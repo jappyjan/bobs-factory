@@ -49,6 +49,8 @@ const sources = {
 	"external-reverify": "external/external-reverify",
 };
 const ports = [
+	"existing-work",
+	"assess-existing",
 	"clarify",
 	"decisions",
 	"plan",
@@ -1660,6 +1662,16 @@ const composition = [
 	},
 ];
 
+// Takeover's own assessment is bound into every composed role; Factory has none.
+const takeoverComposition = composition.map((call) => ({
+	...call,
+	bindings: {
+		...call.bindings,
+		"existing-work": "existing-work",
+		"assess-existing": "assess-existing",
+	},
+}));
+
 export const factoryRecipes = [
 	{ ...stockWorkflowMetadata.factory, steps: composition },
 	{
@@ -1667,7 +1679,7 @@ export const factoryRecipes = [
 		steps: [
 			stockTakeoverSteps["existing-work"]!,
 			stockTakeoverSteps["assess-existing"]!,
-			...composition,
+			...takeoverComposition,
 		],
 	},
 	{

@@ -12,6 +12,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "clarify-v1",
@@ -68,6 +70,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -104,6 +108,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "plan-v1",
@@ -156,6 +162,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "plan-review-v1",
@@ -207,6 +215,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "architecture-checkin-v1",
@@ -251,6 +261,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "architecture-review-v1",
@@ -311,6 +323,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -465,6 +479,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -505,6 +521,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "impact-v1",
@@ -576,6 +594,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "inventory-v1",
@@ -623,6 +643,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -669,6 +691,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -703,6 +727,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "specialist-v1",
@@ -745,6 +771,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "specialist-v1",
@@ -787,6 +815,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "specialist-v1",
@@ -829,6 +859,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "specialist-v1",
@@ -871,6 +903,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "specialist-v1",
@@ -913,6 +947,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 					reads: {
 						scopeSource: "@source",
 						scopeTicket: "@ticket",
+						scopeExistingWork: "existing-work",
+						scopeAssessment: "assess-existing",
 					},
 					output: {
 						format: "coverage-v1",
@@ -966,6 +1002,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -1168,6 +1206,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -1228,6 +1268,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "qa-scope-v1",
@@ -1294,6 +1336,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "qa-capture-v1",
@@ -1356,6 +1400,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "qa-review-v1",
@@ -1445,6 +1491,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -1626,6 +1674,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "review-fix-v1",
@@ -1702,6 +1752,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "ci-fix-v1",
@@ -1786,6 +1838,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -1836,6 +1890,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			observation: "after-ci-fix-observe",
 			observations: "after-ci-fix-observe/observations",
 		},
@@ -3288,6 +3344,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "review-fix-v1",
@@ -3365,6 +3423,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "review-brief-v3",
@@ -3430,6 +3490,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -3501,6 +3563,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -3556,6 +3620,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "json-v1",
@@ -3612,6 +3678,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -3677,6 +3745,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -3746,6 +3816,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -3793,6 +3865,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -3872,6 +3946,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "json-v1",
@@ -3920,6 +3996,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -3967,6 +4045,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -4014,6 +4094,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -4099,6 +4181,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -4149,6 +4233,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		rules: [],
 		checks: [
@@ -4199,6 +4285,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 		},
 		output: {
 			format: "json-v1",
@@ -4246,6 +4334,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -4301,6 +4391,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			scopePlan: "plan",
 			scopeSource: "@source",
 			scopeTicket: "@ticket",
+			scopeExistingWork: "existing-work",
+			scopeAssessment: "assess-existing",
 			draftPr: "draft-pr",
 			ci: "ci",
 			guide: "guide",
@@ -4336,6 +4428,15 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		args: [],
 	},
 };
+
+/** Flat #141 roles, before composed recipes bound the Takeover assessment. */
+export function withoutAssessmentReads(step: WorkflowStep): WorkflowStep {
+	const groups = step.groups?.map((group) => group.map(withoutAssessmentReads));
+	const result = groups ? { ...step, groups } : step;
+	if (!step.reads) return result;
+	const { scopeExistingWork: _, scopeAssessment: __, ...reads } = step.reads;
+	return { ...result, reads };
+}
 
 /** Takeover inspection roles, before entering the shared factory work. */
 export const stockTakeoverSteps: Record<string, WorkflowStep> = {

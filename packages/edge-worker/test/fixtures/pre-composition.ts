@@ -3,6 +3,7 @@ import {
 	stockFactorySteps,
 	stockTakeoverSteps,
 	stockWorkflowMetadata,
+	withoutAssessmentReads,
 } from "../../src/factory/stockFactorySteps.js";
 import { validateWorkflows } from "../../src/factory/Workflow.js";
 
@@ -84,7 +85,7 @@ export const preCompositionWorkflows = validateWorkflows([
 	},
 	{
 		...stockWorkflowMetadata["factory-pipeline"],
-		steps: Object.values(stockFactorySteps),
+		steps: Object.values(stockFactorySteps).map(withoutAssessmentReads),
 	},
 	...improvementRecipes,
 ]);
