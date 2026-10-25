@@ -494,3 +494,119 @@ not retry or enter an error handler. Non-convergence still requires human Contin
 result, a timeout result, or a node's ordinary structured business result remains
 normal data for branches. Existing special recovery paths retain precedence.
 All builder node panels expose the common retry policy and error destination.
+## Merge, ticket and exec IO
+
+These nodes register their palette templates and use the generic JSON settings
+panel. Their receipts are ordinary stamped outputs; node IDs have no special
+meaning. Existing `tool: merge`, `tool: exec` and external tools remain available
+for frozen legacy recipes.
+
+### Operation effects and polling
+
+`nodeEffect(step)` in `nodes/metadata.ts` (also exposed as
+`nodeRegistry.effectFor(step)`, which parses defaults) resolves serializable
+`operationEffects` and `accessEffects` overrides, then the conservative node
+`effect`. Unknown operations remain effects. Polling nodes must use this resolved
+class, not just `definition.effect`: `ticket` with `op: read` and `exec` with
+`access: read-only` are **read-only**; every other B6 operation is **effect**.
+The same operation metadata is available to other IO nodes and browser clients.
+A `wait` wrapper must validate this class both when parsing and before executing
+its body. Read-only polls do not enter `ctx.effect` or cache previous reads.
+
+### merge
+
+Configuration: `requests?: [{repositoryId, url, headSha}]`,
+`method?: "merge" | "squash" | "rebase"`, `pollInterval` (ms, default 10000),
+`timeout` (ms per repository wait, default 3600000). Otherwise `reads.requests`
+provides the requests: a single PR, an array, a legacy grouped `deliveries`
+receipt, or B5's `{repositories: [{id, url, head}]}` receipt. `headRefOid` is also
+accepted as the bound revision. Only repositories selected for the run can merge.
+The default method comes from the configured Git provider.
+
+Output: `{repositories: [{repositoryId, merged: true, sha, url}]}`. `sha` is the
+provider-confirmed merge commit, not the source head. Custom Git providers must
+return `mergeCommitSha` from `view` for a merged request. Repository reservations
+use the same canonical repository/base identity as existing publication, and
+all admission/queue/confirmation waits use `ctx.phase("waiting-ci")`. Each
+repository has an independent durable effect, so partial success survives retry.
+An uncertain request is only polled for confirmation; an open PR is **unknown**,
+not evidence that the merge was absent. It never triggers another merge request.
+A queue timeout or unavailable provider retains an uncertain receipt for retry.
+
+There is no human approval, impact or lifecycle gate in this node. Recipes must
+place their own checks before it, for example `check(approved && fresh(approval))`.
+The Git provider still enforces its native branch rules and merge queues.
+
+### ticket
+
+Configuration: `op` (default `read`), optional `reference`, `commentBody`, `fields`,
+`statusType`, `url`, `teamId`. The corresponding named reads are `reference`,
+`body`, `fields`, `statusType`, `url`; explicit configuration takes precedence.
+`reference` defaults to the run's originating ticket. `commentBody` is named this
+way because `body` already denotes nested graph steps. Bind a display document's
+plain-text fallback to `reads.body` when a formatted document should be posted.
+
+- `read`: complete provider fields, `comments` and `attachments`.
+- `comment`: a string from `commentBody` or `reads.body`.
+- `set-status`: a status **type**: `triage`, `backlog`, `unstarted`, `started`,
+  `completed`, `canceled`. Taskbot maps these to its native status vocabulary;
+  `triage` maps to backlog. No tool/step name chooses status.
+- `update`: `fields: {title?, description?, priority?}`; description is the body.
+- `create`: `fields.title` required, optional description/priority/teamId. Linear
+  and Taskbot reuse existing creation helpers, defaulting to backlog/unassigned.
+  Creation markers/Linear UUIDs reuse the durable effect key.
+- `link`: a URL. Linear/native trackers use their attachment transport; Taskbot
+  uses attachments. GitHub stores an explicit link comment.
+
+Mutating outputs: `{ok: true, id, url}` (the newly created identity for `create`).
+Comments contain a stable searchable marker. Status/update/link retries confirm
+current provider state; a conflicting or invisible write stays unknown instead
+of overwriting it. Confirmed effects reuse their saved receipt across restart.
+
+References:
+
+- Linear and other native trackers: the existing
+  `{provider: "native", platform, workspaceId, id, url}` reference; the configured
+  TicketManager and workspace tracker perform the IO.
+- Taskbot: `{provider: "taskbot", server, instance, project, id, url}`; the
+  configured MCP connection must match the verified instance.
+- GitHub issues: `{provider: "github", repositoryId, number}`; credentials and
+  repository URL come from the run's configured repository. Generic status types
+  are preserved in `factory-status:<type>` labels alongside native open/closed
+  state. Numeric priority is unsupported and rejected.
+- File tickets: `{provider: "file", repositoryId, id}`. JSON records live under
+  the runtime-owned `factoryHome/factory/tickets/<repository-hash>/`; IDs cannot
+  escape this directory. Creation IDs derive from the durable effect identity,
+  and synchronous locked mutations preserve unrelated fields/comments.
+
+**Milestone decision:** new definitions (`engineVersion: "nodes-v1"`, shared with
+B3) explicitly call `ticket set-status` and `ticket comment`. No generic
+`ticketMilestone` property is added. Automatic legacy `TicketTracking` milestones
+are suppressed at the runtime tracking boundary for those definitions, including
+start/terminal and tool-name-based milestones. Definitions without the marker
+retain the existing tracking behavior; accepted saved graphs are not migrated.
+
+### exec
+
+Configuration: `command` (executable), `args` (array, default `[]`),
+`access: "read-only" | "workspace"` (default `read-only`), `timeout` (ms, default
+120000, max one hour), `env` (environment variable **name allowlist**, default
+`["PATH", "LANG"]`), `json` (default false). Commands run in the workspace; use
+`command: "/bin/sh", args: ["-c", "..."]` when shell syntax is needed.
+
+Output: `{exitCode, stdout, stderr, json?}`. Nonzero exit codes are structured
+results; timeout, cancellation, spawn failure and invalid requested JSON fail the
+node. Each stream is bounded to its last one million characters. Execution-profile redaction is
+applied before output is retained. Only allowlisted host/profile environment
+variables are inherited; internal capacity provenance is also retained. Mutating commands additionally receive
+`FACTORY_EFFECT_KEY` for downstream idempotency.
+
+Writes are enforced by the OS for the process and descendants: macOS
+`sandbox-exec`, or Linux `bwrap` (bubblewrap must be installed). Read-only commands
+cannot write workspace files; workspace access permits writes only under the
+resolved workspace. Unsupported/missing enforcement fails closed. A timeout or
+cancellation terminates the process group, escalating to SIGKILL. Mutating exec
+uses `ctx.effect` and deliberately has no generic reconciliation: after an
+uncertain command, the operator must reconcile its external outcome. A confirmed
+command is not run again. Arbitrary shell side effects cannot be safely inferred
+from a local exit code after a crash.

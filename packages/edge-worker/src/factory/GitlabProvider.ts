@@ -64,6 +64,9 @@ export function gitlabProvider(
 			body: mr.description ?? "",
 			headRefName: mr.source_branch,
 			headRefOid: mr.sha ?? mr.diff_refs?.head_sha,
+			...(mr.state === "merged" && (mr.merge_commit_sha || mr.squash_commit_sha)
+				? { mergeCommitSha: mr.merge_commit_sha || mr.squash_commit_sha }
+				: {}),
 			baseRefName: mr.target_branch,
 			state:
 				mr.state === "opened"

@@ -730,6 +730,14 @@ export interface ExecutionContext {
 	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
+	ioGitProvider?(
+		context: ExecutionContext,
+	): Promise<import("./GitProvider.js").GitProvider>;
+	ticketIO?(
+		run: FactoryRun,
+		reference: import("./TicketTracking.js").TicketReference,
+		signal: AbortSignal,
+	): Promise<import("./TicketIO.js").TicketIOAdapter>;
 	transcriptEntries?(
 		runId: string,
 	): readonly import("bobs-factory-core").CyrusAgentSessionEntry[];
@@ -1836,7 +1844,12 @@ export class WorkflowRuntime {
 		milestone: import("./TicketTracking.js").TicketMilestone,
 	): Promise<void> {
 		try {
-			if (!run.ticketReference || !this.hooks.track) return;
+			if (
+				run.workflow.engineVersion === "nodes-v1" ||
+				!run.ticketReference ||
+				!this.hooks.track
+			)
+				return;
 			recordTicketMilestone(run, milestone);
 			await this.save(run);
 			// The outbox owns retries and deduplication. External tracking never
