@@ -294,7 +294,10 @@ export type CheckReference = z.infer<typeof CheckReferenceSchema>;
 const selector = z
 	.string()
 	.max(400)
-	.regex(/^(\/([^~]|~[01])*)?$/, "Expected a JSON pointer selector");
+	.regex(
+		/^\/([^~]|~[01])*$/,
+		"Expected a JSON pointer selector beginning with /",
+	);
 const verifyFields = {
 	path: selector,
 	repositoryId: z.string().min(1).optional(),

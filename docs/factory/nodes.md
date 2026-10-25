@@ -123,7 +123,7 @@ across a cold runtime restart.
 Set `engineVersion: "nodes-v1"` on a recipe to opt into the node engine contract.
 Absence retains accepted legacy definitions, including `step-config-v1` recipes;
 that older marker alone does **not** opt in. The marker belongs to each definition,
-including called recipes, and is retained when saving or forking. No existing
+including called recipes, and is retained when saving or forking. New recipes created in the builder use this marker. No existing
 recipe is migrated automatically. This marker is shared with the other #156 node
 work; align it with B3 if that contract changes before integration.
 

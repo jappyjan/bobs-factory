@@ -128,6 +128,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 					labels: [],
 					allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 					ownership: "local",
+					engineVersion: "nodes-v1",
 					stepConfigVersion: "step-config-v1",
 					steps: [newStep("agent", "work")],
 				} as Recipe)
