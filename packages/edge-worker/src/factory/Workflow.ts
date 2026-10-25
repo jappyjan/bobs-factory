@@ -35,6 +35,8 @@ import { type AgentStepSchema, nodeId as id } from "./nodes/schema.js";
 export type AgentStep = z.infer<typeof AgentStepSchema>;
 export interface WorkflowStep extends StepConfigFields {
 	id: string;
+	reuse?: "unchanged-inputs";
+	bind?: string[];
 	delivery?: "exclusive";
 	resources?: string[];
 	name: string;

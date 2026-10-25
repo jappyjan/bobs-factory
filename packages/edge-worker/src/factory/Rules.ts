@@ -19,7 +19,9 @@ export type RuleOperand =
 	| { path: string }
 	| { length: string }
 	| { sum: RuleOperand[] };
+export type FreshnessResolver = (reference: string) => boolean;
 export type RuleCondition =
+	| { fresh: string }
 	| { all: RuleCondition[] }
 	| { any: RuleCondition[] }
 	| { not: RuleCondition }
@@ -138,6 +140,7 @@ function ruleSchemas(pointer: z.ZodString) {
 	const pointers = z.union([pointer, z.array(pointer).min(1).max(20)]);
 	const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
 		z.union([
+			z.object({ fresh: z.string().min(1).max(400) }).strict(),
 			z.object({ all: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
 			z.object({ any: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
 			z.object({ not: RuleConditionSchema }).strict(),
@@ -506,10 +509,12 @@ export interface RuleEvaluationBudget {
 	remaining: number;
 	workRemaining?: number;
 	validateFormat?: FormatValidator;
+	fresh?: FreshnessResolver;
 }
 interface Work {
 	remaining: number;
 	validateFormat?: FormatValidator;
+	fresh?: FreshnessResolver;
 	work: number;
 	slice: number;
 	/** Named Check inputs are lazy JSON; old condition host getters retain their API. */
@@ -917,6 +922,7 @@ function* conditionTask(
 	if (depth > MAX_DEPTH) throw new Error("Rule nesting exceeds the limit");
 	const next = (condition: RuleCondition, item = scope) =>
 		conditionTask(condition, item, root, depth + 1, state);
+	if ("fresh" in condition) return state.fresh?.(condition.fresh) === true;
 	if ("conforms" in condition) {
 		if (!state.validateFormat)
 			throw new Error("Format rules require the library validator");
@@ -1245,6 +1251,7 @@ function* rulesTask(
 	rules: readonly Rule[] | undefined,
 	document: unknown,
 	validateFormat?: FormatValidator,
+	fresh?: FreshnessResolver,
 ): Task<RuleIssue[]> {
 	if (!rules?.length) return [];
 	if (rules.length > 50)
@@ -1252,6 +1259,7 @@ function* rulesTask(
 	const work = state({
 		remaining: RULE_EVALUATION_LIMITS.conditions,
 		validateFormat,
+		fresh,
 	});
 	yield* footprint(document, work);
 	yield* footprint(rules, work);
@@ -1277,8 +1285,9 @@ export function evaluateRules(
 	rules: readonly Rule[] | undefined,
 	document: unknown,
 	validateFormat?: FormatValidator,
+	fresh?: FreshnessResolver,
 ): RuleIssue[] {
-	return sync(rulesTask(rules, document, validateFormat));
+	return sync(rulesTask(rules, document, validateFormat, fresh));
 }
 /** Runtime evaluation cooperatively yields and propagates cancellation unchanged. */
 export function evaluateRulesAsync(
@@ -1286,8 +1295,12 @@ export function evaluateRulesAsync(
 	document: unknown,
 	validateFormat?: FormatValidator,
 	signal?: AbortSignal,
+	fresh?: FreshnessResolver,
 ): Promise<RuleIssue[]> {
-	return asynchronous(rulesTask(rules, document, validateFormat), signal);
+	return asynchronous(
+		rulesTask(rules, document, validateFormat, fresh),
+		signal,
+	);
 }
 
 function* expressionTask(
@@ -1391,10 +1404,12 @@ function* namedRulesTask(
 	evidence: unknown,
 	passed: RuleCondition | undefined,
 	validateFormat?: FormatValidator,
+	fresh?: FreshnessResolver,
 ): Task<NamedRuleEvaluation> {
 	const work = state({
 		remaining: RULE_EVALUATION_LIMITS.conditions,
 		validateFormat,
+		fresh,
 	});
 	work.strictJson = true;
 	const document = { inputs, evidence };
@@ -1441,9 +1456,17 @@ export function evaluateNamedRules(
 	evidence: unknown = {},
 	passed?: RuleCondition,
 	validateFormat?: FormatValidator,
+	fresh?: FreshnessResolver,
 ): NamedRuleEvaluation {
 	return sync(
-		namedRulesTask(expressions, inputs, evidence, passed, validateFormat),
+		namedRulesTask(
+			expressions,
+			inputs,
+			evidence,
+			passed,
+			validateFormat,
+			fresh,
+		),
 	);
 }
 
@@ -1454,9 +1477,17 @@ export function evaluateNamedRulesAsync(
 	passed?: RuleCondition,
 	validateFormat?: FormatValidator,
 	signal?: AbortSignal,
+	fresh?: FreshnessResolver,
 ): Promise<NamedRuleEvaluation> {
 	return asynchronous(
-		namedRulesTask(expressions, inputs, evidence, passed, validateFormat),
+		namedRulesTask(
+			expressions,
+			inputs,
+			evidence,
+			passed,
+			validateFormat,
+			fresh,
+		),
 		signal,
 	);
 }

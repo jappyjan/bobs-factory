@@ -7,6 +7,7 @@ This changelog documents internal development changes, refactors, tooling update
 ### Added
 
 - Add recipe IO nodes for provider-confirmed merge, explicit ticket operations and commands with enforced workspace access; retain durable restart receipts and legacy ticket tracking. Retry pre-dispatch failures, release merge reservations during queue confirmation, support linked-worktree Git/temp writes, and enforce read-only command networking. Read-only Exec can be polled by Wait with a capacity lease per command and one final receipt. ([Taskbot #163](https://taskbot.apps.janjaap.de/p/bobs-factory/t/163), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#204](https://github.com/jappyjan/bobs-factory/pull/204))
+- Add generic Factory engine guarantees: unchanged-input reuse per lexical/item frame, revision-stamped outputs, bound response digests, rules-v1 freshness and a pure Converge node with builder settings. Preserve accepted bindings across restart and expose a revision-reporting helper for IO nodes. ([Taskbot #158](https://taskbot.apps.janjaap.de/p/bobs-factory/t/158), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
 
 ### Changed
 

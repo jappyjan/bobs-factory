@@ -32,6 +32,7 @@ import {
 	validateInlineSchemaSync,
 } from "./InlineSchema.js";
 import { IssueDestinationSchema } from "./IssueDestination.js";
+import { nodeFreshnessRules } from "./NodeGuarantees.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -336,6 +337,7 @@ export async function parseStepOutputAsync(
 	value: unknown,
 	scope?: StepScope,
 	signal?: AbortSignal,
+	fresh?: (reference: string) => Promise<boolean>,
 ): Promise<unknown> {
 	const config = resolveStepConfig(step, scope);
 	try {
@@ -364,6 +366,7 @@ export async function parseStepOutputAsync(
 			output,
 			conforms,
 			signal,
+			await nodeFreshnessRules(config.rules, fresh),
 		);
 		signal?.throwIfAborted();
 		if (issues.length) throw new OutputValidationError(value, issues);

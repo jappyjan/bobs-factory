@@ -64,7 +64,17 @@ export interface NodeContext<S extends WorkflowStep = WorkflowStep>
 	/** Detached named reads, resolved once before dispatch. */
 	reads: Record<string, unknown>;
 	inputDigest: string;
-	stamp<T>(output: T): { output: T; inputDigest: string };
+	guarantee: import("../NodeGuarantees.js").NodeGuarantee;
+	fresh(reference: string): Promise<boolean>;
+	/** Attach provider-verified repository revisions without changing the output JSON. */
+	recordRevisions(
+		revisions: import("../NodeGuarantees.js").NodeRevisions,
+	): void;
+	stamp<T>(output: T): {
+		output: T;
+		inputDigest: string;
+		guarantee: import("../NodeGuarantees.js").NodeGuarantee;
+	};
 	checkpoint(): Promise<void>;
 	/** Stable for this accepted visit, including retries and process restarts. */
 	effectKey(name: string): Promise<string>;

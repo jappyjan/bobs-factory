@@ -124,7 +124,23 @@ export async function outputRevisionBinding(
 		accessMode(context.step) === "read-only"
 			? snapshotForRead(context)
 			: undefined;
-	const repositories = await Promise.all(
+	const repositories = await captureRepositoryRevisions(context, snapshot);
+	return {
+		version: 1,
+		repositories,
+		historyLength,
+		inputScope: scope,
+		inputExtrasDigest,
+		contextSourcesDigest,
+		inputDigest,
+	};
+}
+/** Shared HEAD/tree/workspace observation for generic node receipts. */
+export async function captureRepositoryRevisions(
+	context: Pick<ExecutionContext, "run">,
+	snapshot?: ReturnType<typeof snapshotForRead>,
+): Promise<OutputRevisionBinding["repositories"]> {
+	return Promise.all(
 		runRepositories(context.run).map(async (repo) => {
 			const git = async (args: string[]) =>
 				(
@@ -184,16 +200,8 @@ export async function outputRevisionBinding(
 			};
 		}),
 	);
-	return {
-		version: 1,
-		repositories,
-		historyLength,
-		inputScope: scope,
-		inputExtrasDigest,
-		contextSourcesDigest,
-		inputDigest,
-	};
 }
+
 export function sameOutputBinding(
 	a: OutputRevisionBinding | undefined,
 	b: OutputRevisionBinding | undefined,

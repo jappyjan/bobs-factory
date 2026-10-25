@@ -778,3 +778,106 @@ repositories, and tests uncertain sends across cold runtime restarts.
 F1 fixture `apps/f1/test-drives/assets/repository-io-nodes.ts` uses real Git,
 mocked agents and a simulated GitLab API, including a lost creation response and
 worker restart.
+## Generic engine guarantees
+
+Every completed node's history receipt keeps `inputDigest` beside its output JSON
+and a versioned `guarantee` containing repository revisions, bound receipt digests
+and its lexical read scope. Scalars and arrays retain their original shape.
+Receipts and an in-flight visit's accepted stamp survive process restart. Old
+unstamped receipts remain readable but cannot establish freshness or reuse.
+
+### Revisions reported by nodes
+
+Agents observe repository HEAD and working changes automatically; agents with
+workspace/push access record the resulting revision after execution. Read-only
+agents retain their input observation (or their declared Snapshot's committed
+revision). Snapshot records its actual captured commit for every repository.
+Non-repository runs carry no local revisions.
+
+IO nodes use this service after obtaining a verified provider/local observation:
+
+```ts
+ctx.recordRevisions({
+  [repositoryId]: { headSha: verifiedHeadSha },
+});
+```
+
+`recordRevisions` attaches metadata to the engine receipt, without wrapping or
+changing the node's output. Call it for every repository the result covers. The
+optional `workspaceDigest` additionally binds working changes; use
+`observeNodeRevisions(ctx)` from `factory/NodeGuarantees.ts` to capture local
+HEAD and workspace digests with the shared Git implementation. Read dependencies
+and explicit bindings propagate revisions to their consumers. Never report an
+agent's claim of a revision as provider-verified evidence. Revisions are compared
+against the retained run repositories, so unknown/unavailable repositories fail
+freshness conservatively. The helper does not grant provider or repository access.
+
+### Reuse
+
+Any step can opt in with `"reuse": "unchanged-inputs"`. Before dispatch, the
+engine checks for a stamped output in that exact step frame with the same resolved
+named-read digest, repository revisions and bound receipt digests. The previous
+output must still be fresh. A hit skips node execution, adds a completed history
+receipt and logs `reused (inputs unchanged)`. Parallel branches and foreach item
+IDs have separate keys; changing an item's contents invalidates its cached output.
+The previous receipt stays immutable. Reuse does not replenish visit/progress
+budgets or acquire execution capacity. Use it only when skipping execution is
+appropriate for that node's declared inputs; polling external state ordinarily
+needs execution even if its local inputs are unchanged.
+
+### Bound responses and `fresh()`
+
+Declare `"bind": ["sample"]` on any step to freeze the referenced receipts before
+execution, including before a human wait. Their output/input/revision digests are
+saved in the visit checkpoint and completed receipt. Resuming that visit does not
+silently bind a response to changed evidence.
+
+In rules-v1, `fresh("sample")` is JSON data:
+
+```json
+{
+  "type": "check",
+  "id": "current",
+  "name": "Current",
+  "check": { "results": { "current": { "fresh": "response" } } }
+}
+```
+
+The operator works in Check results/passed rules and agent output rules, including
+under `all`, `any` and `not`. It re-resolves the producer's named reads in its own
+persisted scope and compares its output, input digest and repository revisions.
+Consumed stamped producers and bound receipts must still match and themselves
+remain fresh, recursively. Missing,
+legacy, cyclic or unreadable evidence yields false. Standalone rule simulation
+without a runtime resolver also yields false. Nodes may call
+`await ctx.fresh("sample")` directly. References are lexical step IDs/paths;
+Call bindings resolve to their original producer, and a leading `/` selects a
+run-absolute step key (for example `/items/a/sample`).
+
+### Converge
+
+Converge is a registered pure logic node, with a palette entry and JSON settings:
+
+```json
+{
+  "id": "observe",
+  "name": "Observe",
+  "type": "converge",
+  "reads": { "value": "sample/value" },
+  "watch": ["/inputs/value"],
+  "maxCycles": 3
+}
+```
+
+`watch` contains JSON Pointers into the same `{inputs, evidence}` document as
+Check; `inputs` are the node's named reads and evidence is empty. The node compares
+a canonical digest with its previous visit in the same frame and returns only
+`{stalled, cycles, changed}`. The first observation starts at one cycle with
+`changed: true`; equal observations increment `cycles`, and a changed observation
+resets it to one. `stalled` becomes true at `maxCycles` consecutive equal visits.
+Watched state is committed with the output receipt, so restart cannot double-count
+an interrupted visit. Recipes own routing when stalled; the node does no IO and
+does not change visit budgets, progress budgets or capacity.
+
+All existing step panels expose reuse/bind through the **Engine guarantees** JSON
+field; new nodes' full **Node configuration** JSON panel covers them directly.

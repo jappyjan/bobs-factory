@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
 	evaluateNamedRules,
 	evaluateNamedRulesAsync,
+	type FreshnessResolver,
 	type RuleCondition,
 	RuleConditionSchema,
 	RuleDataSchema,
@@ -75,6 +76,7 @@ export function evaluateCheck(
 	inputs: unknown,
 	evidence: unknown = {},
 	validateFormat?: FormatValidator,
+	fresh?: FreshnessResolver,
 ): CheckOutput {
 	const evaluated = evaluateNamedRules(
 		configuration.results,
@@ -82,6 +84,7 @@ export function evaluateCheck(
 		evidence,
 		configuration.passed,
 		validateFormat,
+		fresh,
 	);
 	return { passed: evaluated.passed, ...evaluated.results };
 }
@@ -93,6 +96,7 @@ export async function evaluateCheckAsync(
 	evidence: unknown = {},
 	validateFormat?: FormatValidator,
 	signal?: AbortSignal,
+	fresh?: FreshnessResolver,
 ): Promise<CheckOutput> {
 	const evaluated = await evaluateNamedRulesAsync(
 		configuration.results,
@@ -101,6 +105,7 @@ export async function evaluateCheckAsync(
 		configuration.passed,
 		validateFormat,
 		signal,
+		fresh,
 	);
 	return { passed: evaluated.passed, ...evaluated.results };
 }

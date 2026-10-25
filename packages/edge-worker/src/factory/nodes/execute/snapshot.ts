@@ -37,5 +37,11 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 		);
 		await engine.save(run);
 	}
-	return snapshotOutput(run.repositorySnapshots[actionId]!);
+	const receipt = run.repositorySnapshots[actionId]!;
+	ctx.recordRevisions(
+		Object.fromEntries(
+			receipt.repositories.map((repo) => [repo.id, { headSha: repo.revision }]),
+		),
+	);
+	return snapshotOutput(receipt);
 }
