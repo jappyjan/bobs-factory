@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Build human-facing recipe steps with one generic Display node: compose forms, item actions, code tours and content freely, accept agent-produced documents, and retain exact answers across restart. Includes live builder previews, text fallbacks and stale-document checks. ([Taskbot #159](https://taskbot.apps.janjaap.de/p/bobs-factory/t/159), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+
 - Recipes are now built from reusable building blocks. Agent steps take a library or custom JSON output format, rules, evidence checks and declared inputs; new generic steps are Check, For each, Snapshot repository, File issues, Launch runs, and human views (Decide per item, Approve, Show) defined by schema-based components. ([#173](https://github.com/jappyjan/bobs-factory/pull/173)–[#177](https://github.com/jappyjan/bobs-factory/pull/177))
 - Improve codebase is an ordinary, fully visible recipe: snapshot, map, research per perspective, consolidate, decide per item (with targeted Ask Bob follow-ups), plan, check, approve, then file issues or launch Factory runs. The research worker inherits the run's model unless one is set. ([#178](https://github.com/jappyjan/bobs-factory/pull/178))
 - Software factory and Take over existing work are composed from sub-recipes (clarify & plan, check-in, implement, review loop, QA, CI, review guide, merge, external delivery) that can be expanded on the canvas and reused in other recipes. Every bundled recipe except Simple can be forked, including its building blocks. ([#179](https://github.com/jappyjan/bobs-factory/pull/179))

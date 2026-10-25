@@ -91,6 +91,11 @@ function ViewComponent({
 }) {
 	const formId = useId();
 	switch (component.type) {
+		case "section":
+		case "codeTour":
+			return (
+				<pre>{viewText({ version: "view-v1", components: [component] })}</pre>
+			);
 		case "questions":
 			return (
 				<pre className="dv-rich-fallback">
@@ -348,6 +353,7 @@ function ViewComponent({
 					))}
 				</div>
 			);
+		case "form":
 		case "choices":
 			return (
 				<div className="dv-form-fields">
@@ -397,7 +403,7 @@ function ViewComponent({
 													onFieldChange?.(field.id, event.target.value)
 												}
 											/>
-										) : field.type === "select" ? (
+										) : field.type === "select" || field.type === "choice" ? (
 											<select
 												id={id}
 												name={field.id}
@@ -466,6 +472,7 @@ function ViewComponent({
 					))}
 				</div>
 			);
+		case "actions":
 		case "decisionBar":
 			return (
 				<aside
@@ -545,6 +552,9 @@ export type HumanStepAnswer = {
 	fields?: ViewFields;
 	approved?: boolean;
 	feedback?: string;
+	action?: string;
+	values?: ViewFields;
+	documentDigest?: string;
 };
 export type HumanStepAsk = {
 	batchId: string;
@@ -959,7 +969,7 @@ function HumanStepDecisionForm({
 	);
 }
 
-function AskThread({
+export function AskThread({
 	snapshot,
 	itemId,
 	disabled,
@@ -1010,7 +1020,7 @@ function AskThread({
 					: ""}
 			</summary>
 			<p className="muted">
-				A dedicated follow-up answers here. Your source research and selected
+				A dedicated follow-up answers here. Your displayed content and selected
 				action stay intact.
 			</p>
 			<ol className="dv-thread" aria-label="Item questions">

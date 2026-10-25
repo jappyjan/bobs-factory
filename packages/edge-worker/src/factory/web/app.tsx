@@ -890,9 +890,11 @@ function RunPage({
 									? "Workflow disabled · Resume required"
 									: kind === "question"
 										? run.viewDecision && !run.viewDecision.answer
-											? run.viewDecision.kind === "approve"
-												? "Your approval is needed"
-												: "Choose actions for each item"
+											? run.viewDecision.kind === "display"
+												? "Your response is needed"
+												: run.viewDecision.kind === "approve"
+													? "Your approval is needed"
+													: "Choose actions for each item"
 											: `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
 											? run.status === "stopped"

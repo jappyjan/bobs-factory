@@ -79,9 +79,11 @@ function trackingChildren(run: RunSummary): boolean {
 }
 export function workingLabel(run: RunSummary): string {
 	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
-		return run.viewDecision.kind === "approve"
-			? "Waiting for approval"
-			: "Waiting for decisions";
+		return run.viewDecision.kind === "display"
+			? "Waiting for your response"
+			: run.viewDecision.kind === "approve"
+				? "Waiting for approval"
+				: "Waiting for decisions";
 	if (
 		run.status === "waiting" &&
 		trackingChildren(run) &&

@@ -6,6 +6,7 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
+import { DISPLAY_JSON_SCHEMA } from "../DisplayDocument";
 import { DecideConfigurationSchema, decisionItems } from "../HumanStep";
 import {
 	availableViewPaths,
@@ -97,6 +98,7 @@ export function humanPreviewConfiguration(
 			decide: step.decide,
 			reads: step.reads,
 			notifications: step.notifications,
+			...(step.type === "display" ? { bind: step.bind } : {}),
 			lastRun: true,
 		}),
 	};
@@ -267,7 +269,11 @@ export function ViewEditor({
 	paths,
 	onChange,
 	onError,
+	schema = ViewSourceSchema,
+	document = false,
 }: {
+	schema?: { parse(value: unknown): NonNullable<Step["view"]> };
+	document?: boolean;
 	value: Step["view"];
 	readOnly: boolean;
 	paths: string[];
@@ -294,7 +300,7 @@ export function ViewEditor({
 	const update = (next: string) => {
 		setText(next);
 		try {
-			const parsed = ViewSourceSchema.parse(JSON.parse(next));
+			const parsed = schema.parse(JSON.parse(next));
 			emitted.current = JSON.stringify(parsed, null, 2);
 			setError("");
 			onChange(parsed);
@@ -305,7 +311,7 @@ export function ViewEditor({
 	return (
 		<div className="dv-view-editor">
 			<label className="dv-field" htmlFor={`${id}-editor`}>
-				<span>View JSON</span>
+				<span>{document ? "Display document JSON" : "View JSON"}</span>
 				<textarea
 					id={`${id}-editor`}
 					ref={editor}
@@ -378,9 +384,9 @@ export function ViewEditor({
 			<details className="dv-schema">
 				<summary>Component schema and examples</summary>
 				<p>
-					Components: markdown, checklist, beforeAfter, chart, screenshots,
-					video, table, code, steps, points, itemCards, choices, runList,
-					decisionBar.
+					{document
+						? "Components: markdown, points, checklist, table, chart, beforeAfter, steps, code, screenshots, video, itemCards, form, actions, runList, section, codeTour."
+						: "Components: markdown, checklist, beforeAfter, chart, screenshots, video, table, code, steps, points, itemCards, choices, runList, decisionBar."}
 				</p>
 				<p>
 					For a child-run list, declare {`reads: {"children":"@childRuns"}`} and
@@ -388,7 +394,13 @@ export function ViewEditor({
 					labels; human authority comes from the accepted step’s controls.
 				</p>
 				<pre>
-					<code>{JSON.stringify(VIEW_JSON_SCHEMA, null, 2)}</code>
+					<code>
+						{JSON.stringify(
+							document ? DISPLAY_JSON_SCHEMA : VIEW_JSON_SCHEMA,
+							null,
+							2,
+						)}
+					</code>
 				</pre>
 			</details>
 		</div>

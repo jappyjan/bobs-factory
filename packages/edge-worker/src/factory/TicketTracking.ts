@@ -655,6 +655,9 @@ export class TicketTracking {
 			const legacy = run.viewRecords?.find(
 				(record) =>
 					record.snapshot.kind !== "show" &&
+					!(
+						record.snapshot.kind === "display" && !record.snapshot.interactive
+					) &&
 					receipt.key === `view:${record.snapshot.id}`,
 			);
 			if (!legacy) return "current";
@@ -770,6 +773,10 @@ export class TicketTracking {
 							run.viewRecords?.some(
 								(record) =>
 									record.snapshot.kind !== "show" &&
+									!(
+										record.snapshot.kind === "display" &&
+										!record.snapshot.interactive
+									) &&
 									receipt.key === `view:${record.snapshot.id}`,
 							)) &&
 						receipt.deliveryId &&

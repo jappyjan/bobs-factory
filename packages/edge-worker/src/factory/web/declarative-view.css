@@ -681,3 +681,84 @@ ul.dv-points,
 	overflow-wrap: anywhere;
 	max-width: 100%;
 }
+
+.display-document {
+	width: 100%;
+}
+.display-document fieldset {
+	margin: 1rem 0;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	padding: 1rem;
+}
+.display-document legend {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+.display-section > summary {
+	cursor: pointer;
+	font-weight: 600;
+	margin-bottom: 1rem;
+}
+.display-action-bar {
+	position: sticky;
+	bottom: 0;
+	z-index: 3;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	padding: 1rem;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	margin-top: 1rem;
+}
+.display-action-bar p {
+	flex-basis: 100%;
+}
+.display-code-note {
+	grid-column: 1 / -1;
+	white-space: normal;
+	padding: 1rem;
+	border-left: 3px solid var(--accent);
+	background: var(--surface);
+	font-family: inherit;
+}
+.display-document .diff-grid {
+	min-width: 0;
+}
+.display-document .diff-line {
+	flex-wrap: wrap;
+}
+.display-document .diff-line code {
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+@media (max-width: 480px) {
+	.display-document .dv-component {
+		padding: 0.75rem;
+	}
+	.display-document .dv-component .dv-component {
+		padding: 0.5rem;
+		border: 0;
+		box-shadow: none;
+	}
+	.display-action-bar .button {
+		flex: 1 1 auto;
+	}
+}
+.display-document .diff-body.unified .diff-line {
+	min-width: 0;
+	flex-wrap: wrap;
+}
+.display-document .diff-line > code {
+	min-width: 0;
+	flex-basis: 0;
+}
+.display-document .display-code-note {
+	flex: 1 0 100%;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}

@@ -91,7 +91,10 @@ export interface ViewThread {
 export interface ViewSnapshot {
 	id: string;
 	stepKey: string;
-	kind: "decide" | "approve" | "show";
+	kind: "decide" | "approve" | "show" | "display";
+	documentDigest?: string;
+	bound?: string[];
+	interactive?: boolean;
 	title: string;
 	digest: string;
 	view: ResolvedView;
@@ -116,14 +119,11 @@ export interface ViewRecord {
 	/** Exact public display captured in the durable ticket intent (or hook attempt). */
 	publicationDigest?: string;
 }
-const itemKey = z
-	.string()
-	.regex(/^[A-Za-z0-9_-]{1,80}$/)
-	.refine((s) => !["constructor", "prototype", "__proto__"].includes(s));
+const itemKey = viewIdSchema;
 const selection = z
 	.object({
 		itemId: itemKey,
-		action: key,
+		action: viewIdSchema,
 		comment: z.string().max(12000).optional(),
 	})
 	.strict();
@@ -134,6 +134,14 @@ export const ViewAnswerSchema = z.preprocess(
 			batchId: z.string().uuid(),
 			digest: z.string().min(20).max(128),
 			accepted: z.literal(true),
+			action: viewIdSchema.optional(),
+			documentDigest: z
+				.string()
+				.regex(/^[a-f0-9]{64}$/)
+				.optional(),
+			values: z
+				.record(viewIdSchema, z.union([z.string().max(12000), z.boolean()]))
+				.optional(),
 			choices: z.array(selection).max(100).optional(),
 			fields: z
 				.record(viewIdSchema, z.union([z.string().max(12000), z.boolean()]))
@@ -204,6 +212,12 @@ export function viewAnswerOutput(
 	request: ViewAnswer,
 ): Record<string, unknown> {
 	const snapshot = record.snapshot;
+	if (
+		request.action !== undefined ||
+		request.values !== undefined ||
+		request.documentDigest !== undefined
+	)
+		throw new Error("Display answer fields require a display node");
 	const fields: Record<string, string | boolean> = {};
 	const configured = snapshot.view.components.flatMap((component) =>
 		component.type === "choices" ? component.data.fields : [],
