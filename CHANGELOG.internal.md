@@ -6,7 +6,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
-- Add recipe IO nodes for provider-confirmed merge, explicit ticket operations and commands with enforced workspace access; retain durable restart receipts and legacy ticket tracking. (Taskbot #163, epic #156)
+- Add recipe IO nodes for provider-confirmed merge, explicit ticket operations and commands with enforced workspace access; retain durable restart receipts and legacy ticket tracking. ([Taskbot #163](https://taskbot.apps.janjaap.de/p/bobs-factory/t/163), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#204](https://github.com/jappyjan/bobs-factory/pull/204))
 
 ### Changed
 
