@@ -131,8 +131,8 @@ it.each([
 			runner === "claude" ? "CLAUDE_CONFIG_DIR" : "CODEX_HOME"
 		],
 	).toBe(configDirectory);
-	if (runner === "codex") expect(resolved.environment.HOME).not.toBe(root);
-	else expect(resolved.environment.HOME).toBe(root);
+	// Both runners keep the user's HOME so native keychain logins resolve.
+	expect(resolved.environment.HOME).toBe(root);
 	for (const key of [
 		"OPENAI_API_KEY",
 		"ANTHROPIC_API_KEY",
