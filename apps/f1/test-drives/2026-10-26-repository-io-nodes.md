@@ -1,7 +1,8 @@
 # Repository IO nodes: real Git and uncertain PR recovery
 
 **Date:** 2026-10-26 (Europe/Vienna)
-**Candidate:** `feat/156-b5-git-pr-ci`, based on `0acfa08d`, with the B5 working diff.
+**Candidate:** `a03590fe` on `feat/156-b5-git-pr-ci`, based on `0acfa08d`.
+**PR:** [#201](https://github.com/jappyjan/bobs-factory/pull/201).
 **Task:** [Taskbot #162](https://taskbot.apps.janjaap.de/p/bobs-factory/t/162), epic #156.
 
 ## Applicability and setup
@@ -43,15 +44,15 @@ F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/repository-io-nodes.ts
   `commit`, `push`, `pr`, `read`, `comment`, `ready`, `ci`, `diff`.
 - Passed worker/server shutdown and temporary fixture cleanup.
 
-Receipt from the final pre-commit drive:
+Receipt from the final drive of the committed implementation:
 
 ```json
 {
   "result": "PASS",
   "mode": "mock",
-  "runId": "manual-e0a01b2f-47ce-4469-a4dd-9b5307ff3dd7",
-  "head": "1a5d7002c43cb636c50ffdfa6aef718a3d55ef45",
-  "base": "ce6d8d1f4bb7f15e53a716673424a6c6c74f4cb2"
+  "runId": "manual-fb6344a7-9ce1-45f1-8d24-6510b9047e85",
+  "head": "9c67ade8bf44fb46f92d64421e532ce41dcad4e6",
+  "base": "5add7c93e74c91ffc67803edc3de9317d6b4493a"
 }
 ```
 
@@ -62,3 +63,7 @@ not require deployed skills. Live hosted-provider behavior, physical SSH/signing
 agents and browser interaction were not exercised. Focused tests separately
 cover both provider transports, multi-repository scope, every operation and cold
 restart outcomes (confirmed, independently absent and unknown).
+
+Validation after fetching/rebasing `origin/main`: 107 focused tests passed across
+five files. Worker typechecking and the unmodified pre-commit hook’s full build,
+full typecheck and staged-file lint/format checks passed.
