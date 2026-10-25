@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,6 +30,12 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
+// These are native enforcement integration checks. Optional Linux bubblewrap
+// must be installed; the macOS drive exercises the real OS boundary.
+const commandSandboxAvailable =
+	process.platform === "darwin" ||
+	(process.platform === "linux" &&
+		spawnSync("bwrap", ["--version"]).status === 0);
 const homes: string[] = [],
 	runtimes: WorkflowRuntime[] = [];
 afterEach(async () => {
@@ -425,84 +432,90 @@ it("classifies ticket and exec operations individually for read-only polling", (
 		),
 	).toBe("effect");
 });
-it("exec captures separate streams, nonzero exit, JSON and only allowed environment variables", async () => {
-	const { run, home } = setup([]);
-	process.env.B6_TEST_ALLOWED = "visible";
-	process.env.B6_TEST_SECRET = "hidden";
-	const context = {
-		run,
-		signal: new AbortController().signal,
-	} as ExecutionContext;
-	const result = await executeExec(
-		context,
-		configuration.parse({
-			command: "/bin/sh",
-			args: [
-				"-c",
-				'printf \'{"allowed":"%s","secret":"%s"}\' "$B6_TEST_ALLOWED" "$B6_TEST_SECRET"; printf error >&2; exit 7',
-			],
-			env: ["B6_TEST_ALLOWED"],
-			json: true,
-		}),
-	);
-	expect(result).toEqual({
-		exitCode: 7,
-		stdout: '{"allowed":"visible","secret":""}',
-		stderr: "error",
-		json: { allowed: "visible", secret: "" },
-	});
-	expect(existsSync(join(home, "unused"))).toBe(false);
-	delete process.env.B6_TEST_ALLOWED;
-	delete process.env.B6_TEST_SECRET;
-	await expect(
-		executeExec(
-			context,
-			configuration.parse({
-				command: "/bin/echo",
-				args: ["invalid"],
-				json: true,
-			}),
-		),
-	).rejects.toThrow();
-});
-it("exec enforces read-only/workspace writes and terminates a timed-out process group", async () => {
-	const { run, home } = setup([]);
-	const context = {
-		run,
-		signal: new AbortController().signal,
-	} as ExecutionContext;
-	const outside = join(tmpdir(), `b6-outside-${Date.now()}`);
-	const denied = await executeExec(
-		context,
-		configuration.parse({
-			command: "/bin/sh",
-			args: ["-c", "echo forbidden > blocked"],
-		}),
-	);
-	expect(denied.exitCode).not.toBe(0);
-	expect(existsSync(join(home, "blocked"))).toBe(false);
-	const permitted = await executeExec(
-		context,
-		configuration.parse({
-			command: "/bin/sh",
-			args: ["-c", `echo allowed > allowed; echo forbidden > ${outside}`],
-			access: "workspace",
-		}),
-	);
-	expect(permitted.exitCode).not.toBe(0);
-	expect(readFileSync(join(home, "allowed"), "utf8")).toBe("allowed\n");
-	expect(existsSync(outside)).toBe(false);
-	await expect(
-		executeExec(
+it.runIf(commandSandboxAvailable)(
+	"exec captures separate streams, nonzero exit, JSON and only allowed environment variables",
+	async () => {
+		const { run, home } = setup([]);
+		process.env.B6_TEST_ALLOWED = "visible";
+		process.env.B6_TEST_SECRET = "hidden";
+		const context = {
+			run,
+			signal: new AbortController().signal,
+		} as ExecutionContext;
+		const result = await executeExec(
 			context,
 			configuration.parse({
 				command: "/bin/sh",
-				args: ["-c", "sleep 10"],
-				timeout: 2000,
+				args: [
+					"-c",
+					'printf \'{"allowed":"%s","secret":"%s"}\' "$B6_TEST_ALLOWED" "$B6_TEST_SECRET"; printf error >&2; exit 7',
+				],
+				env: ["B6_TEST_ALLOWED"],
+				json: true,
 			}),
-		),
-	).rejects.toThrow("timed out");
-});
+		);
+		expect(result).toEqual({
+			exitCode: 7,
+			stdout: '{"allowed":"visible","secret":""}',
+			stderr: "error",
+			json: { allowed: "visible", secret: "" },
+		});
+		expect(existsSync(join(home, "unused"))).toBe(false);
+		delete process.env.B6_TEST_ALLOWED;
+		delete process.env.B6_TEST_SECRET;
+		await expect(
+			executeExec(
+				context,
+				configuration.parse({
+					command: "/bin/echo",
+					args: ["invalid"],
+					json: true,
+				}),
+			),
+		).rejects.toThrow();
+	},
+);
+it.runIf(commandSandboxAvailable)(
+	"exec enforces read-only/workspace writes and terminates a timed-out process group",
+	async () => {
+		const { run, home } = setup([]);
+		const context = {
+			run,
+			signal: new AbortController().signal,
+		} as ExecutionContext;
+		const outside = join(tmpdir(), `b6-outside-${Date.now()}`);
+		const denied = await executeExec(
+			context,
+			configuration.parse({
+				command: "/bin/sh",
+				args: ["-c", "echo forbidden > blocked"],
+			}),
+		);
+		expect(denied.exitCode).not.toBe(0);
+		expect(existsSync(join(home, "blocked"))).toBe(false);
+		const permitted = await executeExec(
+			context,
+			configuration.parse({
+				command: "/bin/sh",
+				args: ["-c", `echo allowed > allowed; echo forbidden > ${outside}`],
+				access: "workspace",
+			}),
+		);
+		expect(permitted.exitCode).not.toBe(0);
+		expect(readFileSync(join(home, "allowed"), "utf8")).toBe("allowed\n");
+		expect(existsSync(outside)).toBe(false);
+		await expect(
+			executeExec(
+				context,
+				configuration.parse({
+					command: "/bin/sh",
+					args: ["-c", "sleep 10"],
+					timeout: 2000,
+				}),
+			),
+		).rejects.toThrow("timed out");
+	},
+);
 it("creates persistent file tickets using the effect identity and supports every operation", async () => {
 	const { home } = setup([]);
 	const root = fileTicketIO(join(home, "tickets"), "origin");
