@@ -559,3 +559,67 @@ it("returns at the wait deadline even when a read-only provider ignores cancella
 	expect(execute).toHaveBeenCalledTimes(1);
 	expect(run.outputs.wait).toEqual({ output: null, timedOut: true, polls: 1 });
 });
+
+it("resolves per-operation and per-access IO effects with schema defaults before accepting a Wait body", async () => {
+	const type = `fixture-effects-${++id}`;
+	const schema = z.object({
+		...stepFields,
+		type: z.literal(type),
+		op: z.enum(["read", "write", "other"]).default("read"),
+	});
+	nodeRegistry.register({
+		type,
+		schema,
+		category: "io",
+		effect: "effect",
+		operationEffects: { read: "pure", write: "effect" },
+		builder: { label: "Operations", icon: "◇", paletteGroup: "io" },
+		execute: () => ({ ready: true }),
+	});
+	const base = { id: "poll", name: "Poll", type };
+	const step = StepSchema.parse(waitStep(base));
+	expect(nodeRegistry.effectFor(step.body![0]!)).toBe("pure");
+	expect(() => StepSchema.parse(waitStep({ ...base, op: "write" }))).toThrow(
+		"read-only IO",
+	);
+	expect(() => StepSchema.parse(waitStep({ ...base, op: "other" }))).toThrow(
+		"read-only IO",
+	);
+	const accessType = `fixture-access-${++id}`;
+	const accessSchema = z.object({
+		...stepFields,
+		type: z.literal(accessType),
+		access: z.enum(["read-only", "workspace"]).default("read-only"),
+	});
+	nodeRegistry.register({
+		type: accessType,
+		schema: accessSchema,
+		category: "io",
+		effect: "effect",
+		accessEffects: { "read-only": "read-only", workspace: "effect" },
+		builder: { label: "Access", icon: "◇", paletteGroup: "io" },
+		execute: () => ({ ready: true }),
+	});
+	expect(() =>
+		StepSchema.parse(waitStep({ ...base, type: accessType })),
+	).not.toThrow();
+	expect(() =>
+		StepSchema.parse(
+			waitStep({ ...base, type: accessType, access: "workspace" }),
+		),
+	).toThrow("read-only IO");
+	const metadata = JSON.parse(JSON.stringify(nodeRegistry.metadata()));
+	expect(
+		metadata.find((node: { type: string }) => node.type === type)
+			.operationEffects,
+	).toEqual({ read: "pure", write: "effect" });
+	expect(
+		metadata.find((node: { type: string }) => node.type === accessType)
+			.accessEffects,
+	).toEqual({ "read-only": "read-only", workspace: "effect" });
+	const { instance, home } = runtime();
+	const run = start(instance, home, [waitStep(base)]);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(run.outputs.wait).toEqual({ ready: true, timedOut: false, polls: 1 });
+});

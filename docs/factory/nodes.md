@@ -208,10 +208,16 @@ It performs no provider/file IO.
 `interval` and `timeout` in milliseconds, and `until` as a rules-v1 condition.
 A single step object is accepted; parsing normalizes it to a one-element body
 array so existing registry graph traversals still work. The body must register
-`category: "io", effect: "read-only"` and use a registry executor (not the legacy
-inline boundary). The `read-only` effect class is an explicit node contract;
-`pure`, `agent`, `human`, `effect`, and `flow` bodies are rejected. A node author
-must only assign it to IO that does not write provider/repository state. This
+`category: "io"` and use a registry executor (not the legacy inline boundary).
+Wait resolves `nodeRegistry.effectFor(body)`, which parses schema defaults and uses
+shared `nodeEffect` metadata. Its resolved effect must be `read-only` or `pure`;
+`agent`, `human`, `effect`, and `flow` bodies are rejected. Metadata may declare
+`operationEffects` (selected by `op`) and `accessEffects` (selected by string
+`access`), with operation taking precedence and unknown selectors falling back to
+the conservative node default. Both maps cross the JSON builder boundary. This
+supports nodes that mix read and write operations, and read-only exec access.
+The read classifications are explicit node contracts: a node author must only
+assign them to IO that does not write provider/repository state. This
 metadata is not a security sandbox. Do not wrap old tool nodes on an assumption
 that their current action happens to be read-only.
 

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { WorkflowStep } from "../Workflow.js";
-import { installNodeMetadata, type NodeMetadata } from "./metadata.js";
+import {
+	installNodeMetadata,
+	type NodeMetadata,
+	nodeEffect,
+} from "./metadata.js";
 import type { NodeContext, NodeDefinition } from "./NodeDefinition.js";
 
 export class NodeRegistry {
@@ -23,6 +27,10 @@ export class NodeRegistry {
 		if (!node) throw new Error(`Unknown node type: ${type}`);
 		return node;
 	}
+	effectFor(step: WorkflowStep): NodeMetadata["effect"] {
+		const node = this.get(step.type);
+		return nodeEffect(node.schema.parse(step));
+	}
 	metadata(): NodeMetadata[] {
 		return [...this.definitions.values()].map((node) => this.metadataOf(node));
 	}
@@ -31,6 +39,12 @@ export class NodeRegistry {
 			type: node.type,
 			category: node.category,
 			effect: node.effect,
+			...(node.operationEffects
+				? { operationEffects: structuredClone(node.operationEffects) }
+				: {}),
+			...(node.accessEffects
+				? { accessEffects: structuredClone(node.accessEffects) }
+				: {}),
 			builder: structuredClone(node.builder),
 		};
 	}

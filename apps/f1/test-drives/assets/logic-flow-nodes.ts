@@ -47,6 +47,7 @@ process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 const schema = z.object({
 	...stepFields,
 	type: z.literal("f1-read-state"),
+	op: z.enum(["read", "write"]).default("read"),
 	readyAfter: z.number().default(2),
 	fail: z.boolean().default(false),
 });
@@ -54,7 +55,8 @@ nodeRegistry.register({
 	type: "f1-read-state",
 	schema,
 	category: "io",
-	effect: "read-only",
+	effect: "effect",
+	operationEffects: { read: "pure", write: "effect" },
 	builder: { label: "Fixture read", icon: "◇", paletteGroup: "io" },
 	execute(ctx) {
 		if (ctx.step.fail) throw new Error("Fixture read failed");

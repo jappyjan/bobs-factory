@@ -23,7 +23,11 @@ export const schema = z.object({
 			if (steps.length !== 1) return;
 			const body = steps[0]!;
 			const node = nodeRegistry.get(body.type);
-			if (node.category !== "io" || node.effect !== "read-only" || node.inline)
+			if (
+				node.category !== "io" ||
+				!["read-only", "pure"].includes(nodeRegistry.effectFor(body)) ||
+				node.inline
+			)
 				ctx.addIssue({
 					code: "custom",
 					message: "Wait body must be a registered read-only IO node",
@@ -75,7 +79,11 @@ export const definition = {
 		const body = ctx.step.body[0]!;
 		// Recheck capabilities at execution, including frozen/restored definitions.
 		const node = nodeRegistry.get(body.type);
-		if (node.category !== "io" || node.effect !== "read-only" || node.inline)
+		if (
+			node.category !== "io" ||
+			!["read-only", "pure"].includes(nodeRegistry.effectFor(body)) ||
+			node.inline
+		)
 			throw new Error("Wait body must be a registered read-only IO node");
 		return ctx.phase("waiting-ci", async () => {
 			while (!state.matched && Date.now() < state.deadline) {

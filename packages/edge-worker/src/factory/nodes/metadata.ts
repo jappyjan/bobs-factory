@@ -24,6 +24,9 @@ export interface NodeMetadata {
 	type: string;
 	category: NodeCategory;
 	effect: NodeEffect;
+	/** Serializable per-operation classification used by polling and the builder. */
+	operationEffects?: Record<string, NodeEffect>;
+	accessEffects?: Record<string, NodeEffect>;
 	builder: NodeBuilderMetadata;
 }
 export type Kind = { icon: string; label: string; tone: string; hint: string };
@@ -434,4 +437,23 @@ export function createNodeStep(
 		maxVisits: DEFAULT_STEP_MAX_VISITS,
 		...(replace(node.builder.defaults ?? {}) as object),
 	};
+}
+
+/** Unknown operations retain the conservative node default. */
+export function nodeEffect(step: {
+	type: string;
+	op?: unknown;
+	access?: unknown;
+}): NodeEffect {
+	const node = nodeMetadata(step.type);
+	return (
+		(typeof step.op === "string"
+			? node?.operationEffects?.[step.op]
+			: undefined) ??
+		(typeof step.access === "string"
+			? node?.accessEffects?.[step.access]
+			: undefined) ??
+		node?.effect ??
+		"effect"
+	);
 }
