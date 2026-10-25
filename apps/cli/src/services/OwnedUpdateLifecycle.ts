@@ -650,31 +650,78 @@ export class OwnedUpdateLifecycle {
 		);
 		mkdirSync(retained, { recursive: true, mode: 0o700 });
 		const retention = new StorageRetentionStore(this.home);
-		const recovery = await retention.register({
-			category: "recovery",
-			path: retained,
-			root: join(this.home, "updates", "recovery-retained"),
-			producer: "OwnedUpdateLifecycle",
-			operation: transaction.id,
-			dependencies: [
-				"Failure-era state needs explicit reconciliation with current authoritative state",
-			],
-			evidence: [],
-		});
-		for (const name of ["config.json", "state", "factory"]) {
+		// A retried rollback resumes its own recovery record and progress journal.
+		// The journal is durable before any state moves, so a missing journal next
+		// to retained state means a pre-journal rollback that needs manual review.
+		const indexed = (await readStorageJson(
+			join(
+				retention.directory,
+				"path-records",
+				`${storageDigest(realpathSync(retained))}.json`,
+			),
+		)) as { id: string } | undefined;
+		const recovery = indexed
+			? await retention.record(indexed.id)
+			: await retention.register({
+					category: "recovery",
+					path: retained,
+					root: join(this.home, "updates", "recovery-retained"),
+					producer: "OwnedUpdateLifecycle",
+					operation: transaction.id,
+					dependencies: [
+						"Failure-era state needs explicit reconciliation with current authoritative state",
+					],
+					evidence: [],
+				});
+		if (
+			recovery.category !== "recovery" ||
+			recovery.operation !== transaction.id
+		)
+			throw new Error("Retained rollback state belongs to another operation");
+		const journal = join(retained, "rollback-progress.json");
+		const progress: { restored: string[] } = existsSync(journal)
+			? JSON.parse(readFileSync(journal, "utf8"))
+			: { restored: [] };
+		const record = () => {
+			writeFileSync(`${journal}.tmp`, JSON.stringify(progress), {
+				mode: 0o600,
+				flush: true,
+			});
+			renameSync(`${journal}.tmp`, journal);
+		};
+		const names = ["config.json", "state", "factory"];
+		if (
+			!existsSync(journal) &&
+			names.some((name) => existsSync(join(retained, name)))
+		)
+			throw new Error(
+				"Interrupted rollback requires reconciliation of retained state",
+			);
+		record();
+		for (const name of names) {
+			if (progress.restored.includes(name)) continue;
 			const current = join(this.home, name),
+				held = join(retained, name),
 				backup = join(transaction.snapshot, name);
-			if (existsSync(join(retained, name)))
-				throw new Error(
-					"Interrupted rollback requires reconciliation of retained state",
-				);
-			if (existsSync(current)) renameSync(current, join(retained, name));
+			if (existsSync(held)) {
+				// Interrupted mid-restore. No worker starts before every entry is
+				// restored, so current is only a partial snapshot copy plus moved auth.
+				if (
+					name === "factory" &&
+					existsSync(join(current, "auth")) &&
+					!existsSync(join(held, "auth"))
+				)
+					renameSync(join(current, "auth"), join(held, "auth"));
+				rmSync(current, { recursive: true, force: true });
+			} else if (existsSync(current)) renameSync(current, held);
 			if (existsSync(backup))
 				cpSync(backup, current, { recursive: true, verbatimSymlinks: true });
-			if (name === "factory" && existsSync(join(retained, name, "auth"))) {
+			if (name === "factory" && existsSync(join(held, "auth"))) {
 				mkdirSync(current, { recursive: true, mode: 0o700 });
-				renameSync(join(retained, name, "auth"), join(current, "auth"));
+				renameSync(join(held, "auth"), join(current, "auth"));
 			}
+			progress.restored.push(name);
+			record();
 		}
 		this.switchLink(realpathSync(transaction.staged.previousExecutable));
 		await this.start();
