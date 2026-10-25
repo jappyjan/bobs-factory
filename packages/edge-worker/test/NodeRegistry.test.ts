@@ -13,14 +13,22 @@ import {
 	paletteNodes,
 } from "../src/factory/nodes/metadata.js";
 import type { NodeDefinition } from "../src/factory/nodes/NodeDefinition.js";
+import { RULE_EVALUATION_LIMITS } from "../src/factory/Rules.js";
 import {
 	StepSchema,
 	validateWorkflows,
 	WorkflowSchema,
 } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
-import { NodeStepSettings } from "../src/factory/web/node-step-settings.js";
-import { kindOf, newStep } from "../src/factory/web/recipe-graph.js";
+import {
+	configurationPatch,
+	NodeStepSettings,
+} from "../src/factory/web/node-step-settings.js";
+import {
+	kindOf,
+	newStep,
+	updateStep,
+} from "../src/factory/web/recipe-graph.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -257,4 +265,277 @@ it("reconciles an uncertain effect across restart without sending it twice", asy
 	expect(reconcile).toHaveBeenCalledExactlyOnceWith(key);
 	expect(resumed.get(run.id).outputs.send).toEqual({ id: "provider-created" });
 	expect(resumed.get(run.id).nodeEffects?.[key]?.phase).toBe("confirmed");
+});
+
+it.each([
+	"transient failure",
+	"abort before send",
+])("recovers an effect after %s using the original key", async (failure) => {
+	const send = vi.fn(async (_key: string) => ({ id: "created" }));
+	if (failure === "transient failure")
+		send.mockRejectedValueOnce(new Error("DNS unavailable"));
+	const reconcile = vi.fn(
+		async (): Promise<{ id: string } | null | undefined> => null,
+	);
+	let first = true;
+	const schema = z.object({
+		...stepFields,
+		type: z.literal(`fixture-retry-${failure}`),
+	});
+	nodeRegistry.register({
+		type: `fixture-retry-${failure}`,
+		schema,
+		category: "io",
+		effect: "effect",
+		builder: { label: "Retry", icon: "◇", paletteGroup: "io" },
+		execute: async (ctx) => {
+			if (first && failure === "abort before send") {
+				const controller = new AbortController();
+				ctx.signal = controller.signal;
+				const save = ctx.engine.save;
+				ctx.engine.save = async (run) => {
+					await save(run);
+					if (
+						Object.values(run.nodeEffects ?? {}).some(
+							(r) => r.phase === "sending",
+						)
+					)
+						controller.abort();
+				};
+			}
+			first = false;
+			return ctx.effect("create", "accepted", send, reconcile);
+		},
+	});
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{ id: "send", name: "Send", type: `fixture-retry-${failure}` },
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	const [key, record] = Object.entries(run.nodeEffects!)[0]!;
+	expect(record.phase).toBe(
+		failure === "transient failure" ? "uncertain" : "not-sent",
+	);
+	expect(send).toHaveBeenCalledTimes(failure === "transient failure" ? 1 : 0);
+	instance.retry(run.id);
+	await waitForRuntime(() => expect(run.status).toBe("completed"));
+	expect(send).toHaveBeenCalledTimes(failure === "transient failure" ? 2 : 1);
+	for (const [sentKey] of send.mock.calls) expect(sentKey).toBe(key);
+	expect(Object.keys(run.nodeEffects!)).toEqual([key]);
+	expect(run.nodeEffects![key]!.phase).toBe("confirmed");
+	if (failure === "abort before send") expect(reconcile).not.toHaveBeenCalled();
+	else expect(reconcile).toHaveBeenCalledExactlyOnceWith(key);
+});
+
+it("records read-resolution failures as failed step attempts", async () => {
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{
+			id: "check",
+			name: "Check",
+			type: "check",
+			reads: { ticket: "@ticket" },
+			check: {
+				results: { present: { path: "/inputs/ticket/title", exists: true } },
+			},
+		},
+	]);
+	run.ticketSnapshot = {
+		title: "Oversized",
+		comments: Array.from(
+			{ length: RULE_EVALUATION_LIMITS.collection + 1 },
+			() => ({ body: "comment" }),
+		),
+	};
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toContain(
+		"Check ticket comments exceed the collection limit",
+	);
+	expect(
+		run.stepAttempts?.map(({ step, outcome }) => ({ step, outcome })),
+	).toEqual([{ step: "check", outcome: "failed" }]);
+});
+
+it.each([
+	"waiting-ci",
+	"waiting-human",
+] as const)("observes and clears %s without execution capacity", async (kind) => {
+	const schema = z.object({
+		...stepFields,
+		type: z.literal(`fixture-${kind}`),
+	});
+	let calls = 0;
+	nodeRegistry.register({
+		type: `fixture-${kind}`,
+		schema,
+		category: "io",
+		effect: "effect",
+		builder: { label: "Wait", icon: "◇", paletteGroup: "io" },
+		execute: (ctx) =>
+			ctx.phase(kind, async () => {
+				expect(ctx.run.capacityLeaves?.wait).toEqual({ phase: kind });
+				expect(ctx.run.diagnostics?.operations.wait).toEqual({
+					kind: kind === "waiting-ci" ? "provider-ci" : "human",
+				});
+				if (++calls === 1) throw new Error("wait failed");
+				return "ready";
+			}),
+	});
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{ id: "wait", name: "Wait", type: `fixture-${kind}` },
+	]);
+	// A cold restart may retain the last passive wait leaf.
+	run.capacityLeaves = { wait: { phase: kind } };
+	await instance.save(run);
+	await instance.shutdown();
+	const resumed = runtime(home).instance;
+	const loaded = resumed.get(run.id);
+	await resumed.launch(loaded);
+	expect(loaded.status).toBe("failed");
+	expect(loaded.capacityLeaves?.wait).toBeUndefined();
+	expect(loaded.diagnostics?.operations.wait).toBeUndefined();
+	resumed.retry(run.id);
+	await waitForRuntime(() => expect(loaded.status).toBe("completed"));
+	expect(loaded.outputs.wait).toBe("ready");
+	expect(loaded.capacityLeaves?.wait).toBeUndefined();
+	expect(loaded.diagnostics?.operations.wait).toBeUndefined();
+});
+
+it("removes deleted optional JSON configuration through the builder merge patch", () => {
+	const workflow = recipe([
+		{ id: "call", name: "Call", type: "snapshot", maxVisits: 3 },
+	]);
+	const step = workflow.steps[0]!;
+	const { maxVisits: _, ...edited } = step;
+	const updated = updateStep(
+		workflow,
+		step.id,
+		configurationPatch(step, { ...edited, id: "changed", type: "changed" }),
+	);
+	const saved = JSON.parse(JSON.stringify(updated)).steps[0];
+	expect(saved).not.toHaveProperty("maxVisits");
+	expect(saved.id).toBe("call");
+	expect(saved.type).toBe("snapshot");
+});
+
+it("passes graph chat through flow nodes despite local step overrides", async () => {
+	const observed: boolean[] = [];
+	const home = mkdtempSync(join(tmpdir(), "node-chat-"));
+	homes.push(home);
+	const instance = new WorkflowRuntime(home, {
+		...hooks,
+		agent: async (ctx) => {
+			observed.push(ctx.chat!);
+			return {};
+		},
+	});
+	runtimes.push(instance);
+	const call = (id: string) => ({
+		id,
+		name: id,
+		type: "workflow",
+		workflow: "chat-child",
+		chat: false,
+	});
+	const definitions = validateWorkflows([
+		...defaultWorkflows,
+		{
+			id: "chat-root",
+			name: "Root",
+			chat: true,
+			steps: [
+				call("direct"),
+				{
+					id: "fan",
+					name: "Fan",
+					type: "fanout",
+					chat: false,
+					groups: [[call("branch")]],
+				},
+				{
+					id: "each",
+					name: "Each",
+					type: "foreach",
+					chat: false,
+					items: { values: [{ id: "one" }] },
+					body: [call("nested-item")],
+				},
+			],
+		},
+		{
+			id: "chat-child",
+			name: "Child",
+			internal: true,
+			steps: [
+				{ id: "agent", name: "Agent", type: "agent", prompt: "Read the task" },
+			],
+		},
+	]);
+	instance.updateWorkflows(definitions);
+	const run = instance.create({
+		title: "Chat",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "fixture",
+		workflow: definitions.find((d) => d.id === "chat-root")!,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "chat-root",
+			at: new Date().toISOString(),
+		},
+	});
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	expect(observed).toEqual([true, true, true]);
+});
+
+it("stamps the exact history reads consumed by a refreshed agent", async () => {
+	const observed: unknown[] = [];
+	const home = mkdtempSync(join(tmpdir(), "node-history-"));
+	homes.push(home);
+	const instance = new WorkflowRuntime(home, {
+		...hooks,
+		agent: async (ctx) => {
+			observed.push(ctx.input);
+			return { refreshed: true };
+		},
+	});
+	runtimes.push(instance);
+	const run = start(instance, home, [
+		{
+			id: "inspect",
+			name: "Inspect",
+			type: "agent",
+			prompt: "Read the history",
+			reads: { history: "@history" },
+		},
+	]);
+	const seed = { step: "seed", output: { accepted: true }, at: run.createdAt };
+	run.history.push(seed, {
+		step: "inspect",
+		output: { old: true },
+		at: run.createdAt,
+	});
+	run.boundOutputs = {
+		inspect: {
+			version: 1,
+			repositories: [],
+			inputDigest: "previous",
+			historyLength: 0,
+		},
+	};
+	run.checkpoint = {
+		current: "inspect",
+		visits: {},
+		producerRefresh: { source: "inspect", current: "end" },
+	};
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	expect(observed[0]).toMatchObject({ history: [seed] });
+	expect(run.history.at(-1)?.inputDigest).toBe(digest({ history: [seed] }));
 });

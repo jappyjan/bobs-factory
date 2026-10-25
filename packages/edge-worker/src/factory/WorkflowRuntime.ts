@@ -2631,11 +2631,13 @@ export class WorkflowRuntime {
 			};
 			context.beginProgressAttempt = (reason) =>
 				beginProgressAttempt(context, reason);
+			let consumedReads: Record<string, unknown> | undefined;
 			if (step.reads) {
 				const bindings = stepBindings(
 					context,
 					bindingHistory(context, boundScope),
 				);
+				consumedReads = bindings;
 				Object.assign(input, bindings);
 				retainTranscriptSource(bindings, input);
 			} else if (config.inputs && config.reads.answers) {
@@ -2912,20 +2914,22 @@ export class WorkflowRuntime {
 				} else checkpoint.current = next;
 			};
 			if (state.phase === "executing") {
-				const nodeCtx = nodeContext(
-					context,
-					checkpoint,
-					workflowId,
-					parallel,
-					this.nodeEngine(),
-				);
-				nodeCtx.sourceInput = input;
 				let completionMessage: string | undefined;
 				state.attemptId = beginStepAttempt(context);
 				await this.save(run);
 				signal.throwIfAborted();
 				try {
 					if (step.type === "check") await context.beginProgressAttempt?.();
+					const nodeCtx = nodeContext(
+						context,
+						checkpoint,
+						workflowId,
+						parallel,
+						this.nodeEngine(),
+						chat,
+						step.type === "agent" ? consumedReads : undefined,
+					);
+					nodeCtx.sourceInput = input;
 					if (
 						(step.tool === "review-gate" ||
 							(step.type === "check" && hasCheck(step, "review-evidence"))) &&

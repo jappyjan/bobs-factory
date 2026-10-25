@@ -40,6 +40,16 @@ registerNodeSettings("action", (props) => (
 	<ActionStepSettings {...props} ownerId={props.owner.id} />
 ));
 
+/** Missing JSON properties must also clear the builder's existing merge-patch values. */
+export function configurationPatch(step: Step, value: object): Partial<Step> {
+	return {
+		...Object.fromEntries(Object.keys(step).map((key) => [key, undefined])),
+		...value,
+		id: step.id,
+		type: step.type,
+	};
+}
+
 /** New nodes are editable immediately, even before a specialized panel is supplied. */
 function ConfigurationSettings({
 	step,
@@ -57,7 +67,7 @@ function ConfigurationSettings({
 				readOnly={readOnly}
 				onError={onError}
 				onChange={(value) =>
-					onChange({ ...(value as object), id: step.id, type: step.type })
+					onChange(configurationPatch(step, value as object))
 				}
 			/>
 		</section>

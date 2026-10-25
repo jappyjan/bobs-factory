@@ -32,7 +32,7 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 		engine,
 		frame: checkpoint,
 		workflowId,
-		chat = false,
+		graphChat: chat,
 		reviewBaseline,
 	} = ctx;
 	const key = ctx.stepKey!;

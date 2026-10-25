@@ -54,7 +54,7 @@ export interface NodeEngine {
 export interface EffectRecord {
 	key: string;
 	inputDigest: string;
-	phase: "sending" | "uncertain" | "confirmed";
+	phase: "not-sent" | "sending" | "uncertain" | "confirmed";
 	receipt?: unknown;
 	error?: string;
 }
@@ -68,13 +68,20 @@ export interface NodeContext<S extends WorkflowStep = WorkflowStep>
 	checkpoint(): Promise<void>;
 	/** Stable for this accepted visit, including retries and process restarts. */
 	effectKey(name: string): Promise<string>;
-	/** Uncertain sends require reconciliation; they are never blindly repeated. */
+	/** Reconcile to a receipt, null (absent), or undefined (unknown). */
 	effect<T>(
 		name: string,
 		input: unknown,
 		send: (key: string) => Promise<T>,
-		reconcile?: (key: string) => Promise<T | undefined>,
+		reconcile?: (key: string) => Promise<T | null | undefined>,
 	): Promise<T>;
+	/** Observe a wait without acquiring execution capacity. */
+	phase<T>(
+		kind: "waiting-ci" | "waiting-human",
+		fn: () => Promise<T>,
+	): Promise<T>;
+	/** Enclosing graph mode, before per-step/review overrides to chat. */
+	graphChat: boolean;
 	/** Graph state/services used by existing flow and IO nodes. */
 	engine: NodeEngine;
 	frame: GraphCheckpoint;

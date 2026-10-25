@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { immutableJson } from "bobs-factory-core";
 import { digest } from "../Delivery.js";
+import { timingOperation } from "../RunDiagnostics.js";
 import { stepBindings } from "../StepBindings.js";
 import type { ExecutionContext, GraphCheckpoint } from "../WorkflowRuntime.js";
 import type { NodeContext, NodeEngine } from "./NodeDefinition.js";
@@ -11,11 +12,16 @@ export function nodeContext(
 	workflowId: string,
 	parallel: boolean,
 	engine: NodeEngine,
+	graphChat = false,
+	consumedReads?: Record<string, unknown>,
 ): NodeContext {
-	const reads = stepBindings(context, context.run.history, { checkJson: true });
+	const reads =
+		consumedReads ??
+		stepBindings(context, context.run.history, { checkJson: true });
 	const inputDigest = digest(reads);
 	const checkpoint = () => engine.save(context.run);
 	let identityCheckpoint: Promise<void> | undefined;
+	let phaseActive = false;
 	const effectKey = async (name: string) => {
 		if (!name) throw new Error("Effect name is required");
 		const active = frame.active;
@@ -38,11 +44,44 @@ export function nodeContext(
 		frame,
 		workflowId,
 		parallel,
+		graphChat,
+		async phase<T>(
+			kind: "waiting-ci" | "waiting-human",
+			fn: () => Promise<T>,
+		): Promise<T> {
+			const { run, stepKey: key = context.step.id } = context;
+			const leaf = run.capacityLeaves?.[key];
+			if (
+				phaseActive ||
+				leaf?.request ||
+				(leaf && !["waiting-ci", "waiting-human"].includes(leaf.phase))
+			)
+				throw new Error(
+					"Wait phases must run outside execution capacity or another phase",
+				);
+			context.signal.throwIfAborted();
+			phaseActive = true;
+			run.capacityLeaves ??= {};
+			run.capacityLeaves[key] = { phase: kind };
+			timingOperation(run, key, {
+				kind: kind === "waiting-ci" ? "provider-ci" : "human",
+			});
+			try {
+				await checkpoint();
+				context.signal.throwIfAborted();
+				return await fn();
+			} finally {
+				phaseActive = false;
+				delete run.capacityLeaves[key];
+				timingOperation(run, key);
+				await checkpoint();
+			}
+		},
 		async effect<T>(
 			name: string,
 			input: unknown,
 			send: (key: string) => Promise<T>,
-			reconcile?: (key: string) => Promise<T | undefined>,
+			reconcile?: (key: string) => Promise<T | null | undefined>,
 		): Promise<T> {
 			const key = await effectKey(name);
 			context.run.nodeEffects ??= {};
@@ -54,7 +93,7 @@ export function nodeContext(
 					`Effect ${name} inputs changed; reconcile the accepted intent first`,
 				);
 			if (record?.phase === "confirmed") return record.receipt as T;
-			if (record) {
+			if (record && record.phase !== "not-sent") {
 				record.phase = "uncertain";
 				await checkpoint();
 				context.signal.throwIfAborted();
@@ -63,11 +102,14 @@ export function nodeContext(
 					throw new Error(
 						`Effect ${name} is uncertain and requires reconciliation (${key})`,
 					);
-				record.receipt = immutableJson(receipt);
-				record.phase = "confirmed";
-				delete record.error;
-				await checkpoint();
-				return receipt;
+				if (receipt !== null) {
+					record.receipt = immutableJson(receipt);
+					record.phase = "confirmed";
+					delete record.error;
+					await checkpoint();
+					return receipt;
+				}
+				// Provider proved absence; reuse the same provider idempotency key.
 			}
 			context.signal.throwIfAborted();
 			record = records[key] = {
@@ -75,9 +117,11 @@ export function nodeContext(
 				inputDigest: acceptedDigest,
 				phase: "sending",
 			};
-			await checkpoint();
+			let invoked = false;
 			try {
+				await checkpoint();
 				context.signal.throwIfAborted();
+				invoked = true;
 				const receipt = await send(key);
 				record.receipt = immutableJson(receipt);
 				record.phase = "confirmed";
@@ -86,7 +130,8 @@ export function nodeContext(
 			} catch (error) {
 				// If persistence failed after confirmation, retain the receipt in memory;
 				// an older disk snapshot still re-enters through reconciliation.
-				if (record.phase !== "confirmed") record.phase = "uncertain";
+				if (record.phase !== "confirmed")
+					record.phase = invoked ? "uncertain" : "not-sent";
 				record.error = error instanceof Error ? error.message : String(error);
 				await checkpoint();
 				throw error;
