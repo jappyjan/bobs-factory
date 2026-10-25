@@ -13,6 +13,7 @@ import {
 	transcriptPointerValue,
 } from "bobs-factory-mcp-tools";
 import { resolveStepConfig, workflowIdForStep } from "./StepConfig.js";
+import { boundStepKey } from "./ToolBindings.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 function handoffName(input: unknown): string {
@@ -137,8 +138,14 @@ export function roleAgentContext(context: ExecutionContext): unknown {
 			: { input: context.input };
 	const config = resolveStepConfig(context.step);
 	const source = (path: string) => ({ runId: context.run.id, path });
+	// A partner that has not produced yet (e.g. clarify's own scope on a first pass)
+	// is not a lost record; only report reads whose producer already has output.
+	const produced = (name: string) => {
+		const key = boundStepKey(context, name);
+		return !key || context.run.outputs?.[key] !== undefined;
+	};
 	const gaps = Object.entries(config.reads).flatMap(([name, binding]) =>
-		!binding.when && input[name] === undefined
+		!binding.when && input[name] === undefined && produced(name)
 			? [
 					{
 						input: name,

@@ -476,3 +476,54 @@ it("refuses an oversized original range before detaching it and records an actio
 		},
 	});
 });
+
+it("reports a partner read as missing only after its producer has output", async () => {
+	const home = mkdtempSync(join(tmpdir(), "first-pass-gaps-"));
+	homes.push(home);
+	const workflow = WorkflowSchema.parse({
+		id: "first-pass",
+		name: "First pass",
+		steps: [
+			{
+				id: "consume",
+				name: "Clarify",
+				type: "agent",
+				prompt: "Clarify the task, reusing any earlier plan",
+				reads: { earlier: "plan" },
+			},
+			{ id: "plan", name: "Plan", type: "agent", prompt: "Plan the work" },
+		],
+	});
+	const runtime = new WorkflowRuntime(home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtimes.push(runtime);
+	registerWorkflowConfig(workflow);
+	const run = runtime.create({
+		id: "first-pass-run",
+		workflow,
+		workflowDefinitions: [workflow],
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+		input: "Continue the existing work",
+		repositoryId: "fixture",
+		workspace: home,
+	});
+	const ctx: ExecutionContext = {
+		run,
+		step: workflow.steps[0]!,
+		stepKey: "consume",
+		input: {},
+		factoryHome: home,
+		signal: new AbortController().signal,
+		evidenceDir: home,
+		log: () => {},
+	};
+	const gaps = () =>
+		(roleAgentContext(ctx) as { handoff: { gaps: { input: string }[] } })
+			.handoff.gaps;
+	expect(gaps()).toEqual([]);
+	run.outputs.plan = { summary: "Earlier plan" };
+	expect(gaps().map((gap) => gap.input)).toEqual(["earlier"]);
+});
