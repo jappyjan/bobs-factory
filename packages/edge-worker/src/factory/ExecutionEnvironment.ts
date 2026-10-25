@@ -928,6 +928,9 @@ export class ExecutionEnvironmentResolver {
 						);
 					}
 				} else {
+					// Codex keeps MCP OAuth tokens in the user's keychain, which macOS
+					// resolves from HOME; XDG and Git configuration stay private.
+					env.HOME = this.hostHome;
 					env.CODEX_HOME = directory;
 					const status = await inspectCodexNativeLogin(env);
 					account = status.account;
