@@ -91,6 +91,7 @@ export function stepBindings(
 			return roleTranscriptSource(context);
 		},
 		callInputs: context.callInputs ?? {},
+		error: context.error,
 		delivery: run.delivery,
 		get childRuns() {
 			return childRunsView(run);

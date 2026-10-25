@@ -343,6 +343,91 @@ export const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
 	z.object({ select: pointer }).strict(),
 ]);
 
+/** Transform templates reuse rules-v1, adding only literals and item mapping. */
+export type TransformValue =
+	| RuleExpression
+	| string
+	| number
+	| boolean
+	| null
+	| { literal: unknown }
+	| { map: string; where?: RuleCondition; template: TransformTemplate };
+export type TransformTemplate = Record<string, TransformValue>;
+const fieldName = z
+	.string()
+	.min(1)
+	.max(80)
+	.refine(
+		(name) => !["__proto__", "constructor", "prototype"].includes(name),
+		"Reserved transform field",
+	);
+export const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
+	z.union([
+		RuleExpressionSchema,
+		z.string(),
+		z.number(),
+		z.boolean(),
+		z.null(),
+		z
+			.object({
+				literal: z.unknown().superRefine((value, context) => {
+					if (!z.json().safeParse(value).success)
+						context.addIssue({
+							code: "custom",
+							message: "Transform literals must be JSON data",
+						});
+				}),
+			})
+			.strict(),
+		z
+			.object({
+				map: pointer,
+				where: RuleConditionSchema.optional(),
+				template: TransformTemplateSchema,
+			})
+			.strict(),
+	]),
+);
+export const TransformTemplateSchema: z.ZodType<TransformTemplate> = z.lazy(
+	() =>
+		z
+			.record(fieldName, TransformValueSchema)
+			.refine(
+				(value) => Object.keys(value).length <= 50,
+				"At most 50 transform fields",
+			),
+);
+export const TransformSchema = RuleDataSchema.pipe(
+	z.unknown().superRefine((value, context) => {
+		// Inspect original keys before record parsing can discard __proto__.
+		const visit = (template: unknown, path: string[]) => {
+			if (!template || typeof template !== "object" || Array.isArray(template))
+				return;
+			for (const name of Object.keys(template)) {
+				if (["__proto__", "constructor", "prototype"].includes(name))
+					context.addIssue({
+						code: "custom",
+						path: [...path, name],
+						message: "Reserved transform field",
+					});
+				const child = (template as Record<string, unknown>)[name];
+				if (
+					child &&
+					typeof child === "object" &&
+					Object.hasOwn(child, "map") &&
+					Object.hasOwn(child, "template")
+				)
+					visit((child as { template: unknown }).template, [
+						...path,
+						name,
+						"template",
+					]);
+			}
+		};
+		visit(value, []);
+	}),
+).pipe(TransformTemplateSchema);
+
 /** Independent AST and total-work ceilings; recipe data cannot increase either. */
 export const RULE_EVALUATION_LIMITS = {
 	conditions: 100_000,
@@ -1134,10 +1219,11 @@ function* expressionTask(
 	expression: RuleExpression,
 	document: unknown,
 	work: Work,
+	root: unknown = document,
 ): Task<RuleResult> {
 	if ("select" in expression) {
 		const encoded = yield* canonical(
-			yield* resolve(document, document, expression.select, work),
+			yield* resolve(document, root, expression.select, work),
 			work,
 		);
 		if (encoded === undefined) return null;
@@ -1148,14 +1234,8 @@ function* expressionTask(
 		return JSON.parse(encoded) as RuleResult;
 	}
 	if (!("aggregate" in expression))
-		return yield* conditionTask(expression, document, document, 0, work);
-	const selected = yield* resolve(
-		document,
-		document,
-		expression.path,
-		work,
-		true,
-	);
+		return yield* conditionTask(expression, document, root, 0, work);
+	const selected = yield* resolve(document, root, expression.path, work, true);
 	// An absent or malformed producer collection is not a successful empty
 	// collection. Ordinary rules retain their historical missing-path semantics.
 	if (!Array.isArray(selected))
@@ -1168,7 +1248,7 @@ function* expressionTask(
 		yield* spend(work);
 		if (
 			expression.where &&
-			!(yield* conditionTask(expression.where, item, document, 0, work))
+			!(yield* conditionTask(expression.where, item, root, 0, work))
 		)
 			continue;
 		if (expression.aggregate === "count") count++;
@@ -1177,7 +1257,7 @@ function* expressionTask(
 			const matches = yield* conditionTask(
 				expression.require,
 				item,
-				document,
+				root,
 				0,
 				work,
 			);
@@ -1311,4 +1391,73 @@ export async function selectRuleValuesAsync(
 		budget.remaining = work.remaining;
 		budget.workRemaining = work.work;
 	}
+}
+
+function* transformTemplateTask(
+	template: TransformTemplate,
+	scope: unknown,
+	root: unknown,
+	work: Work,
+	depth = 0,
+): Task<Record<string, unknown>> {
+	if (depth > MAX_DEPTH) throw new Error("Transform nesting exceeds the limit");
+	const result: Record<string, unknown> = {};
+	for (const name of yield* members(template, work)) {
+		if (["__proto__", "constructor", "prototype"].includes(name))
+			throw new Error("Reserved transform field");
+		const value = own(template, name, work) as TransformValue;
+		yield* spend(work);
+		if (value === null || typeof value !== "object") result[name] = value;
+		else if ("literal" in value) {
+			const encoded = yield* canonical(value.literal, work);
+			result[name] = encoded === undefined ? null : JSON.parse(encoded);
+		} else if ("map" in value) {
+			const items = yield* resolve(scope, root, value.map, work, true);
+			if (!Array.isArray(items))
+				throw new Error(`Transform map path ${value.map} must select an array`);
+			const mapped: unknown[] = [];
+			for (const item of yield* collection(items, work)) {
+				if (
+					value.where &&
+					!(yield* conditionTask(value.where, item, root, 0, work))
+				)
+					continue;
+				mapped.push(
+					yield* transformTemplateTask(
+						value.template,
+						item,
+						root,
+						work,
+						depth + 1,
+					),
+				);
+			}
+			result[name] = mapped;
+		} else result[name] = yield* expressionTask(value, scope, work, root);
+		yield* footprint(result[name], work);
+	}
+	return result;
+}
+/** One shared work/output budget covers every field and mapped item. */
+export function evaluateTransformAsync(
+	template: TransformTemplate,
+	inputs: unknown,
+	signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+	function* task(): Task<Record<string, unknown>> {
+		const work = state({ remaining: RULE_EVALUATION_LIMITS.conditions });
+		work.strictJson = true;
+		yield* footprint(template, work);
+		const document = { inputs };
+		const result = yield* transformTemplateTask(
+			template,
+			document,
+			document,
+			work,
+		);
+		const encoded = (yield* canonical(result, work))!;
+		yield* spend(work, encoded.length + 1);
+		return JSON.parse(encoded) as Record<string, unknown>;
+	}
+	return asynchronous(task(), signal);
 }

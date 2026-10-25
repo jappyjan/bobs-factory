@@ -55,6 +55,16 @@ async function executeCheckBody(
 	const issues = checkStepEvidenceIssues(step);
 	if (issues.length) throw new Error(issues.join("; "));
 	const config = resolveStepConfig(step);
+	if (!config.checks.length) {
+		return evaluateCheckAsync(
+			step.check,
+			(context as NodeContext).reads ??
+				stepBindings(context, context.run.history, { checkJson: true }),
+			{},
+			conforms,
+			signal,
+		);
+	}
 	if (config.revision === "bound") {
 		context.inspectionBinding = await outputRevisionBinding(
 			context,

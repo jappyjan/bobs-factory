@@ -226,7 +226,7 @@ function Literal({
 	);
 }
 
-function ConditionEditor({
+export function ConditionEditor({
 	value,
 	label,
 	readOnly,
@@ -637,8 +637,10 @@ export function CheckStepSettings({
 	readOnly,
 	onChange,
 	onError,
+	owner,
 }: {
 	step: Step;
+	owner?: { engineVersion?: string };
 	readOnly: boolean;
 	onChange: (patch: Partial<Step>) => void;
 	onError: (field: string, error: string) => void;
@@ -837,25 +839,29 @@ export function CheckStepSettings({
 					{JSON.stringify({ review: "review-step" })}.
 				</small>
 			</details>
-			<details className="check-inputs">
-				<summary>Declared evidence checks · {step.checks?.length ?? 0}</summary>
-				<CheckJsonField
-					label="Check evidence checks"
-					value={step.checks ?? []}
-					readOnly={readOnly}
-					onError={onError}
-					onChange={(checks) => onChange({ checks })}
-					validate={(value) =>
-						Array.isArray(value)
-							? undefined
-							: "Enter an array of declared checks."
-					}
-				/>
-				<small>
-					Only declared checks from the fixed evidence library may verify
-					evidence. Read names do not activate a role.
-				</small>
-			</details>
+			{owner?.engineVersion !== "nodes-v1" && (
+				<details className="check-inputs">
+					<summary>
+						Declared evidence checks · {step.checks?.length ?? 0}
+					</summary>
+					<CheckJsonField
+						label="Check evidence checks"
+						value={step.checks ?? []}
+						readOnly={readOnly}
+						onError={onError}
+						onChange={(checks) => onChange({ checks })}
+						validate={(value) =>
+							Array.isArray(value)
+								? undefined
+								: "Enter an array of declared checks."
+						}
+					/>
+					<small>
+						Only declared checks from the fixed evidence library may verify
+						evidence. Read names do not activate a role.
+					</small>
+				</details>
+			)}
 			<section className="check-routes-summary" aria-label="Routes on">
 				<b>Routes on</b>
 				<p>{["passed", ...results.map(([name]) => name)].join(" · ")}</p>

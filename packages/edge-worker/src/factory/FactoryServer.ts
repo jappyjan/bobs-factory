@@ -73,6 +73,7 @@ import {
 	savedReviewViewSnapshot,
 } from "./NativeViews.js";
 import { nodeRegistry } from "./nodes/index.js";
+import { transformOutput } from "./nodes/transform.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
@@ -1260,6 +1261,28 @@ export class FactoryServer {
 					.strict()
 					.parse(request.body);
 				return runtime.humanViews.preview(body);
+			},
+		);
+		this.app.post(
+			"/api/workflows/transform/simulate",
+			{ bodyLimit: 256 * 1024 },
+			async (request) => {
+				const body = z
+					.object({
+						step: StepSchema,
+						inputs: z.unknown(),
+						fallback: z.string().default("end"),
+					})
+					.parse(request.body);
+				if (body.step.type !== "transform" || !body.step.transform)
+					throw new Error("Select a configured Transform step to simulate");
+				const output = await transformOutput(
+					body.step.transform,
+					body.inputs,
+					body.step.output,
+					schemaRequests.get(request)?.signal,
+				);
+				return { output, next: routeResult(body.step, output, body.fallback) };
 			},
 		);
 		this.app.post(

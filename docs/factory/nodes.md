@@ -39,7 +39,7 @@ export const definition = {
 
 Import the definition in `nodes/index.ts` and add `nodeRegistry.register(definition)`.
 Duplicate types fail immediately. Categories are `agent`, `display`, `logic`,
-`flow`, `io`; effects are `pure`, `agent`, `human`, `effect`, `flow`. They describe
+`flow`, `io`; effects are `pure`, `read-only`, `agent`, `human`, `effect`, `flow`. They describe
 nodes; they do not grant permissions or replace existing execution safeguards.
 
 `StepSchema` first applies the existing `ownStepData` preprocessor, then selects
@@ -118,113 +118,165 @@ no cyclic dependencies.
 insertion/settings, recursive data-only safety, output stamps and effect recovery
 across a cold runtime restart.
 
-## Agent nodes (new engine)
 
-Set `engineVersion: "nodes-v1"` on a recipe to opt into the node engine contract.
-Absence retains accepted legacy definitions, including `step-config-v1` recipes;
-that older marker alone does **not** opt in. The marker belongs to each definition,
-including called recipes, and is retained when saving or forking. New recipes created in the builder use this marker. No existing
-recipe is migrated automatically. This marker is shared with the other #156 node
-work; align it with B3 if that contract changes before integration.
+## Definition versions and pure Check
 
-An agent runs a prompt and returns data. Its configuration is:
+New recipe definitions declare **`engineVersion: "nodes-v1"`** on the workflow.
+The builder sets this on a new recipe and preserves it on save/export. Omission
+means a legacy definition, including when importing an old recipe or forking a
+bundled legacy recipe. Do not silently stamp saved or running legacy graphs.
+`stepConfigVersion: "step-config-v1"` and per-step `configVersion` are independent
+configuration interpretation markers: existing evidence-backed recipes already
+use them, so they cannot distinguish the new node contract. Agent node work must
+use this same workflow `engineVersion` boundary, rather than repurposing those
+markers. `registerWorkflowConfig` treats marked workflows as explicit, including
+steps without optional configuration; called workflows own their own version.
+
+In nodes-v1, a Check rejects the `checks` property, **even an empty array**, at
+workflow parse/save time, recursively through nested bodies and parallel groups.
+An unmarked definition retains existing code-backed evidence checks until D1.
+For either version, a Check with no configured checks takes the pure execution
+path: only rules-v1 over resolved named reads; no evidence hooks, file checks or
+revision inspection inside its executor. Existing named `check.results`, optional
+`check.passed`, boolean aggregation and ordinary branches are unchanged. The
+structured rule editor remains available; only legacy recipes show the evidence
+checks editor. Editable projection does not add `checks` to a marked Check.
 
 ```json
 {
-  "id": "compose",
-  "type": "agent",
-  "name": "Compose",
-  "prompt": "Produce the requested result from the supplied reads.",
-  "reads": { "request": "@launchInputs/request", "answer": "human/answer" },
-  "output": { "schema": { "type": "object", "required": ["status"] } },
-  "rules": [],
-  "verify": [{ "check": "files-exist", "path": "/files/*" }],
-  "access": "workspace",
-  "instructions": [],
-  "session": "resume",
-  "runner": "codex",
-  "model": "configured-model",
-  "chat": false,
-  "next": "status"
+  "id": "example", "name": "Example", "engineVersion": "nodes-v1",
+  "steps": [{
+    "id": "check", "name": "Check", "type": "check",
+    "reads": {"data": "source"},
+    "check": {"results": {"ready": {"path": "/inputs/data/ready", "equals": true}}},
+    "branches": [{"when": {"path": "passed", "equals": true}, "next": "end"}]
+  }]
 }
 ```
 
-`output` accepts `{ "format": "<registered format ID>" }` or `{ "schema": <JSON
-Schema> }`. Runner/model settings also include `reasoningEffort`, `modelVariant`
-and `serviceTier`, subject to the selected runner's existing support. Graph routes,
-visit limits, resource constraints and context policies retain their usual meaning.
+## Transform
 
-`session` defaults to `fresh`: each graph visit starts a new native conversation.
-`resume` retains the node's last native session by its structural path and
-continues it when a loop revisits that node or its enclosing Parallel, For each
-or called recipe. The next message contains the newly
-resolved named reads (bounded values inline, large or native-transcript reads
-through scoped factory-context references); the factory-context connection is rebuilt with current data.
-Separate nodes, call sites, Parallel branches and For each item IDs keep separate
-session identities, even when child frames are rebuilt. Reordering items keeps
-each session with its item ID. An
-interrupted visit and output-correction retries continue their saved session in
-either mode; `fresh` controls **new visits**, not recovery within a visit.
-Session identities survive checkpoints and cold restarts. A resumed visit never
-reuses its previous completed result as the new output.
+`type: "transform"`, category `logic`, effect `pure`. `transform` is an object
+whose fields are rules-v1 expressions (`select`, conditions and `aggregate`:
+`filter`, `count`, `all`, `any`), scalar literals, `{literal: <JSON>}`, or a map:
+`{map: <JSON Pointer>, where?: <condition>, template: <field object>}`. Use
+`literal` for objects and arrays, including data resembling an expression.
 
-All currently selectable runners support native resume: Claude uses SDK `resume`,
-Codex resumes its app-server thread, Gemini uses `-r`, Cursor resumes its agent,
-and OpenCode uses `--session`. Resume uses the runner and model saved with the
-conversation, even if repository defaults have changed. If the native ID,
-transcript or runner is unavailable, the runtime logs a warning and makes one
-fresh attempt with the prior output and current reads in the new message
-(large prior outputs remain on scoped factory-context access). Other native
-errors retain the existing recovery behavior. Dependency refreshes respect
-`fresh` versus `resume`; correction retries within the same visit retain their
-conversation.
-
-`verify` accepts only selector-based generic evidence checks:
-
-- `{"check":"files-exist","path":"/files/*","repositoryId":"optional-repo"}`
-- `{"check":"media-valid","path":"/images/*","kind":"image"}` (or `video`)
-- `{"check":"code-refs-valid","path":"/references/*","repositoryId":"optional-repo"}`
-- `{"check":"ids-resolve","path":"/selected/*","source":"items","ids":"/items/*/id"}`
-
-Selectors are JSON Pointers with `*` for array/object entries. `source` names a
-read on this agent. File and code checks retain repository containment/revision
-validation; media checks retain the evidence-directory boundary. Verification
-failures use the existing bounded output-correction retries in the same native
-session, with the rejected output and precise issues. Schemas and declarative
-rules express other output requirements. Runtime contract adapters are unavailable
-through `verify`.
-
-New-engine agents reject `qaContract`, `videoContract`, `impactContract`, `impact`,
-`architectureSource`, `architectureContract`, `architectureBrief`, `reviewContract`,
-`guideContract`, `review`, `impactSource`, `inputs`, `askQuestions`, `view` and
-`checks`, including inside nested graphs. Legacy definitions and their prompt
-assembly remain unchanged. The new builder panel exposes Session and Verify and
-leaves human presentation to separate nodes.
-
-## Asking a human through graph composition
-
-An agent can return ordinary data such as:
+The initial document is `{inputs: <resolved reads>}`. Inside map, `select` and
+conditions read the current item; `$/inputs/...` reads the original document.
+Nested maps keep that original root. Map/aggregate must select arrays; missing
+or malformed collections fail. No field can read another field from the same
+transform; use another Transform when a subsequent calculation needs its result.
 
 ```json
-{ "status": "needs-input", "display": { "title": "Choose a value" } }
+{
+  "id": "shape", "name": "Shape", "type": "transform",
+  "reads": {"items": "source/items", "label": "source/label"},
+  "transform": {
+    "rows": {
+      "map": "/inputs/items",
+      "where": {"path": "/enabled", "equals": true},
+      "template": {
+        "id": {"select": "/id"},
+        "label": {"select": "$/inputs/label"},
+        "ready": {"path": "/state", "equals": "ready"}
+      }
+    },
+    "count": {"aggregate": "count", "path": "/inputs/items", "where": {"path": "/enabled", "equals": true}},
+    "version": 1,
+    "metadata": {"literal": {"source": "recipe"}}
+  },
+  "output": {"schema": {"type": "object", "required": ["rows", "count"]}}
+}
 ```
 
-The recipe owns the loop:
+Output owns detached JSON. Templates have at most 50 fields per object, 12 map
+levels, and share the existing rules-v1 total-work, collection and output budgets
+across every field/item. Evaluation yields and honors cancellation. Optional
+`output: {schema: <JSON Schema>}` uses the existing bounded validator without
+coercion/default insertion. Invalid output fails before a history receipt.
 
-```text
-agent (session: resume)
-  → check(status == needs-input)
-      true → display(from: agent/display) → agent
-      false → next node
+The registry supplies palette/defaults and a Transform settings panel for the
+template, reads and output schema. Builder simulation uses
+`POST /api/workflows/transform/simulate` with `{step, inputs, fallback?}` and
+returns `{output, next}` using the production evaluator and normal route matching.
+It performs no provider/file IO.
+
+## Wait
+
+`type: "wait"`, category `flow`, effect `flow`. Configure `body` as **one step**,
+`interval` and `timeout` in milliseconds, and `until` as a rules-v1 condition.
+A single step object is accepted; parsing normalizes it to a one-element body
+array so existing registry graph traversals still work. The body must register
+`category: "io", effect: "read-only"` and use a registry executor (not the legacy
+inline boundary). The `read-only` effect class is an explicit node contract;
+`pure`, `agent`, `human`, `effect`, and `flow` bodies are rejected. A node author
+must only assign it to IO that does not write provider/repository state. This
+metadata is not a security sandbox. Do not wrap old tool nodes on an assumption
+that their current action happens to be read-only.
+
+```json
+{
+  "id": "wait", "name": "Wait", "type": "wait",
+  "body": {"id": "poll", "name": "Poll", "type": "registered-read-only-node", "reads": {"target": "source/target"}},
+  "interval": 10000, "timeout": 600000,
+  "until": {"path": "/output/ready", "equals": true},
+  "retry": {"max": 2, "backoff": 1000}, "onError": "handle"
+}
 ```
 
-Bind the display's answer output into the agent's `reads`. The returning message
-contains that new read; the existing native conversation provides continuity.
-The agent neither renders UI nor waits for answers itself. Output field names
-such as `status` and `display` have no special engine meaning. The display document
-must match the display node's configured schema.
+The body resolves its own reads on each poll. `until` sees
+`{output: <last body output>, inputs: <Wait reads>, polls: <attempt count>}`.
+The first poll runs immediately. Later polls wait one interval after the previous
+poll; the timeout includes IO and offline time. The deadline, next-poll time,
+last output, match and poll count checkpoint on the accepted visit and survive a
+restart. A restarted, already-expired wait returns the retained output without
+polling again. A new graph visit starts a fresh deadline; an execution retry keeps
+the same deadline. Providers should honor `ctx.signal`; the deadline also bounds
+the wait if a body promise does not settle. It cannot terminate uncooperative IO.
 
-`test/fixtures/agent-node-needs-input.json` is an executable test recipe. Until B2
-lands, `test/AgentNode.test.ts` registers a tiny pure status check and fake human
-node through the registry. It tests the complete loop and a restart while waiting,
-without introducing another production human UI protocol.
+Object output fields are returned with `{timedOut, polls}` added (these two names
+are reserved by Wait); scalar/array body output is retained under `output`.
+Timeout is an ordinary result for recipe branches, not an exception. Body errors
+fail the Wait, allowing the wrapper's retry/onError policy to handle them. The
+embedded body cannot carry routes or retry/onError; put those on the Wait.
+
+Wait uses `ctx.phase("waiting-ci", ...)` across polling and sleeping, with no
+execution capacity request. There is one progress line per visit and one final
+history receipt, never a history record per poll. The registry adds its palette
+entry and a panel for body, durations, until and reads. Tests use a fake registered
+read-only node, independent of any particular provider integration.
+
+## Retry and onError
+
+All registered node schemas inherit optional common fields:
+
+```json
+{
+  "retry": {"max": 3, "backoff": 1000},
+  "onError": "handle"
+}
+```
+
+`max` is the number of **additional** execution attempts (0–100); `backoff` is a
+fixed delay in milliseconds (0–86,400,000). Retries reuse the accepted visit and
+its effect keys. The retry count and next-attempt time survive restart. Backoff
+uses a capacity-free phase. Each failure remains in attempt diagnostics; only a
+successful execution appends its normal output receipt. Nodes with writes must
+still use their idempotency/reconciliation contracts; retry does not make unsafe
+writes safe or waive an uncertain effect.
+
+After exhaustion, `onError` routes to a step in the same lexical graph. The
+handler declares `reads: {error: "@error"}` (or `@error/message`), then reads
+`/inputs/error` from Check/Transform. The value is `{message, kind}`: `kind` is
+an explicit string error kind when present, otherwise the error's name, otherwise
+`"Error"`. This runtime-owned context is scoped to that graph frame and retains
+the last routed error through restart; it is not a producer output. Error routes
+must name an actual local step, not `end` or a declared return outcome. Ordinary
+visit limits still bound error-route loops.
+
+Without these properties, execution failure behaves as before. Cancellation,
+shutdown and update pauses do not retry or enter an error handler. A false Check
+result, a timeout result, or a node's ordinary structured business result remains
+normal data for branches. Existing special recovery paths retain precedence.
+All builder node panels expose the common retry policy and error destination.

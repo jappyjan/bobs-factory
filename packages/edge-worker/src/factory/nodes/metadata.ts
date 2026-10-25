@@ -2,7 +2,13 @@ import type { WorkflowStep as Step } from "../Workflow.js";
 import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
 export type NodeCategory = "agent" | "display" | "logic" | "flow" | "io";
-export type NodeEffect = "pure" | "agent" | "human" | "effect" | "flow";
+export type NodeEffect =
+	| "pure"
+	| "read-only"
+	| "agent"
+	| "human"
+	| "effect"
+	| "flow";
 export interface NodeBuilderMetadata {
 	label: string;
 	icon: string;
