@@ -2,16 +2,17 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
+import { paletteNodes } from "../nodes/metadata.js";
 import { type NativeViewPreset, nativeViewPreset } from "../ViewPresets";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
-import { ActionStepSettings } from "./action-step-settings";
 import { AgentStepSettings } from "./agent-step-settings";
-import { CheckJsonField, CheckStepSettings } from "./check-step-settings";
+import { CheckJsonField } from "./check-step-settings";
 import { api, useAction, useConfig } from "./client";
 import { ForeachSimulation } from "./foreach-simulation";
-import { CallInputMapping, ForeachStepSettings } from "./foreach-step-settings";
+import { CallInputMapping } from "./foreach-step-settings";
 import { AgentSettings } from "./forms";
-import { HumanStepSettings, ViewEditor } from "./human-step-settings";
+import { ViewEditor } from "./human-step-settings";
+import { NodeStepSettings } from "./node-step-settings.js";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
@@ -51,22 +52,7 @@ const nativeKeys = [
 	"modelVariant",
 	"serviceTier",
 ] as const;
-const paletteKinds = [
-	"agent",
-	"check",
-	"decide",
-	"approve",
-	"show",
-	"human",
-	"tool",
-	"script",
-	"fanout",
-	"foreach",
-	"snapshot",
-	"file-issues",
-	"launch-runs",
-	"workflow",
-] as const;
+const paletteKinds = () => paletteNodes().map((node) => node.type);
 const revision = (recipe?: Recipe) =>
 	recipe ? revisionOf(editableOf(recipe)) : "missing";
 const isLocal = (recipe?: Recipe) => recipe?.ownership !== "bundled";
@@ -263,7 +249,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 			? entry.slice("workflow:".length)
 			: undefined;
 		const kind = requestedRecipe === undefined ? entry : "workflow";
-		if (!paletteKinds.some((candidate) => candidate === kind)) return;
+		if (!paletteKinds().some((candidate) => candidate === kind)) return;
 		const callables = draft.recipes.filter(
 			(r) => r.id !== owner.id && r.allowedTriggers.includes("workflow"),
 		);
@@ -281,7 +267,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 				? after
 				: owner.steps.at(-1)?.id;
 		edit(owner, (r) =>
-			insertStepAfter(r, anchor, newStep(kind as never, stepId, callable)),
+			insertStepAfter(r, anchor, newStep(kind, stepId, callable)),
 		);
 		setSimulation(undefined);
 		select(stepId);
@@ -699,10 +685,10 @@ export function RecipePalette({
 }) {
 	const [open, setOpen] = useState(false);
 	const entries = [
-		...paletteKinds.map((kind) => ({
+		...paletteKinds().map((kind) => ({
 			id: kind,
 			...kinds[kind],
-			label: kind === "human" ? "Ask me" : kinds[kind].label,
+			label: kind === "human" ? "Ask me" : kinds[kind]!.label,
 		})),
 		...recipes
 			.filter(
@@ -964,14 +950,17 @@ function Inspector({
 					onError={onConfigError}
 				/>
 			)}
-			{step.type === "check" && (
-				<CheckStepSettings
-					step={step}
-					readOnly={!local}
-					onChange={onChange}
-					onError={onConfigError}
-				/>
-			)}
+			<NodeStepSettings
+				step={step}
+				owner={owner}
+				recipes={recipes}
+				readOnly={!local}
+				selection={selection}
+				onSelect={onSelect}
+				onChange={onChange}
+				onError={onConfigError}
+			/>
+
 			{["agent", "tool"].includes(step.type) && (
 				<section className="recipe-section">
 					<h3>Human view</h3>
@@ -1018,16 +1007,6 @@ function Inspector({
 						</label>
 					)}
 				</section>
-			)}
-			{["decide", "approve", "show"].includes(step.type) && (
-				<HumanStepSettings
-					step={step}
-					workflowId={owner.id}
-					previewDefinition={owner}
-					readOnly={!local}
-					onChange={onChange}
-					onError={onConfigError}
-				/>
 			)}
 			{(step.type === "tool" || step.type === "script") && local && (
 				<section className="recipe-section">
@@ -1087,26 +1066,6 @@ function Inspector({
 						</select>
 					</label>
 				</section>
-			)}
-			{step.type === "foreach" && (
-				<ForeachStepSettings
-					step={step}
-					readOnly={!local}
-					selection={selection}
-					onChange={onChange}
-					onError={onConfigError}
-					onSelect={onSelect}
-				/>
-			)}
-			{["snapshot", "file-issues", "launch-runs"].includes(step.type) && (
-				<ActionStepSettings
-					step={step}
-					readOnly={!local}
-					ownerId={owner.id}
-					recipes={recipes}
-					onChange={onChange}
-					onError={onConfigError}
-				/>
 			)}
 			{step.type === "fanout" && (
 				<section className="recipe-section">

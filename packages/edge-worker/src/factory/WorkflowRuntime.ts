@@ -35,7 +35,6 @@ import {
 	isUpdatePaused,
 	UpdatePausedError,
 } from "../updates/UpdatePausedError.js";
-import { actionItems } from "./ActionSteps.js";
 import { activityMarkers } from "./ActivityPage.js";
 import {
 	type AgentSettings,
@@ -55,7 +54,6 @@ import {
 	snapshotProposal,
 	verifyProposal,
 } from "./Architecture.js";
-import { evaluateCheckAsync } from "./Check.js";
 import {
 	DeliveryContractSchema,
 	type DeliveryState,
@@ -78,28 +76,17 @@ import {
 	upgradedGuideStep,
 	upgradeHandoffReadiness,
 } from "./defaultWorkflows.js";
-import { runEvidenceChecks } from "./EvidenceChecks.js";
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
 import {
 	ExecutionProfileStore,
 	type ExecutionSelection,
 	type ExecutionSnapshot,
 } from "./ExecutionProfiles.js";
-import { executeCommand, FactoryTools } from "./FactoryTools.js";
-import {
-	type FileIssueBatch,
-	type FileIssueIntent,
-	fileIssueBatch,
-	prepareFileIssues,
-} from "./FileIssues.js";
-import {
-	aggregateForeach,
-	type ForeachItemState,
-	type ForeachProgress,
-	type ForeachSnapshot,
-	foreachPointer,
-	foreachScope,
-	prepareForeach,
+import type { FileIssueBatch, FileIssueIntent } from "./FileIssues.js";
+import type {
+	ForeachItemState,
+	ForeachProgress,
+	ForeachSnapshot,
 } from "./Foreach.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { GitSettings } from "./GitSettings.js";
@@ -117,7 +104,6 @@ import {
 	impactDecisionDigest,
 	impactFanout,
 	impactProgressEvidence,
-	inventoryScopeMatches,
 	recordConvergence,
 	STALE_IMPACT_MESSAGE,
 	validateImpact,
@@ -133,8 +119,6 @@ import {
 	type LaunchRunBatch,
 	launchBatchProjection,
 	launchBatchSettled,
-	launchOutput,
-	prepareLaunchRuns,
 	stopLaunchRuns,
 	tickLaunchRuns,
 } from "./LaunchRuns.js";
@@ -144,14 +128,15 @@ import {
 	recordMergeConfirmation,
 } from "./MergeRecovery.js";
 import { nativeViewText } from "./NativeViews.js";
-import { conforms } from "./OutputFormats.js";
+import { nodeContext } from "./nodes/context.js";
+import { NODE_REROUTE } from "./nodes/control.js";
+import { nodeRegistry } from "./nodes/index.js";
+import type { NodeEngine } from "./nodes/NodeDefinition.js";
 import {
-	acceptedProgressValue,
 	beginProgressAttempt,
 	continueProgress,
 	initializeProgressBudget,
 	type ProgressBudget,
-	progressEvidence,
 	recordProgressEvidence,
 	recordProgressFailure,
 	recordProgressInput,
@@ -166,12 +151,9 @@ import {
 	questionNotification,
 } from "./Questions.js";
 import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
-import {
-	captureRepositorySnapshot,
-	type SnapshotInputProvenance,
-	type SnapshotReceipt,
-	snapshotInputMappings,
-	snapshotOutput,
+import type {
+	SnapshotInputProvenance,
+	SnapshotReceipt,
 } from "./RepositorySnapshot.js";
 import { guideHeadline } from "./ReviewBrief.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
@@ -197,7 +179,6 @@ import { currentStepView, presentationOutputKeys } from "./RunOutputRoles.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
 	aggregateReview,
-	captureReviewContext,
 	type Inventory,
 	latestAggregate,
 	originalReviewContext,
@@ -214,9 +195,7 @@ import {
 } from "./StepBindings.js";
 import {
 	architectureRevisionDecision,
-	CHECK_SELECTOR_IDS,
 	checkArgs,
-	checkStepEvidenceIssues,
 	consumesImpact,
 	consumesReview,
 	fixerPublication,
@@ -236,9 +215,7 @@ import {
 } from "./stockFactorySteps.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
 import {
-	boundOutput,
 	boundStepKey,
-	boundToolOutput,
 	nextProducerKey,
 	outputForTool,
 	producerKey,
@@ -249,7 +226,6 @@ import {
 } from "./ToolBindings.js";
 import { HumanViews } from "./ViewRuntime.js";
 import {
-	assertForeachBody,
 	isComputeIntensive,
 	readPath,
 	requireTrigger,
@@ -608,10 +584,15 @@ export interface FactoryRun {
 	/** Tracker input captured by the host, independently of authored output IDs. */
 	ticketSnapshot?: unknown;
 	reviewRounds?: ReviewBaseline[];
+	nodeEffects?: Record<
+		string,
+		import("./nodes/NodeDefinition.js").EffectRecord
+	>;
 	outputs: Record<string, unknown>;
 	history: {
 		step: string;
 		output: unknown;
+		inputDigest?: string;
 		/** Immutable runtime evidence, separate from pure Check results. */
 		evidence?: Record<string, unknown>;
 		at: string;
@@ -2367,6 +2348,28 @@ export class WorkflowRuntime {
 		return sourceInput;
 	}
 
+	private async executeCheck(
+		context: ExecutionContext,
+		preparedEvidence?: unknown,
+	): Promise<unknown> {
+		const { executeCheck } = await import("./nodes/execute/check.js");
+		return executeCheck(context, this.nodeEngine(), preparedEvidence);
+	}
+	private nodeEngine(): NodeEngine {
+		return {
+			graph: this.graph.bind(this),
+			newCheckpoint: this.newCheckpoint.bind(this),
+			frameResults: this.frameResults.bind(this),
+			historyPreviews: this.historyPreviews.bind(this),
+			save: this.save.bind(this),
+			log: this.log.bind(this),
+			hooks: this.hooks,
+			runs: this.runs,
+			subscribe: this.subscribe.bind(this),
+			reconcileLaunchBatch: this.reconcileLaunchBatch.bind(this),
+			humanViews: this.humanViews,
+		};
+	}
 	private async graph(
 		run: FactoryRun,
 		steps: WorkflowStep[],
@@ -2909,6 +2912,14 @@ export class WorkflowRuntime {
 				} else checkpoint.current = next;
 			};
 			if (state.phase === "executing") {
+				const nodeCtx = nodeContext(
+					context,
+					checkpoint,
+					workflowId,
+					parallel,
+					this.nodeEngine(),
+				);
+				nodeCtx.sourceInput = input;
 				let completionMessage: string | undefined;
 				state.attemptId = beginStepAttempt(context);
 				await this.save(run);
@@ -2982,463 +2993,11 @@ export class WorkflowRuntime {
 							};
 						if (step.type === "check")
 							output = await this.executeCheck(context, output);
-					} else if (["decide", "approve", "show"].includes(step.type)) {
-						if (parallel && step.type !== "show")
-							throw new Error(
-								"Human checkpoints belong outside concurrent bodies",
-							);
-						output = await this.humanViews.execute(context, checkpoint);
-					} else if (
-						["snapshot", "file-issues", "launch-runs"].includes(step.type)
-					) {
-						output = await this.executeAction(context, checkpoint, workflowId);
-					} else if (step.type === "check") {
-						output = await this.executeCheck(context);
-					} else if (step.type === "foreach") {
-						output = await this.executeForeach(
-							context,
-							checkpoint,
-							workflowId,
-							chat,
-							reviewBaseline,
-						);
-					} else if (step.type === "fanout") {
-						if (
-							step.groups?.some((group) =>
-								group.some(
-									(item) =>
-										item.askQuestions ||
-										["human-review", "architecture-decision"].includes(
-											item.tool ?? "",
-										),
-								),
-							)
-						)
-							throw new Error(
-								"Human checkpoints belong outside fanout branches",
-							);
-						if (reviewConfig && !state.reviewBaseline) {
-							const inventory = outputs[reviewConfig!.inventory] as
-								| Inventory
-								| undefined;
-							if (
-								!inventory?.digest ||
-								inventory.questions.length ||
-								inventory.conflicts.length ||
-								inventory.sourceReceipt.unavailable.length
-							)
-								throw new Error(
-									"Requirement extraction is missing or has unresolved scope/source blockers",
-								);
-							const impact = impactSourceId ? decisionFor(run, key) : undefined;
-							if (impact) await assertImpactFresh(context, impact, step);
-							if (!inventoryScopeMatches(context, inventory, impact)) {
-								checkpoint.current = reviewConfig!.inventory;
-								checkpoint.active = undefined;
-								this.log(
-									run,
-									key,
-									"Scope changed after extraction; extracting a fresh inventory before starting reviewers.",
-								);
-								finishStepAttempt(context, "blocked");
-								continue;
-							}
-							if (impactSourceId && !impact)
-								throw new Error(
-									"Configured review requires a completed impact assessment",
-								);
-							const repo = readOutput(step, "repository", outputs) as
-								| { baseBranch?: string }
-								| undefined;
-							const source = readOutput(step, "source", outputs) as
-								| { baseRefName?: string }
-								| undefined;
-							const revision = await reviewedRunRevision(
-								run,
-								`refs/remotes/origin/${source?.baseRefName ?? repo?.baseBranch ?? runRepositories(run)[0]!.baseBranch}`,
-							);
-							run.reviewRounds ??= [];
-							state.reviewBaseline = immutableJson({
-								schemaVersion: 1,
-								round: run.reviewRounds.length + 1,
-								key,
-								inventory: structuredClone(inventory),
-								...revision,
-								historyLength: run.history.length,
-								at: new Date().toISOString(),
-								reviewers: (step.groups ?? []).flatMap((group, i) =>
-									group.map((s) => ({
-										id: s.id,
-										key: `${key}/${i}/${s.id}`,
-										group: i,
-										contract: reviewEvidenceContract(s)!,
-									})),
-								),
-								...captureReviewContext(input, run, this.historyPreviews(run)),
-								...(impact
-									? {
-											impact: {
-												snapshot: structuredClone(impact.snapshot),
-												reuse: structuredClone(impact.reuseRecords),
-											},
-										}
-									: {}),
-							});
-							run.reviewRounds.push(state.reviewBaseline);
-						}
-						if (state.reviewBaseline)
-							checkpoint.reviewKey = state.reviewBaseline.key;
-						state.children ??= (step.groups ?? []).map((group, index) => {
-							const prior =
-								state.reviewBaseline?.impact?.snapshot.reuseVersion ===
-								"composed-v1"
-									? checkpoint.branches?.[step.id]?.[index]
-									: undefined;
-							return {
-								...this.newCheckpoint(group),
-								...(prior
-									? {
-											visits: { ...prior.visits },
-											agentSessions: structuredClone(prior.agentSessions),
-											additionalVisits: structuredClone(prior.additionalVisits),
-										}
-									: {}),
-								outputs: reviewConfig ? {} : structuredClone(outputs),
-							};
-						});
-						if (config.explicit) {
-							checkpoint.branches ??= {};
-							checkpoint.branches[step.id] = state.children;
-						}
-						// Also fill older resumed branches, preserving reviews established within them.
-						for (const child of state.children) {
-							child.reviewKey ??= checkpoint.reviewKey;
-							child.iteration ??= checkpoint.iteration;
-							child.callInputs ??= checkpoint.callInputs;
-							child.progressInputs ??= checkpoint.progressInputs;
-							child.progressItem ??= checkpoint.progressItem;
-							child.snapshotInputs ??= checkpoint.snapshotInputs;
-							child.projectResults ??= config.explicit
-								? true
-								: checkpoint.projectResults;
-						}
-						await this.save(run);
-						signal.throwIfAborted();
-						const branchController = new AbortController();
-						const cancelBranches = () => branchController.abort(signal.reason);
-						signal.addEventListener("abort", cancelBranches, { once: true });
-						if (signal.aborted) cancelBranches();
-						let failure: unknown;
-						const branchResults = await Promise.allSettled(
-							(step.groups ?? []).map((group, index) => {
-								const reused = state.reviewBaseline?.impact?.reuse ?? [];
-								const retainedRole = (id: string) =>
-									reused.some((r) => r.original.stamp.reviewer === id);
-								const afterRetained = (
-									target: string | undefined,
-								): string | undefined => {
-									const seen = new Set<string>();
-									while (target && retainedRole(target)) {
-										if (seen.has(target))
-											throw new Error(
-												"Review reuse cannot skip a cyclic role route",
-											);
-										seen.add(target);
-										const index = group.findIndex((s) => s.id === target);
-										const role = group[index]!;
-										if (role.branches.length)
-											throw new Error(
-												"Conditional reviewer routes need full execution",
-											);
-										target = role.next ?? group[index + 1]?.id ?? "end";
-									}
-									return target;
-								};
-								const selected = group
-									.filter((s) => !retainedRole(s.id))
-									.map((s) => ({
-										...s,
-										next: afterRetained(s.next),
-										branches: s.branches.map((b) => ({
-											...b,
-											next: afterRetained(b.next)!,
-										})),
-									}));
-								for (const candidate of selected)
-									inheritStepConfig(
-										group.find((s) => s.id === candidate.id)!,
-										candidate,
-									);
-								for (const role of group) {
-									const retained = reused.find(
-										(r) => r.original.stamp.reviewer === role.id,
-									);
-									if (retained)
-										state.children![index]!.outputs![role.id] = structuredClone(
-											retained.original,
-										);
-								}
-								if (!selected.length)
-									return Promise.resolve(state.children![index]!.outputs!);
-								// Review branches have no internal correction routes; retain selected order.
-								if (
-									state.children![index]!.current !== "end" &&
-									!selected.some(
-										(s) => s.id === state.children![index]!.current,
-									)
-								)
-									state.children![index]!.current = selected[0]!.id;
-								state.children![index]!.progressPath =
-									`${context.progressOperation}/${index}`;
-								return this.graph(
-									run,
-									selected,
-									state.children![index]!.outputs!,
-									branchController.signal,
-									`${key}/${index}/`,
-									state.children![index]!,
-									workflowId,
-									chat,
-									true,
-									state.reviewBaseline ?? reviewBaseline,
-								).catch((error) => {
-									// Suspension must wait for active siblings without cancelling
-									// them. A real failure still cancels and takes precedence.
-									if (!failure || !isUpdatePaused(error)) failure = error;
-									if (!isUpdatePaused(error)) branchController.abort(error);
-									throw error;
-								});
-							}),
-						);
-						signal.removeEventListener("abort", cancelBranches);
-						if (failure) throw failure;
-						if (state.reviewBaseline) {
-							// All runner hooks have returned and cleaned up their temporary
-							// project configuration. Reject any remaining edits before
-							// accepting the round, without exempting runner directories.
-							const revision = await reviewedRunRevision(
-								run,
-								state.reviewBaseline,
-							);
-							if (revision.headSha !== state.reviewBaseline.headSha)
-								throw new Error("Revision changed during specialist review");
-						}
-						output = branchResults.map((result, index) =>
-							result.status === "fulfilled"
-								? reviewConfig
-									? Object.fromEntries(
-											(step.groups?.[index] ?? []).map((s) => [
-												s.id,
-												result.value[s.id],
-											]),
-										)
-									: config.explicit || checkpoint.projectResults
-										? this.frameResults(
-												run,
-												step.groups?.[index] ?? [],
-												state.children![index]!,
-												`${key}/${index}/`,
-											)
-										: result.value
-								: undefined,
-						);
-						if (impactSourceId) {
-							const decision = decisionFor(run, key)!;
-							decision.pending.specialists = state
-								.reviewBaseline!.reviewers.filter((r) => {
-									const receipt = (output as Record<string, any>[])[r.group]?.[
-										r.id
-									];
-									return (
-										receipt?.status !== "completed" || receipt.blockers?.length
-									);
-								})
-								.map((r) => r.id);
-						}
-						if (state.reviewBaseline)
-							for (const reviewer of state.reviewBaseline.reviewers) {
-								run.outputs[reviewer.key] = (
-									output as Record<string, unknown>[]
-								)[reviewer.group]![reviewer.id];
-							}
-					} else if (step.type === "workflow") {
-						const definition = run.workflowDefinitions?.find(
-							(item) => item.id === step.workflow,
-						);
-						if (!definition)
-							throw new Error(`Workflow unavailable: ${step.workflow}`);
-						requireTrigger(definition, "workflow");
-						if (!state.call) {
-							state.call = {
-								type: "workflow",
-								callerWorkflowId: workflowId,
-								step: step.id,
-								key,
-								workflowId: definition.id,
-							};
-							// Call receipts outlive the capped activity buffer, including interrupted calls.
-							run.workflowCalls ??= run.events
-								.filter((event) => event.call)
-								.map((event) => ({ call: event.call!, at: event.at }));
-							run.workflowCalls.push({
-								call: state.call,
-								at: new Date().toISOString(),
-							});
-							this.log(
-								run,
-								key,
-								`Calling ${definition.name} from ${workflowId}/${step.id}`,
-								"workflow",
-								state.call,
-							);
-						}
-						const newVisit = !state.children;
-						if (!state.children) {
-							const retained = definition.outcomes?.length
-								? checkpoint.calls?.[step.id]
-								: undefined;
-							const child = retained ?? this.newCheckpoint(definition.steps);
-							if (retained) {
-								child.current = checkpoint.entry ?? definition.steps[0]!.id;
-								child.active = undefined;
-								delete child.outcome;
-							}
-							if (checkpoint.entry) child.current = checkpoint.entry;
-							delete checkpoint.entry;
-							state.children = [child];
-						}
-						// Recovery can already supply an active child. Retain that exact frame,
-						// including visits and ownership, before its first resumed dispatch.
-						if (config.explicit || definition.outcomes?.length) {
-							checkpoint.calls ??= {};
-							checkpoint.calls[step.id] = state.children[0]!;
-						}
-						// Calls of the same recipe in one enclosing body share work identity across routes.
-						// Keep the enclosing structural scope, never its generated visit/frame identity.
-						state.children[0]!.progressPath =
-							`${checkpoint.progressPath ?? workflowId}/${definition.id}`;
-						state.children[0]!.progressItem = checkpoint.progressItem;
-						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
-						state.children[0]!.iteration ??= checkpoint.iteration;
-						if (
-							checkpoint.projectResults ||
-							step.bindings ||
-							definition.outcomes?.length ||
-							step.inputMapping ||
-							checkpoint.iteration
-						)
-							state.children[0]!.projectResults = true;
-						const isolated =
-							config.explicit ||
-							!!step.inputMapping ||
-							!!step.bindings ||
-							!!checkpoint.iteration;
-						if (isolated && (newVisit || !state.children[0]!.outputs)) {
-							const mappings = Object.fromEntries(
-								Object.entries(step.inputMapping ?? {}).map(([name, path]) => [
-									name,
-									structuredClone(
-										foreachPointer(
-											foreachScope({
-												outputs,
-												inputs: stepBindings(context),
-												item: checkpoint.iteration?.value,
-												index: checkpoint.iteration?.index,
-											}),
-											path,
-										),
-									),
-								]),
-							);
-							state.children[0]!.outputs = {
-								...(step.bindings ? {} : snapshotWorkflowInput(outputs)),
-								...snapshotWorkflowInput(mappings),
-								...Object.fromEntries(
-									Object.entries(state.children[0]!.resultReceipts ?? {}).map(
-										([id, receipt]) => [
-											id,
-											snapshotWorkflowInput(receipt.output),
-										],
-									),
-								),
-							};
-							state.children[0]!.callInputs = step.inputMapping
-								? immutableJson(mappings)
-								: checkpoint.callInputs;
-						}
-						if (newVisit || !state.children[0]!.progressInputs)
-							state.children[0]!.progressInputs = step.inputMapping
-								? Object.fromEntries(
-										Object.entries(step.inputMapping).flatMap(
-											([name, path]) => {
-												const value = acceptedProgressValue(
-													context,
-													path,
-													state.children![0]!.callInputs?.[name],
-												);
-												return value === undefined
-													? []
-													: [[name, digest(value)]];
-											},
-										),
-									)
-								: checkpoint.progressInputs;
-						if (step.bindings) {
-							const child = state.children[0]!;
-							child.outputs ??= {};
-							for (const name of Object.keys(step.bindings)) {
-								const source = producerKey(run, `${key}/`, name);
-								const value = producerValue(run, source);
-								if (value === undefined) delete child.outputs[name];
-								else child.outputs[name] = snapshotWorkflowInput(value);
-							}
-						}
-						if (newVisit || !state.children[0]!.snapshotInputs)
-							state.children[0]!.snapshotInputs = step.inputMapping
-								? immutableJson(
-										snapshotInputMappings(
-											context,
-											step.inputMapping,
-											state.children[0]!.callInputs ?? {},
-											key,
-										),
-									)
-								: checkpoint.snapshotInputs;
-						await this.save(run);
-						signal.throwIfAborted();
-						await this.graph(
-							run,
-							definition.steps,
-							isolated ? state.children[0]!.outputs! : outputs,
-							signal,
-							`${key}/`,
-							state.children[0]!,
-							definition.id,
-							definition.chat ?? chat,
-							parallel,
-							config.explicit ? reviewBaseline : undefined,
-						);
-						output = {
-							workflow: definition.id,
-							completed: true,
-							...(definition.outcomes?.length
-								? { outcome: state.children[0]!.outcome ?? "completed" }
-								: {}),
-							...(step.inputMapping ||
-							step.bindings ||
-							definition.outcomes?.length ||
-							checkpoint.iteration
-								? {
-										outputs: this.frameResults(
-											run,
-											definition.steps,
-											state.children[0]!,
-											`${key}/`,
-										),
-									}
-								: {}),
-						};
-						checkpoint.reviewKey = state.children[0]!.reviewKey;
+					} else if (!nodeRegistry.get(step.type).inline) {
+						output = await nodeRegistry.execute(nodeCtx);
+						if (output === NODE_REROUTE) continue;
+						const summary = nodeRegistry.get(step.type).summary?.(output);
+						if (summary) completionMessage = summary;
 					} else {
 						run.capacityLeaves ??= {};
 						run.capacityLeaves[key] = {
@@ -3811,7 +3370,7 @@ export class WorkflowRuntime {
 					run.history.push(
 						immutableJson({
 							step: key,
-							output,
+							...nodeCtx.stamp(output),
 							...(checkpoint.iteration
 								? {
 										iteration: {
@@ -6392,164 +5951,6 @@ export class WorkflowRuntime {
 			}),
 		);
 	}
-	/** Each accepted execution owns an ID independent of retries, graph visits and lexical item IDs. */
-	private async executeAction(
-		context: ExecutionContext,
-		checkpoint: GraphCheckpoint,
-		workflowId: string,
-	): Promise<unknown> {
-		const { run, step, signal } = context;
-		const active = checkpoint.active!;
-		if (!active.actionId) {
-			active.actionId = randomUUID();
-			await this.save(run);
-		}
-		const actionId = active.actionId;
-		const scope = {
-			outputs: context.outputs ?? run.outputs,
-			inputs: stepBindings(context),
-			item: checkpoint.iteration?.value,
-			index: checkpoint.iteration?.index,
-		};
-		signal.throwIfAborted();
-		if (step.type === "snapshot") {
-			run.repositorySnapshots ??= {};
-			if (!run.repositorySnapshots[actionId]) {
-				run.repositorySnapshots[actionId] = await captureRepositorySnapshot(
-					run,
-					actionId,
-					step.snapshot ?? {},
-					this.runs.values(),
-					signal,
-					{
-						key: context.stepKey!,
-						iteration: context.iteration && {
-							frame: context.iteration.frame,
-							id: context.iteration.id,
-							index: context.iteration.index,
-							itemDigest: digest(context.iteration.value),
-						},
-					},
-				);
-				await this.save(run);
-			}
-			return snapshotOutput(run.repositorySnapshots[actionId]!);
-		}
-		if (step.type === "file-issues") {
-			if (!step.fileIssues)
-				throw new Error("File issues configuration is missing");
-			run.issueActions ??= {};
-			if (
-				!run.issueActions[actionId] &&
-				actionItems(step.fileIssues, scope).length === 0
-			) {
-				run.issueActions[actionId] = {
-					actionId,
-					inputDigest: digest([]),
-					accepted: immutableJson([]),
-					items: [],
-				};
-				await this.save(run);
-			}
-			if (!run.issueActions[actionId]) {
-				const available = await (this.hooks.issueDestinations?.(run, signal) ??
-					Promise.resolve({
-						options: [],
-						limitations: ["No configured issue destination is available"],
-					}));
-				const selected = step.fileIssues.destination;
-				const matches = available.options.filter(({ destination }) =>
-					selected
-						? destination.provider === selected.provider &&
-							(destination.provider === "linear" &&
-							selected.provider === "linear"
-								? destination.teamId === selected.teamId &&
-									destination.workspaceId === selected.workspaceId
-								: digest(destination) === digest(selected))
-						: true,
-				);
-				if (matches.length !== 1)
-					throw new Error(
-						"File issues needs one configured project destination. Select an accessible Linear team/project or Taskbot project in the recipe; no issues were sent.",
-					);
-				run.issueActions[actionId] = prepareFileIssues(
-					run.id,
-					actionId,
-					step.fileIssues,
-					scope,
-					selected ?? matches[0]!.destination,
-				);
-				await this.save(run);
-			}
-			const send = this.hooks.fileIssue;
-			if (!send && run.issueActions[actionId]!.items.length)
-				throw new Error("Configured issue creation adapter is unavailable");
-			return fileIssueBatch(
-				run.issueActions[actionId]!,
-				(intent, sendingSignal) => send!(run, intent, sendingSignal),
-				() => this.save(run),
-				signal,
-			);
-		}
-		if (!step.launchRuns)
-			throw new Error("Launch runs configuration is missing");
-		run.launchActions ??= {};
-		if (!run.launchActions[actionId]) {
-			const ancestors = [
-				...(run.recipeParent?.ancestors ?? []),
-				run.workflow.id,
-			];
-			const visit = (frame: GraphCheckpoint | undefined) => {
-				const call = frame?.active?.call;
-				if (call && context.stepKey!.startsWith(`${call.key}/`))
-					ancestors.push(call.callerWorkflowId, call.workflowId);
-				for (const child of frame?.active?.children ?? []) visit(child);
-			};
-			visit(run.checkpoint);
-			run.launchActions[actionId] = prepareLaunchRuns(
-				run,
-				step.launchRuns,
-				scope,
-				{
-					key: context.stepKey!,
-					actionId,
-					workflowId,
-					ancestors: [...new Set(ancestors)],
-				},
-			);
-			await this.save(run);
-		}
-		const batch = run.launchActions[actionId]!;
-		if (!batch.accepted.wait) {
-			await this.reconcileLaunchBatch(run, batch, signal);
-			return launchOutput(batch);
-		}
-		while (true) {
-			let wake!: () => void;
-			const changed = new Promise<void>((resolve) => {
-				wake = resolve;
-			});
-			const unsubscribe = this.subscribe((change) => {
-				if (batch.accepted.items.some((item) => item.runId === change.id))
-					wake();
-			});
-			const abort = () => wake();
-			signal.addEventListener("abort", abort, { once: true });
-			try {
-				await this.reconcileLaunchBatch(run, batch, signal);
-				signal.throwIfAborted();
-				if (launchBatchSettled(batch)) return launchOutput(batch);
-				run.status = "waiting";
-				await this.save(run);
-				await changed;
-				signal.throwIfAborted();
-				run.status = "running";
-			} finally {
-				unsubscribe();
-				signal.removeEventListener("abort", abort);
-			}
-		}
-	}
 	private launchOutcomeStatus(run: FactoryRun): FactoryRun["status"] {
 		const batches = Object.values(run.launchActions ?? {});
 		if (batches.some((batch) => !launchBatchSettled(batch))) return "waiting";
@@ -6667,433 +6068,6 @@ export class WorkflowRuntime {
 				runtime: this,
 				save: () => this.save(run),
 			});
-	}
-	private async executeForeach(
-		context: ExecutionContext,
-		checkpoint: GraphCheckpoint,
-		workflowId: string,
-		chat: boolean,
-		reviewBaseline?: ReviewBaseline,
-	): Promise<unknown> {
-		const { run, step, signal } = context;
-		const key = context.stepKey!;
-		const active = checkpoint.active!;
-		assertForeachBody(
-			step.body ?? [],
-			run.workflowDefinitions ?? [run.workflow],
-			[workflowId],
-		);
-		if (!active.foreach) {
-			const snapshot = prepareForeach(step, {
-				outputs: context.outputs!,
-				inputs: stepBindings(context),
-				item: checkpoint.iteration?.value,
-				index: checkpoint.iteration?.index,
-			});
-			active.foreach = {
-				snapshot: immutableJson(snapshot),
-				body: structuredClone(step.body!),
-				outputs: snapshotWorkflowInput(context.outputs!),
-				states: snapshot.items.map(() => ({ status: "pending" })),
-			};
-			run.foreachIterations ??= [];
-			run.foreachIterations.push(
-				immutableJson({
-					key,
-					visit: checkpoint.visits[step.id]!,
-					snapshot: active.foreach.snapshot,
-				}),
-			);
-			const acceptedItems =
-				step.items && "values" in step.items
-					? step.items.values
-					: step.items && "from" in step.items
-						? acceptedProgressValue(
-								context,
-								step.items.from,
-								snapshot.items.map((item) => item.value),
-							)
-						: undefined;
-			active.children = snapshot.items.map((item) => ({
-				...this.newCheckpoint(step.body!),
-				projectResults: true,
-				resultReceipts: {},
-				progressPath: `${context.progressOperation}/item`,
-				iteration: { ...item, frame: key },
-				callInputs: checkpoint.callInputs,
-				progressInputs: checkpoint.progressInputs,
-				transcriptEntries: this.hooks.transcriptEntries
-					? () => this.hooks.transcriptEntries!(run.id)
-					: undefined,
-				progressItem:
-					Array.isArray(acceptedItems) &&
-					digest(acceptedItems[item.index]) === digest(item.value)
-						? digest(item.value)
-						: undefined,
-				snapshotInputs: checkpoint.snapshotInputs,
-				reviewKey: checkpoint.reviewKey,
-			}));
-		}
-		const loop = active.foreach;
-		assertForeachBody(loop.body, run.workflowDefinitions ?? [run.workflow], [
-			workflowId,
-		]);
-		// Rehydrate accepted configuration authority after ordinary serialized loading.
-		registerWorkflowConfig(
-			{
-				id: workflowId,
-				stepConfigVersion: "step-config-v1",
-				steps: loop.body,
-			},
-			run.workflow.id,
-		);
-		loop.snapshot = immutableJson(loop.snapshot);
-		if (
-			!active.children ||
-			active.children.length !== loop.snapshot.items.length ||
-			loop.states.length !== loop.snapshot.items.length
-		)
-			throw new Error("For each checkpoint has inconsistent item frames");
-		for (const [index, item] of loop.snapshot.items.entries()) {
-			active.children[index]!.projectResults = true;
-			active.children[index]!.snapshotInputs ??= checkpoint.snapshotInputs;
-			const frame = active.children[index]!.iteration;
-			if (
-				!frame ||
-				frame.id !== item.id ||
-				frame.index !== item.index ||
-				frame.frame !== key ||
-				digest(frame.value) !== digest(item.value)
-			)
-				throw new Error(
-					`For each checkpoint item ${item.id} does not match its accepted frame`,
-				);
-			if (loop.states[index]!.status === "completed") {
-				const produced = this.frameResults(
-					run,
-					loop.body,
-					active.children[index]!,
-					`${key}/${item.id}/`,
-				);
-				// The snapshot store can rehydrate JSON with null prototypes; compare
-				// canonical JSON authority rather than JavaScript object prototypes.
-				if (digest(produced) !== digest(loop.states[index]!.result))
-					throw new Error(
-						`Completed item ${item.id} has no matching exact-frame result receipts; original results are retained`,
-					);
-			}
-		}
-		const progress = () => {
-			run.foreach ??= {};
-			run.foreach[key] = {
-				key,
-				visit: checkpoint.visits[step.id]!,
-				concurrency: loop.snapshot.concurrency,
-				maxItems: loop.snapshot.maxItems,
-				failure: loop.snapshot.failure,
-				items: loop.snapshot.items.map(({ id, index }, i) => ({
-					id,
-					index,
-					status: loop.states[i]!.status,
-					...(loop.states[i]!.error ? { error: loop.states[i]!.error } : {}),
-				})),
-				completed: loop.states.filter((s) => s.status === "completed").length,
-				failed: loop.states.filter((s) => s.status === "failed").length,
-				total: loop.states.length,
-			};
-		};
-		// Running/cancelled work resumes its retained child/native checkpoint, never a new graph.
-		for (const state of loop.states)
-			if (state.status === "running" || state.status === "cancelled") {
-				state.status = "pending";
-				delete state.error;
-			}
-		progress();
-		await this.save(run); // Full snapshot and every child identity precede dispatch.
-		signal.throwIfAborted();
-		const controller = new AbortController();
-		const cancel = () => controller.abort(signal.reason);
-		signal.addEventListener("abort", cancel, { once: true });
-		if (signal.aborted) cancel();
-		let next = 0;
-		let suspension: unknown;
-		let fatal =
-			loop.snapshot.failure === "all-must-succeed" &&
-			loop.states.some((s) => s.status === "failed");
-		const worker = async () => {
-			while (!controller.signal.aborted && !fatal && !suspension) {
-				const index = next++;
-				if (index >= loop.states.length) return;
-				const state = loop.states[index]!;
-				if (state.status === "completed" || state.status === "failed") continue;
-				const item = loop.snapshot.items[index]!;
-				const child = active.children![index]!;
-				child.outputs ??= snapshotWorkflowInput(loop.outputs);
-				state.status = "running";
-				progress();
-				await this.save(run);
-				try {
-					controller.signal.throwIfAborted();
-					await this.graph(
-						run,
-						loop.body,
-						child.outputs,
-						controller.signal,
-						`${key}/${item.id}/`,
-						child,
-						workflowId,
-						chat,
-						true,
-						reviewBaseline,
-					);
-					controller.signal.throwIfAborted();
-					state.result = this.frameResults(
-						run,
-						loop.body,
-						child,
-						`${key}/${item.id}/`,
-					);
-					state.status = "completed";
-				} catch (error) {
-					if (isUpdatePaused(error) && !signal.aborted) {
-						suspension ??= error;
-						state.status = "pending";
-					} else if (controller.signal.aborted) {
-						state.status = "cancelled";
-						state.error = signal.aborted
-							? "Run cancelled; unfinished context retained"
-							: "Sibling failed; unfinished context retained";
-					} else {
-						state.status = "failed";
-						state.error =
-							error instanceof Error ? error.message : String(error);
-						if (loop.snapshot.failure === "all-must-succeed") {
-							fatal = true;
-							controller.abort(error);
-						}
-					}
-				} finally {
-					progress();
-					await this.save(run);
-				}
-			}
-		};
-		try {
-			// Orchestration holds no capacity lease or shared-resource reservation.
-			// All workers settle their native/leaf cleanup before join or failure.
-			const outcomes = await Promise.allSettled(
-				Array.from(
-					{ length: Math.min(loop.snapshot.concurrency, loop.states.length) },
-					worker,
-				),
-			);
-			const unexpected = outcomes.find((o) => o.status === "rejected");
-			if (unexpected?.status === "rejected") throw unexpected.reason;
-			if (fatal || signal.aborted)
-				for (const state of loop.states)
-					if (state.status === "pending") {
-						state.status = "cancelled";
-						state.error = fatal
-							? "Not dispatched: sibling failed"
-							: "Not dispatched: run cancelled";
-					}
-			progress();
-			await this.save(run);
-			signal.throwIfAborted();
-			if (suspension) throw suspension;
-			if (fatal) {
-				const summary = aggregateForeach(loop.snapshot, loop.states).summary;
-				throw new Error(
-					`For each ${key} failed: ${summary.failures.map((f) => `${f.id}: ${f.error}`).join("; ")}`,
-				);
-			}
-			return aggregateForeach(loop.snapshot, loop.states);
-		} finally {
-			signal.removeEventListener("abort", cancel);
-		}
-	}
-	/** Runtime owns checkpoint/convergence bookkeeping; the evaluator only consumes data. */
-	private async executeCheck(
-		context: ExecutionContext,
-		preparedReview?: unknown,
-	): Promise<unknown> {
-		const key = context.stepKey ?? context.step.id;
-		timingOperation(context.run, key, { kind: "execution" });
-		await this.save(context.run);
-		try {
-			return await this.executeCheckBody(context, preparedReview);
-		} finally {
-			timingOperation(context.run, key);
-			await this.save(context.run);
-		}
-	}
-	private async executeCheckBody(
-		context: ExecutionContext,
-		preparedReview?: unknown,
-	): Promise<unknown> {
-		const { step, signal } = context;
-		if (!step.check) throw new Error("Check configuration is missing");
-		const issues = checkStepEvidenceIssues(step);
-		if (issues.length) throw new Error(issues.join("; "));
-		const config = resolveStepConfig(step);
-		if (config.revision === "bound") {
-			context.inspectionBinding = await outputRevisionBinding(
-				context,
-				undefined,
-				true,
-			);
-			await assertBoundInspectionFresh(context);
-		}
-		const inputs = stepBindings(context, context.run.history, {
-			checkJson: true,
-		});
-		const selectors = config.checks.filter(
-			({ check, args }) =>
-				(CHECK_SELECTOR_IDS as readonly string[]).includes(check) &&
-				typeof args.path === "string",
-		);
-		if (selectors.length) await runEvidenceChecks(context, { inputs });
-		const declared = new Set(config.checks.map((check) => check.check));
-		const projected =
-			preparedReview === undefined
-				? declared.size
-					? await (this.hooks.evidence?.(context) ??
-							new FactoryTools({ postComment: async () => {} }).evidence(
-								context,
-							))
-					: {}
-				: { "review-evidence": preparedReview };
-		const evidence = Object.fromEntries(
-			Object.entries(projected).filter(([key]) => declared.has(key as never)),
-		);
-		for (const { check } of selectors) evidence[check] = { verified: true };
-
-		context.checkEvidence = evidence;
-		const ruleEvidence = { ...evidence };
-		if (
-			hasCheck(step, "review-boundary") &&
-			hasCheck(step, "review-evidence")
-		) {
-			const aggregate = evidence[
-				"review-evidence"
-			] as import("./SpecialistReview.js").AggregateReview &
-				Record<string, unknown>;
-			ruleEvidence["review-evidence"] = {
-				findings: aggregate.findings,
-				rawFindings: aggregate.rawFindings,
-				coverage: aggregate.coverage,
-				reviewers: aggregate.reviewers.map((reviewer) => ({
-					status: reviewer.status,
-					blockers: reviewer.blockers,
-				})),
-				disagreements: aggregate.disagreements,
-				reviewIncomplete: aggregate.reviewIncomplete ?? false,
-				reviewBlocked: aggregate.reviewBlocked ?? false,
-				questions: aggregate.questions ?? [],
-			};
-		}
-
-		if (context.checkEvidence && Object.keys(context.checkEvidence).length)
-			recordProgressEvidence(context, progressEvidence(context.checkEvidence));
-		const output = await evaluateCheckAsync(
-			step.check,
-			inputs,
-			ruleEvidence,
-			conforms,
-			signal,
-		);
-		if (
-			hasCheck(step, "review-assistance") &&
-			output.approved !== true &&
-			!(Array.isArray(output.questions) && output.questions.length) &&
-			context.run.history.some(
-				(item) =>
-					item.step === boundStepKey(context, "fix") &&
-					readPath(item.output, "reviewAssessment.unchangedCode") === true,
-			)
-		) {
-			const revision = await reviewedRunRevision(context.run, undefined, {
-				requireClean: false,
-			});
-			const dirty = Boolean(
-				(
-					await executeCommand(context, "git", ["status", "--porcelain"])
-				).trim(),
-			);
-			const questions = reviewRecoveryQuestions(context, output, {
-				headSha: revision.headSha,
-				dirty,
-			});
-			if (questions.length)
-				Object.assign(output, { reviewBlocked: true, questions });
-		}
-		if (hasCheck(step, "post-fix-evidence")) {
-			const observed = boundToolOutput(
-				context,
-				"observation",
-				"inspect-review-readiness",
-			);
-			if (
-				!observed ||
-				importDigest(observed) !==
-					importDigest(boundOutput(context, "observation"))
-			)
-				throw new Error(
-					"Post-fix evidence requires the exact executed provider inspection in this workflow frame",
-				);
-			const questions: string[] = [];
-			const seen = new Set<string>();
-			for (const [name, kind] of [
-				["revisionAssistance", "revision"],
-				["failureAssistance", "failure"],
-				["workAssistance", "work"],
-			]) {
-				const observations = output[name!];
-				if (!Array.isArray(observations)) continue;
-				for (const observation of observations) {
-					const identity = importDigest(observation);
-					if (seen.has(identity)) continue;
-					seen.add(identity);
-					const snapshot = readPath(
-						observation,
-						"readiness",
-					) as import("./MergeReadiness.js").MergeReadiness;
-					const headSha = String(readPath(observation, "headSha"));
-					const question =
-						kind === "revision"
-							? `The same revision mismatch remains after the CI fixer's synchronization attempt: The provider reports ${snapshot.headSha}, while the worktree is at ${headSha}. Restore synchronization between this PR and its branch, then reply to resume. Checks for the older revision remain insufficient; your answer does not approve or waive review and CI.`
-							: kind === "failure"
-								? `The CI fixer made no revision change and these same checks still fail: ${snapshot.checks
-										.filter((check) => check.bucket === "fail")
-										.map(
-											(check) => `${check.name}: ${check.link ?? check.state}`,
-										)
-										.join(
-											"; ",
-										)}. Resolve the external blocker or provide a corrective direction before retrying. The failures remain blocking.`
-								: `The CI fixer made no progress on the same actionable blockers: ${snapshot.blockers
-										.filter((blocker) => blocker.action === "fix")
-										.map((blocker) => blocker.message)
-										.join(
-											"; ",
-										)}. Resolve the blocker or provide a corrective direction before retrying. Review and merge safeguards remain enforced.`;
-					questions.push(
-						typeof readPath(observation, "repositoryName") === "string"
-							? `${readPath(observation, "repositoryName")}: ${question}`
-							: question,
-					);
-				}
-			}
-			if (output.needsAssistance === true) {
-				if (!questions.length)
-					throw new Error(
-						"Post-fix assistance requires declared matching observation results",
-					);
-				Object.assign(output, { questions });
-			}
-		}
-
-		return output;
 	}
 
 	private nextStep(

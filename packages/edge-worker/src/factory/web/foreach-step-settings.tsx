@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { foreachPointerSchema } from "../Foreach";
+import { nodeMetadata } from "../nodes/metadata.js";
 import { CheckJsonField } from "./check-step-settings";
 import { kindOf, newStep, type Step } from "./recipe-graph";
 
@@ -52,21 +53,7 @@ export function bodyProblem(value: unknown): string | undefined {
 		if (
 			typeof step.name !== "string" ||
 			!step.name.trim() ||
-			![
-				"agent",
-				"check",
-				"script",
-				"tool",
-				"fanout",
-				"foreach",
-				"workflow",
-				"snapshot",
-				"file-issues",
-				"launch-runs",
-				"show",
-				"decide",
-				"approve",
-			].includes(step.type) ||
+			!nodeMetadata(step.type) ||
 			!Array.isArray(step.branches)
 		)
 			return `Step “${step.id}” needs a name, supported type and branches array.`;

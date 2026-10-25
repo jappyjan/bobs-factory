@@ -71,6 +71,7 @@ import {
 	prepareNativeViewConsent,
 	savedReviewViewSnapshot,
 } from "./NativeViews.js";
+import { nodeRegistry } from "./nodes/index.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
@@ -958,6 +959,7 @@ export class FactoryServer {
 						...common,
 						workflows: workflows(),
 						workflowConfiguration: runtime.catalog.read(),
+						nodeTypes: nodeRegistry.metadata(),
 						defaultWorkflow: runtime.getDefaultWorkflow(),
 					};
 				const profiles = runtime.executionProfiles.read();
@@ -1000,6 +1002,7 @@ export class FactoryServer {
 						? {
 								...execution(),
 								workflowConfiguration: runtime.catalog.read(),
+								nodeTypes: nodeRegistry.metadata(),
 							}
 						: {}),
 					repositories: hooks.repositories(),
@@ -1555,6 +1558,7 @@ export class FactoryServer {
 				workflows: saved.updatedWorkflows,
 				configRevision: saved.configRevision,
 				workflowConfiguration: runtime.catalog.read(),
+				nodeTypes: nodeRegistry.metadata(),
 				defaultWorkflow: runtime.getDefaultWorkflow(),
 			};
 		});

@@ -1,25 +1,13 @@
 import { RoleContextPolicySchema } from "bobs-factory-mcp-tools";
-import {
-	type FileIssuesConfiguration,
-	FileIssuesConfigurationSchema,
-	type LaunchRunsConfiguration,
-	LaunchRunsConfigurationSchema,
-	type SnapshotConfiguration,
-	SnapshotConfigurationSchema,
+import type {
+	FileIssuesConfiguration,
+	LaunchRunsConfiguration,
+	SnapshotConfiguration,
 } from "./ActionSteps.js";
 import { passiveTools } from "./CapacityPolicy.js";
-import { type CheckConfiguration, CheckSchema } from "./Check.js";
-import {
-	foreachFields,
-	foreachPointerSchema,
-	prepareForeach,
-} from "./Foreach.js";
-import {
-	type DecideConfiguration,
-	DecideConfigurationSchema,
-	type ViewNotifications,
-	ViewNotificationsSchema,
-} from "./HumanStep.js";
+import type { CheckConfiguration } from "./Check.js";
+import { foreachPointerSchema, prepareForeach } from "./Foreach.js";
+import type { DecideConfiguration, ViewNotifications } from "./HumanStep.js";
 import { ProgressPolicySchema } from "./ProgressPolicy.js";
 import { validateReviewConfiguration } from "./SpecialistReview.js";
 import {
@@ -27,97 +15,30 @@ import {
 	readStep,
 	registerWorkflowConfig,
 	type StepConfigFields,
-	stepConfigFields,
 	stepConfigIssues,
 } from "./StepConfig.js";
-import { type ViewSource, ViewSourceSchema } from "./View.js";
+import type { ViewSource } from "./View.js";
 
 export { isComputeIntensive, passiveTools } from "./CapacityPolicy.js";
 
 import type { WorkflowTrigger } from "bobs-factory-core";
 import { z } from "zod";
-import { agentSettings, resolveAgentSettings } from "./AgentSettings.js";
-import { BRIEF_CONTRACTS, type BriefContract } from "./GuideAuthoring.js";
+import { resolveAgentSettings } from "./AgentSettings.js";
+import type { BriefContract } from "./GuideAuthoring.js";
 import { LaunchFieldSchema } from "./LaunchFields.js";
-import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "./WorkflowLimits.js";
 
-const id = z
-	.string()
-	.regex(/^[a-zA-Z0-9_-]+$/)
-	.max(80);
-const condition = z.object({ path: z.string().min(1), equals: z.unknown() });
-const reviewSources = z.object({ inventory: id, fanout: id.optional() });
-const impactSources = z.object({
-	inventory: id,
-	fanout: id,
-	maxUnchangedCycles: z.number().int().min(2).max(20).default(3),
-});
-const base = {
-	id,
-	view: ViewSourceSchema.optional(),
-	...stepConfigFields,
-	delivery: z.literal("exclusive").optional(),
-	resources: z.array(z.string().min(1)).min(1).optional(),
-	name: z.string().min(1),
-	next: id.optional(),
-	branches: z
-		.array(z.object({ when: condition, next: id, entry: id.optional() }))
-		.default([]),
-	qaContract: z.literal("qa-v1").optional(),
-	videoContract: z.literal("video-v1").optional(),
-	review: reviewSources.optional(),
-	impactSource: id.optional(),
-	maxVisits: z
-		.number()
-		.int()
-		.min(1)
-		.max(MAX_STEP_VISITS)
-		.default(DEFAULT_STEP_MAX_VISITS),
-};
-export const AgentStepSchema = z.object({
-	...base,
-	type: z.literal("agent"),
-	impactContract: z.literal("impact-v1").optional(),
-	impact: impactSources.optional(),
-	architectureSource: id.optional(),
-	architectureContract: z
-		.enum(["architecture-v1", "architecture-review-v1"])
-		.optional(),
-	/** New stock proposals require the check-in; frozen graphs retain their contract. */
-	architectureBrief: z.enum(["review-v1", "checkin-v1"]).optional(),
-	reviewContract: z
-		.enum(["inventory-v1", "specialist-v1", "coverage-v1"])
-		.optional(),
-	/** Guide steps opt into the review brief (v2 adds show & tell, v3 Dig deeper); absent keeps the chapter guide. */
-	guideContract: z.enum(BRIEF_CONTRACTS).optional(),
-	computeIntensive: z.never().optional(),
-	prompt: z.string().min(1),
-	inputs: z.array(z.string()).optional(),
-	...agentSettings,
-	json: z.boolean().default(true),
-	askQuestions: z.boolean().default(false),
-	chat: z.boolean().optional(),
-});
+export { AgentStepSchema } from "./nodes/schema.js";
+
+import { nodeRegistry } from "./nodes/index.js";
+import { setRegisteredStepSchema } from "./nodes/registry.js";
+import { type AgentStepSchema, nodeId as id } from "./nodes/schema.js";
 export type AgentStep = z.infer<typeof AgentStepSchema>;
 export interface WorkflowStep extends StepConfigFields {
 	id: string;
 	delivery?: "exclusive";
 	resources?: string[];
 	name: string;
-	type:
-		| "agent"
-		| "script"
-		| "tool"
-		| "check"
-		| "fanout"
-		| "workflow"
-		| "foreach"
-		| "snapshot"
-		| "file-issues"
-		| "launch-runs"
-		| "decide"
-		| "approve"
-		| "show";
+	type: string;
 	view?: ViewSource;
 	decide?: DecideConfiguration;
 	notifications?: ViewNotifications;
@@ -208,165 +129,11 @@ function ownStepData(value: unknown, context: z.RefinementCtx): unknown {
 	}
 	return result;
 }
-const humanBase = {
-	notifications: ViewNotificationsSchema.optional(),
-	...base,
-	context: z.never().optional(),
-	output: z.never().optional(),
-	rules: z.never().optional(),
-	checks: z.never().optional(),
-	revision: z.never().optional(),
-	access: z.never().optional(),
-	instructions: z.never().optional(),
-	qaContract: z.never().optional(),
-	videoContract: z.never().optional(),
-	review: z.never().optional(),
-	impactSource: z.never().optional(),
-};
-export const StepSchema: z.ZodType<WorkflowStep> = z.lazy(() =>
-	z.preprocess(
-		ownStepData,
-		z.discriminatedUnion("type", [
-			AgentStepSchema,
-			z
-				.object({
-					...humanBase,
-					type: z.literal("decide"),
-					view: ViewSourceSchema,
-					decide: DecideConfigurationSchema,
-					delivery: z.never().optional(),
-					resources: z.never().optional(),
-					computeIntensive: z.never().optional(),
-				})
-				.strict(),
-			z
-				.object({
-					...humanBase,
-					type: z.literal("approve"),
-					view: ViewSourceSchema,
-					delivery: z.never().optional(),
-					resources: z.never().optional(),
-					computeIntensive: z.never().optional(),
-				})
-				.strict(),
-			z
-				.object({
-					...humanBase,
-					type: z.literal("show"),
-					view: ViewSourceSchema,
-					delivery: z.never().optional(),
-					resources: z.never().optional(),
-					computeIntensive: z.never().optional(),
-				})
-				.strict(),
-
-			z.object({
-				...base,
-				type: z.literal("snapshot"),
-				snapshot: SnapshotConfigurationSchema.default({}),
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("file-issues"),
-				fileIssues: FileIssuesConfigurationSchema,
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("launch-runs"),
-				launchRuns: LaunchRunsConfigurationSchema,
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("check"),
-				check: CheckSchema,
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("workflow"),
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				workflow: id,
-				/** Opt in to freshness at the actual leaf read instead of every Call port. */
-				inputFreshness: z.enum(["eager", "on-read"]).optional(),
-				/** Named producer ports, relative to the caller's graph. */
-				bindings: z
-					.record(
-						id,
-						z
-							.string()
-							.regex(
-								/^(?:[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*|@bindings\/[A-Za-z0-9_-]+)$/,
-							),
-					)
-					.optional(),
-				inputMapping: z
-					.record(
-						z
-							.string()
-							.regex(/^[A-Za-z][A-Za-z0-9_-]{0,59}$/)
-							.refine(
-								(s) =>
-									![
-										"item",
-										"index",
-										"inputs",
-										"__proto__",
-										"constructor",
-										"prototype",
-									].includes(s),
-							),
-						foreachPointerSchema,
-					)
-					.refine((m) => Object.keys(m).length <= 30, "At most 30 call inputs")
-					.optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("script"),
-				script: z.string().min(1),
-				computeIntensive: z.boolean().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("tool"),
-				tool: z.string().min(1),
-				computeIntensive: z.boolean().optional(),
-				args: z.array(z.string()).default([]),
-				arguments: z.record(z.string(), z.unknown()).optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("foreach"),
-				...foreachFields,
-				body: z.array(StepSchema).min(1).max(100),
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-			}),
-			z.object({
-				...base,
-				type: z.literal("fanout"),
-				delivery: z.never().optional(),
-				resources: z.never().optional(),
-				computeIntensive: z.never().optional(),
-				groups: z.array(z.array(StepSchema).min(1)).min(1).max(8),
-			}),
-		]),
-	),
+export const StepSchema: z.ZodType<WorkflowStep> = z.preprocess(
+	ownStepData,
+	z.unknown().transform((value, context) => nodeRegistry.parse(value, context)),
 );
+setRegisteredStepSchema(StepSchema);
 export const WorkflowSchema = z
 	.object({
 		id,
