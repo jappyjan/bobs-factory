@@ -35,7 +35,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Codex runs using an identity profile can now use MCP servers signed in with OAuth (for example Taskbot), instead of failing with "Auth required".
+- Fresh Takeovers no longer fail at clarify on their first pass: earlier scope decisions that haven't been produced yet aren't reported as lost records, so Bob asks you instead of giving up. ([#196](https://github.com/jappyjan/bobs-factory/pull/196))
+- Codex runs using an identity profile can now use MCP servers signed in with OAuth (for example Taskbot), instead of failing with "Auth required". ([#195](https://github.com/jappyjan/bobs-factory/pull/195))
 - Runs using an identity or tool profile can now work in projects with a `.env` file when running Codex, and can deliver to, file and update Linear tickets like Legacy runs. ([#194](https://github.com/jappyjan/bobs-factory/pull/194))
 - Fresh Takeovers can reuse an existing branch worktree without retention trying to register the unused new run directory. Preserve existing ownership and reserve the actual worktree for continuation. ([#193](https://github.com/jappyjan/bobs-factory/pull/193))
 - Wait for resumed operator test runs to finish saving before retrying ticket synchronization, avoiding intermittent nightly validation failures. ([#192](https://github.com/jappyjan/bobs-factory/pull/192))
