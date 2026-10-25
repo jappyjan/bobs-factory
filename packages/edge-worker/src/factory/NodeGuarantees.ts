@@ -229,6 +229,15 @@ export async function freshNodeOutput(
 						: context.run.outputs[source],
 				]),
 			);
+			if (
+				!(
+					sameFrame &&
+					context.outputs &&
+					Object.hasOwn(context.outputs, step.id)
+				) &&
+				!Object.hasOwn(context.run.outputs, key)
+			)
+				return false;
 			const currentOutput =
 				sameFrame && context.outputs && Object.hasOwn(context.outputs, step.id)
 					? context.outputs[step.id]

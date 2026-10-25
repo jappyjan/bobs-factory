@@ -3062,6 +3062,7 @@ export class WorkflowRuntime {
 						await context.beginProgressAttempt?.();
 
 					if (reuseHit) {
+						nodeCtx.guarantee.state = structuredClone(reused!.guarantee?.state);
 						output = structuredClone(reused!.output);
 						completionMessage = "reused (inputs unchanged)";
 					} else if (

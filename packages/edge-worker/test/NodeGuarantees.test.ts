@@ -139,6 +139,7 @@ it("reuses unchanged inputs, misses changed inputs, and logs each reuse", async 
 	execute.mockImplementation((ctx) => {
 		if (ctx.step.id === "source") return { value: cycle < 2 ? 1 : 2 };
 		if (ctx.step.id === "compute") {
+			ctx.guarantee.state = { value: ctx.reads.value };
 			computations++;
 			return { value: ctx.reads.value };
 		}
@@ -159,6 +160,11 @@ it("reuses unchanged inputs, misses changed inputs, and logs each reuse", async 
 	expect(run.error).toBeUndefined();
 	expect(run.status).toBe("completed");
 	expect(computations).toBe(2);
+	expect(
+		run.history
+			.filter((entry) => entry.step === "compute")
+			.map((entry) => entry.guarantee?.state),
+	).toEqual([{ value: 1 }, { value: 1 }, { value: 2 }]);
 	expect(
 		run.history
 			.filter((entry) => entry.step === "compute")
@@ -647,4 +653,15 @@ it("stamps a mutating agent with its resulting revision while retaining its inpu
 	);
 	expect(await freshNodeOutput(context(run), "source")).toBe(false);
 	expect(await freshNodeOutput(context(run), "change")).toBe(true);
+});
+
+it("distinguishes a current null result from a missing output slot", async () => {
+	execute.mockImplementation(() => null);
+	const { instance, home } = runtime();
+	const run = start(instance, home, [fixture("scalar")]);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(await freshNodeOutput(context(run), "scalar")).toBe(true);
+	delete run.outputs.scalar;
+	expect(await freshNodeOutput(context(run), "scalar")).toBe(false);
 });
