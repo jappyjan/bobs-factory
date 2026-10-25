@@ -1,0 +1,96 @@
+{
+	"result": "PASS",
+	"mode": "mock",
+	"source": "b73145243581b785e95797888247dddb48c13b8c",
+	"runId": "manual-2adb0820-0d8a-4fd2-8816-d69ecfe4e57b",
+	"history": [
+		{
+			"step": "snapshot",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "loop/one/value",
+			"inputDigest": "48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6"
+		},
+		{
+			"step": "loop/two/value",
+			"inputDigest": "49c987621f206f09e5fbe23b516b55a36f838cb14867961f1d84a554d3a35b6b"
+		},
+		{
+			"step": "loop/one/check",
+			"inputDigest": "48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6"
+		},
+		{
+			"step": "loop/two/check",
+			"inputDigest": "49c987621f206f09e5fbe23b516b55a36f838cb14867961f1d84a554d3a35b6b"
+		},
+		{
+			"step": "loop",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel/0/left",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel/1/right",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "call/check",
+			"inputDigest": "9d709bba0358da8fdf5600bb3692fa32d0aa2a19a08152cf4307e0b4240e71ac"
+		},
+		{
+			"step": "call",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "show",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "approve",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "file",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "launch",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "finish",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		}
+	],
+	"checks": [
+		"JSON-only node metadata",
+		"snapshot",
+		"foreach and scoped reads",
+		"check",
+		"fanout",
+		"workflow call",
+		"show and approve",
+		"cold checkpoint recovery",
+		"empty file/launch actions",
+		"native mock final response",
+		"all output stamps"
+	],
+	"candidateFilesSha256": {
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "83ef5b8407185f6eaf793415d1ced91c68c34ce08665b2df7f0147e7e42a34a6",
+		"packages/edge-worker/src/factory/nodes/NodeDefinition.ts": "0567e9e20ea03b84bf5d6e2eacd30cebfd05684f180c7432673e19a0a8cbeb2e",
+		"packages/edge-worker/src/factory/nodes/context.ts": "c1b8052a68cde4acc6cc80782b46848db5fd7660f984f59712c11ec40d322c95",
+		"packages/edge-worker/src/factory/nodes/execute/fanout.ts": "4035d7aed7095fb14bca020650df1359afda6dfb95410999e2c8f62021245753",
+		"packages/edge-worker/src/factory/nodes/execute/foreach.ts": "6ebd1985f384ed2092d4c15a38e4da8f3615581b8187035da4d5896fd4fa7f08",
+		"packages/edge-worker/src/factory/nodes/execute/workflow.ts": "880427a0533ea1ec7cc90b7936051bdf47dafcdcd2d97ef08b55167ef3af8ed2",
+		"packages/edge-worker/src/factory/web/node-step-settings.tsx": "5b803d0f71a4d6ae43ad15eb772f1735a2a6594a506319d5d075e2438cc2127d",
+		"packages/edge-worker/test/NodeRegistry.test.ts": "3a9ba538df60df3f906513cf9b11e849aa3d3a34e0c043b3042cd2264cb22b66",
+		"apps/f1/test-drives/assets/node-registry.ts": "e37009ce27dd386ab00c9b6f6d209593c05b82bbe7909aa0740d5c63851fb37c"
+	}
+}

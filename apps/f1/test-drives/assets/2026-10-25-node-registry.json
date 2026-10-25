@@ -1,0 +1,124 @@
+{
+	"result": "PASS",
+	"mode": "mock",
+	"source": "5d5f2760f0fb40557669d5ba54a22f687c70e48f",
+	"runId": "manual-98e764fe-b024-4cfe-9168-a41ad7e51a55",
+	"history": [
+		{
+			"step": "snapshot",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "loop/one/value",
+			"inputDigest": "48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6"
+		},
+		{
+			"step": "loop/two/value",
+			"inputDigest": "49c987621f206f09e5fbe23b516b55a36f838cb14867961f1d84a554d3a35b6b"
+		},
+		{
+			"step": "loop/one/check",
+			"inputDigest": "48208f9428d64634bd8e28ff345bf0eab60d53c18fa2fbdb0b9bc1e84df2b5f6"
+		},
+		{
+			"step": "loop/two/check",
+			"inputDigest": "49c987621f206f09e5fbe23b516b55a36f838cb14867961f1d84a554d3a35b6b"
+		},
+		{
+			"step": "loop",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel/0/left",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel/1/right",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "parallel",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "call/check",
+			"inputDigest": "9d709bba0358da8fdf5600bb3692fa32d0aa2a19a08152cf4307e0b4240e71ac"
+		},
+		{
+			"step": "call",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "show",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "approve",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "file",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "launch",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		},
+		{
+			"step": "finish",
+			"inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+		}
+	],
+	"checks": [
+		"JSON-only node metadata",
+		"snapshot",
+		"foreach and scoped reads",
+		"check",
+		"fanout",
+		"workflow call",
+		"show and approve",
+		"cold checkpoint recovery",
+		"empty file/launch actions",
+		"native mock final response",
+		"all output stamps"
+	],
+	"candidateFiles": {
+		"apps/f1/test-drives/assets/node-registry.ts": "e37009ce27dd386ab00c9b6f6d209593c05b82bbe7909aa0740d5c63851fb37c",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "48b0137fe9e7e7d42c70396a4bd30df41108915bb54f6b9fb4aa3c1a23a63cf4",
+		"packages/edge-worker/src/factory/Workflow.ts": "84a68e2650f423161c39f23c1d292b3f987a7798975c1ee2af48d17643b13801",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "9a3fd9681e264801c9b5174b9d9b74c3a0e325d6ac2560d9bd44b3beed0a1577",
+		"packages/edge-worker/src/factory/nodes/NodeDefinition.ts": "0cc8d1e5c06ed6dceab65d555d9cdcc0bb4b958f653806feb5b365bc597e67a0",
+		"packages/edge-worker/src/factory/nodes/agent.ts": "49b3b4f02ff042166801ace4a0eeea76b1bb644b06c50f4a77caac7dbb712509",
+		"packages/edge-worker/src/factory/nodes/approve.ts": "01a1267ac8d3b3243aaabb3d9a7ff98f2e8c8453620e8622f14e81cf36a458d1",
+		"packages/edge-worker/src/factory/nodes/check.ts": "d088773c79ecd83d6ed772c7f256575f38695db0ad74681ab006fb2ee62e338e",
+		"packages/edge-worker/src/factory/nodes/context.ts": "51014328697fb79cff076690365ff114af42c4da0ded3196451684e5f87af986",
+		"packages/edge-worker/src/factory/nodes/control.ts": "b66efea12399112dab31287ca336281ecc331eb0f71ac15140a2862c49df0216",
+		"packages/edge-worker/src/factory/nodes/decide.ts": "f6470ba7444b3e0b790811898f639b579a5d58edada24971d042fb2467a21329",
+		"packages/edge-worker/src/factory/nodes/execute/check.ts": "0505f5797a6e85fe21d6b1c678ba6aa1eecbae70cb8e019d511736f38b1fc0d0",
+		"packages/edge-worker/src/factory/nodes/execute/fanout.ts": "f2127330b013cd19064f38a9eb30acddee01dd89892b7e9dadc39959cb4104b7",
+		"packages/edge-worker/src/factory/nodes/execute/file-issues.ts": "0a31de9d86249da8342dbc31f46a6e5a17b26dcc44e39895b2c0dad2ed633a3e",
+		"packages/edge-worker/src/factory/nodes/execute/foreach.ts": "29fc69b8337c24ea835386edcb05e95ef689008f4e4f318848b95c015f94279d",
+		"packages/edge-worker/src/factory/nodes/execute/launch-runs.ts": "f5aa276ce5f06da7e615f73ce42946d48e3306412f45a2ebb5e5be20a15195cb",
+		"packages/edge-worker/src/factory/nodes/execute/snapshot.ts": "79ae943dd7112a19bf30f271186f42e1a5b752e5a706944cc19bd8ec0af47c6e",
+		"packages/edge-worker/src/factory/nodes/execute/workflow.ts": "67e1104b2c1cc3944be4ec042ae12b2d24b4f013612c1fe15a7d2eb4e3e6f19a",
+		"packages/edge-worker/src/factory/nodes/fanout.ts": "14242cbcb49913ad961507c4a9ba1959e3b6dbb7c81d6e87afdfc8c7b0305420",
+		"packages/edge-worker/src/factory/nodes/file-issues.ts": "53c5eff2cd30de421db7aacb3727921dddedc756b82efe569461eda0cbef47b3",
+		"packages/edge-worker/src/factory/nodes/foreach.ts": "828234b6ced789d766d0322d1262db13d9a38b30224da444b0ab196f22cac26d",
+		"packages/edge-worker/src/factory/nodes/human-schema.ts": "d586d96e6be0b22c77d751ae64166892621b5d71454d44e789da75f3d6d6738e",
+		"packages/edge-worker/src/factory/nodes/index.ts": "ef2d417d2848f6d09a6d36ea7252af600f80c1d56201aecbf41435dc64d16ce1",
+		"packages/edge-worker/src/factory/nodes/launch-runs.ts": "5175ab19ca4c3de22cfd695ed1452f3beccdb7b89b479cfbff8974e8f8a163ce",
+		"packages/edge-worker/src/factory/nodes/metadata.ts": "f26b6f6604bd7cab2256ce9e70391a7ad09c281348f0badccfc5f609a4b1ece4",
+		"packages/edge-worker/src/factory/nodes/registry.ts": "f517f503ddd52f6422f4ff9bb961351e248f6e0493e5e4821976bfc850542408",
+		"packages/edge-worker/src/factory/nodes/schema.ts": "48ac9f53d51a46b5b96fc288262bcebe32c8dc9631f1181f62add2e18e79c335",
+		"packages/edge-worker/src/factory/nodes/script.ts": "d669238d7867a01b3f8c01fc7ae81c08060dbd479755177230cdf67e89fc9b93",
+		"packages/edge-worker/src/factory/nodes/show.ts": "1707a8099eda99cfb4a2d00cbddacdb06077c1faf4aba0c0f7e2bedcdffa34a5",
+		"packages/edge-worker/src/factory/nodes/snapshot.ts": "7f1c056dc223faaf25011eb4a69f63fd5afc9d29e1a8e58ac6c156ed1dcf380b",
+		"packages/edge-worker/src/factory/nodes/tool.ts": "473256638f8eccb9e24f03a9effb1efcdc5bcb5ebc060586c30340a17be449b0",
+		"packages/edge-worker/src/factory/nodes/workflow.ts": "04642a4b6f2abadff62d5ed3b17b59f00389af30865abffde4ceb20de0b333d1",
+		"packages/edge-worker/src/factory/web/client.ts": "9982900b058c146d7822650fa771b59cb2fb4117282f2c5c6fa38ce8dec5d27e",
+		"packages/edge-worker/src/factory/web/foreach-step-settings.tsx": "141dd6997193c3de86ab82489ff1cb4fa54d48f59612ee0f54f688dc72519679",
+		"packages/edge-worker/src/factory/web/node-step-settings.tsx": "eeed23d0334854fcd9f9320d547b37452ad7565594190cdbd90d45a326391630",
+		"packages/edge-worker/src/factory/web/recipe-builder.tsx": "a3954473357e3d74a8618ee510dd10014b42163cf713a86f8beb25272c6e433b",
+		"packages/edge-worker/src/factory/web/recipe-graph.ts": "aeb6a52b38ed1597239da9778ca61930a4f089c9117dab802afeb8f7db6570ef"
+	}
+}

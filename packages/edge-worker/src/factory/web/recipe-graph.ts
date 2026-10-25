@@ -6,9 +6,9 @@ import {
 } from "../ActionSteps.js";
 import { ForeachSettingsSchema, prepareForeach } from "../Foreach.js";
 import { DecideConfigurationSchema } from "../HumanStep.js";
+import { createNodeStep, type Kind, nodeKind } from "../nodes/metadata.js";
 import { ViewSourceSchema } from "../View.js";
 import type { WorkflowStep } from "../Workflow.js";
-import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
 export type Step = WorkflowStep;
 export type Recipe = {
@@ -128,109 +128,13 @@ export function describeCondition(when: { path: string; equals?: unknown }) {
 	);
 }
 
-export type Kind = { icon: string; label: string; tone: string; hint: string };
-export const kinds: Record<
-	| "agent"
-	| "check"
-	| "decide"
-	| "approve"
-	| "show"
-	| "tool"
-	| "script"
-	| "fanout"
-	| "foreach"
-	| "snapshot"
-	| "file-issues"
-	| "launch-runs"
-	| "workflow"
-	| "human",
-	Kind
-> = {
-	decide: {
-		icon: "☷",
-		label: "Decide per item",
-		tone: "red",
-		hint: "Choose a configured action for each item, then route the results",
+export type { Kind } from "../nodes/metadata.js";
+export const kinds = new Proxy(
+	{} as Record<string, Kind> & { human: Kind; workflow: Kind },
+	{
+		get: (_target, type: string) => nodeKind(type),
 	},
-	approve: {
-		icon: "✓",
-		label: "Approve",
-		tone: "red",
-		hint: "Explicitly approve the displayed content or request changes",
-	},
-	show: {
-		icon: "▤",
-		label: "Show",
-		tone: "blue",
-		hint: "Displays a declarative view and immediately continues",
-	},
-	snapshot: {
-		icon: "◈",
-		label: "Snapshot repository",
-		tone: "blue",
-		hint: "Pins tracked repository revisions for read-only agents",
-	},
-	"file-issues": {
-		icon: "🎫",
-		label: "File issues",
-		tone: "blue",
-		hint: "Creates backlog-only, unassigned tickets with durable receipts",
-	},
-	"launch-runs": {
-		icon: "↗",
-		label: "Launch runs",
-		tone: "orange",
-		hint: "Starts independent runs with dependency waves and durable tracking",
-	},
-	agent: {
-		icon: "✦",
-		label: "Agent",
-		tone: "violet",
-		hint: "An AI agent does the work with a prompt",
-	},
-	check: {
-		icon: "✓",
-		label: "Check",
-		tone: "green",
-		hint: "Evaluates named rules; the recipe routes on their results",
-	},
-	tool: {
-		icon: "⚙",
-		label: "Built-in",
-		tone: "blue",
-		hint: "Bob runs a built-in action",
-	},
-	script: {
-		icon: "›_",
-		label: "Script",
-		tone: "green",
-		hint: "Runs a shell script in the worktree",
-	},
-	fanout: {
-		icon: "⫘",
-		label: "In parallel",
-		tone: "orange",
-		hint: "Runs several branches at the same time",
-	},
-	foreach: {
-		icon: "↻",
-		label: "For each",
-		tone: "orange",
-		hint: "Runs a body for every item, with durable per-item progress",
-	},
-	workflow: {
-		icon: "🧩",
-		label: "Recipe",
-		tone: "yellow",
-		hint: "Runs another recipe, then continues",
-	},
-	human: {
-		icon: "🙋",
-		label: "You",
-		tone: "red",
-		hint: "Waits for a human decision",
-	},
-};
+);
 export const humanTools = [
 	"human-review",
 	"architecture-decision",
@@ -239,7 +143,7 @@ export const humanTools = [
 export function kindOf(step: Step): Kind {
 	if (step.type === "tool" && humanTools.includes(step.tool ?? ""))
 		return kinds.human;
-	return kinds[step.type];
+	return nodeKind(step.type);
 }
 
 export const toolText: Record<string, string> = {
@@ -694,210 +598,7 @@ export function uniqueStepId(taken: Iterable<string>, base: string) {
 	while (used.has(`${base}-${i}`)) i++;
 	return `${base}-${i}`;
 }
-export function newStep(
-	kind:
-		| "agent"
-		| "check"
-		| "decide"
-		| "approve"
-		| "show"
-		| "tool"
-		| "script"
-		| "fanout"
-		| "foreach"
-		| "snapshot"
-		| "file-issues"
-		| "launch-runs"
-		| "workflow"
-		| "human",
-	id: string,
-	callable?: string,
-): Step {
-	const base = {
-		id,
-		configVersion: "step-config-v1" as const,
-		branches: [],
-		maxVisits: DEFAULT_STEP_MAX_VISITS,
-	};
-	switch (kind) {
-		case "decide":
-			return {
-				...base,
-				name: "Decide per item",
-				type: "decide",
-				view: {
-					version: "view-v1",
-					components: [
-						{
-							id: "intro",
-							type: "markdown",
-							data: {
-								literal: { text: "Choose what should happen to each item." },
-							},
-						},
-					],
-				},
-				decide: {
-					items: { literal: [{ id: "first", title: "First item" }] },
-					itemId: "/id",
-					title: "/title",
-					details: [],
-					actions: [
-						{ id: "fix", label: "Fix", comment: true },
-						{ id: "skip", label: "Skip", comment: true },
-						{
-							id: "followUp",
-							label: "Follow up",
-							comment: true,
-							followUp: true,
-						},
-					],
-				},
-			};
-		case "approve":
-		case "show":
-			return {
-				...base,
-				name: kind === "approve" ? "Approve artifact" : "Show summary",
-				type: kind,
-				view: {
-					version: "view-v1",
-					components: [
-						{
-							id: "intro",
-							type: "markdown",
-							data: {
-								literal: {
-									text:
-										kind === "approve"
-											? "Review this artifact before approving it."
-											: "The recipe continues after displaying this summary.",
-								},
-							},
-						},
-					],
-				},
-			};
-		case "snapshot":
-			return {
-				...base,
-				name: "Snapshot repositories",
-				type: "snapshot",
-				snapshot: {},
-			};
-		case "file-issues":
-			return {
-				...base,
-				name: "File issues",
-				type: "file-issues",
-				fileIssues: {
-					items: { values: [] },
-					itemId: "/id",
-					maxItems: 100,
-					fields: { title: "/title", body: "/body" },
-				},
-			};
-		case "launch-runs":
-			return {
-				...base,
-				name: "Launch runs",
-				type: "launch-runs",
-				launchRuns: {
-					items: { values: [] },
-					itemId: "/id",
-					maxItems: 100,
-					workflow: callable ?? "factory",
-					inputMapping: { prompt: "/prompt" },
-					wait: true,
-				},
-			};
-		case "check":
-			return {
-				...base,
-				name: "Check results",
-				type: "check",
-				reads: {},
-				check: {
-					results: {
-						approved: { path: "/inputs/review/approved", equals: true },
-					},
-				},
-			};
-		case "agent":
-			return {
-				...base,
-				name: "New agent step",
-				type: "agent",
-				prompt: "Describe what this agent should do and what it returns.",
-			};
-		case "human":
-			return {
-				...base,
-				name: "Your review",
-				type: "tool",
-				tool: "human-review",
-			};
-		case "tool":
-			return {
-				...base,
-				name: "New built-in step",
-				type: "tool",
-				tool: "draft-pr",
-			};
-		case "script":
-			return {
-				...base,
-				name: "New script",
-				type: "script",
-				script: "pnpm test",
-			};
-		case "fanout":
-			return {
-				...base,
-				name: "Parallel review",
-				type: "fanout",
-				groups: [
-					[
-						{
-							id: `${id}-a`,
-							name: "Reviewer A",
-							type: "agent",
-							branches: [],
-							maxVisits: DEFAULT_STEP_MAX_VISITS,
-							prompt: "Review the change and return findings.",
-						},
-					],
-				],
-			};
-		case "foreach":
-			return {
-				...base,
-				name: "For each item",
-				type: "foreach",
-				items: { values: [{ id: "first", name: "First item" }] },
-				itemId: "/id",
-				concurrency: 4,
-				maxItems: 100,
-				failure: "all-must-succeed",
-				body: [
-					{
-						...base,
-						id: `${id}-work`,
-						type: "agent",
-						name: "Process item",
-						prompt: "Process /item at /index. Return the result for this item.",
-					},
-				],
-			};
-		case "workflow":
-			return {
-				...base,
-				name: "Run another recipe",
-				type: "workflow",
-				workflow: callable ?? "",
-			};
-	}
-}
+export const newStep = createNodeStep;
 /** Problems the editor can explain before the server rejects a save. */
 export function draftProblems(
 	recipe: Recipe,

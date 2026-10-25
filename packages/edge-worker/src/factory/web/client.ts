@@ -8,6 +8,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { installNodeMetadata } from "../nodes/metadata.js";
 import {
 	active,
 	attention,
@@ -429,7 +430,11 @@ export function useConfig(
 ) {
 	return useQuery({
 		queryKey: view === "dashboard" ? ["config"] : ["config", view],
-		queryFn: ({ signal }) => api(`/api/config?view=${view}`, { signal }),
+		queryFn: async ({ signal }) => {
+			const config = await api(`/api/config?view=${view}`, { signal });
+			if (config.nodeTypes) installNodeMetadata(config.nodeTypes);
+			return config;
+		},
 	});
 }
 export function useCapacity() {
