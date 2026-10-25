@@ -1,7 +1,7 @@
 # Factory node registry and cold checkpoint recovery
 
-**Date:** 2026-10-25  
-**Result:** PASS  
+**Date:** 2026-10-25
+**Result:** PASS
 **Mode:** deterministic mocked agents, real embedded EdgeWorker, protected Factory
 HTTP routes and disposable Git repository/home. No live inference or external
 tracker/provider mutations.
