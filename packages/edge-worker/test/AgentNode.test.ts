@@ -24,6 +24,7 @@ import { materializeWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
+	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { AgentStepSettings } from "../src/factory/web/agent-step-settings.js";
@@ -92,6 +93,31 @@ nodeRegistry.register({
 		}),
 });
 
+nodeRegistry.register({
+	type: "test-agent-round",
+	schema: z.object({ ...stepFields, type: z.literal("test-agent-round") }),
+	category: "logic",
+	effect: "human",
+	builder: { label: "Round", icon: "?", paletteGroup: "logic", defaults: {} },
+	execute: async (ctx) => {
+		if (ctx.run.history.some((entry) => entry.step === "again"))
+			return { again: false };
+		await ctx.phase(
+			"waiting-human",
+			() =>
+				new Promise<void>((resolve, reject) => {
+					answer = resolve;
+					ctx.signal.addEventListener(
+						"abort",
+						() => reject(ctx.signal.reason),
+						{ once: true },
+					);
+				}),
+		);
+		return { again: true };
+	},
+});
+
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
 afterEach(async () => {
@@ -125,6 +151,8 @@ function fixture(runnerType: RunnerType = "codex") {
 	const turns: {
 		runner: RunnerType;
 		resume?: string;
+		model?: string;
+		instruction?: string;
 		prompt: string;
 		snapshot: unknown;
 	}[] = [];
@@ -132,6 +160,8 @@ function fixture(runnerType: RunnerType = "codex") {
 		turn === 1
 			? { status: "needs-input", display: { title: "Choose a value" } }
 			: { status: "completed", value: "Use the saved value" };
+	let defaultRunner = runnerType;
+	let resumeError: string | undefined;
 	const worker = Object.assign(Object.create(EdgeWorker.prototype), {
 		agentSessionManager: {
 			getSession: () => ({}),
@@ -158,7 +188,7 @@ function fixture(runnerType: RunnerType = "codex") {
 			_id: unknown,
 			instruction: string,
 		) => ({
-			runnerType,
+			runnerType: defaultRunner,
 			config: {
 				model: "fixture",
 				workingDirectory: workspace,
@@ -177,6 +207,8 @@ function fixture(runnerType: RunnerType = "codex") {
 					turns.push({
 						runner: type,
 						resume: config.resumeSessionId,
+						model: config.model,
+						instruction: config.appendSystemPrompt,
 						prompt,
 						snapshot: loadFactoryContextSnapshot(
 							(
@@ -184,6 +216,8 @@ function fixture(runnerType: RunnerType = "codex") {
 							).args.at(-1)!,
 						),
 					});
+					if (config.resumeSessionId && resumeError)
+						throw new Error(resumeError);
 					await config.onMessage?.({
 						type: "system",
 						subtype: "init",
@@ -202,8 +236,8 @@ function fixture(runnerType: RunnerType = "codex") {
 		script: async () => ({}),
 		tool: async () => ({}),
 	};
-	const runtime = () => {
-		const value = new WorkflowRuntime(home, hooks);
+	const runtime = (overrides: Partial<RuntimeHooks> = {}) => {
+		const value = new WorkflowRuntime(home, { ...hooks, ...overrides });
 		runtimes.push(value);
 		return value;
 	};
@@ -213,6 +247,12 @@ function fixture(runnerType: RunnerType = "codex") {
 		turns,
 		runtime,
 		worker,
+		setDefaultRunner: (next: RunnerType) => {
+			defaultRunner = next;
+		},
+		setResumeError: (next: string) => {
+			resumeError = next;
+		},
 		setOutput: (next: typeof output) => {
 			output = next;
 		},
@@ -475,13 +515,14 @@ it("keeps large and native transcript reads on the scoped MCP connection", () =>
 	});
 });
 
-it("fails explicitly if a revisited resume node has no native session", async () => {
+it("continues with a warning if a revisited resume node has no native session", async () => {
 	const f = fixture();
+	f.setOutput(() => ({ status: "completed" }));
 	const runtime = new WorkflowRuntime(f.home, {
-		agent: async () => ({
-			status: "needs-input",
-			display: { title: "Choose a value" },
-		}),
+		agent: async (ctx) =>
+			ctx.resumeFallback
+				? f.worker.executeFactoryAgent(ctx)
+				: { status: "needs-input", display: { title: "Choose a value" } },
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
@@ -498,14 +539,248 @@ it("fails explicitly if a revisited resume node has no native session", async ()
 	void runtime.launch(run);
 	await waitForRuntime(() => expect(answer).toBeTypeOf("function"));
 	answer!();
-	await waitForRuntime(() => expect(run.status).toBe("failed"));
-	expect(run.error).toContain(
-		"previous visit did not retain a native session ID",
+	await waitForRuntime(() => expect(run.status).toBe("completed"));
+	expect(run.error).toBeUndefined();
+	expect(f.turns[0]!.resume).toBeUndefined();
+	expect(f.turns[0]!.prompt).toContain(
+		'Previous output (JSON):\n{"status":"needs-input","display":{"title":"Choose a value"}}',
 	);
+	expect(
+		run.events.some(
+			(event) =>
+				event.message.includes("Warning:") &&
+				event.message.includes("not retained"),
+		),
+	).toBe(true);
 });
 
-it("rejects cross-runner native session reuse before launching another runner", async () => {
-	const f = fixture("codex");
+it("uses the saved runner and model when current defaults have changed", async () => {
+	const f = fixture();
+	f.setOutput(() => ({ status: "completed" }));
+	const runtime = f.runtime({
+		agent: async (ctx) => {
+			ctx.resumeAgent = {
+				runner: "claude",
+				model: "saved-model",
+				sessionId: "claude-native",
+			};
+			return f.worker.executeFactoryAgent(ctx);
+		},
+	});
+	const workflow = WorkflowSchema.parse({
+		id: "saved-settings",
+		name: "Saved settings",
+		engineVersion: "nodes-v1",
+		steps: [nestedAgent],
+	});
+	const run = runtime.create({
+		repositoryId: "repo",
+		workspace: f.workspace,
+		workflow,
+		input: "Compose",
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	await runtime.launch(run);
+	expect([run.status, run.error]).toEqual(["completed", undefined]);
+	expect(
+		f.turns.map(({ runner, model, resume }) => ({ runner, model, resume })),
+	).toEqual([
+		{ runner: "claude", model: "saved-model", resume: "claude-native" },
+	]);
+});
+
+const nestedAgent = {
+	id: "compose",
+	name: "Compose",
+	type: "agent",
+	prompt: "Inspect current data",
+	session: "resume",
+	reads: { data: "@launchInputs/data" },
+	next: "end",
+};
+
+it.each([
+	"fanout",
+	"foreach",
+	"workflow",
+] as const)("resumes each structural agent in a revisited %s after cold restart", async (kind) => {
+	const f = fixture();
+	f.setOutput((turn) => ({ turn }));
+	let runtime = f.runtime();
+	const child = WorkflowSchema.parse({
+		id: "child",
+		name: "Child",
+		engineVersion: "nodes-v1",
+		triggers: ["workflow"],
+		steps: [nestedAgent],
+	});
+	const enclosing =
+		kind === "fanout"
+			? {
+					type: "fanout",
+					groups: [
+						[{ ...nestedAgent, id: "left" }],
+						[{ ...nestedAgent, id: "right" }],
+					],
+				}
+			: kind === "foreach"
+				? {
+						type: "foreach",
+						items: { values: [{ id: "alpha" }, { id: "beta" }] },
+						concurrency: 1,
+						body: [nestedAgent],
+					}
+				: { type: "workflow", workflow: "child" };
+	const workflow = WorkflowSchema.parse({
+		id: "nested-resume",
+		name: "Nested resume",
+		engineVersion: "nodes-v1",
+		steps: [
+			{ id: "nested", name: "Nested", ...enclosing, next: "again" },
+			{
+				id: "again",
+				name: "Again",
+				type: "test-agent-round",
+				branches: [{ when: { path: "again", equals: true }, next: "nested" }],
+				next: "end",
+			},
+		],
+	});
+	runtime.updateWorkflows([...runtime.listWorkflows(), workflow, child]);
+	const run = runtime.create({
+		repositoryId: "repo",
+		workspace: f.workspace,
+		workflow,
+		input: "Review",
+		launchInputs: { data: "current-value" },
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	void runtime.launch(run);
+	await waitForRuntime(() => expect(answer, run.error).toBeTypeOf("function"));
+	const count = kind === "workflow" ? 1 : 2;
+	expect(f.turns).toHaveLength(count);
+	expect(f.turns.every((turn) => turn.resume === undefined)).toBe(true);
+	runtime.stop(run.id);
+	await runtime.shutdown();
+	answer = undefined;
+	// Manual launches can have no frozen run.runner; a changed repository default must not change the saved session's runner/model.
+	f.setDefaultRunner("claude");
+	runtime = f.runtime();
+	runtime.resume(run.id);
+	await waitForRuntime(() =>
+		expect(answer, runtime.get(run.id).error).toBeTypeOf("function"),
+	);
+	answer!();
+	await waitForRuntime(() =>
+		expect(runtime.get(run.id).status, runtime.get(run.id).error).toBe(
+			"completed",
+		),
+	);
+	expect(f.turns).toHaveLength(2 * count);
+	expect(f.turns.slice(count).map((turn) => turn.resume)).toEqual(
+		Array.from({ length: count }, (_, index) => `native-codex-${index + 1}`),
+	);
+	for (const turn of f.turns) {
+		expect(turn.runner).toBe("codex");
+		expect(turn.model).toBe("fixture");
+		expect(turn.instruction).toContain(
+			"Execute the configured agent node: Compose.",
+		);
+		expect(turn.prompt).toContain(
+			'Current reads (JSON):\n{"data":"current-value"}',
+		);
+	}
+});
+
+it.each([
+	false,
+	true,
+])("preserves cloned foreach agent reads and ids-resolve (restart=%s)", async (restart) => {
+	const f = fixture();
+	f.setOutput(() => ({ selected: ["allowed"] }));
+	let paused = false;
+	let runtime = f.runtime(
+		restart
+			? {
+					agent: async (ctx) => {
+						paused = true;
+						await new Promise<void>((_resolve, reject) =>
+							ctx.signal.addEventListener(
+								"abort",
+								() => reject(ctx.signal.reason),
+								{
+									once: true,
+								},
+							),
+						);
+					},
+				}
+			: {},
+	);
+	const workflow = WorkflowSchema.parse({
+		id: "foreach-restart",
+		name: "Restart",
+		engineVersion: "nodes-v1",
+		steps: [
+			{
+				id: "each",
+				name: "Each",
+				type: "foreach",
+				items: { values: [{ id: "alpha", ids: ["allowed"] }] },
+				body: [
+					{
+						...nestedAgent,
+						reads: { item: "@item" },
+						verify: [
+							{
+								check: "ids-resolve",
+								path: "/selected/*",
+								source: "item",
+								ids: "/ids/*",
+							},
+						],
+					},
+				],
+			},
+		],
+	});
+	const run = runtime.create({
+		repositoryId: "repo",
+		workspace: f.workspace,
+		workflow,
+		input: "Inspect",
+		runner: "codex",
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	void runtime.launch(run);
+	if (restart) {
+		await waitForRuntime(() => expect(paused).toBe(true));
+		await runtime.shutdown();
+		runtime = f.runtime();
+		runtime.resumeAll();
+	}
+	await waitForRuntime(() =>
+		expect(runtime.get(run.id).status, runtime.get(run.id).error).toBe(
+			"completed",
+		),
+	);
+	expect(f.turns).toHaveLength(1);
+	expect(f.turns[0]!.instruction).toContain(
+		"Execute the configured agent node: Compose.",
+	);
+	expect(f.turns[0]!.prompt).toContain(
+		'Current reads (JSON):\n{"item":{"id":"alpha","ids":["allowed"]}}',
+	);
+	expect(runtime.get(run.id).outputs.each).toMatchObject({
+		results: { alpha: { compose: { selected: ["allowed"] } } },
+	});
+});
+
+it.each([
+	"thread/resume failed: no rollout found for thread id native-codex-1",
+	"spawn codex ENOENT",
+])("falls back once to fresh context when resume fails: %s", async (failure) => {
+	const f = fixture();
 	const runtime = f.runtime();
 	const workflow = WorkflowSchema.parse(recipe);
 	const run = runtime.create({
@@ -513,19 +788,102 @@ it("rejects cross-runner native session reuse before launching another runner", 
 		workspace: f.workspace,
 		workflow,
 		input: "Compose",
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	void runtime.launch(run);
+	await waitForRuntime(() => expect(answer, run.error).toBeTypeOf("function"));
+	f.setResumeError(failure);
+	if (failure.includes("ENOENT")) f.setDefaultRunner("claude");
+	answer!();
+	await waitForRuntime(() => expect(run.status, run.error).toBe("completed"));
+	expect(f.turns.map((turn) => turn.resume)).toEqual([
+		undefined,
+		"native-codex-1",
+		undefined,
+	]);
+	expect(f.turns[2]!.runner).toBe(
+		failure.includes("ENOENT") ? "claude" : "codex",
+	);
+	expect(f.turns[2]!.prompt).toContain(
+		'Previous output (JSON):\n{"status":"needs-input","display":{"title":"Choose a value"}}',
+	);
+	expect(f.turns[2]!.prompt).toContain(
+		'Current reads (JSON):\n{"answer":"Use the saved value"}',
+	);
+	expect(
+		run.events.some((event) =>
+			event.message.includes("Warning: native session cannot be resumed"),
+		),
+	).toBe(true);
+});
+
+it.each([
+	"fresh",
+	"resume",
+])("respects session=%s when a stale bound producer is refreshed", async (session) => {
+	const f = fixture();
+	f.setOutput((turn) => {
+		if (turn === 2) {
+			writeFileSync(join(f.workspace, "proof.txt"), "Changed revision\n");
+			execFileSync("git", ["add", "."], { cwd: f.workspace });
+			execFileSync(
+				"git",
+				[
+					"-c",
+					"user.name=Fixture",
+					"-c",
+					"user.email=fixture@example.invalid",
+					"-c",
+					"commit.gpgsign=false",
+					"commit",
+					"-m",
+					"Change [skip ci]",
+				],
+				{ cwd: f.workspace },
+			);
+		}
+		return { receipt: turn };
+	});
+	const runtime = f.runtime();
+	const workflow = WorkflowSchema.parse({
+		id: "freshness",
+		name: "Freshness",
+		engineVersion: "nodes-v1",
+		steps: [
+			{
+				...nestedAgent,
+				id: "inspection",
+				revision: "bound",
+				session,
+				next: "mutate",
+			},
+			{ ...nestedAgent, id: "mutate", session: "fresh", next: "consume" },
+			{
+				...nestedAgent,
+				id: "consume",
+				reads: { source: "inspection" },
+				session: "fresh",
+				next: "end",
+			},
+		],
+	});
+	const run = runtime.create({
+		repositoryId: "repo",
+		workspace: f.workspace,
+		workflow,
+		input: "Inspect",
 		runner: "codex",
 		triggerOrigin: { type: "manual", workflowId: workflow.id },
 	});
-	await expect(
-		f.worker.executeFactoryAgent({
-			run,
-			step: workflow.steps[0]!,
-			input: {},
-			signal: new AbortController().signal,
-			log: () => {},
-			evidenceDir: join(f.home, "evidence"),
-			resumeAgent: { runner: "claude", sessionId: "claude-native" },
-		}),
-	).rejects.toThrow("Cannot resume claude session with codex");
-	expect(f.turns).toHaveLength(0);
+	await runtime.launch(run);
+	expect([run.status, run.error]).toEqual(["completed", undefined]);
+	expect(f.turns.map((turn) => turn.resume)).toEqual([
+		undefined,
+		undefined,
+		session === "resume" ? "native-codex-1" : undefined,
+		undefined,
+	]);
+	expect(f.turns[3]!.prompt).toContain(
+		'Current reads (JSON):\n{"source":{"receipt":3}}',
+	);
 });

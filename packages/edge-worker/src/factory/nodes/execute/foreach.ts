@@ -4,7 +4,7 @@ import { digest } from "../../Delivery.js";
 import { aggregateForeach, prepareForeach } from "../../Foreach.js";
 import { acceptedProgressValue } from "../../ProgressBudget.js";
 import { stepBindings } from "../../StepBindings.js";
-import { registerWorkflowConfig } from "../../StepConfig.js";
+import { isNodeEngineStep, registerWorkflowConfig } from "../../StepConfig.js";
 import { assertForeachBody } from "../../Workflow.js";
 import { snapshotWorkflowInput } from "../../WorkflowInput.js";
 import type { NodeContext } from "../NodeDefinition.js";
@@ -85,6 +85,7 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 	registerWorkflowConfig(
 		{
 			id: workflowId,
+			engineVersion: isNodeEngineStep(step) ? "nodes-v1" : undefined,
 			stepConfigVersion: "step-config-v1",
 			steps: loop.body,
 		},

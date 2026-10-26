@@ -155,11 +155,14 @@ and `serviceTier`, subject to the selected runner's existing support. Graph rout
 visit limits, resource constraints and context policies retain their usual meaning.
 
 `session` defaults to `fresh`: each graph visit starts a new native conversation.
-`resume` retains the node's last native session in its lexical graph frame and
-continues it when a loop revisits that node. The next message contains the newly
+`resume` retains the node's last native session by its structural path and
+continues it when a loop revisits that node or its enclosing Parallel, For each
+or called recipe. The next message contains the newly
 resolved named reads (bounded values inline, large or native-transcript reads
 through scoped factory-context references); the factory-context connection is rebuilt with current data.
-Separate nodes, calls and item frames keep separate session identities. An
+Separate nodes, call sites, Parallel branches and For each item IDs keep separate
+session identities, even when child frames are rebuilt. Reordering items keeps
+each session with its item ID. An
 interrupted visit and output-correction retries continue their saved session in
 either mode; `fresh` controls **new visits**, not recovery within a visit.
 Session identities survive checkpoints and cold restarts. A resumed visit never
@@ -167,11 +170,14 @@ reuses its previous completed result as the new output.
 
 All currently selectable runners support native resume: Claude uses SDK `resume`,
 Codex resumes its app-server thread, Gemini uses `-r`, Cursor resumes its agent,
-and OpenCode uses `--session`. Native errors propagate through the existing
-recovery path; they do not silently start a fresh conversation. A different runner
-cannot consume another runner's session ID. A revisited `resume` node with no
-retained native ID fails with an explicit error; select `fresh` when the runner
-cannot retain a resumable session.
+and OpenCode uses `--session`. Resume uses the runner and model saved with the
+conversation, even if repository defaults have changed. If the native ID,
+transcript or runner is unavailable, the runtime logs a warning and makes one
+fresh attempt with the prior output and current reads in the new message
+(large prior outputs remain on scoped factory-context access). Other native
+errors retain the existing recovery behavior. Dependency refreshes respect
+`fresh` versus `resume`; correction retries within the same visit retain their
+conversation.
 
 `verify` accepts only selector-based generic evidence checks:
 

@@ -71,3 +71,52 @@ Provider-specific errors retain existing recovery semantics.
 Every fixture shuts down its runtime, stops scoped MCP processes and removes its
 owned temporary home/repository. No production tracker, repository or provider
 session is touched.
+
+
+## Review follow-up: nested agents and unavailable sessions
+
+This follow-up supersedes the initial missing-ID and cross-runner failure
+assertions above. It uses the same real Factory runtime/EdgeWorker/scoped MCP
+path with deterministic native runners; no live provider execution or credits.
+
+Before applying the fixes, the new focused regressions fail against `822f2cf1`:
+
+- Revisited Parallel branches receive `[undefined, undefined]` instead of their
+  first native session IDs after a cold restart.
+- The first For each agent cannot resolve its named `ids-resolve` source and
+  exhausts its two output-correction attempts.
+
+The follow-up scenarios assert:
+
+- For each agents receive the generic instructions, current item reads and
+  successful `ids-resolve` verification on the first run and after restarting
+  inside an unfinished cloned body.
+- Parallel branches, For each items and called recipes resume their original
+  session IDs when the enclosing node is revisited after cold restart. Branches
+  and item IDs remain isolated, and completed outputs are not replayed.
+- Manual launches without `run.runner` keep the saved runner and model even
+  after the repository default changes.
+- Missing native IDs, missing Codex rollouts and unavailable runner executables
+  log a warning and make one fresh attempt with the prior output and current
+  reads. The unavailable-runner case uses the current default runner.
+- A stale bound producer starts fresh in `fresh` mode and resumes in `resume`
+  mode; its consumer receives the refreshed result.
+
+The clone/registration audit found that Parallel's selected steps already use
+`inheritStepConfig`, called recipes use their accepted registered definitions,
+and startup/recovery registers the frozen definitions. For each re-registration
+was the missing engine marker; it now derives that marker from its accepted
+parent step. Session lookup uses the existing structural graph keys (call site,
+branch index, item ID), persisted independently of newly constructed child frames.
+
+Validation from `packages/edge-worker`:
+
+```sh
+pnpm exec vitest run test/AgentNode.test.ts test/FactoryRolePrompts.test.ts test/EvidenceChecks.test.ts test/NodeRegistry.test.ts test/GenericOutputProtocols.test.ts test/StepConfig.test.ts test/LegacyStepConfigResume.test.ts test/FactoryAgentSettings.test.ts test/Workflow*.test.ts test/Foreach*.test.ts test/*Fanout*.test.ts test/CallFreshness.test.ts test/RevisionBinding*.test.ts test/prompt-assembly*.test.ts --maxWorkers=2 --reporter=dot
+```
+
+**Passed: 32 files / 426 tests**, including all 39 agent-node tests and all nine
+unchanged legacy prompt-assembly files. Edge-worker typecheck and diff whitespace
+checks pass. The normal pre-commit hook runs formatting, full monorepo build and
+full monorepo typechecks; lint-staged's optional backup stash is disabled to honor
+the no-stash instruction. Shipping results are also recorded on PR #200.
