@@ -1,7 +1,7 @@
 # Factory node guarantees: post-effect revisions
 
 **Date:** 2026-10-26
-**Tested implementation:** `fix/156-post-effect-revisions` over `7ca69084`
+**Tested implementation:** `c7fad76b` over `7ca69084`
 (Taskbot #158 follow-up, epic #156).
 **Mode:** real disposable Git source clone, linked worktree and local bare remote;
 scripted PR provider; production Factory runtime, Display and authenticated API
@@ -61,4 +61,7 @@ pnpm --filter ./packages/edge-worker typecheck
 ```
 
 The edge-worker typecheck, changed-file Biome checks and initial workspace build
-also passed. The focused run includes the maintained scripted drive above.
+also passed. The normal pre-commit hook passed its Biome, workspace build and
+workspace typecheck gates. The focused run includes the maintained scripted drive
+above. [PR #207](https://github.com/jappyjan/bobs-factory/pull/207) retains the
+implementation and this evidence.
