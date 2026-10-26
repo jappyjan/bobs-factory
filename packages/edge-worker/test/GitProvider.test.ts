@@ -545,7 +545,7 @@ it("exposes GitLab IO reads, metadata updates, comments and required/optional ch
 					commit: { id: "head" },
 					pipeline: { sha: "head" },
 				},
-				{ id: 6, name: "optional", status: "success", allow_failure: true },
+				{ id: 6, name: "optional", status: "failed", allow_failure: true },
 			]);
 		if (path.endsWith("/trace")) return "Runner failed to allocate a machine";
 		if (path.endsWith("/notes") && args.includes("POST"))
@@ -563,7 +563,13 @@ it("exposes GitLab IO reads, metadata updates, comments and required/optional ch
 		headRefOid: "head",
 		baseSha: "base",
 		labels: ["example"],
-		mergeability: "draft_status",
+		mergeability: "unknown",
+		providerMergeability: "draft_status",
+		comments: [expect.objectContaining({ body: "Please fix it" })],
+		blockers: expect.arrayContaining([
+			expect.objectContaining({ kind: "draft" }),
+		]),
+		queued: false,
 		reviews: [{ user: { username: "alice" } }],
 		unresolvedThreads: [{ id: "discussion" }],
 	});
@@ -581,6 +587,29 @@ it("exposes GitLab IO reads, metadata updates, comments and required/optional ch
 			expect.objectContaining({ name: "optional", required: false }),
 		]),
 	);
+	// Polling again must reuse immutable failure logs, including across adapter recreation.
+	const receipts = {};
+	const polling = gitProvider(cmd, { type: "gitlab", repositoryUrl }, receipts);
+	cmd.mockClear();
+	await polling.read!(url);
+	await gitProvider(cmd, { type: "gitlab", repositoryUrl }, receipts).read!(
+		url,
+	);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/jobs/5/trace")),
+	).toHaveLength(1);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/jobs/6/trace")),
+	).toHaveLength(0);
+	// One MR + one discussion fetch per snapshot; no separate PR-read inspection.
+	expect(
+		cmd.mock.calls.filter(([, args]) =>
+			/\/merge_requests\/17(?:\?|$)/.test(args[1]!),
+		),
+	).toHaveLength(2);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/discussions")),
+	).toHaveLength(2);
 	await provider.update!(url, { title: "New title", body: "New body" });
 	expect(cmd.mock.calls.at(-1)![1]).toEqual(
 		expect.arrayContaining([
@@ -619,6 +648,9 @@ it("exposes GitHub IO reads, metadata updates and comments through native transp
 				html_url: `${prUrl}#issuecomment-8`,
 			});
 		const receipt = githubApiReceipt(args, {
+			labels: { nodes: [{ name: "example" }] },
+			mergeStateStatus: "BEHIND",
+			reviewDecision: "CHANGES_REQUESTED",
 			statusCheckRollup: {
 				contexts: {
 					nodes: [
@@ -655,6 +687,14 @@ it("exposes GitHub IO reads, metadata updates and comments through native transp
 		state: "OPEN",
 		labels: ["example"],
 		mergeability: "mergeable",
+		providerMergeability: "BEHIND",
+		mergeStateStatus: "BEHIND",
+		reviewDecision: "CHANGES_REQUESTED",
+		blockers: expect.arrayContaining([
+			expect.objectContaining({ kind: "stale" }),
+			expect.objectContaining({ kind: "reviews" }),
+		]),
+		queued: false,
 	});
 	expect(result.checks).toEqual(
 		expect.arrayContaining([
@@ -669,6 +709,11 @@ it("exposes GitHub IO reads, metadata updates and comments through native transp
 			expect.objectContaining({ name: "optional", required: false }),
 		]),
 	);
+	expect(
+		cmd.mock.calls.filter(
+			([, args]) => githubRequest(args).path === "repos/test/repo/pulls/1",
+		),
+	).toHaveLength(0);
 	await provider.update!(prUrl, { title: "Title", body: "Body" });
 	expect(githubRequest(cmd.mock.calls.at(-1)![1])).toMatchObject({
 		method: "PATCH",
@@ -686,4 +731,33 @@ it("exposes GitHub IO reads, metadata updates and comments through native transp
 			body: "Body",
 		}),
 	).toThrow("selected repository");
+});
+
+it("GitHub retryCheck reports a running Actions run as skipped", async () => {
+	const cmd = vi.fn(async (_exe: string, args: string[]) => {
+		const request = githubRequest(args);
+		if (request.path.endsWith("/actions/runs/42"))
+			return JSON.stringify({
+				id: 42,
+				head_sha: "head",
+				run_attempt: 1,
+				status: "in_progress",
+			});
+		return JSON.stringify(githubApiReceipt(args));
+	});
+	const provider = gitProvider(cmd, {
+		type: "github",
+		repositoryUrl: "https://github.com/test/repo",
+	});
+	expect(
+		await provider.retryCheck!("https://github.com/test/repo/pull/1", {
+			kind: "github-run",
+			id: "42",
+			attempt: 1,
+			headSha: "head",
+		}),
+	).toEqual({ requested: false, reason: "in-progress" });
+	expect(
+		cmd.mock.calls.some(([, args]) => githubRequest(args).method === "POST"),
+	).toBe(false);
 });

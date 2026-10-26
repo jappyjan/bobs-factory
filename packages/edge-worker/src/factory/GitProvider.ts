@@ -58,7 +58,8 @@ export interface GitProvider {
 	retryCheck?(
 		url: string,
 		retry: NonNullable<ProviderCheck["retry"]>,
-	): Promise<void>;
+		// biome-ignore lint/suspicious/noConfusingVoidType: Existing adapters return no retry receipt.
+	): Promise<void | { requested: boolean; reason?: string }>;
 	list(branch: string): Promise<{ url: string; isDraft: boolean }[]>;
 	create(input: {
 		branch: string;
@@ -221,7 +222,7 @@ export function gitProvider(
 	if (snapshot.type === "github") {
 		provider = githubProvider(command, repository.url, checkReceipts);
 	} else if (snapshot.type === "gitlab")
-		provider = gitlabProvider(command, repository);
+		provider = gitlabProvider(command, repository, checkReceipts);
 	else if (snapshot.type === "custom") {
 		const invoke = async (operation: string, input: unknown) => {
 			const directory = mkdtempSync(join(tmpdir(), "factory-git-provider-"));

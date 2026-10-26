@@ -75,6 +75,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 			case "commit": {
 				await assertWorktree(io);
 				const message = textRead(ctx, "message");
+				const verify = ctx.step.verify;
 
 				// Retain the pre-commit head separately so a restart can distinguish a lost
 				// successful response from a signing/hook failure that created no commit.
@@ -83,22 +84,23 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				});
 				const { parent } = await ctx.effect(
 					`git:commit-parent:${repository.id}`,
-					{ message },
+					{ message, verify },
 					observe,
 					observe,
 				);
 				return ctx.effect(
 					`git:commit:${repository.id}`,
-					{ message },
+					{ message, verify },
 					async (key) => {
 						if ((await command("git", ["rev-parse", "HEAD"])) !== parent)
 							throw new Error("Worktree head changed before commit");
 						if (!(await command("git", ["status", "--porcelain"])))
 							return { head: parent, committed: false };
 						await command("git", ["add", "-A"]);
-						// Keep hooks, configured identity, signing and SSH agent handling intact.
+						// Recipes may bypass hooks; identity, signing and SSH handling still apply.
 						await command("git", [
 							"commit",
+							...(verify ? [] : ["--no-verify"]),
 							"-m",
 							message,
 							"--trailer",
@@ -127,11 +129,13 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 					`git:push:${repository.id}`,
 					{ head, branch },
 					async () => {
+						if ((await command("git", ["rev-parse", "HEAD"])) !== head)
+							throw new Error("Worktree head changed before push");
 						await command("git", [
 							"push",
 							"-u",
 							"origin",
-							`${head}:refs/heads/${branch}`,
+							`HEAD:refs/heads/${branch}`,
 						]);
 						return receipt;
 					},
@@ -142,11 +146,8 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 							"origin",
 							`refs/heads/${branch}`,
 						]);
-						return remote.split(/\s/)[0] === head
-							? receipt
-							: !remote
-								? null
-								: undefined;
+						// A normal push can safely be resent even when the branch exists.
+						return remote.split(/\s/)[0] === head ? receipt : null;
 					},
 				);
 			}

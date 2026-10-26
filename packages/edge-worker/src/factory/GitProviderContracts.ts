@@ -17,6 +17,7 @@ export const PullRequestSchema = z.object({
 	isDraft: z.boolean(),
 	isCrossRepository: z.boolean(),
 });
+export type PullRequest = z.infer<typeof PullRequestSchema>;
 export const TakeoverPullRequestSchema = PullRequestSchema.extend({
 	state: z.literal("OPEN"),
 	isCrossRepository: z.literal(false),
@@ -126,7 +127,19 @@ export const RequestCommentSchema = z.object({
 export type RequestComment = z.infer<typeof RequestCommentSchema>;
 export const RequestReadSchema = PullRequestSchema.extend({
 	baseSha: z.string().min(1),
-	mergeability: z.string(),
+	mergeability: z.enum(["mergeable", "conflicting", "unknown"]),
+	providerMergeability: z.string().nullable(),
+	mergeStateStatus: z.string().nullable().optional(),
+	reviewDecision: z.string().nullable().optional(),
+	comments: z.array(z.unknown()),
+	blockers: z.array(
+		z.object({
+			kind: z.string(),
+			message: z.string(),
+			action: z.enum(["fix", "wait", "human"]),
+		}),
+	),
+	queued: z.boolean(),
 	reviews: z.array(z.unknown()),
 	unresolvedThreads: z.array(z.unknown()),
 	reviewComments: z.array(z.unknown()),

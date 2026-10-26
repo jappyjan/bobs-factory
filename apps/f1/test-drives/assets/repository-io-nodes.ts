@@ -42,6 +42,10 @@ git(repo, "commit", "-qm", "Fixture");
 git(repo, "clone", "-q", "--bare", repo, remote);
 git(repo, "remote", "add", "origin", remote);
 const base = git(repo, "rev-parse", "HEAD");
+// Verify that the recipe's opt-out works with a real failing commit hook.
+const hook = join(repo, ".git", "hooks", "pre-commit");
+writeFileSync(hook, "#!/bin/sh\nexit 1\n");
+chmodSync(hook, 0o755);
 const statePath = join(root, "provider.json");
 writeFileSync(statePath, JSON.stringify({ creates: 0, notes: [] }));
 process.env.F1_IO_STATE = statePath;
@@ -58,7 +62,7 @@ const save=()=>fs.writeFileSync(file,JSON.stringify(s));
 const out=(v)=>{save();process.stdout.write(JSON.stringify(v));};
 if(path.includes('/merge_requests?')) out(s.mr?[s.mr]:[]);
 else if(path.endsWith('/merge_requests')&&method==='POST') {
- s.creates++; s.mr={web_url:'https://gitlab.example/team/project/-/merge_requests/1',iid:1,title:fields.title,description:fields.description,
+ s.creates++; s.mr={web_url:'https://gitlab.example/team/project/-/merge_requests/1',iid:1,title:fields.title.trim(),description:fields.description+'\\n',
  source_branch:fields.source_branch,target_branch:fields.target_branch,sha:git('rev-parse','HEAD'),state:'opened',draft:true,
  source_project_id:1,target_project_id:1,detailed_merge_status:'draft_status',labels:['fixture'],head_pipeline:{id:1,sha:git('rev-parse','HEAD'),status:'success'}};
  save(); process.stderr.write('Simulated lost response after creation');process.exit(1);
@@ -73,7 +77,8 @@ else if(path.includes('/pipelines/1/jobs')) out([{id:1,name:'build',status:'succ
 else if(path==='projects/team%2Fproject') out({id:1,only_allow_merge_if_pipeline_succeeds:true,squash_option:'always'});
 else if(path.includes('/merge_requests/1')) {
  if(method==='PUT'){if(fields.title){s.mr.title=fields.title;s.mr.draft=/^Draft:/.test(fields.title);}if(fields.description)s.mr.description=fields.description;}
- out(s.mr);
+ if(path.includes('with_merge_status_recheck')&&!s.mr.draft&&!s.staleObserved){s.staleObserved=true;out({...s.mr,sha:${JSON.stringify(base)}});}
+ else out(s.mr);
 }
 else {process.stderr.write('Unhandled fixture API '+path);process.exit(2);}
 `,
@@ -109,6 +114,7 @@ const workflow = WorkflowSchema.parse({
 			name: "Commit",
 			type: "git",
 			op: "commit",
+			verify: false,
 			reads: { message: "seed/message" },
 		},
 		{ id: "push", name: "Push", type: "git", op: "push" },
@@ -141,6 +147,13 @@ const workflow = WorkflowSchema.parse({
 			reads: { pr: "pr" },
 		},
 		{ id: "ci", name: "CI", type: "ci", op: "status", reads: { pr: "pr" } },
+		{
+			id: "ciFresh",
+			name: "CI fresh",
+			type: "ci",
+			op: "status",
+			reads: { pr: "pr" },
+		},
 		{ id: "diff", name: "Diff", type: "git", op: "diff" },
 	],
 });
@@ -169,7 +182,7 @@ const config: EdgeWorkerConfig = {
 		"mock",
 		JSON.stringify({
 			message: "feat: IO fixture",
-			title: "IO fixture",
+			title: "IO fixture\n",
 			body: "Fixture body",
 			questions: [],
 		}),
@@ -212,6 +225,10 @@ try {
 		const n = catalog.nodeTypes.find((n: any) => n.type === type);
 		assert(n);
 		assert(n.operationEffects);
+		assert.equal(
+			n.operationEffects[type === "pr" ? "read" : "status"],
+			"read-only",
+		);
 		assert(!("execute" in n));
 	}
 	const started = await request("/api/runs", {
@@ -236,6 +253,7 @@ try {
 		),
 		committed,
 	);
+	assert.equal(git(run.workspace, "rev-parse", "@{upstream}"), committed);
 	assert(Object.values(run.nodeEffects!).some((e) => e.phase === "uncertain"));
 	await worker.stop();
 	worker = new EdgeWorker(config);
@@ -255,6 +273,18 @@ try {
 	assert.equal(ci.base, base);
 	assert.equal(ci.checks[0].required, true);
 	assert.equal(ci.summary.failed, 0);
+	assert.equal(ci.headMatches, false);
+	assert.equal(ci.prHead, base);
+	assert.equal(ci.localHead, committed);
+	assert.equal(ci.summary.complete, false);
+	const fresh = (run.outputs.ciFresh as any).repositories[0];
+	assert.equal(fresh.headMatches, true);
+	assert.equal(fresh.summary.complete, true);
+	const read = (run.outputs.read as any).repositories[0];
+	assert.equal(read.providerMergeability, "draft_status");
+	assert.equal(read.queued, false);
+	assert(Array.isArray(read.comments));
+	assert(read.blockers.some((b: any) => b.kind === "draft"));
 	assert.deepEqual((run.outputs.diff as any).repositories[0].files, [
 		"README.md",
 	]);
@@ -275,7 +305,9 @@ try {
 					"uncertain PR creation",
 					"cold restart reconciliation",
 					"PR read/comment/ready",
-					"single-read current-head CI",
+					"head-lag CI then fresh read",
+					"upstream and commit hook opt-out",
+					"provider-normalized title/body",
 					"diff",
 					"activity and stamps",
 				],

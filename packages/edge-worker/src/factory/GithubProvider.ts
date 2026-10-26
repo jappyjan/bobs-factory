@@ -50,30 +50,25 @@ export function githubProvider(
 	};
 	return {
 		read: async (url) => {
-			const pr = await api.request<any>("GET", path(url));
+			path(url);
 			const snapshot = await inspectGithubReadiness(
 				command,
 				url,
 				checkReceipts,
 			);
-			if (
-				pr.head?.sha !== snapshot.headSha ||
-				pr.base?.ref !== snapshot.baseRefName
-			)
-				throw new Error("PR revision changed during read");
+			if (!snapshot.request) throw new Error("PR metadata unavailable");
 			return {
-				...githubPullRequest(pr),
+				...snapshot.request,
 				baseSha: snapshot.baseSha,
-				mergeability:
-					pr.mergeable === true
-						? "mergeable"
-						: pr.mergeable === false
-							? "conflicting"
-							: "unknown",
+				mergeability: snapshot.mergeability ?? "unknown",
+				providerMergeability: snapshot.providerMergeability ?? null,
+				mergeStateStatus: snapshot.mergeStateStatus ?? null,
+				reviewDecision: snapshot.reviewDecision ?? null,
+				comments: snapshot.comments,
+				blockers: snapshot.blockers,
+				queued: snapshot.queued,
 				reviews: snapshot.reviews,
 				unresolvedThreads: snapshot.threads,
-				reviewComments: await api.pages(`${path(url)}/comments`),
-				labels: (pr.labels ?? []).map((label: any) => label.name),
 				checks: snapshot.checks,
 			};
 		},
@@ -116,8 +111,13 @@ export function githubProvider(
 				receipt.run_attempt !== retry.attempt ||
 				receipt.status !== "completed"
 			)
-				return;
+				return {
+					requested: false,
+					reason:
+						receipt.status !== "completed" ? "in-progress" : "retry-changed",
+				};
 			await api.request("POST", `${runPath}/rerun-failed-jobs`);
+			return { requested: true };
 		},
 		list: async (branch) =>
 			(

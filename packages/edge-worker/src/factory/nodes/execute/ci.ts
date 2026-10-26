@@ -8,10 +8,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 		const provider = await io.provider();
 		const url = await requestUrl(ctx, io, provider);
 		const snapshot = await provider.readiness(url);
-		if (snapshot.headSha !== io.head)
-			throw new Error(
-				"CI status requires the current worktree head to be pushed to the PR",
-			);
+		const headMatches = snapshot.headSha === io.head;
 		const checks = snapshot.checks.map((check) => ({
 			name: check.name,
 			required: check.required ?? null,
@@ -33,10 +30,26 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 			const seen = new Set<string>();
 			for (const check of candidates) {
 				const retry = check.retry;
-				if (!provider.retryCheck || !retry || retry.headSha !== io.head)
-					throw new Error(
-						"Provider cannot safely rerun this infrastructure failure",
-					);
+				const reason = !headMatches
+					? "head-mismatch"
+					: !provider.retryCheck
+						? "unsupported"
+						: !retry
+							? "missing-retry-identity"
+							: retry.headSha !== io.head
+								? "retry-head-mismatch"
+								: retry.status && retry.status !== "completed"
+									? "in-progress"
+									: undefined;
+				if (reason || !retry) {
+					reruns.push({
+						check: check.name,
+						retry: retry ?? null,
+						requested: false,
+						skipped: reason,
+					});
+					continue;
+				}
 				const identity = `${retry.kind}:${retry.id}:${retry.attempt}`;
 				if (seen.has(identity)) continue;
 				seen.add(identity);
@@ -46,8 +59,14 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 						`ci:rerun:${io.repository.id}:${identity}`,
 						{ url, retry },
 						async () => {
-							await provider.retryCheck!(url, retry);
-							return receipt;
+							const result = await provider.retryCheck!(url, retry);
+							return result?.requested === false
+								? {
+										...receipt,
+										requested: false,
+										skipped: result.reason ?? "provider-skipped",
+									}
+								: receipt;
 						},
 						async () => {
 							const current = await provider.readiness(url);
@@ -71,7 +90,10 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 		return {
 			url,
 			base: snapshot.baseSha,
-			summary: checksSummary(snapshot.checks),
+			prHead: snapshot.headSha,
+			localHead: io.head,
+			headMatches,
+			summary: checksSummary(snapshot.checks, headMatches),
 			checks,
 			infraFailure: checks.some((c) => c.infraFailure),
 			...(ctx.step.op === "rerun" ? { reruns } : {}),

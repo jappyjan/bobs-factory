@@ -14,6 +14,9 @@ import type {
 export function gitlabProvider(
 	command: ProviderCommand,
 	repository: { host: string; project: string; url: string },
+	checkReceipts: NonNullable<
+		import("./CISupervision.js").CISupervision["checkReceipts"]
+	> = {},
 ): GitProvider {
 	const root = `projects/${encodeURIComponent(repository.project)}`;
 	const api = async (
@@ -92,9 +95,12 @@ export function gitlabProvider(
 		},
 	});
 	const failureExcerpt = async (job: any) => {
-		if (job.status !== "failed") return undefined;
+		if (job.status !== "failed" || job.allow_failure) return undefined;
+		const key = JSON.stringify([repository.url, "gitlab-job", job.id]);
+		if (checkReceipts[key]?.failureLogExcerpt !== undefined)
+			return checkReceipts[key].failureLogExcerpt;
 		try {
-			return (
+			const excerpt = (
 				await command("glab", [
 					"api",
 					`${root}/jobs/${job.id}/trace`,
@@ -102,6 +108,13 @@ export function gitlabProvider(
 					repository.host,
 				])
 			).slice(-8000);
+			checkReceipts[key] = {
+				failure: { kind: "unknown", evidence: job.failure_reason ?? "" },
+				failureLogExcerpt: excerpt,
+			};
+			while (Object.keys(checkReceipts).length > 200)
+				delete checkReceipts[Object.keys(checkReceipts)[0]!];
+			return excerpt;
 		} catch {
 			return job.failure_reason;
 		}
@@ -109,22 +122,18 @@ export function gitlabProvider(
 
 	const provider: GitProvider = {
 		read: async (url) => {
-			const mr = await api(requestPath(url));
 			const snapshot = await provider.readiness(url);
-			const pr = normalize(mr);
-			if (
-				pr.headRefOid !== snapshot.headSha ||
-				pr.baseRefName !== snapshot.baseRefName
-			)
-				throw new Error("MR revision changed during read");
+			if (!snapshot.request) throw new Error("MR metadata unavailable");
 			return {
-				...pr,
+				...snapshot.request,
 				baseSha: snapshot.baseSha,
-				mergeability: mr.detailed_merge_status ?? "unknown",
+				mergeability: snapshot.mergeability ?? "unknown",
+				providerMergeability: snapshot.providerMergeability ?? null,
+				comments: snapshot.comments,
+				blockers: snapshot.blockers,
+				queued: snapshot.queued,
 				reviews: snapshot.reviews,
 				unresolvedThreads: snapshot.threads,
-				reviewComments: await pages(`${requestPath(url)}/discussions`),
-				labels: mr.labels ?? [],
 				checks: snapshot.checks,
 			};
 		},
@@ -392,6 +401,18 @@ export function gitlabProvider(
 			if (!base.commit?.id)
 				throw new Error("GitLab target revision unavailable");
 			return {
+				request: {
+					...pr,
+					labels: mr.labels ?? [],
+					reviewComments: discussions,
+				},
+				mergeability:
+					mr.has_conflicts || status === "conflict"
+						? "conflicting"
+						: status === "mergeable" || mr.merge_status === "can_be_merged"
+							? "mergeable"
+							: "unknown",
+				providerMergeability: status ?? null,
 				url: pr.url,
 				headSha: pr.headRefOid,
 				baseSha: base.commit.id,

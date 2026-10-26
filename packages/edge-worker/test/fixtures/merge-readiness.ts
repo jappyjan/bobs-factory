@@ -7,6 +7,11 @@ export function providerReceipt(extra: Record<string, unknown> = {}) {
 				rebaseMergeAllowed: true,
 				pullRequest: {
 					id: "PR_node",
+					number: 1,
+					title: "Change",
+					body: "Description",
+					headRefName: "feature",
+					labels: { nodes: [] },
 					url: "https://github.com/test/repo/pull/1",
 					headRefOid: "head",
 					baseRefOid: "base",

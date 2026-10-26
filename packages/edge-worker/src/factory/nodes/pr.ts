@@ -12,7 +12,7 @@ export const definition = {
 	category: "io",
 	effect: "effect",
 	operationEffects: {
-		read: "pure",
+		read: "read-only",
 		ensure: "effect",
 		comment: "effect",
 		ready: "effect",

@@ -24,6 +24,7 @@ export interface CISupervision {
 		{
 			failure: NonNullable<ProviderCheck["failure"]>;
 			metadataRecheck?: boolean;
+			failureLogExcerpt?: string;
 		}
 	>;
 }

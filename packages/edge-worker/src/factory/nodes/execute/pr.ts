@@ -11,6 +11,12 @@ import {
 	textRead,
 } from "./repository-io.js";
 
+const normalizedTitle = (title: string) =>
+	title
+		.trim()
+		.replace(/^(?:Draft:|WIP:)\s*/i, "")
+		.trim();
+
 export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 	return repositories(ctx, async (io) => {
 		const { repository, branch } = io;
@@ -52,9 +58,8 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 					assertRequest(io, pr);
 					if (
 						!pr.isDraft ||
-						pr.body !== markedBody ||
-						pr.title.replace(/^(?:Draft:|WIP:)\s*/i, "") !==
-							title.replace(/^(?:Draft:|WIP:)\s*/i, "")
+						!pr.body.includes(marker(key)) ||
+						normalizedTitle(pr.title) !== normalizedTitle(title)
 					)
 						throw new Error(
 							"Provider did not confirm the requested draft metadata",
@@ -64,11 +69,14 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				async (key) => {
 					const pr = await find();
 					if (!pr) return null;
-					return pr.body === `${body}\n\n${marker(key)}` &&
-						pr.title.replace(/^(?:Draft:|WIP:)\s*/i, "") ===
-							title.replace(/^(?:Draft:|WIP:)\s*/i, "")
-						? { url: pr.url, head: pr.headRefOid, isDraft: pr.isDraft }
-						: undefined;
+					if (
+						!pr.isDraft ||
+						(pr.body.includes(marker(key)) &&
+							normalizedTitle(pr.title) === normalizedTitle(title))
+					)
+						return { url: pr.url, head: pr.headRefOid, isDraft: pr.isDraft };
+					// Updating an existing draft is idempotent, including a failed PATCH.
+					return null;
 				},
 			);
 		}

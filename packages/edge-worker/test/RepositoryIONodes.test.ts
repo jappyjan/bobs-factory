@@ -165,12 +165,12 @@ afterEach(async () => {
 	for (const r of runtimes.splice(0)) await r.shutdown();
 	for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
 });
-function runtime(home: string) {
+function runtime(home: string, title = "Example") {
 	const r = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		tool: async () => ({
 			message: "feat: example",
-			title: "Example",
+			title,
 			body: "Body",
 		}),
 		script: async () => ({}),
@@ -178,7 +178,7 @@ function runtime(home: string) {
 	runtimes.push(r);
 	return r;
 }
-function fixture(steps: object[], ids = ["hub"]) {
+function fixture(steps: object[], ids = ["hub"], title = "Example") {
 	const home = mkdtempSync(join(tmpdir(), "repository-io-"));
 	homes.push(home);
 	const repos: RunRepository[] = ids.map((id) => {
@@ -195,7 +195,7 @@ function fixture(steps: object[], ids = ["hub"]) {
 			baseBranch: "main",
 		};
 	});
-	const instance = runtime(home);
+	const instance = runtime(home, title);
 	const workflow = WorkflowSchema.parse({
 		id: "io",
 		name: "IO",
@@ -340,18 +340,14 @@ it.each([
 	const resumed = runtime(home);
 	resumed.retry(run.id);
 	await waitForRuntime(() =>
-		expect(resumed.get(run.id).status).toBe(
-			outcome === "unknown" ? "failed" : "completed",
-		),
+		expect(resumed.get(run.id).status).toBe("completed"),
 	);
 	expect(f.provider.create).toHaveBeenCalledTimes(outcome === "absent" ? 2 : 1);
 	if (outcome === "absent") {
 		const calls = vi.mocked(f.provider.create).mock.calls;
 		expect(calls[0]![0].body).toBe(calls[1]![0].body);
 	}
-	expect(resumed.get(run.id).nodeEffects![key]!.phase).toBe(
-		outcome === "unknown" ? "uncertain" : "confirmed",
-	);
+	expect(resumed.get(run.id).nodeEffects![key]!.phase).toBe("confirmed");
 });
 it("pr comment reconciles a lost response without posting twice", async () => {
 	const { instance, home, run } = fixture([
@@ -433,12 +429,18 @@ it("ci status is a single read and rerun targets infrastructure failures only, o
 	for (const id of ["hub", "lab"])
 		expect(forges.get(id)!.provider.retryCheck).toHaveBeenCalledTimes(1);
 });
-it("rejects stale-head CI and leaves ready requests untouched on ensure", async () => {
+it("reports stale-head CI as incomplete and leaves ready requests untouched on ensure", async () => {
 	const { instance, run } = fixture([{ id: "op", type: "ci", op: "status" }]);
 	await seedPR("hub");
 	forges.get("hub")!.pr.headRefOid = base;
 	await instance.launch(run);
-	expect(run.status).toBe("failed");
+	expect(run.status).toBe("completed");
+	expect((run.outputs.op as any).repositories[0]).toMatchObject({
+		headMatches: false,
+		localHead: head,
+		prHead: base,
+		summary: { complete: false },
+	});
 	const other = fixture([{ id: "op", type: "pr", op: "ensure" }]);
 	await seedPR("hub");
 	forges.get("hub")!.pr.isDraft = false;
@@ -489,7 +491,7 @@ it("publishes operation effect metadata and JSON-panel defaults without executab
 		["pr", ["read"]],
 		["ci", ["status"]],
 	] as const)
-		for (const op of ops) expect(nodeEffect({ type, op })).toBe("pure");
+		for (const op of ops) expect(nodeEffect({ type, op })).toBe("read-only");
 	for (const [type, op] of [
 		["git", "commit"],
 		["git", "push"],
@@ -501,8 +503,24 @@ it("publishes operation effect metadata and JSON-panel defaults without executab
 		expect(nodeEffect({ type: type!, op })).toBe("effect");
 	expect(nodeEffect({ type: "git", op: "unknown" })).toBe("effect");
 	expect(nodeEffect({ type: "git", op: "toString" })).toBe("effect");
-	expect(nodeRegistry.effectFor({ type: "ci", op: "status" })).toBe("pure");
-	expect(nodeRegistry.effectFor({ type: "ci", op: "rerun" })).toBe("effect");
+	expect(
+		nodeRegistry.effectFor(
+			WorkflowSchema.parse({
+				id: "effects",
+				name: "Effects",
+				steps: [{ id: "ci", name: "CI", type: "ci", op: "status" }],
+			}).steps[0]!,
+		),
+	).toBe("read-only");
+	expect(
+		nodeRegistry.effectFor(
+			WorkflowSchema.parse({
+				id: "effects",
+				name: "Effects",
+				steps: [{ id: "ci", name: "CI", type: "ci", op: "rerun" }],
+			}).steps[0]!,
+		),
+	).toBe("effect");
 });
 
 it.each([
@@ -538,4 +556,150 @@ it.each([
 	expect((resumed.get(run.id).outputs.op as any).repositories[0]).toMatchObject(
 		{ head: nextHead, committed: true },
 	);
+});
+
+it.each([
+	true,
+	false,
+	undefined,
+])("git commit honors verify=%s, defaulting to hooks", async (verify) => {
+	const { instance, run } = fixture([
+		{
+			id: "op",
+			type: "git",
+			op: "commit",
+			...(verify === undefined ? {} : { verify }),
+		},
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	const args = mocks.command.mock.calls.find(
+		([, , args]) => args[0] === "commit",
+	)![2];
+	expect(args.includes("--no-verify")).toBe(verify === false);
+});
+
+it.each([
+	"accepted",
+	"failed",
+])("git push recovers a %s send to an existing branch after restart", async (outcome) => {
+	const { instance, home, run } = fixture([
+		{ id: "op", type: "git", op: "push" },
+	]);
+	states.get("hub")!.remote = base;
+	const execute = mocks.command.getMockImplementation()!;
+	let first = true;
+	mocks.command.mockImplementation(async (ctx, exe, args) => {
+		if (args[0] === "push" && first) {
+			first = false;
+			if (outcome === "accepted") await execute(ctx, exe, args);
+			throw new Error("push response lost");
+		}
+		return execute(ctx, exe, args);
+	});
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	await instance.shutdown();
+	const resumed = runtime(home);
+	resumed.retry(run.id);
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	const sends = mocks.command.mock.calls.filter(
+		([, , args]) => args[0] === "push",
+	);
+	expect(sends).toHaveLength(outcome === "accepted" ? 1 : 2);
+	expect(sends[0]![2]).toEqual([
+		"push",
+		"-u",
+		"origin",
+		"HEAD:refs/heads/feature",
+	]);
+	expect(states.get("hub")!.remote).toBe(head);
+});
+
+it("pr ensure retries a failed update after restart with the same marker", async () => {
+	const { instance, home, run } = fixture([
+		{ id: "op", type: "pr", op: "ensure" },
+	]);
+	await seedPR("hub");
+	const f = forges.get("hub")!;
+	vi.mocked(f.provider.update!).mockRejectedValueOnce(new Error("PATCH lost"));
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	await instance.shutdown();
+	const resumed = runtime(home);
+	resumed.retry(run.id);
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	expect(f.provider.create).toHaveBeenCalledTimes(1); // seed only
+	const updates = vi.mocked(f.provider.update!).mock.calls;
+	expect(updates).toHaveLength(2);
+	expect(updates[0]![1]).toEqual(updates[1]![1]);
+});
+
+it("pr ensure accepts provider trimming and marker-preserving body normalization", async () => {
+	const { instance, run } = fixture(
+		[{ id: "op", type: "pr", op: "ensure" }],
+		["hub"],
+		"Example\n",
+	);
+	const f = forges.get("hub")!,
+		original = f.provider.create;
+	f.provider.create = vi.fn(async (input) =>
+		original({ ...input, title: input.title.trim(), body: `${input.body}\n` }),
+	);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(f.pr.title).toBe("Example");
+});
+
+it("ci rerun skips missing identities, in-progress runs and provider-side races", async () => {
+	const { instance, run } = fixture([{ id: "op", type: "ci", op: "rerun" }]);
+	await seedPR("hub");
+	const f = forges.get("hub")!;
+	const check = {
+		name: "runner",
+		state: "FAILURE",
+		bucket: "fail",
+		failure: { kind: "infrastructure", evidence: "runner unavailable" },
+	};
+	f.setChecks([
+		check,
+		{
+			...check,
+			name: "running",
+			retry: {
+				id: "1",
+				attempt: 1,
+				headSha: head,
+				kind: "github-run",
+				status: "in_progress",
+			},
+		},
+		{
+			...check,
+			name: "raced",
+			retry: {
+				id: "2",
+				attempt: 1,
+				headSha: head,
+				kind: "github-run",
+				status: "completed",
+			},
+		},
+	]);
+	vi.mocked(f.provider.retryCheck!).mockResolvedValue({
+		requested: false,
+		reason: "in-progress",
+	});
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(f.provider.retryCheck).toHaveBeenCalledTimes(1);
+	expect((run.outputs.op as any).repositories[0].reruns).toMatchObject([
+		{ check: "runner", requested: false, skipped: "missing-retry-identity" },
+		{ check: "running", requested: false, skipped: "in-progress" },
+		{ check: "raced", requested: false, skipped: "in-progress" },
+	]);
 });

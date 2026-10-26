@@ -67,3 +67,23 @@ restart outcomes (confirmed, independently absent and unknown).
 Validation after fetching/rebasing `origin/main`: 107 focused tests passed across
 five files. Worker typechecking and the unmodified pre-commit hook’s full build,
 full typecheck and staged-file lint/format checks passed.
+
+
+## Review follow-up validation
+
+The follow-up fixture also installs a failing real pre-commit hook and commits
+with `verify: false`, checks the real Git upstream after push, supplies a title
+with a trailing newline and a provider-normalized body, and reports a stale PR
+head on the first CI read followed by the current head on the next read. The HTTP
+catalog now asserts `read-only` classification. PR read assertions include raw
+merge status, conversation comments, factual blockers and queue state.
+
+Command: `F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/repository-io-nodes.ts`.
+Passed with run `manual-93b41867-96f2-43a2-89c9-d3300ecdb986`, committed fixture head
+`fa3a4d0e0a85f12ec050f9191a64f30f25200bfd` and base
+`1095bc543c572c898fde905d768e2ad90596d213`. The first CI result had
+`headMatches: false` and `summary.complete: false`; the second had both `true`.
+The existing cold-restart PR recovery, activity and revision assertions still
+passed. Provider transport and agents remain scripted, with no hosted writes or
+paid inference. Focused restart tests cover failed pushes to existing branches and
+failed draft updates; provider tests cover skipped retries and cached GitLab logs.

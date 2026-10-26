@@ -11,7 +11,7 @@ export const definition = {
 	schema,
 	category: "io",
 	effect: "effect",
-	operationEffects: { status: "pure", rerun: "effect" },
+	operationEffects: { status: "read-only", rerun: "effect" },
 	builder: {
 		label: "CI",
 		icon: "✓",
