@@ -1,3 +1,4 @@
+import { factoryDeliveryRecipes } from "./factoryDeliveryRecipes.js";
 import {
 	stockFactorySteps as roles,
 	stockTakeoverSteps,
@@ -1676,6 +1677,7 @@ const takeoverComposition = composition.map((call) => ({
 }));
 
 export const factoryRecipes = [
+	...factoryDeliveryRecipes,
 	...v2PlanningRecipes,
 	{ ...stockWorkflowMetadata.factory, steps: composition },
 	{

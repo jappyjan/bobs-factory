@@ -700,6 +700,13 @@ repository/provider. Bind a URL to inspect a closed request.
   `null`. NUL-separated Git output preserves whitespace and tabs in paths; renames
   appear as add/delete.
 
+For an exact incremental diff, project saved repository heads into the same
+`from` read shape, `{repositories: [{id, base: savedHead}]}`, and leave
+`mergeBase` false. There is one baseline input; a grouped result's `head` is not
+implicitly substituted for its `base`. Missing repository bases and invalid/option
+refs fail closed. With `mergeBase: true`, missing base objects are fetched as
+above; exact comparisons require both commits locally.
+
 Commit/push require the run's dedicated linked worktree, its exact root and a
 non-base branch. Source clones and detached HEADs are rejected. These nodes do not
 create worktrees, change identity settings or disable signing.
@@ -1011,3 +1018,19 @@ run's evidence directory (using its existing realpath/symlink/size checks). Rela
 paths still address repository files. This lets a capture verify its actual image
 and clip paths, including evidence stored outside a repository worktree; arbitrary
 absolute host paths remain forbidden. Legacy checks retain repository-only paths.
+
+### Merge expected revisions
+
+Merge optionally accepts `expectedRevision: "producer"` (a lexical producer
+reference, including Call aliases or an absolute step path). It requires a stamped
+receipt with an observable revision for every requested repository and takes the
+provider's expected SHA from that receipt, overriding request payload heads.
+Before a new dispatch it also requires `fresh(producer)`. A scoped receipt still
+supplies its exact observed head: provider head equality is always enforced, even
+when a narrower local freshness scope permits other changes. Use `bind: ["producer"]`
+to freeze the authorization receipt for the visit. After an uncertain/confirmed
+send, retry reconciles the original effect instead of acquiring new authority or
+sending another merge. Unstamped JSON cannot supply expected-revision authority.
+
+CI/PR check summaries report `complete: false` while any check is pending; CI
+additionally reports incomplete while provider and local heads differ.

@@ -6,6 +6,7 @@ import {
 import { resolveGitProvider } from "../../GitProvider.js";
 import { repositoryReference } from "../../GitProviderReference.js";
 import { delay } from "../../MergeReadiness.js";
+import { latestNodeReceipt, nodeReference } from "../../NodeGuarantees.js";
 import { repositoryRun, runRepositories } from "../../RepositoryScope.js";
 import { requestSchema, type schema } from "../merge.js";
 import type { NodeContext } from "../NodeDefinition.js";
@@ -51,6 +52,18 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 	)
 		throw new Error("Duplicate merge repository");
 	const repositories = runRepositories(ctx.run);
+	if (ctx.step.expectedRevision) {
+		const receipt = latestNodeReceipt(
+			ctx,
+			nodeReference(ctx, ctx.step.expectedRevision),
+		);
+		for (const request of requests) {
+			const revision = receipt?.guarantee?.revisions[request.repositoryId];
+			if (!revision || revision.unobservable || !receipt?.inputDigest)
+				throw new Error("Merge expectedRevision requires a stamped revision");
+			request.headSha = revision.headSha;
+		}
+	}
 	for (const request of requests)
 		if (!repositories.some((repo) => repo.id === request.repositoryId))
 			throw new Error(`Repository ${request.repositoryId} is outside this run`);
@@ -121,6 +134,11 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 			const record = ctx.run.nodeEffects?.[key];
 			if (!record || record.phase === "not-sent") {
 				// Failures and cancellation during preflight/admission must remain retryable.
+				if (
+					ctx.step.expectedRevision &&
+					!(await ctx.fresh(ctx.step.expectedRevision))
+				)
+					throw new Error("Merge expectedRevision is stale");
 				ctx.signal.throwIfAborted();
 				provider = await getProvider();
 				const current = await provider.view(request.url);

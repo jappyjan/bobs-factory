@@ -118,6 +118,6 @@ export function checksSummary(checks: { bucket: string }[], complete = true) {
 		passed: checks.filter((c) => c.bucket === "pass").length,
 		failed: checks.filter((c) => c.bucket === "fail").length,
 		pending: checks.filter((c) => c.bucket === "pending").length,
-		complete,
+		complete: complete && checks.every((check) => check.bucket !== "pending"),
 	};
 }
