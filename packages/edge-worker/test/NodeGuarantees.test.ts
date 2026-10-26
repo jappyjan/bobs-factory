@@ -8,6 +8,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { digest } from "../src/factory/Delivery.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import * as gitProviders from "../src/factory/GitProvider.js";
 import {
 	freshNodeOutput,
 	observeNodeRevisions,
@@ -42,6 +43,17 @@ nodeRegistry.register({
 	category: "logic",
 	effect: "pure",
 	builder: { label: "Fixture", icon: "◇", paletteGroup: "logic" },
+	execute: (ctx) => execute(ctx),
+});
+nodeRegistry.register({
+	type: "guarantees-effect-fixture",
+	schema: z.object({
+		...stepFields,
+		type: z.literal("guarantees-effect-fixture"),
+	}),
+	category: "io",
+	effect: "effect",
+	builder: { label: "Effect fixture", icon: "◇", paletteGroup: "io" },
 	execute: (ctx) => execute(ctx),
 });
 afterEach(async () => {
@@ -305,6 +317,209 @@ it("invalidates fresh after input, dirty workspace and HEAD changes, including a
 	await expect(freshNodeOutput(aborted, "inspect")).rejects.toThrow(
 		"freshness cancelled",
 	);
+});
+
+it.each([
+	undefined,
+	{ paths: ["value"] },
+	"none",
+] as const)("refreshes generic effect revisions in scope %j while retaining explicit bindings", async (revisionScope) => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	execute.mockImplementation((ctx) => {
+		if (ctx.step.id === "source") return { message: "commit" };
+		repo.commit(ctx.step.id);
+		return { committed: true };
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("effect", {
+				type: "guarantees-effect-fixture",
+				revisionScope,
+				reads: { message: "source/message" },
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	const receipt = run.history.at(-1)!;
+	if (revisionScope === "none")
+		expect(receipt.guarantee?.revisions).toEqual({});
+	else
+		expect(receipt.guarantee?.revisions.fixture).toMatchObject({
+			headSha: repo.git("rev-parse", "HEAD"),
+			workspaceDigest: expect.any(String),
+			...(revisionScope
+				? { paths: ["value"], scopedDigest: expect.any(String) }
+				: {}),
+		});
+	expect(await freshNodeOutput(context(run), "effect")).toBe(true);
+	expect(await freshNodeOutput(context(run), "source")).toBe(false);
+	// Explicit binding keeps pre-effect evidence strict even when ordinary reads
+	// are just values used to perform an operation on the resulting revision.
+	const bound = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("bound", {
+				type: "guarantees-effect-fixture",
+				revisionScope,
+				bind: ["source"],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(bound);
+	expect(bound.error).toBeUndefined();
+	expect(await freshNodeOutput(context(bound), "bound")).toBe(false);
+	repo.commit("later");
+	expect(await freshNodeOutput(context(run), "effect")).toBe(
+		revisionScope === "none",
+	);
+});
+
+it("does not renew already-stale inherited evidence after an effect", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	execute.mockImplementation((ctx) => {
+		if (ctx.step.id === "source") return { value: 1 };
+		repo.commit(ctx.step.id);
+		return {};
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("change", { type: "guarantees-effect-fixture" }),
+			fixture("consume", {
+				type: "guarantees-effect-fixture",
+				reads: { value: "source/value" },
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(await freshNodeOutput(context(run), "change")).toBe(false);
+	expect(await freshNodeOutput(context(run), "consume")).toBe(false);
+	expect(run.history.at(-1)?.guarantee?.revisions.fixture?.headSha).toBe(
+		repo.git("rev-parse", "HEAD"),
+	);
+});
+
+it("keeps PR ensure and its bound Display stale when a commit lands during retry backoff", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	repo.git("checkout", "-qb", "feature");
+	const reviewedHead = repo.git("rev-parse", "HEAD");
+	execute.mockReturnValue({ title: "Reviewed change", body: "Reviewed at S1" });
+	const url = "https://github.com/fixture/repo/pull/1";
+	let request: { title: string; body: string } | undefined;
+	const unavailable = async (): Promise<never> => {
+		throw new Error("Unexpected provider operation");
+	};
+	const create = vi.fn(async (input) => {
+		request = input;
+		return url;
+	});
+	const resolve = vi
+		.spyOn(gitProviders, "resolveGitProvider")
+		.mockRejectedValueOnce(new Error("Temporary provider setup failure"))
+		.mockResolvedValue({
+			list: async () => [],
+			create,
+			view: async () => ({
+				url,
+				number: 1,
+				...request!,
+				headRefName: "feature",
+				headRefOid: repo.git("rev-parse", "HEAD"),
+				baseRefName: "main",
+				state: "OPEN",
+				isDraft: true,
+				isCrossRepository: false,
+			}),
+			inspect: unavailable,
+			readiness: unavailable,
+			draft: unavailable,
+			description: unavailable,
+			merge: unavailable,
+		});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("review"),
+			{
+				id: "pr",
+				name: "PR",
+				type: "pr",
+				op: "ensure",
+				reads: { title: "review/title", body: "review/body" },
+				retry: { max: 1, backoff: 60000 },
+			},
+			{
+				id: "approval",
+				name: "Approval",
+				type: "display",
+				bind: ["pr"],
+				document: {
+					version: "view-v1",
+					components: [
+						{
+							id: "text",
+							type: "markdown",
+							data: { literal: { text: "PR ensured" } },
+						},
+					],
+				},
+			},
+		],
+		repo.workspace,
+		"nodes-v1",
+	);
+	run.repositories = [
+		{
+			id: "fixture",
+			name: "Fixture",
+			repositoryPath: repo.workspace,
+			workspace: repo.workspace,
+			baseBranch: "main",
+		},
+	];
+	const pending = instance.launch(run);
+	await vi.waitFor(() => expect(run.checkpoint?.active?.retryAt).toBeDefined());
+	expect(run.checkpoint!.active!.actionId).toBeUndefined();
+	expect(
+		run.checkpoint!.active!.nodeStamp?.guarantee.revisionChecks,
+	).toBeUndefined();
+	// Another actor commits S2 while the first attempt is backing off at S1.
+	repo.commit("unreviewed S2");
+	const ensuredHead = repo.git("rev-parse", "HEAD");
+	expect(ensuredHead).not.toBe(reviewedHead);
+	await instance.shutdown();
+	await pending;
+	const resumed = runtime(home).instance;
+	const loaded = resumed.get(run.id);
+	loaded.checkpoint!.active!.retryAt = Date.now();
+	await resumed.launch(loaded);
+	expect(loaded.error).toBeUndefined();
+	expect(loaded.status).toBe("completed");
+	expect(resolve).toHaveBeenCalledTimes(2);
+	expect(create).toHaveBeenCalledTimes(1);
+	expect(
+		loaded.history.find((entry) => entry.step === "pr")?.guarantee?.revisions
+			.fixture?.headSha,
+	).toBe(ensuredHead);
+	expect(await freshNodeOutput(context(loaded), "pr")).toBe(false);
+	expect(await freshNodeOutput(context(loaded), "approval")).toBe(false);
 });
 
 it("invalidates reuse after a revision change reported by an IO node", async () => {

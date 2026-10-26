@@ -358,6 +358,56 @@ it("records read-resolution failures as failed step attempts", async () => {
 	).toEqual([{ step: "check", outcome: "failed" }]);
 });
 
+it("does not stamp retry sleep before the first accepted reads, including after restart", async () => {
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{
+			id: "check",
+			name: "Check",
+			type: "check",
+			reads: { ticket: "@ticket" },
+			check: {
+				results: { present: { path: "/inputs/ticket/title", exists: true } },
+			},
+			retry: { max: 1, backoff: 0 },
+		},
+	]);
+	run.ticketSnapshot = { title: "Available on retry" };
+	// An earlier read-resolution failure scheduled a retry before any stamp existed.
+	run.checkpoint = {
+		current: "check",
+		visits: { check: 1 },
+		active: { phase: "executing", retries: 1, retryAt: Date.now() },
+	};
+	await instance.save(run);
+	await instance.shutdown();
+	const resumed = runtime(home).instance;
+	const loaded = resumed.get(run.id);
+	const save = resumed.save.bind(resumed);
+	let waits = 0;
+	const saving = vi
+		.spyOn(resumed, "save")
+		.mockImplementation(async (snapshot) => {
+			if (snapshot.capacityLeaves?.check?.phase === "waiting-ci") {
+				waits++;
+				expect(snapshot.checkpoint?.active?.nodeStamp).toBeUndefined();
+			}
+			await save(snapshot);
+		});
+	try {
+		await resumed.launch(loaded);
+		expect(loaded.error).toBeUndefined();
+		expect(loaded.status).toBe("completed");
+		expect(waits).toBeGreaterThan(0);
+		expect(loaded.history.at(-1)?.inputDigest).toBe(
+			digest({ ticket: loaded.ticketSnapshot }),
+		);
+		expect(loaded.outputs.check).toEqual({ passed: true, present: true });
+	} finally {
+		saving.mockRestore();
+	}
+});
+
 it.each([
 	"waiting-ci",
 	"waiting-human",

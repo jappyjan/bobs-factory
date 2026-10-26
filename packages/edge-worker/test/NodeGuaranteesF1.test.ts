@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import * as gitProviders from "../src/factory/GitProvider.js";
 import { freshNodeOutput } from "../src/factory/NodeGuarantees.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import {
@@ -399,6 +400,249 @@ it.each([
 		).toBe(head);
 	} finally {
 		await server?.stop();
+		await runtime.shutdown();
+		await restarted?.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("stamps commit, push and PR ensure after effects so a bound Display stays fresh until the next commit", async () => {
+	const home = mkdtempSync(join(tmpdir(), "f1-post-effect-revisions-"));
+	const source = join(home, "source"),
+		workspace = join(home, "worktree");
+	mkdirSync(source);
+	const git = (...args: string[]) =>
+		execFileSync("git", args, {
+			cwd: workspace,
+			encoding: "utf8",
+		}).trim();
+	execFileSync("git", ["init", "-qb", "main", source]);
+	const sourceGit = (...args: string[]) =>
+		execFileSync("git", args, { cwd: source });
+	sourceGit("config", "user.name", "F1");
+	sourceGit("config", "user.email", "f1@example.test");
+	sourceGit("config", "commit.gpgsign", "false");
+	sourceGit("config", "core.hooksPath", "/dev/null");
+	writeFileSync(join(source, "value"), "one");
+	sourceGit("add", ".");
+	sourceGit("commit", "-qm", "Initial [skip ci]");
+	sourceGit("worktree", "add", "-qb", "feature", workspace);
+	const remote = join(home, "remote.git");
+	execFileSync("git", ["init", "--bare", "-q", remote]);
+	git("remote", "add", "origin", remote);
+	const before = git("rev-parse", "HEAD");
+	writeFileSync(join(workspace, "value"), "two");
+	const url = "https://github.com/fixture/repo/pull/1";
+	let request: { title: string; body: string } | undefined;
+	const unavailable = async (): Promise<never> => {
+		throw new Error("Unexpected provider operation");
+	};
+	const provider: gitProviders.GitProvider = {
+		list: async () => (request ? [{ url, isDraft: true }] : []),
+		create: vi.fn(async (input) => {
+			request = input;
+			return url;
+		}),
+		view: async () => ({
+			url,
+			number: 1,
+			...request!,
+			headRefName: "feature",
+			headRefOid: git("rev-parse", "HEAD"),
+			baseRefName: "main",
+			state: "OPEN",
+			isDraft: true,
+			isCrossRepository: false,
+		}),
+		inspect: unavailable,
+		readiness: unavailable,
+		draft: unavailable,
+		description: unavailable,
+		merge: unavailable,
+	};
+	const resolve = vi
+		.spyOn(gitProviders, "resolveGitProvider")
+		.mockResolvedValue(provider);
+	const workflow = validateWorkflows([
+		...defaultWorkflows,
+		{
+			id: "post-effect-f1",
+			name: "Post-effect F1",
+			engineVersion: "nodes-v1",
+			steps: [
+				{
+					id: "metadata",
+					name: "Metadata",
+					type: "transform",
+					revisionScope: "none",
+					transform: {
+						message: "Commit [skip ci]",
+						title: "Change",
+						body: "Description",
+					},
+				},
+				{
+					id: "commit",
+					name: "Commit",
+					type: "git",
+					op: "commit",
+					hooks: false,
+					reads: { message: "metadata/message" },
+				},
+				{
+					id: "push",
+					name: "Push",
+					type: "git",
+					op: "push",
+					reads: { commit: "commit" },
+				},
+				{
+					id: "pr",
+					name: "PR",
+					type: "pr",
+					op: "ensure",
+					reads: {
+						title: "metadata/title",
+						body: "metadata/body",
+						push: "push",
+					},
+				},
+				{
+					id: "approval",
+					name: "Approve",
+					type: "display",
+					bind: ["commit", "push", "pr"],
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "answer",
+								type: "form",
+								data: {
+									literal: {
+										fields: [
+											{
+												id: "answer",
+												type: "text",
+												label: "Answer",
+												required: true,
+											},
+										],
+									},
+								},
+							},
+						],
+					},
+				},
+				{
+					id: "gate",
+					name: "Gate",
+					type: "check",
+					check: { results: { current: { fresh: "approval" } } },
+				},
+			],
+		},
+	]).at(-1)!;
+	const hooks = {
+		agent: async () => ({
+			message: "Commit [skip ci]",
+			title: "Change",
+			body: "Description",
+		}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	};
+	const runtime = new WorkflowRuntime(home, hooks);
+	let restarted: WorkflowRuntime | undefined;
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => {
+			throw new Error("No launch");
+		},
+		stop: (id) => runtime.stop(id),
+	});
+	try {
+		const run = runtime.create({
+			title: "Post-effect F1",
+			repositoryId: "fixture",
+			workspace,
+			repositories: [
+				{
+					id: "fixture",
+					name: "Fixture",
+					repositoryPath: source,
+					workspace,
+					baseBranch: "main",
+				},
+			],
+			input: "",
+			workflow,
+			triggerOrigin: {
+				type: "manual",
+				workflowId: workflow.id,
+				at: new Date().toISOString(),
+			},
+		});
+		void runtime.launch(run);
+		await waitForRuntime(() =>
+			expect(run.viewDecision, run.error).toBeDefined(),
+		);
+		const committed = git("rev-parse", "HEAD");
+		expect(committed).not.toBe(before);
+		expect(
+			git("ls-remote", "origin", "refs/heads/feature").split(/\s/)[0],
+		).toBe(committed);
+		for (const step of ["commit", "push", "pr"]) {
+			expect(
+				run.history.find((entry) => entry.step === step)?.guarantee?.revisions
+					.fixture,
+			).toMatchObject({
+				headSha: committed,
+				workspaceDigest: expect.any(String),
+			});
+		}
+		const answer = await server.app.inject({
+			method: "POST",
+			url: `/api/runs/${run.id}/view-answer`,
+			headers: { "x-factory-request": "1" },
+			payload: {
+				batchId: run.viewDecision!.id,
+				digest: run.viewDecision!.digest,
+				documentDigest: run.viewDecision!.documentDigest,
+				accepted: true,
+				values: { answer: "Approved" },
+			},
+		});
+		expect(answer.statusCode, answer.body).toBe(200);
+		await waitForRuntime(() => expect(run.status, run.error).toBe("completed"));
+		expect(run.outputs.gate).toEqual({ passed: true, current: true });
+		expect(provider.create).toHaveBeenCalledTimes(1);
+		await runtime.shutdown();
+		restarted = new WorkflowRuntime(home, hooks);
+		const loaded = restarted.get(run.id);
+		const context: ExecutionContext = {
+			run: loaded,
+			step: workflow.steps.at(-1)!,
+			stepKey: "gate",
+			outputs: loaded.outputs,
+			input: {},
+			signal: new AbortController().signal,
+			log: () => {},
+			evidenceDir: home,
+		};
+		for (const step of ["commit", "push", "pr", "approval"])
+			expect(await freshNodeOutput(context, step), step).toBe(true);
+		expect(await freshNodeOutput(context, "metadata")).toBe(true);
+		writeFileSync(join(workspace, "value"), "three");
+		git("add", ".");
+		git("commit", "-qm", "Later [skip ci]");
+		for (const step of ["commit", "push", "pr", "approval"])
+			expect(await freshNodeOutput(context, step), step).toBe(false);
+	} finally {
+		resolve.mockRestore();
+		await server.stop();
 		await runtime.shutdown();
 		await restarted?.shutdown();
 		rmSync(home, { recursive: true, force: true });
