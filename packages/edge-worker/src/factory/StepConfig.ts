@@ -188,6 +188,7 @@ export const CONTEXT_SOURCES = [
 	"feedback",
 	"reviewFix",
 	"qaReuse",
+	"media",
 	"item",
 	"index",
 	"callInputs",

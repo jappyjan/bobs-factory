@@ -260,7 +260,7 @@ export async function probeVideo(path: string, signal?: AbortSignal) {
 		),
 	};
 }
-async function captionAsset(path: string, directory: string) {
+export async function captionAsset(path: string, directory: string) {
 	const real = evidenceFile(path, directory, 1024 * 1024),
 		content = await readFile(real, "utf8");
 	const blocks = content

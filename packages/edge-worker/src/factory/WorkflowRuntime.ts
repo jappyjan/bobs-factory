@@ -469,6 +469,7 @@ import {
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	verifiedMedia?: import("./VerifiedMedia.js").VerifiedMedia[];
 	/** Structural step paths include call sites, branch indices and foreach item IDs, never visits. */
 	agentNodeSessions?: Record<
 		string,

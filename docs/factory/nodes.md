@@ -981,3 +981,33 @@ does not change visit budgets, progress budgets or capacity.
 
 All existing step panels expose reuse/bind/revisionScope through the **Engine guarantees** JSON
 field; new nodes' full **Node configuration** JSON panel covers them directly.
+
+`code-refs-valid` can also select authored Display components (for example
+`path: "/components/*"`). It checks `code` ranges and every `codeTour` file/note,
+recursing through literal `section` components. Old-side tour notes are validated
+at the common base with `origin/<baseBranch>`; new-side notes use the observed
+head. Reference-bearing components must use literal data so their verified content
+is exactly the authored content. Non-code components are ignored. This is generic
+Display evidence verification; no recipe names or review policy enter the checker.
+
+`media-valid` also accepts selected `{path, ...}` objects. A video object supplies
+`posterPath`, `transcript`, and optional `captionsPath`; audio requires valid timed
+WebVTT captions. Verification probes/decodes clips and verifies the poster. For
+nodes-v1 producers, successfully verified bytes are retained as generic run media,
+keyed by producing step and output digest. Only a completed matching receipt makes
+an asset available; rejected candidates cannot authorize a display.
+
+Named read `@media` exposes that accepted inventory: `id`, `index`, `kind`, `path`,
+`sha256` and video metadata. Display screenshots use `index`/`sha256`; videos use
+`id` as `taskId`, plus `sha256` and transcript. Recipes choose which verified assets
+support their claims. Display and existing authenticated media routes recheck the
+producer's scoped freshness, evidence containment and exact bytes; no capture-role
+adapter is required. Inventories persist across restart, retain original identities
+on reuse, and are bounded to 2,048 entries and 512 MiB per run. Image/video file
+paths remain private context data; browser documents contain only inventory refs.
+
+For nodes-v1, `files-exist` accepts absolute artifact paths only within the current
+run's evidence directory (using its existing realpath/symlink/size checks). Relative
+paths still address repository files. This lets a capture verify its actual image
+and clip paths, including evidence stored outside a repository worktree; arbitrary
+absolute host paths remain forbidden. Legacy checks retain repository-only paths.

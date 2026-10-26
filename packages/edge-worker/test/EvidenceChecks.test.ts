@@ -219,3 +219,91 @@ it("executes all four new agent verifications against current named reads", asyn
 		"ids-resolve requires a named source read",
 	);
 });
+
+it("verifies nested Display code and code tours, including old-side notes at the common base", async () => {
+	const { context, workspace } = fixture();
+	const git = (...args: string[]) =>
+		execFileSync("git", args, { cwd: workspace, encoding: "utf8" }).trim();
+	git("update-ref", "refs/remotes/origin/main", "HEAD");
+	writeFileSync(join(workspace, "proof.ts"), "replacement\n");
+	git("add", "proof.ts");
+	git("commit", "-m", "Replace");
+	context.progress!.currentRevision!.headSha = git("rev-parse", "HEAD");
+	context.run.repositories = [
+		{
+			id: "repo",
+			name: "Fixture",
+			workspace,
+			repositoryPath: workspace,
+			baseBranch: "main",
+		},
+	];
+	context.step = {
+		...context.step,
+		checks: [{ check: "code-refs-valid", path: "/components/*" }],
+	};
+	const component = (type: string, data: unknown) => ({
+		type,
+		data: { literal: data },
+	});
+	const output = {
+		components: [
+			component("markdown", { text: "No reference" }),
+			component("section", {
+				components: [
+					component("code", { file: "proof.ts", startLine: 1, endLine: 1 }),
+					component("codeTour", {
+						files: [{ path: "proof.ts", notes: [{ line: 2, side: "old" }] }],
+					}),
+				],
+			}),
+		],
+	};
+	await expect(runEvidenceChecks(context, output)).resolves.toEqual(output);
+	for (const invalid of [
+		component("code", { file: "proof.ts", startLine: 2 }),
+		component("codeTour", { files: [{ path: "missing.ts", notes: [] }] }),
+		component("codeTour", {
+			files: [{ path: "proof.ts", notes: [{ line: 3, side: "old" }] }],
+		}),
+		{ type: "codeTour", data: { path: "/inputs/tour" } },
+	])
+		await expect(
+			runEvidenceChecks(context, { components: [invalid] }),
+		).rejects.toBeInstanceOf(OutputValidationError);
+});
+
+it("checks new-engine absolute artifacts only under the run evidence root", async () => {
+	const { context, workspace, evidenceDir } = fixture();
+	const { registerWorkflowConfig } = await import(
+		"../src/factory/StepConfig.js"
+	);
+	const workflow = WorkflowSchema.parse({
+		id: "artifact-files",
+		name: "Artifact files",
+		engineVersion: "nodes-v1",
+		steps: [
+			{
+				id: "assets",
+				name: "Assets",
+				type: "agent",
+				prompt: "Collect files",
+				verify: [{ check: "files-exist", path: "/files/*" }],
+			},
+		],
+	});
+	registerWorkflowConfig(workflow);
+	context.step = workflow.steps[0]!;
+	const artifact = join(evidenceDir, "receipt.txt");
+	writeFileSync(artifact, "executed evidence");
+	await expect(
+		runEvidenceChecks(context, { files: [artifact] }),
+	).resolves.toEqual({ files: [artifact] });
+	await expect(
+		runEvidenceChecks(context, { files: [join(workspace, "proof.ts")] }),
+	).rejects.toBeInstanceOf(OutputValidationError);
+	symlinkSync(join(workspace, "proof.ts"), join(evidenceDir, "escaped.txt"));
+	await expect(
+		runEvidenceChecks(context, { files: [join(evidenceDir, "escaped.txt")] }),
+	).rejects.toBeInstanceOf(OutputValidationError);
+});

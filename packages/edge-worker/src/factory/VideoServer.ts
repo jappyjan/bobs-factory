@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import type { FastifyInstance } from "fastify";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
 import { outputForCheck } from "./ToolBindings.js";
+import { mediaCurrent, verifiedVideo } from "./VerifiedMedia.js";
 import {
 	byteRange,
 	evidenceFile,
@@ -34,9 +35,12 @@ export function registerVideoRoutes(
 				.header("Cache-Control", "no-store")
 				.header("X-Content-Type-Options", "nosniff");
 			const run = runtime.get(request.params.id),
-				video = (
-					outputForCheck(run, "capture-evidence") as VideoCapture | undefined
-				)?.videos?.find((v) => v.taskId === request.params.task),
+				generic = verifiedVideo(run, request.params.task),
+				video =
+					generic ??
+					(
+						outputForCheck(run, "capture-evidence") as VideoCapture | undefined
+					)?.videos?.find((v) => v.taskId === request.params.task),
 				validation = video?.validation;
 			if (!video || !validation)
 				return reply.code(404).send({ error: "Video evidence is unavailable" });
@@ -58,25 +62,32 @@ export function registerVideoRoutes(
 			// Grouped runs retain Git worktrees beneath a non-Git workspace parent.
 			// Match the same complete scope fingerprint used by capture finalization.
 			try {
-				const revisions = await Promise.all(
-					runRepositories(run).map(async (repository) => {
-						const options = { cwd: repository.workspace, timeout: 10000 };
-						const headSha = (
-							await exec("git", ["rev-parse", "HEAD"], options)
-						).stdout.trim();
-						const dirty = (
-							await exec("git", ["status", "--porcelain"], options)
-						).stdout.trim();
-						return { repositoryId: repository.id, headSha, dirty };
-					}),
-				);
-				if (
-					scopeRevision(revisions) !== validation.validatedRevision ||
-					revisions.some((r) => r.dirty)
-				)
-					return reply
-						.code(409)
-						.send({ error: "Video belongs to an earlier or dirty revision" });
+				if (generic) {
+					if (!(await mediaCurrent(run, generic.asset)))
+						return reply
+							.code(409)
+							.send({ error: "Video belongs to an earlier revision" });
+				} else {
+					const revisions = await Promise.all(
+						runRepositories(run).map(async (repository) => {
+							const options = { cwd: repository.workspace, timeout: 10000 };
+							const headSha = (
+								await exec("git", ["rev-parse", "HEAD"], options)
+							).stdout.trim();
+							const dirty = (
+								await exec("git", ["status", "--porcelain"], options)
+							).stdout.trim();
+							return { repositoryId: repository.id, headSha, dirty };
+						}),
+					);
+					if (
+						scopeRevision(revisions) !== validation.validatedRevision ||
+						revisions.some((r) => r.dirty)
+					)
+						return reply
+							.code(409)
+							.send({ error: "Video belongs to an earlier or dirty revision" });
+				}
 			} catch {
 				return reply.code(409).send({
 					error: "Video repository revisions are unavailable; refresh this run",

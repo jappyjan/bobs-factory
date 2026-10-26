@@ -117,3 +117,9 @@ storage and freshness policy. Display does not implement `bind` or `fresh`.
 
 Content-only displays retain their history without consuming the per-run limit of
 100 decision snapshots, so a show-only `foreach` can exceed 100 iterations.
+
+New-engine capture agents can provide media through selector-based `media-valid`
+verification. A guide reads `@media`, matches verified entries to its recipe's
+accepted evidence, and emits the same screenshot/video components. The inventory
+is generic: no legacy capture step or recipe-specific media flag is needed. Display
+checks exact asset hashes and the producing receipt's revision scope before use.

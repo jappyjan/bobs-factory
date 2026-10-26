@@ -12,6 +12,7 @@ import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { isNodeEngineStep, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
 import { stepForRun } from "./ToolBindings.js";
+import { acceptedMedia } from "./VerifiedMedia.js";
 import { childRunsView } from "./ViewRuntime.js";
 import type { WorkflowStep } from "./Workflow.js";
 import { detachedWorkflowRead, snapshotHistory } from "./WorkflowInput.js";
@@ -132,6 +133,9 @@ export function stepBindings(
 		history: snapshotHistory(history),
 		launchInputs: run.launchInputs ?? {},
 		mergeReadiness: run.mergeReadiness,
+		get media() {
+			return acceptedMedia(run);
+		},
 		get feedback() {
 			return (
 				stepContextSources(context).feedback ??
