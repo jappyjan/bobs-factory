@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { digest } from "./Delivery.js";
+import { foreachPointer } from "./Foreach.js";
 import { runRepositories } from "./RepositoryScope.js";
 import { snapshotForRead } from "./RepositorySnapshot.js";
 import { captureRepositoryRevisions } from "./RevisionBinding.js";
@@ -12,11 +13,19 @@ import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 /** A provider may report only HEAD; local observations also cover uncommitted changes. */
 export type NodeRevisions = Record<
 	string,
-	{ headSha: string; workspaceDigest?: string }
+	{
+		headSha: string;
+		workspaceDigest?: string;
+		paths?: string[];
+		scopedDigest?: string;
+		unobservable?: true;
+	}
 >;
 export interface NodeGuarantee {
 	version: 1;
 	revisions: NodeRevisions;
+	/** Keep distinct inherited scopes when several producers cover one repository. */
+	revisionChecks?: Record<string, NodeRevisions>;
 	boundDigests: Record<string, string>;
 	/** Repository observations owned by this node, rather than inherited reads. */
 	observedRepositories?: string[];
@@ -63,33 +72,141 @@ function receiptDigest(receipt: Receipt): string {
 		output: receipt.output,
 		inputDigest: receipt.inputDigest,
 		revisions: receipt.guarantee?.revisions,
+		revisionChecks: receipt.guarantee?.revisionChecks,
 		boundDigests: receipt.guarantee?.boundDigests,
 	});
 }
 
-/** Capture local revisions once per observation. Non-repository runs have no local revisions. */
+/** Capture failures invalidate evidence without preventing ordinary node execution. */
 export async function observeNodeRevisions(
 	context: ExecutionContext,
+	paths?: string[],
+	snapshot?: ReturnType<typeof snapshotForRead>,
 ): Promise<NodeRevisions> {
 	context.signal.throwIfAborted();
 	const repositories = runRepositories(context.run).filter((repo) =>
 		existsSync(join(repo.workspace, ".git")),
 	);
-	if (!repositories.length) return {};
-	const observed = await captureRepositoryRevisions({
-		run: { ...context.run, repositories },
-	});
+	const entries = await Promise.all(
+		repositories.map(async (repo) => {
+			try {
+				const [revision] = await captureRepositoryRevisions(
+					{
+						run: { ...context.run, repositories: [repo] },
+					},
+					snapshot && {
+						...snapshot,
+						repositories: snapshot.repositories.filter(
+							(item) => item.id === repo.id,
+						),
+					},
+					paths,
+				);
+				const { headSha, workspaceDigest, treeSha } = revision!;
+				return [
+					repo.id,
+					{
+						headSha,
+						workspaceDigest,
+						...(paths
+							? { paths, scopedDigest: digest({ treeSha, workspaceDigest }) }
+							: {}),
+					},
+				] as const;
+			} catch {
+				return [
+					repo.id,
+					{ headSha: "unobservable", unobservable: true as const },
+				] as const;
+			}
+		}),
+	);
 	context.signal.throwIfAborted();
-	return Object.fromEntries(
-		observed.map(({ id, headSha, workspaceDigest }) => [
-			id,
-			{ headSha, workspaceDigest },
-		]),
+	return Object.fromEntries(entries);
+}
+
+/** Owned by one evaluation/step attempt; never shared across steps or mutations. */
+export function nodeRevisionObserver(context: ExecutionContext) {
+	const observations = new Map<string, Promise<NodeRevisions>>();
+	return (paths?: string[], snapshot?: ReturnType<typeof snapshotForRead>) => {
+		const key = digest({ paths, snapshot });
+		let observed = observations.get(key);
+		if (!observed) {
+			observed = observeNodeRevisions(context, paths, snapshot);
+			observations.set(key, observed);
+		}
+		return observed;
+	};
+}
+type RevisionObserver = ReturnType<typeof nodeRevisionObserver>;
+
+/** Pointers are into declared reads, matching the /inputs convention of Check. */
+function revisionPaths(context: ExecutionContext): string[] | undefined {
+	const scope = context.step.revisionScope;
+	if (!scope || typeof scope === "string") return;
+	let paths: unknown = scope.paths;
+	if (!Array.isArray(paths)) {
+		paths = foreachPointer(
+			{ inputs: stepBindings(context) },
+			(paths as { from: string }).from,
+		);
+	}
+	if (
+		!Array.isArray(paths) ||
+		paths.length > 1000 ||
+		paths.some(
+			(path) => typeof path !== "string" || !path.length || path.length > 400,
+		)
+	)
+		throw new Error(
+			"revisionScope paths must resolve to a list of paths/globs in reads",
+		);
+	return [...new Set(paths as string[])].sort();
+}
+
+/** Explicit scopes replace inherited repository-wide stamps, while reads still bind inputs. */
+export async function scopedNodeRevisions(
+	context: ExecutionContext,
+	observe: RevisionObserver = nodeRevisionObserver(context),
+): Promise<NodeRevisions> {
+	if (context.step.revisionScope === "none") return {};
+	try {
+		return await observe(
+			revisionPaths(context),
+			accessMode(context.step) === "read-only"
+				? snapshotForRead(context)
+				: undefined,
+		);
+	} catch (error) {
+		if (context.signal.aborted) throw error;
+		return Object.fromEntries(
+			runRepositories(context.run).map((repo) => [
+				repo.id,
+				{ headSha: "unobservable", unobservable: true },
+			]),
+		);
+	}
+}
+function sameRevision(
+	accepted: NodeRevisions[string],
+	current?: NodeRevisions[string],
+): boolean {
+	if (!current || accepted.unobservable || current.unobservable) return false;
+	if (accepted.scopedDigest !== undefined)
+		return (
+			accepted.scopedDigest === current.scopedDigest &&
+			digest(accepted.paths) === digest(current.paths)
+		);
+	return (
+		accepted.headSha === current.headSha &&
+		(accepted.workspaceDigest === undefined ||
+			accepted.workspaceDigest === current.workspaceDigest)
 	);
 }
 
 export async function prepareNodeGuarantee(
 	context: ExecutionContext,
+	observe: RevisionObserver = nodeRevisionObserver(context),
 ): Promise<NodeGuarantee> {
 	const outputs = context.outputs ?? context.run.outputs;
 	const prefix = prefixOf(context.stepKey ?? context.step.id);
@@ -120,10 +237,15 @@ export async function prepareNodeGuarantee(
 		}),
 	);
 	const revisions: NodeRevisions = {};
+	const revisionChecks: Record<string, NodeRevisions> = {};
 	for (const name of readSources) {
 		const key = sources[name]!;
 		const receipt = latestNodeReceipt(context, key);
 		Object.assign(revisions, receipt?.guarantee?.revisions);
+		if (receipt?.guarantee) {
+			revisionChecks[key] = receipt.guarantee.revisions;
+			Object.assign(revisionChecks, receipt.guarantee.revisionChecks);
+		}
 	}
 	const boundDigests: Record<string, string> = {};
 	for (const reference of context.step.bind ?? []) {
@@ -136,7 +258,18 @@ export async function prepareNodeGuarantee(
 	}
 	const observedRepositories = new Set<string>();
 	let localObservation: NodeRevisions | undefined;
-	if (context.step.type === "agent" || context.step.type === "snapshot") {
+	const explicitScope =
+		context.step.revisionScope && context.step.revisionScope !== "repository";
+	if (explicitScope) {
+		for (const id of Object.keys(revisions)) delete revisions[id];
+		localObservation = await scopedNodeRevisions(context, observe);
+		Object.assign(revisions, localObservation);
+		for (const id of Object.keys(localObservation))
+			observedRepositories.add(id);
+	} else if (
+		context.step.type === "agent" ||
+		context.step.type === "snapshot"
+	) {
 		if (
 			context.step.type === "agent" &&
 			accessMode(context.step) === "read-only"
@@ -153,11 +286,11 @@ export async function prepareNodeGuarantee(
 					),
 				);
 			else {
-				localObservation = await observeNodeRevisions(context);
+				localObservation = await observe();
 				Object.assign(revisions, localObservation);
 			}
 		} else {
-			localObservation = await observeNodeRevisions(context);
+			localObservation = await observe();
 			Object.assign(revisions, localObservation);
 		}
 		for (const id of Object.keys(localObservation ?? {}))
@@ -167,8 +300,8 @@ export async function prepareNodeGuarantee(
 		context,
 		context.stepKey ?? context.step.id,
 	)?.guarantee;
-	if (previous?.observedRepositories?.length) {
-		const current = localObservation ?? (await observeNodeRevisions(context));
+	if (!explicitScope && previous?.observedRepositories?.length) {
+		const current = localObservation ?? (await observe());
 		for (const id of previous.observedRepositories) {
 			const accepted = previous.revisions[id]!;
 			const observed = current[id];
@@ -182,10 +315,19 @@ export async function prepareNodeGuarantee(
 	return {
 		version: 1,
 		revisions,
+		revisionChecks:
+			!explicitScope &&
+			context.step.type !== "agent" &&
+			context.step.type !== "snapshot" &&
+			Object.values(revisionChecks).some((checks) =>
+				Object.values(checks).some((revision) => revision.paths !== undefined),
+			)
+				? revisionChecks
+				: undefined,
 		observedRepositories: [
 			...new Set([
 				...observedRepositories,
-				...(previous?.observedRepositories ?? []),
+				...(!explicitScope ? (previous?.observedRepositories ?? []) : []),
 			]),
 		],
 		boundDigests,
@@ -207,10 +349,10 @@ export async function prepareNodeGuarantee(
 export async function freshNodeOutput(
 	context: ExecutionContext,
 	reference: string,
+	observe: RevisionObserver = nodeRevisionObserver(context),
 ): Promise<boolean> {
 	context.signal.throwIfAborted();
 	const visiting = new Set<string>();
-	let revisions: Promise<NodeRevisions> | undefined;
 	const check = async (key: string, depth: number): Promise<boolean> => {
 		if (depth > 50 || visiting.has(key)) return false;
 		const receipt = latestNodeReceipt(context, key);
@@ -265,14 +407,14 @@ export async function freshNodeOutput(
 				receipt.inputDigest
 			)
 				return false;
-			if (Object.keys(guarantee.revisions).length) {
-				revisions ??= observeNodeRevisions(context);
-				const current = await revisions;
-				for (const [id, accepted] of Object.entries(guarantee.revisions)) {
+			for (const checks of [
+				guarantee.revisions,
+				...Object.values(guarantee.revisionChecks ?? {}),
+			]) {
+				for (const [id, accepted] of Object.entries(checks)) {
 					if (
-						current[id]?.headSha !== accepted.headSha ||
-						(accepted.workspaceDigest !== undefined &&
-							current[id]?.workspaceDigest !== accepted.workspaceDigest)
+						accepted.unobservable ||
+						!sameRevision(accepted, (await observe(accepted.paths))[id])
 					)
 						return false;
 				}
@@ -297,6 +439,33 @@ export async function freshNodeOutput(
 	return check(nodeReference(context, reference), 0);
 }
 
+function sameRevisionMap(
+	accepted: NodeRevisions,
+	current: NodeRevisions,
+): boolean {
+	return (
+		digest(Object.keys(accepted).sort()) ===
+			digest(Object.keys(current).sort()) &&
+		Object.entries(accepted).every(([id, revision]) =>
+			sameRevision(revision, current[id]),
+		)
+	);
+}
+function sameRevisionChecks(
+	accepted: NodeGuarantee,
+	current: NodeGuarantee,
+): boolean {
+	const a = accepted.revisionChecks ?? {},
+		b = current.revisionChecks ?? {};
+	return (
+		sameRevisionMap(accepted.revisions, current.revisions) &&
+		digest(Object.keys(a).sort()) === digest(Object.keys(b).sort()) &&
+		Object.entries(a).every(([key, revisions]) =>
+			sameRevisionMap(revisions, b[key]!),
+		)
+	);
+}
+
 export function reusableNodeOutput(
 	context: ExecutionContext,
 	inputDigest: string,
@@ -310,7 +479,7 @@ export function reusableNodeOutput(
 	return receipt &&
 		receipt.inputDigest === inputDigest &&
 		receipt.guarantee &&
-		digest(receipt.guarantee.revisions) === digest(guarantee.revisions) &&
+		sameRevisionChecks(receipt.guarantee, guarantee) &&
 		digest(receipt.guarantee.boundDigests) === digest(guarantee.boundDigests) &&
 		(!context.iteration ||
 			receipt.iteration?.itemDigest === digest(context.iteration.value))

@@ -5,6 +5,7 @@ import { EffectReconciliationError } from "../ExecutionErrors.js";
 import {
 	freshNodeOutput,
 	type NodeRevisions,
+	nodeRevisionObserver,
 	prepareNodeGuarantee,
 } from "../NodeGuarantees.js";
 import { timingOperation } from "../RunDiagnostics.js";
@@ -27,9 +28,10 @@ export async function nodeContext(
 	const inputDigest = digest(reads);
 	const active = frame.active;
 	if (!active) throw new Error("Node context requires an active visit");
+	const observe = nodeRevisionObserver(context);
 	const guarantee = active.nodeStamp
 		? structuredClone(active.nodeStamp.guarantee)
-		: await prepareNodeGuarantee(context);
+		: await prepareNodeGuarantee(context, observe);
 	if (!active.nodeStamp) {
 		active.nodeStamp = { inputDigest, guarantee: structuredClone(guarantee) };
 		await engine.save(context.run);
@@ -53,8 +55,18 @@ export async function nodeContext(
 		reads,
 		inputDigest,
 		guarantee,
-		fresh: (reference: string) => freshNodeOutput(context, reference),
+		fresh: (reference: string) => freshNodeOutput(context, reference, observe),
 		recordRevisions: (revisions: NodeRevisions) => {
+			if (context.step.revisionScope === "none") return;
+			if (typeof context.step.revisionScope === "object") {
+				// A provider HEAD alone cannot replace this node's scoped observation.
+				revisions = Object.fromEntries(
+					Object.entries(revisions).filter(
+						([, value]) =>
+							value.scopedDigest !== undefined || value.unobservable,
+					),
+				);
+			}
 			Object.assign(services.guarantee.revisions, structuredClone(revisions));
 			services.guarantee.observedRepositories = [
 				...new Set([

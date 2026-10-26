@@ -161,12 +161,23 @@ export function NodeStepSettings(props: NodeSettingsProps) {
 					<CheckJsonField
 						label="Reuse and bindings"
 						object
-						value={{ reuse: props.step.reuse, bind: props.step.bind }}
+						value={{
+							reuse: props.step.reuse,
+							bind: props.step.bind,
+							revisionScope: props.step.revisionScope,
+						}}
 						readOnly={props.readOnly}
 						onError={props.onError}
 						onChange={(value) => {
-							const fields = value as Pick<Step, "reuse" | "bind">;
-							props.onChange({ reuse: fields.reuse, bind: fields.bind });
+							const fields = value as Pick<
+								Step,
+								"reuse" | "bind" | "revisionScope"
+							>;
+							props.onChange({
+								reuse: fields.reuse,
+								bind: fields.bind,
+								revisionScope: fields.revisionScope,
+							});
 						}}
 					/>
 				</section>

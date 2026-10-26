@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveStepConfig } from "../StepConfig.js";
 import type { WorkflowStep } from "../Workflow.js";
 import {
 	installNodeMetadata,
@@ -64,7 +65,27 @@ export class NodeRegistry {
 			return z.NEVER;
 		}
 		const result = node.schema.safeParse(value);
-		if (result.success) return result.data;
+		if (result.success) {
+			const step = result.data;
+			if (step.reuse) {
+				const selfRead = Object.values(resolveStepConfig(step).reads).some(
+					({ from }) =>
+						from.split("/")[0] === step.id || /^@history(\/|$)/.test(from),
+				);
+				const selfBind = step.bind?.some(
+					(ref) => ref === step.id || ref === `/${step.id}`,
+				);
+				if (node.usesPreviousReceipt || selfRead || selfBind) {
+					context.addIssue({
+						code: "custom",
+						path: ["reuse"],
+						message: `${node.type} cannot reuse output because it depends on its previous receipt`,
+					});
+					return z.NEVER;
+				}
+			}
+			return result.data;
+		}
 		// Finalized schema issues retain their original validation code and path.
 		for (const issue of result.error.issues)
 			context.addIssue(issue as Parameters<typeof context.addIssue>[0]);

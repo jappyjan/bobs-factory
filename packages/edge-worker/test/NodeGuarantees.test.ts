@@ -22,6 +22,7 @@ import {
 	paletteNodes,
 } from "../src/factory/nodes/metadata.js";
 import { parseStepOutputAsync } from "../src/factory/OutputFormats.js";
+import * as revisions from "../src/factory/RevisionBinding.js";
 import { evaluateCondition } from "../src/factory/Rules.js";
 import { StepSchema, validateWorkflows } from "../src/factory/Workflow.js";
 import {
@@ -48,6 +49,7 @@ afterEach(async () => {
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 	execute.mockReset();
+	vi.restoreAllMocks();
 });
 function runtime(
 	home = mkdtempSync(join(tmpdir(), "node-guarantees-")),
@@ -482,20 +484,21 @@ it("detects unchanged cycles, resets after change, and retains converge state ov
 	});
 });
 
-it("provides converge registry metadata, insertion and a JSON builder panel including reuse/bind", () => {
+it("provides converge registry metadata, insertion and a JSON builder panel including bind", () => {
 	installNodeMetadata(JSON.parse(JSON.stringify(nodeRegistry.metadata())));
 	expect(paletteNodes().some((node) => node.type === "converge")).toBe(true);
 	const step = {
 		...newStep("converge", "observe"),
-		reuse: "unchanged-inputs" as const,
 		bind: ["source"],
 	};
 	expect(StepSchema.parse(step)).toMatchObject({
 		watch: ["/inputs/value"],
 		maxCycles: 3,
 		bind: ["source"],
-		reuse: "unchanged-inputs",
 	});
+	expect(() => recipe([{ ...step, reuse: "unchanged-inputs" }])).toThrow(
+		"cannot reuse",
+	);
 	const workflow = recipe([step]);
 	const markup = renderToStaticMarkup(
 		createElement(NodeStepSettings, {
@@ -512,7 +515,6 @@ it("provides converge registry metadata, insertion and a JSON builder panel incl
 	expect(markup).toContain("Node configuration");
 	expect(markup).toContain("watch");
 	expect(markup).toContain("bind");
-	expect(markup).toContain("reuse");
 });
 
 it("resolves bound Call aliases in the producer's frame after restart", async () => {
@@ -664,4 +666,350 @@ it("distinguishes a current null result from a missing output slot", async () =>
 	expect(await freshNodeOutput(context(run), "scalar")).toBe(true);
 	delete run.outputs.scalar;
 	expect(await freshNodeOutput(context(run), "scalar")).toBe(false);
+});
+
+it.each([
+	"parallel",
+	"foreach",
+])("reuses scoped agents in %s across unrelated commits, but reruns affected scopes", async (kind) => {
+	let cycle = 0;
+	const calls: string[] = [];
+	const { instance, home } = runtime(undefined, async (ctx) => {
+		calls.push(ctx.stepKey!);
+		return { reviewed: true };
+	});
+	const repo = repository(home);
+	mkdirSync(join(repo.workspace, "area"));
+	writeFileSync(join(repo.workspace, "area", "file.ts"), "initial");
+	repo.git("add", ".");
+	repo.commit("initial");
+	const freshness: boolean[] = [];
+	execute.mockImplementation(async (ctx) => {
+		if (ctx.step.id === "impact") {
+			ctx.recordRevisions(await observeNodeRevisions(ctx));
+			return { paths: ["area/**"], items: [{ id: "a" }, { id: "b" }] };
+		}
+		if (cycle === 0) repo.commit("outside scope");
+		if (cycle === 1) {
+			writeFileSync(join(repo.workspace, "area", "file.ts"), "changed");
+			repo.git("add", ".");
+			repo.commit("inside scope");
+		}
+		freshness.push(
+			await ctx.fresh(
+				kind === "parallel" ? "/group/0/review" : "/group/a/review",
+			),
+		);
+		return { again: ++cycle < 3 };
+	});
+	const review = (dynamic: boolean) => ({
+		id: "review",
+		name: "Review",
+		type: "agent",
+		prompt: "Review area",
+		reuse: "unchanged-inputs",
+		reads: { paths: "impact/paths" },
+		revisionScope: { paths: dynamic ? { from: "/inputs/paths" } : ["area/**"] },
+	});
+	const group =
+		kind === "parallel"
+			? {
+					id: "group",
+					name: "Parallel",
+					type: "fanout",
+					groups: [[review(false)], [review(true)]],
+				}
+			: {
+					id: "group",
+					name: "For each",
+					type: "foreach",
+					reads: { items: "impact/items" },
+					items: { from: "/inputs/items" },
+					body: [review(true)],
+				};
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("impact"),
+			group,
+			fixture("cycle", {
+				branches: [{ when: { path: "again", equals: true }, next: "impact" }],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	const keys =
+		kind === "parallel"
+			? ["group/0/review", "group/1/review"]
+			: ["group/a/review", "group/b/review"];
+	expect(calls.sort()).toEqual([...keys, ...keys].sort());
+	expect(freshness).toEqual([true, false, true]);
+	expect(
+		run.events.filter((event) => event.message === "reused (inputs unchanged)"),
+	).toHaveLength(2);
+	// Scoped content and the accepted paths survive restart, along with local HEAD provenance.
+	await instance.shutdown();
+	const loaded = runtime(home).instance.get(run.id);
+	expect(await freshNodeOutput(context(loaded), `/${keys[0]}`)).toBe(true);
+	writeFileSync(join(repo.workspace, "outside"), "untracked outside");
+	expect(await freshNodeOutput(context(loaded), `/${keys[0]}`)).toBe(true);
+	writeFileSync(join(repo.workspace, "area", "new.ts"), "untracked inside");
+	expect(await freshNodeOutput(context(loaded), `/${keys[0]}`)).toBe(false);
+	rmSync(join(repo.workspace, "area", "new.ts"));
+	writeFileSync(join(repo.workspace, "area", "file.ts"), "dirty inside");
+	expect(await freshNodeOutput(context(loaded), `/${keys[0]}`)).toBe(false);
+});
+
+it("resolves changing dynamic scopes from named reads and lets none rely on inputs only", async () => {
+	let cycles = 0;
+	const calls: string[] = [];
+	const { instance, home } = runtime(undefined, async (ctx) => {
+		calls.push(ctx.step.id);
+		return { ok: true };
+	});
+	const repo = repository(home);
+	execute.mockImplementation(async (ctx) => {
+		if (ctx.step.id === "impact") {
+			ctx.recordRevisions(await observeNodeRevisions(ctx));
+			return { paths: cycles ? ["missing/**"] : ["value"] };
+		}
+		if (++cycles === 1) repo.commit("two");
+		return { again: cycles < 2 };
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("impact"),
+			{
+				id: "dynamic",
+				name: "Dynamic",
+				type: "agent",
+				prompt: "Inspect",
+				reuse: "unchanged-inputs",
+				reads: { paths: "impact/paths" },
+				revisionScope: { paths: { from: "/inputs/paths" } },
+			},
+			{
+				id: "inputsOnly",
+				name: "Inputs only",
+				type: "agent",
+				prompt: "Inspect",
+				reuse: "unchanged-inputs",
+				reads: { paths: "impact/paths" },
+				revisionScope: "none",
+			},
+			fixture("cycle", {
+				branches: [{ when: { path: "again", equals: true }, next: "dynamic" }],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(calls).toEqual(["dynamic", "inputsOnly", "dynamic"]);
+	expect(
+		run.history.find((entry) => entry.step === "inputsOnly")?.guarantee
+			?.revisions,
+	).toEqual({});
+	// The producer's reads are re-resolved for freshness, including its dynamic paths.
+	run.outputs.impact = { paths: ["other"] };
+	expect(await freshNodeOutput(context(run), "dynamic")).toBe(false);
+	expect(await freshNodeOutput(context(run), "inputsOnly")).toBe(false);
+});
+
+it.each([
+	"unborn HEAD",
+	"failed observation",
+])("fails closed without failing the agent on %s", async (failure) => {
+	let calls = 0,
+		cycles = 0;
+	const { instance, home } = runtime(undefined, async () => {
+		calls++;
+		return { ok: true };
+	});
+	const repo = repository(home);
+	if (failure === "unborn HEAD") repo.git("update-ref", "-d", "HEAD");
+	else
+		vi.spyOn(revisions, "captureRepositoryRevisions").mockRejectedValue(
+			new Error("maxBuffer/timeout"),
+		);
+	execute.mockImplementation(() => ({ again: ++cycles < 2 }));
+	const run = start(
+		instance,
+		home,
+		[
+			{
+				id: "sample",
+				name: "Sample",
+				type: "agent",
+				prompt: "Inspect",
+				reuse: "unchanged-inputs",
+			},
+			fixture("cycle", {
+				branches: [{ when: { path: "again", equals: true }, next: "sample" }],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	expect(calls).toBe(2);
+	expect(run.history[0]?.guarantee?.revisions.fixture?.unobservable).toBe(true);
+	expect(await freshNodeOutput(context(run), "sample")).toBe(false);
+});
+
+it("shares observations across preparation, reuse and multiple fresh references in one step attempt", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	const capture = vi.spyOn(revisions, "captureRepositoryRevisions");
+	let cycles = 0;
+	execute.mockImplementation(async (ctx) => {
+		if (ctx.step.id === "bound") return {};
+		if (cycles === 0) {
+			capture.mockClear();
+			expect(
+				await Promise.all([ctx.fresh("sample"), ctx.fresh("bound")]),
+			).toEqual([true, true]);
+			expect(capture).toHaveBeenCalledTimes(1);
+			capture.mockClear();
+		}
+		return { again: ++cycles < 2 };
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			{
+				id: "sample",
+				name: "Sample",
+				type: "agent",
+				prompt: "Inspect",
+				reuse: "unchanged-inputs",
+			},
+			fixture("bound", { bind: ["sample"] }),
+			fixture("cycle", {
+				branches: [{ when: { path: "again", equals: true }, next: "sample" }],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(capture).toHaveBeenCalledTimes(1); // prepare and fresh on reused sample
+	expect(
+		run.events.filter((event) => event.message === "reused (inputs unchanged)"),
+	).toHaveLength(1);
+});
+
+it("rejects reuse for node-owned previous state and explicit self/history dependencies", () => {
+	const schema = z.object({
+		...stepFields,
+		type: z.literal("previous-receipt-fixture"),
+	});
+	nodeRegistry.register({
+		type: "previous-receipt-fixture",
+		schema,
+		usesPreviousReceipt: true,
+		category: "logic",
+		effect: "pure",
+		builder: { label: "Previous", icon: "◇", paletteGroup: "logic" },
+		execute: () => ({}),
+	});
+	expect(() =>
+		recipe([
+			{
+				id: "previous",
+				name: "Previous",
+				type: "previous-receipt-fixture",
+				reuse: "unchanged-inputs",
+			},
+		]),
+	).toThrow("previous receipt");
+	for (const fields of [
+		{ reads: { previous: "self/value" } },
+		{ reads: { history: "@history" } },
+		{ bind: ["self"] },
+	])
+		expect(() =>
+			recipe([fixture("self", { ...fields, reuse: "unchanged-inputs" })]),
+		).toThrow("previous receipt");
+});
+
+it("retains every inherited revision scope when multiple reviewers cover the same repository", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	execute.mockImplementation(() => ({}));
+	const run = start(
+		instance,
+		home,
+		[
+			{
+				id: "first",
+				name: "First",
+				type: "agent",
+				prompt: "Inspect",
+				revisionScope: { paths: ["value"] },
+			},
+			{
+				id: "second",
+				name: "Second",
+				type: "agent",
+				prompt: "Inspect",
+				revisionScope: { paths: ["other"] },
+			},
+			fixture("combine", { reads: { first: "first", second: "second" } }),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(await freshNodeOutput(context(run), "combine")).toBe(true);
+	repo.commit("two");
+	expect(await freshNodeOutput(context(run), "second")).toBe(true);
+	expect(await freshNodeOutput(context(run), "combine")).toBe(false);
+});
+
+it("compares a scoped Snapshot reader with the local checkout, including dirty changes", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	const run = start(
+		instance,
+		home,
+		[
+			{ id: "snapshot", name: "Snapshot", type: "snapshot" },
+			{
+				id: "sample",
+				name: "Sample",
+				type: "agent",
+				prompt: "Inspect",
+				access: { mode: "read-only" },
+				reads: { snapshot: "snapshot" },
+				revisionScope: { paths: ["value"] },
+			},
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(await freshNodeOutput(context(run), "sample")).toBe(true);
+	writeFileSync(join(repo.workspace, "outside"), "outside");
+	repo.git("add", "outside");
+	repo.git(
+		"-c",
+		"core.hooksPath=/dev/null",
+		"-c",
+		"commit.gpgsign=false",
+		"commit",
+		"-qm",
+		"Outside [skip ci]",
+	);
+	expect(await freshNodeOutput(context(run), "sample")).toBe(true);
+	writeFileSync(join(repo.workspace, "value"), "dirty");
+	expect(await freshNodeOutput(context(run), "sample")).toBe(false);
 });

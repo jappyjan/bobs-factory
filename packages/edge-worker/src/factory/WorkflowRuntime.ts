@@ -134,7 +134,7 @@ import {
 	recordMergeConfirmation,
 } from "./MergeRecovery.js";
 import { nativeViewText } from "./NativeViews.js";
-import { observeNodeRevisions, reusableNodeOutput } from "./NodeGuarantees.js";
+import { reusableNodeOutput, scopedNodeRevisions } from "./NodeGuarantees.js";
 import { nodeContext } from "./nodes/context.js";
 import { NODE_REROUTE } from "./nodes/control.js";
 import { nodeRegistry } from "./nodes/index.js";
@@ -3498,7 +3498,7 @@ export class WorkflowRuntime {
 						!reuseHit &&
 						accessMode(step) !== "read-only"
 					)
-						nodeCtx.recordRevisions(await observeNodeRevisions(context));
+						nodeCtx.recordRevisions(await scopedNodeRevisions(context));
 					const acceptedBinding = await assertBoundInspectionFresh(context);
 					outputs[step.id] = output;
 					if (step.type === "agent" && isNodeEngineStep(step)) {

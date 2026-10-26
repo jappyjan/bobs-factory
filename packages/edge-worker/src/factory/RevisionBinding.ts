@@ -139,6 +139,7 @@ export async function outputRevisionBinding(
 export async function captureRepositoryRevisions(
 	context: Pick<ExecutionContext, "run">,
 	snapshot?: ReturnType<typeof snapshotForRead>,
+	paths?: string[],
 ): Promise<OutputRevisionBinding["repositories"]> {
 	return Promise.all(
 		runRepositories(context.run).map(async (repo) => {
@@ -153,7 +154,31 @@ export async function captureRepositoryRevisions(
 			const pinned = snapshot?.repositories.find((item) => item.id === repo.id);
 			const headSha =
 				pinned?.revision ?? (await git(["rev-parse", "HEAD"])).trim();
-			const treeSha = (await git(["rev-parse", `${headSha}^{tree}`])).trim();
+			let treeSha = (await git(["rev-parse", `${headSha}^{tree}`])).trim();
+			if (paths) {
+				// ls-tree accepts literal paths, not glob pathspecs. ls-files expands
+				// Git pathspecs against HEAD plus the index, including deleted files.
+				const selected = new Set(
+					paths.length
+						? (
+								await git([
+									"ls-files",
+									"--cached",
+									`--with-tree=${headSha}`,
+									"-z",
+									"--",
+									...paths,
+								])
+							).split("\0")
+						: [],
+				);
+				const entries = (await git(["ls-tree", "-r", "-z", headSha]))
+					.split("\0")
+					.filter((entry) =>
+						selected.has(entry.slice(entry.indexOf("\t") + 1)),
+					);
+				treeSha = digest(entries);
+			}
 			if (snapshot) {
 				if (
 					!pinned ||
@@ -170,14 +195,34 @@ export async function captureRepositoryRevisions(
 					id: repo.id,
 					headSha,
 					treeSha,
-					workspaceDigest: digest({ pinned: headSha, treeSha }),
+					workspaceDigest: paths
+						? createHash("sha256").digest("hex")
+						: digest({ pinned: headSha, treeSha }),
 				};
 			}
 			const hash = createHash("sha256").update(
-				await git(["diff", "--no-ext-diff", "--binary", headSha]),
+				paths?.length === 0
+					? ""
+					: await git([
+							"diff",
+							"--no-ext-diff",
+							"--binary",
+							headSha,
+							"--",
+							...(paths ?? []),
+						]),
 			);
 			const untracked = (
-				await git(["ls-files", "--others", "--exclude-standard", "-z"])
+				paths?.length === 0
+					? ""
+					: await git([
+							"ls-files",
+							"--others",
+							"--exclude-standard",
+							"-z",
+							"--",
+							...(paths ?? []),
+						])
 			)
 				.split("\0")
 				.filter(Boolean)

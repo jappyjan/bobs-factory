@@ -21,6 +21,7 @@ export const schema = z.object({
 });
 export const definition = {
 	type: "converge",
+	usesPreviousReceipt: true,
 	schema,
 	category: "logic",
 	effect: "pure",

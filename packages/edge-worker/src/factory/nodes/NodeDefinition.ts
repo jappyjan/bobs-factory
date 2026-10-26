@@ -105,6 +105,8 @@ export interface NodeDefinition<
 	Schema extends z.ZodType<WorkflowStep> = z.ZodType<WorkflowStep>,
 > extends NodeMetadata {
 	schema: Schema;
+	/** Execution derives a new result from its own previous receipt (e.g. counters). */
+	usesPreviousReceipt?: true;
 	execute(ctx: NodeContext<z.output<Schema>>): Promise<unknown> | unknown;
 	summary?: (output: unknown) => string | undefined;
 	/** Temporary bridge for agent/script/tool until their execution is extracted. */

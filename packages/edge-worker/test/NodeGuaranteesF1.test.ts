@@ -21,7 +21,7 @@ vi.mock("../src/factory/FactoryWebAssets.js", () => ({
 	}),
 }));
 
-it("drives reuse, bound freshness and convergence through the authenticated API with scripted agents and real Git", async () => {
+it("drives scoped reuse across commits, bound freshness and convergence through the authenticated API with scripted agents and real Git", async () => {
 	const home = mkdtempSync(join(tmpdir(), "f1-node-guarantees-"));
 	const workspace = join(home, "repo");
 	mkdirSync(workspace);
@@ -57,6 +57,13 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 					type: "agent",
 					prompt: "Scripted sample",
 					reuse: "unchanged-inputs",
+					revisionScope: { paths: ["value"] },
+				},
+				{
+					id: "change",
+					name: "Change",
+					type: "script",
+					script: "scripted-change",
 				},
 				{
 					id: "observe",
@@ -64,7 +71,7 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 					type: "converge",
 					reads: { value: "sample/value" },
 					watch: ["/inputs/value"],
-					maxCycles: 2,
+					maxCycles: 3,
 					branches: [
 						{ when: { path: "stalled", equals: false }, next: "sample" },
 					],
@@ -85,13 +92,33 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 			],
 		},
 	]).at(-1)!;
-	let agentCalls = 0;
+	let agentCalls = 0,
+		changes = 0;
+	const outsideCommit = (value: string) => {
+		writeFileSync(join(workspace, "outside"), value);
+		git("add", "outside");
+		git(
+			"-c",
+			"core.hooksPath=/dev/null",
+			"-c",
+			"commit.gpgsign=false",
+			"commit",
+			"-qm",
+			"Outside [skip ci]",
+		);
+	};
 	const hooks = {
 		agent: async () => {
 			agentCalls++;
 			return { value: 1 };
 		},
-		script: async () => ({ accepted: true }),
+		script: async (ctx: ExecutionContext) => {
+			if (ctx.step.id === "change") {
+				if (++changes === 1) outsideCommit("outside");
+				else if (changes === 2) commit("inside");
+			}
+			return { accepted: true };
+		},
 		tool: async () => ({}),
 	};
 	const runtime = new WorkflowRuntime(home, hooks);
@@ -133,13 +160,13 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 		expect(created.statusCode, created.body).toBe(202);
 		const run = runtime.get(created.json().id);
 		await waitForRuntime(() => expect(run.status).toBe("completed"));
-		expect(agentCalls).toBe(1);
+		expect(agentCalls).toBe(2);
 		expect(run.history.filter((entry) => entry.step === "sample")).toHaveLength(
-			2,
+			3,
 		);
 		expect(run.outputs.observe).toEqual({
 			stalled: true,
-			cycles: 2,
+			cycles: 3,
 			changed: false,
 		});
 		expect(run.outputs.check).toEqual({ passed: true, current: true });
@@ -160,7 +187,7 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 		const loaded = restarted.get(run.id);
 		const context: ExecutionContext = {
 			run: loaded,
-			step: loaded.workflow.steps[3]!,
+			step: loaded.workflow.steps.at(-1)!,
 			stepKey: "check",
 			outputs: loaded.outputs,
 			input: {},
@@ -172,6 +199,8 @@ it("drives reuse, bound freshness and convergence through the authenticated API 
 			loaded.history.find((entry) => entry.step === "response")?.guarantee
 				?.boundDigests,
 		).toEqual(bound);
+		expect(await freshNodeOutput(context, "response")).toBe(true);
+		outsideCommit("after restart");
 		expect(await freshNodeOutput(context, "response")).toBe(true);
 		commit("two");
 		expect(await freshNodeOutput(context, "response")).toBe(false);
