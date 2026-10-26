@@ -118,146 +118,190 @@ const MAX_VALUES = 20_000;
 const pointer = z
 	.string()
 	.max(400)
+	.regex(/^\$?(\/[^/]*)*$/, "Rule paths are JSON Pointers such as /status");
+const transformPointer = z
+	.string()
+	.max(400)
 	.regex(
 		/^(?:\$|\^*(?:@key|@index)?)?(\/[^/]*)*$/,
 		"Rule paths are JSON Pointers such as /status",
 	);
-const operand: z.ZodType<RuleOperand> = z.lazy(() =>
-	z.union([
-		z.number(),
-		z.object({ path: pointer }).strict(),
-		z.object({ length: pointer }).strict(),
-		z.object({ sum: z.array(operand).min(1).max(20) }).strict(),
-	]),
-);
-const pointers = z.union([pointer, z.array(pointer).min(1).max(20)]);
-export const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
-	z.union([
-		z.object({ all: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
-		z.object({ any: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
-		z.object({ not: RuleConditionSchema }).strict(),
+function ruleSchemas(pointer: z.ZodString) {
+	const operand: z.ZodType<RuleOperand> = z.lazy(() =>
+		z.union([
+			z.number(),
+			z.object({ path: pointer }).strict(),
+			z.object({ length: pointer }).strict(),
+			z.object({ sum: z.array(operand).min(1).max(20) }).strict(),
+		]),
+	);
+	const pointers = z.union([pointer, z.array(pointer).min(1).max(20)]);
+	const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
+		z.union([
+			z.object({ all: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
+			z.object({ any: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
+			z.object({ not: RuleConditionSchema }).strict(),
+			z
+				.object({
+					conforms: z
+						.string()
+						.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
+						.max(100),
+					path: pointer.optional(),
+				})
+				.strict(),
+			z
+				.object({
+					compare: z
+						.object({
+							left: operand,
+							op: z.enum(["eq", "lt", "lte", "gt", "gte"]),
+							right: operand,
+						})
+						.strict(),
+				})
+				.strict(),
+			z
+				.object({
+					distinct: z.array(pointer).min(1).max(20),
+					by: pointers.optional(),
+				})
+				.strict(),
+			z
+				.object({
+					sameLength: z.object({ items: pointer, as: pointer }).strict(),
+				})
+				.strict(),
+			z
+				.object({
+					lookup: z
+						.object({ collection: pointer, key: pointer, value: pointer })
+						.strict(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					text: z
+						.object({
+							path: pointer,
+							test: z.enum([
+								"nonblank",
+								"no-local-path",
+								"no-commit-sha",
+								"repository-relative",
+							]),
+						})
+						.strict(),
+				})
+				.strict(),
+			z
+				.object({
+					each: pointer,
+					where: RuleConditionSchema.optional(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					some: pointer,
+					where: RuleConditionSchema.optional(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					count: pointer,
+					where: RuleConditionSchema.optional(),
+					min: operand.optional(),
+					max: operand.optional(),
+				})
+				.strict()
+				.refine(
+					(c) => c.min !== undefined || c.max !== undefined,
+					"count needs min or max",
+				),
+			z
+				.object({
+					path: pointer,
+					equals: z.unknown().optional(),
+					notEquals: z.unknown().optional(),
+					in: z.array(z.unknown()).max(100).optional(),
+					exists: z.boolean().optional(),
+					empty: z.boolean().optional(),
+					minLength: operand.optional(),
+					maxLength: operand.optional(),
+					min: operand.optional(),
+					max: operand.optional(),
+					unique: z.literal(true).optional(),
+					by: pointers.optional(),
+					within: pointers.optional(),
+					disjoint: pointers.optional(),
+					equalsPath: pointer.optional(),
+					maxItem: operand.optional(),
+				})
+				.strict()
+				.refine(
+					(c) =>
+						[
+							"equals",
+							"notEquals",
+							"in",
+							"exists",
+							"empty",
+							"minLength",
+							"maxLength",
+							"min",
+							"max",
+							"unique",
+							"within",
+							"disjoint",
+							"equalsPath",
+							"maxItem",
+						].some((key) => Object.hasOwn(c, key)),
+					"A path condition needs an operator such as equals, empty or unique",
+				),
+		]),
+	);
+	const RuleAggregateSchema: z.ZodType<RuleAggregate> = z.union([
 		z
 			.object({
-				conforms: z
-					.string()
-					.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
-					.max(100),
-				path: pointer.optional(),
+				aggregate: z.enum(["all", "any"]),
+				path: pointer,
+				where: RuleConditionSchema.optional(),
+				require: RuleConditionSchema,
 			})
 			.strict(),
 		z
 			.object({
-				compare: z
-					.object({
-						left: operand,
-						op: z.enum(["eq", "lt", "lte", "gt", "gte"]),
-						right: operand,
-					})
-					.strict(),
+				aggregate: z.enum(["count", "filter"]),
+				path: pointer,
+				where: RuleConditionSchema.optional(),
 			})
 			.strict(),
+	]);
+	const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
+		RuleConditionSchema,
+		RuleAggregateSchema,
+		z.object({ select: pointer }).strict(),
 		z
 			.object({
-				distinct: z.array(pointer).min(1).max(20),
-				by: pointers.optional(),
-			})
-			.strict(),
-		z
-			.object({
-				sameLength: z.object({ items: pointer, as: pointer }).strict(),
-			})
-			.strict(),
-		z
-			.object({
-				lookup: z
+				find: z
 					.object({ collection: pointer, key: pointer, value: pointer })
 					.strict(),
-				require: RuleConditionSchema,
 			})
 			.strict(),
-		z
-			.object({
-				text: z
-					.object({
-						path: pointer,
-						test: z.enum([
-							"nonblank",
-							"no-local-path",
-							"no-commit-sha",
-							"repository-relative",
-						]),
-					})
-					.strict(),
-			})
-			.strict(),
-		z
-			.object({
-				each: pointer,
-				where: RuleConditionSchema.optional(),
-				require: RuleConditionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				some: pointer,
-				where: RuleConditionSchema.optional(),
-				require: RuleConditionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				count: pointer,
-				where: RuleConditionSchema.optional(),
-				min: operand.optional(),
-				max: operand.optional(),
-			})
-			.strict()
-			.refine(
-				(c) => c.min !== undefined || c.max !== undefined,
-				"count needs min or max",
-			),
-		z
-			.object({
-				path: pointer,
-				equals: z.unknown().optional(),
-				notEquals: z.unknown().optional(),
-				in: z.array(z.unknown()).max(100).optional(),
-				exists: z.boolean().optional(),
-				empty: z.boolean().optional(),
-				minLength: operand.optional(),
-				maxLength: operand.optional(),
-				min: operand.optional(),
-				max: operand.optional(),
-				unique: z.literal(true).optional(),
-				by: pointers.optional(),
-				within: pointers.optional(),
-				disjoint: pointers.optional(),
-				equalsPath: pointer.optional(),
-				maxItem: operand.optional(),
-			})
-			.strict()
-			.refine(
-				(c) =>
-					[
-						"equals",
-						"notEquals",
-						"in",
-						"exists",
-						"empty",
-						"minLength",
-						"maxLength",
-						"min",
-						"max",
-						"unique",
-						"within",
-						"disjoint",
-						"equalsPath",
-						"maxItem",
-					].some((key) => Object.hasOwn(c, key)),
-				"A path condition needs an operator such as equals, empty or unique",
-			),
-	]),
-);
+	]);
+
+	return { RuleConditionSchema, RuleAggregateSchema, RuleExpressionSchema };
+}
+const standardRules = ruleSchemas(pointer);
+const transformRules = ruleSchemas(transformPointer);
+export const {
+	RuleConditionSchema,
+	RuleAggregateSchema,
+	RuleExpressionSchema,
+} = standardRules;
 export const RuleSchema: z.ZodType<Rule> = z
 	.object({
 		id: z
@@ -327,36 +371,6 @@ export const RuleDataSchema = z.unknown().superRefine((value, context) => {
 });
 export const RulesSchema = RuleDataSchema.pipe(z.array(RuleSchema).max(50));
 
-export const RuleAggregateSchema: z.ZodType<RuleAggregate> = z.union([
-	z
-		.object({
-			aggregate: z.enum(["all", "any"]),
-			path: pointer,
-			where: RuleConditionSchema.optional(),
-			require: RuleConditionSchema,
-		})
-		.strict(),
-	z
-		.object({
-			aggregate: z.enum(["count", "filter"]),
-			path: pointer,
-			where: RuleConditionSchema.optional(),
-		})
-		.strict(),
-]);
-export const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
-	RuleConditionSchema,
-	RuleAggregateSchema,
-	z.object({ select: pointer }).strict(),
-	z
-		.object({
-			find: z
-				.object({ collection: pointer, key: pointer, value: pointer })
-				.strict(),
-		})
-		.strict(),
-]);
-
 /** Transform templates reuse rules-v1 with literals, object merging and item mapping. */
 export type TransformValue =
 	| RuleExpression
@@ -393,42 +407,50 @@ const transformLiteralSchema = z
 		}),
 	})
 	.strict();
-export const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
-	z.union([
-		RuleExpressionSchema,
-		z
-			.object({
-				merge: z
-					.array(z.union([RuleExpressionSchema, transformLiteralSchema]))
-					.min(1)
-					.max(20),
-			})
-			.strict(),
-		z.string(),
-		z.number(),
-		z.boolean(),
-		z.null(),
-		transformLiteralSchema,
-		z
-			.object({
-				map: pointers,
-				distinctBy: pointer.optional(),
-				missingAsEmpty: z.boolean().optional(),
-				where: RuleConditionSchema.optional(),
-				template: TransformTemplateSchema,
-			})
-			.strict(),
-	]),
-);
-export const TransformTemplateSchema: z.ZodType<TransformTemplate> = z.lazy(
-	() =>
+function transformSchemas(inMap: boolean) {
+	const paths = inMap ? transformPointer : pointer;
+	const expression = (inMap ? transformRules : standardRules)
+		.RuleExpressionSchema;
+	const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
+		z.union([
+			expression,
+			z
+				.object({
+					merge: z
+						.array(z.union([expression, transformLiteralSchema]))
+						.min(1)
+						.max(20),
+				})
+				.strict(),
+			z.string(),
+			z.number(),
+			z.boolean(),
+			z.null(),
+			transformLiteralSchema,
+			z
+				.object({
+					map: z.union([paths, z.array(paths).min(1).max(20)]),
+					distinctBy: transformPointer.optional(),
+					missingAsEmpty: z.boolean().optional(),
+					where: transformRules.RuleConditionSchema.optional(),
+					template: mappedTransform.TransformTemplateSchema,
+				})
+				.strict(),
+		]),
+	);
+	const TransformTemplateSchema: z.ZodType<TransformTemplate> = z.lazy(() =>
 		z
 			.record(fieldName, TransformValueSchema)
 			.refine(
 				(value) => Object.keys(value).length <= 50,
 				"At most 50 transform fields",
 			),
-);
+	);
+	return { TransformValueSchema, TransformTemplateSchema };
+}
+const mappedTransform = transformSchemas(true);
+export const { TransformValueSchema, TransformTemplateSchema } =
+	transformSchemas(false);
 export const TransformSchema = RuleDataSchema.pipe(
 	z.unknown().superRefine((value, context) => {
 		// Inspect original keys before record parsing can discard __proto__.

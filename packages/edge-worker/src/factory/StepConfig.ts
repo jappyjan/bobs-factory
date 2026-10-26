@@ -1038,3 +1038,590 @@ const inheritedConfigOwners = new WeakMap<object, object>();
 export function registerWorkflowConfig(
 	workflow: {
 		id: string;
+		engineVersion?: "nodes-v1";
+		stepConfigVersion?: string;
+		steps: object[];
+	},
+	rootWorkflowId = workflow.id,
+): void {
+	const visit = (steps: object[], modern = false) => {
+		const architectureRevision = steps.some(
+			(step) => (step as LegacyStep).tool === "architecture-decision",
+		);
+		for (const step of steps) {
+			registeredScopes.set(step, {
+				workflowId: workflow.id,
+				rootWorkflowId,
+				legacy:
+					!workflow.engineVersion &&
+					!modern &&
+					!workflow.stepConfigVersion &&
+					!isExplicitStep(step),
+				engineVersion: workflow.engineVersion,
+				architectureRevision,
+			});
+			for (const group of (step as { groups?: object[][] }).groups ?? [])
+				visit(group, modern);
+			const body = (step as { body?: object[] }).body;
+			if (body) visit(body, true);
+		}
+	};
+	visit(workflow.steps);
+}
+/** Editable projection: materialize every old setting together before any single setting changes. */
+export function materializeWorkflowConfig<
+	T extends {
+		id: string;
+		engineVersion?: "nodes-v1";
+		stepConfigVersion?: string;
+		steps: object[];
+	},
+>(workflow: T): T {
+	registerWorkflowConfig(workflow);
+	if (workflow.engineVersion) return structuredClone(workflow);
+	const copy = structuredClone(workflow);
+	const visit = (originals: object[], copies: object[]) => {
+		for (const [index, original] of originals.entries()) {
+			const step = copies[index]! as LegacyStep & {
+				groups?: object[][];
+				body?: object[];
+			};
+			const config = resolveStepConfig(original);
+			Object.assign(step, {
+				configVersion: STEP_CONFIG_VERSION,
+				reads: Object.fromEntries(
+					Object.entries(config.reads).map(([name, read]) => [
+						name,
+						read.when ? { ...read } : read.from,
+					]),
+				),
+			});
+			// Views and pure/flow nodes share reads, but never acquire legacy evidence fields
+			// merely because Recipes projects an editable definition.
+			if (
+				!["decide", "approve", "show", "transform", "wait"].includes(
+					step.type ?? "",
+				)
+			) {
+				Object.assign(step, {
+					rules: structuredClone(config.rules),
+					checks: config.checks.map(({ check, args }) =>
+						Object.keys(args).length ? { check, ...args } : check,
+					),
+					access: config.access,
+					instructions: [...config.instructions],
+				});
+				if (config.output) step.output = structuredClone(config.output);
+				if (config.revision) step.revision = config.revision;
+			}
+			for (const [groupIndex, group] of (
+				(original as { groups?: object[][] }).groups ?? []
+			).entries())
+				visit(group, step.groups![groupIndex]!);
+			const body = (original as { body?: object[] }).body;
+			if (body) visit(body, step.body!);
+		}
+	};
+	visit(workflow.steps, copy.steps);
+	copy.stepConfigVersion = STEP_CONFIG_VERSION;
+	return copy;
+}
+/** Accepted definition owning a runtime copy; equal configuration is not ownership. */
+export function stepConfigOwner(step: object): object {
+	return inheritedConfigOwners.get(step) ?? step;
+}
+/** Carry accepted configuration ownership and legacy interpretation to runtime copies. */
+export function inheritStepConfig(source: object, target: object): void {
+	inheritedConfigOwners.set(target, stepConfigOwner(source));
+	const scope = registeredScopes.get(source);
+	if (scope) registeredScopes.set(target, scope);
+}
+/** Default is modern. Only an explicitly registered old definition enables ID normalization. */
+export function resolveStepConfig(
+	step: object,
+	scope: StepScope = {},
+): ResolvedStepConfig {
+	const effective = { ...registeredScopes.get(step), ...scope };
+	return (effective.legacy ?? hasLegacyFlags(step)) && !isExplicitStep(step)
+		? legacyStepPreset(step as LegacyStep, effective)
+		: explicitConfig(step as LegacyStep);
+}
+
+export function formatOf(step: object, scope?: StepScope): string | undefined {
+	const output = resolveStepConfig(step, scope).output;
+	return output && "format" in output ? output.format : undefined;
+}
+export function hasCheck(step: object, check: CheckId): boolean {
+	return resolveStepConfig(step).checks.some((c) => c.check === check);
+}
+export function checkArgs(
+	step: object,
+	check: CheckId,
+): Record<string, unknown> | undefined {
+	return resolveStepConfig(step).checks.find((c) => c.check === check)?.args;
+}
+/** Evidence protocols are independent of selecting the same pure output schema. */
+export function reviewEvidenceContract(
+	step: object,
+): "inventory-v1" | "specialist-v1" | "coverage-v1" | undefined {
+	if (hasCheck(step, "inventory-evidence")) return "inventory-v1";
+	const args = checkArgs(step, "specialist-evidence");
+	return args
+		? args.coverage === true
+			? "coverage-v1"
+			: "specialist-v1"
+		: undefined;
+}
+
+/** A named read alone never activates independent review baselines or fanout rules. */
+export function consumesReview(step: object): boolean {
+	return hasCheck(step, "review-boundary");
+}
+
+/** A named read alone never activates impact evidence or rerouting. */
+export function consumesImpact(step: object): boolean {
+	return hasCheck(step, "impact-boundary");
+}
+
+export function hasInstruction(step: object, id: InstructionId): boolean {
+	return resolveStepConfig(step).instructions.includes(id);
+}
+
+/** An opt-in handback uses its declared decision in the same lexical graph. */
+export function architectureRevisionDecision<
+	T extends { id: string; tool?: string },
+>(step: object, siblings: T[]): T | undefined {
+	if (!hasCheck(step, "architecture-revision")) return undefined;
+	const decisions = siblings.filter(
+		(sibling) => sibling.tool === "architecture-decision",
+	);
+	const selected = readStep(step, "architectureDecision");
+	return selected
+		? decisions.find((decision) => decision.id === selected)
+		: decisions.length === 1 || !resolveStepConfig(step).explicit
+			? decisions[0]
+			: undefined;
+}
+/** The step ID a named read binds to (undefined for context sources). */
+export function readStep(step: object, name: string): string | undefined {
+	const from = resolveStepConfig(step).reads[name]?.from;
+	if (!from || from.startsWith("@")) return undefined;
+	return from.split("/")[0];
+}
+/** Resolve a named read against graph outputs (step reads only). */
+export function readOutput(
+	step: object,
+	name: string,
+	outputs: Record<string, unknown>,
+): unknown {
+	const binding = resolveStepConfig(step).reads[name];
+	if (!binding || binding.from.startsWith("@")) return undefined;
+	return pointerValue(outputs, binding.from);
+}
+
+/** Old queued fixers inherited publication from their declaring readiness route. */
+export function fixerPublication(
+	step: object,
+	readiness: object,
+	outputs: Record<string, unknown>,
+): unknown {
+	return (
+		readOutput(step, "publication", outputs) ??
+		(!resolveStepConfig(step).explicit
+			? readOutput(readiness, "draftPr", outputs)
+			: undefined)
+	);
+}
+/** "step/a/b" → outputs.step.a.b */
+export function pointerValue(root: unknown, reference: string): unknown {
+	return reference
+		.split("/")
+		.map((key) => key.replace(/~1/g, "/").replace(/~0/g, "~"))
+		.reduce<unknown>(
+			(value, key) =>
+				value && typeof value === "object" && Object.hasOwn(value, key)
+					? (value as Record<string, unknown>)[key]
+					: undefined,
+			root,
+		);
+}
+export function readsSource(step: object, source: ContextSource): boolean {
+	return Object.values(resolveStepConfig(step).reads).some(
+		(read) => read.from === `@${source}` || read.from.startsWith(`@${source}/`),
+	);
+}
+export function accessMode(step: object): ResolvedStepConfig["access"]["mode"] {
+	return resolveStepConfig(step).access.mode;
+}
+
+/** Validate inline schemas in an isolated, resource-limited validator. */
+export const inlineSchemaIssues = compileInlineSchemaSync;
+export const inlineSchemaIssuesAsync = compileInlineSchema;
+
+/** Only protocols implemented by Check may be declared on that node. */
+export function checkStepEvidenceIssues(step: LegacyStep): string[] {
+	if (step.type !== "check") return [];
+	const issues: string[] = [];
+	const config = resolveStepConfig(step);
+	const protocols = new Set<CheckId>([
+		"review-evidence",
+		"review-assistance",
+		"qa-gate-evidence",
+		"delivery-evidence",
+		"post-fix-evidence",
+		"review-boundary",
+		"impact-boundary",
+		"scope-inputs",
+		"qa-evidence",
+	]);
+	for (const { check, args } of config.checks) {
+		if ((CHECK_SELECTOR_IDS as readonly string[]).includes(check)) {
+			if (typeof args.path !== "string") {
+				if (
+					!(
+						check === "media-valid" &&
+						args.adapter === "qa-gate" &&
+						hasCheck(step, "qa-gate-evidence")
+					)
+				)
+					issues.push(
+						`${step.id}: ${check} on Check requires an explicit path selector`,
+					);
+				continue;
+			}
+			if (
+				args.path.length > 400 ||
+				!/^\/(?:[^/]*(?:\/[^/]*)*)?$/.test(args.path)
+			)
+				issues.push(
+					`${step.id}: ${check} path must be a JSON Pointer of at most 400 characters`,
+				);
+			if (
+				check === "media-valid" &&
+				args.kind !== undefined &&
+				!["image", "video"].includes(String(args.kind))
+			)
+				issues.push(`${step.id}: media-valid kind must be image or video`);
+			if (
+				check === "ids-resolve" &&
+				(typeof args.source !== "string" ||
+					!config.reads[args.source] ||
+					typeof args.ids !== "string" ||
+					args.ids.length > 400 ||
+					!args.ids.startsWith("/"))
+			)
+				issues.push(
+					`${step.id}: ids-resolve requires a named source read and ids JSON Pointer`,
+				);
+		} else if (!protocols.has(check) || typeof args.path === "string")
+			issues.push(
+				`${step.id}: ${check} is not an executable Check evidence protocol; use its agent or action step`,
+			);
+	}
+	for (const [marker, source] of [
+		["review-assistance", "review-evidence"],
+		["review-boundary", "review-evidence"],
+		["qa-evidence", "qa-gate-evidence"],
+	] as const)
+		if (hasCheck(step, marker) && !hasCheck(step, source))
+			issues.push(`${step.id}: ${marker} on Check requires ${source}`);
+	if (step.rules?.length)
+		issues.push(
+			`${step.id}: Check predicates belong in check.results or check.passed; rules validate agent outputs`,
+		);
+	return issues;
+}
+
+/** Save-time validation of one step's configuration and references. */
+export function stepConfigIssues(
+	step: LegacyStep & { prompt?: string },
+	siblings: { id: string }[],
+	inherited: string[] = [],
+): string[] {
+	const issues: string[] = checkStepEvidenceIssues(step);
+	const ids = new Set([...siblings.map((s) => s.id), ...inherited]);
+	for (const [name, binding] of Object.entries(step.reads ?? {})) {
+		const from = normalizeRead(binding).from;
+		const head = from.split("/")[0]!;
+		if (!head.startsWith("@") && !ids.has(head))
+			issues.push(`${step.id}: read "${name}" names unknown step ${head}`);
+	}
+	for (const name of step.inputs ?? [])
+		if (step.reads && !step.reads[name] && !ids.has(name))
+			issues.push(`${step.id}: input "${name}" has no read binding`);
+	if (step.output && "schema" in step.output)
+		for (const issue of inlineSchemaIssues(step.output.schema))
+			issues.push(`${step.id}: output schema ${issue}`);
+	if (step.output && !["agent", "transform"].includes(step.type ?? ""))
+		issues.push(`${step.id}: output formats apply to agent steps`);
+	if (step.output && step.json === false)
+		issues.push(`${step.id}: output formats require JSON output`);
+	if (consumesReview(step)) {
+		if (!readStep(step, "inventory"))
+			issues.push(`${step.id}: review-boundary requires reads.inventory`);
+		if (
+			step.type !== "fanout" &&
+			step.tool !== "review-gate" &&
+			!(step.type === "check" && hasCheck(step, "review-evidence"))
+		)
+			issues.push(
+				`${step.id}: review-boundary requires a review fanout or review-gate action`,
+			);
+		if (
+			(step.tool === "review-gate" || step.type === "check") &&
+			!readStep(step, "fanout")
+		)
+			issues.push(
+				`${step.id}: review-boundary requires reads.fanout on a review-gate action`,
+			);
+	}
+	if (hasCheck(step, "impact-boundary") && !readStep(step, "impact"))
+		issues.push(`${step.id}: impact-boundary requires reads.impact`);
+	const reuseVersion = checkArgs(step, "impact-reuse")?.reuseVersion;
+	if (reuseVersion !== undefined && reuseVersion !== "composed-v1")
+		issues.push(
+			`${step.id}: unsupported impact reuseVersion ${String(reuseVersion)}`,
+		);
+	if (hasCheck(step, "capture-evidence") && !readStep(step, "scope"))
+		issues.push(`${step.id}: capture-evidence requires reads.scope`);
+	if (hasCheck(step, "architecture-revision")) {
+		const handback = step.branches?.some(
+			(branch: { when: { path: string; equals?: unknown }; next: string }) =>
+				branch.when.path === "architectureRevision" &&
+				branch.when.equals === true &&
+				inherited.includes(branch.next),
+		);
+		const decision = architectureRevisionDecision(step, siblings);
+		const target = decision && readStep(decision, "revise");
+		if (
+			!handback &&
+			(step.type !== "agent" ||
+				!decision ||
+				!siblings.some(
+					(sibling) =>
+						sibling.id === target && hasCheck(sibling, "architecture-proposal"),
+				))
+		)
+			issues.push(
+				`${step.id}: architecture-revision requires a local architecture decision with its proposal revision route; use reads.architectureDecision to select among multiple decisions`,
+			);
+	}
+	const conditions: unknown[] = [...(step.rules ?? [])];
+	while (conditions.length) {
+		const condition = conditions.pop();
+		if (condition && typeof condition === "object") {
+			for (const [key, value] of Object.entries(condition)) {
+				if (
+					key === "conforms" &&
+					!(FORMAT_IDS as readonly unknown[]).includes(value)
+				)
+					issues.push(`${step.id}: unknown rule format ${String(value)}`);
+				else if (value && typeof value === "object")
+					conditions.push(...(Array.isArray(value) ? value : [value]));
+			}
+		}
+	}
+	for (const check of [...(step.checks ?? []), ...(step.verify ?? [])].map(
+		normalizeCheck,
+	)) {
+		if (
+			![
+				"files-exist",
+				"media-valid",
+				"code-refs-valid",
+				"ids-resolve",
+			].includes(check.check)
+		)
+			continue;
+		if (typeof check.args.path === "string") {
+			if (
+				check.check === "media-valid" &&
+				check.args.kind !== undefined &&
+				!["image", "video"].includes(String(check.args.kind))
+			)
+				issues.push(`${step.id}: media-valid kind must be image or video`);
+			if (!/^\/(?:[^/]*(?:\/[^/]*)*)?$/.test(check.args.path))
+				issues.push(`${step.id}: ${check.check} path must be a JSON Pointer`);
+			if (
+				check.check === "ids-resolve" &&
+				(typeof check.args.source !== "string" ||
+					typeof check.args.ids !== "string" ||
+					!String(check.args.ids).startsWith("/") ||
+					!resolveStepConfig(step).reads[String(check.args.source)])
+			)
+				issues.push(
+					`${step.id}: ids-resolve requires a named source read and ids JSON Pointer`,
+				);
+			continue;
+		}
+		const output =
+			step.output && "format" in step.output ? step.output.format : undefined;
+		const guide = output === "guide-v1" || output?.startsWith("review-brief-v");
+		const validAdapter =
+			check.check === "media-valid"
+				? (check.args.adapter === "capture" &&
+						hasCheck(step, "capture-evidence") &&
+						["capture-v1", "qa-capture-v1"].includes(output ?? "")) ||
+					(check.args.adapter === "guide" &&
+						guide &&
+						hasCheck(step, "requirement-coverage")) ||
+					(check.args.adapter === "qa-gate" &&
+						((step.type === "tool" &&
+							["visual-gate", "handoff"].includes(step.tool ?? "")) ||
+							(step.type === "check" && hasCheck(step, "qa-gate-evidence"))))
+				: check.check === "code-refs-valid"
+					? check.args.adapter === "guide" &&
+						guide &&
+						hasCheck(step, "requirement-coverage")
+					: check.check === "ids-resolve"
+						? check.args.adapter === "qa-scope" && output === "qa-scope-v1"
+						: false;
+		if (!validAdapter)
+			issues.push(
+				`${step.id}: ${check.check} requires a path selector or a compatible explicit stock adapter`,
+			);
+	}
+	const declared = new Set(step.instructions ?? []);
+	for (const match of (step.prompt ?? "").matchAll(
+		/\{\{instruction:([^}]*)\}\}/g,
+	)) {
+		const id = match[1]!;
+		if (!(INSTRUCTION_IDS as readonly string[]).includes(id))
+			issues.push(`${step.id}: unknown shared instruction ${id}`);
+		else if (!declared.has(id as InstructionId))
+			issues.push(
+				`${step.id}: shared instruction ${id} must be listed in instructions`,
+			);
+	}
+	const access = step.access;
+	if (
+		access &&
+		typeof access === "object" &&
+		access.mode === "read-only" &&
+		access.tools?.some((tool) => !readOnlyTools.includes(tool))
+	)
+		issues.push(
+			`${step.id}: read-only access permits only ${readOnlyTools.join(", ")}`,
+		);
+	if (accessOf(step) === "read-only" && step.type !== "agent")
+		issues.push(`${step.id}: read-only access applies to agent steps`);
+	return issues;
+}
+function accessOf(step: LegacyStep) {
+	return typeof step.access === "string" ? step.access : step.access?.mode;
+}
+export const readOnlyTools = [
+	"mcp__factory-context__list_context",
+	"mcp__factory-context__read_context",
+	"mcp__factory-context__list_repository",
+	"mcp__factory-context__read_repository",
+];
+
+/** Legacy digest adapter, only for accepted unversioned context records. */
+export function legacyScopeSources(input: unknown): Record<string, unknown> {
+	const outputs =
+		(input as { outputs?: Record<string, unknown> })?.outputs ?? {};
+	return Object.fromEntries(
+		[
+			"clarify",
+			"decisions",
+			"plan",
+			"existing-work",
+			"assess-existing",
+			"source",
+			"ticket",
+		].map((key) => [key, outputs[key]]),
+	);
+}
+
+type LegacyOutputRun = {
+	workflow?: {
+		id: string;
+		engineVersion?: string;
+		stepConfigVersion?: string;
+		steps: object[];
+	};
+	workflowDefinitions?: {
+		id: string;
+		engineVersion?: string;
+		stepConfigVersion?: string;
+		steps: object[];
+	}[];
+	outputs: Record<string, unknown>;
+};
+
+/** Only accepted graphs made entirely of historical step shapes shared leaf outputs. */
+export function usesLegacyOutputAliases(run: LegacyOutputRun): boolean {
+	if (!run.workflow) return false;
+	const definitions = new Map(
+		(run.workflowDefinitions ?? [run.workflow]).map((workflow) => [
+			workflow.id,
+			workflow,
+		]),
+	);
+	const seen = new Set<string>();
+	const old = (workflow: NonNullable<typeof run.workflow>): boolean => {
+		if (
+			workflow.engineVersion ||
+			workflow.stepConfigVersion ||
+			!Array.isArray(workflow.steps)
+		)
+			return false;
+		if (seen.has(workflow.id)) return true;
+		seen.add(workflow.id);
+		const steps = (values: object[]): boolean =>
+			values.every((step) => {
+				if (isExplicitStep(step)) return false;
+				const value = step as {
+					type?: string;
+					body?: object[];
+					inputMapping?: unknown;
+					workflow?: string;
+					groups?: object[][];
+				};
+				if (value.type === "workflow" && value.workflow) {
+					const child = definitions.get(value.workflow);
+					if (!child || !old(child)) return false;
+				}
+				return (
+					value.type !== "foreach" &&
+					!value.inputMapping &&
+					(value.groups ?? []).every(steps)
+				);
+			});
+		return steps(workflow.steps);
+	};
+	return old(run.workflow);
+}
+
+/** Historical receipt aliases are available only to wholly unversioned accepted graphs. */
+export function legacyToolOutputKey(
+	run: LegacyOutputRun,
+	tool: string,
+): string | undefined {
+	if (!usesLegacyOutputAliases(run)) return;
+	const aliases: Record<string, string> = {
+		merge: "merge",
+		"draft-pr": "draft-pr",
+		ci: "ci",
+		handoff: "handoff",
+		"merge-readiness": "merge-readiness",
+		"human-review": "human-review",
+		takeover: "source",
+		"repository-context": "repository",
+		"ticket-context": "ticket",
+		"external-final": "external-final",
+		"external-verify": "external-verify",
+	};
+	const alias = aliases[tool];
+	return alias && Object.hasOwn(run.outputs, alias) ? alias : undefined;
+}
+
+/** Read historical receipts only after the key adapter has accepted the old graph. */
+export function legacyToolOutput(
+	run: Parameters<typeof legacyToolOutputKey>[0],
+	tool: string,
+): unknown {
+	const key = legacyToolOutputKey(run, tool);
+	return key ? run.outputs[key] : undefined;
+}

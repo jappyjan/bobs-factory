@@ -103,6 +103,113 @@ function waitStep(body: unknown, extra: object = {}) {
 	};
 }
 
+it.each([
+	"^/value",
+	"^^/value",
+	"@key",
+	"@index",
+	"^@key",
+	"^@index",
+])("rejects map-only pointer %s in ordinary rules and top-level transforms", (path) => {
+	const conditions = [
+		{ path, exists: true },
+		{ all: [{ compare: { left: { length: path }, op: "gte", right: 0 } }] },
+		{ each: "/items", require: { path: "/id", equalsPath: path } },
+	];
+	for (const condition of conditions) {
+		expect(() =>
+			recipe([
+				{
+					id: "check",
+					name: "Check",
+					type: "check",
+					check: { results: { valid: condition } },
+				},
+			]),
+		).toThrow();
+		expect(() =>
+			recipe([
+				{
+					id: "agent",
+					name: "Agent",
+					type: "agent",
+					prompt: "Validate",
+					rules: [{ message: "Must be valid", require: condition }],
+				},
+			]),
+		).toThrow();
+		expect(TransformSchema.safeParse({ valid: condition }).success).toBe(false);
+		expect(
+			TransformSchema.safeParse({
+				rows: {
+					map: "/inputs/items",
+					template: { valid: condition },
+				},
+			}).success,
+		).toBe(true);
+	}
+	for (const expression of [
+		{ select: path },
+		{ aggregate: "count", path: "/items", where: { path, exists: true } },
+		{ find: { collection: "/items", key: "/id", value: path } },
+	]) {
+		expect(() =>
+			recipe([
+				{
+					id: "check",
+					name: "Check",
+					type: "check",
+					check: {
+						results: { selected: expression },
+						passed: { path: "/selected", exists: true },
+					},
+				},
+			]),
+		).toThrow();
+		expect(TransformSchema.safeParse({ value: expression }).success).toBe(
+			false,
+		);
+		expect(
+			TransformSchema.safeParse({
+				rows: {
+					map: "/inputs/items",
+					template: { value: expression },
+				},
+			}).success,
+		).toBe(true);
+	}
+	expect(
+		TransformSchema.safeParse({ rows: { map: path, template: {} } }).success,
+	).toBe(false);
+});
+
+it("retains ordinary root pointers and inert map syntax in literal data", () => {
+	expect(() =>
+		recipe([
+			{
+				id: "agent",
+				name: "Agent",
+				type: "agent",
+				prompt: "Validate",
+				rules: [
+					{ message: "Required", require: { path: "$/value", exists: true } },
+				],
+			},
+		]),
+	).not.toThrow();
+	expect(
+		TransformSchema.safeParse({
+			value: {
+				literal: {
+					path: "^/value",
+					key: "@key",
+					index: "@index",
+				},
+			},
+		}).success,
+	).toBe(true);
+});
+
 it("maps filtered items with root reads, aggregates and literals, retaining input ownership", async () => {
 	const template = TransformSchema.parse({
 		rows: {
