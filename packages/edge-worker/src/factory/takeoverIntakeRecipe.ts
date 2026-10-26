@@ -177,6 +177,7 @@ export const takeoverIntakeRecipe = {
 			name: "Compare existing work against the base",
 			type: "git",
 			op: "diff",
+			mergeBase: true,
 			reads: { from: "pr" },
 			next: "status",
 		},

@@ -271,6 +271,28 @@ it.each([
 		if (op === "push") expect(r.pushed).toBe(true);
 	}
 });
+it("git diff never treats a missing revision as a fetch destination refspec", async () => {
+	const { instance, run } = fixture([
+		{
+			id: "op",
+			type: "git",
+			op: "diff",
+			from: "main:refs/heads/target",
+			mergeBase: true,
+		},
+	]);
+	const command = mocks.command.getMockImplementation()!;
+	mocks.command.mockImplementation(async (ctx, exe, args) => {
+		if (args.at(-1) === "main:refs/heads/target^{commit}")
+			throw new Error("Unknown commit");
+		return command(ctx, exe, args);
+	});
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(
+		mocks.command.mock.calls.some(([, , args]) => args[0] === "fetch"),
+	).toBe(false);
+});
 it("git commit is a no-op when clean and rejects source-clone mutations", async () => {
 	const { instance, run, repos } = fixture([
 		{ id: "op", type: "git", op: "commit" },

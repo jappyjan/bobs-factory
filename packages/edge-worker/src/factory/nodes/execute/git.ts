@@ -47,8 +47,27 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 						"--end-of-options",
 						`${ref}^{commit}`,
 					]);
-				const base = await resolve(from),
-					target = await resolve(to);
+				const target = await resolve(to);
+				let base: string;
+				try {
+					base = await resolve(from);
+				} catch (error) {
+					// A missing revision must never become a fetch destination refspec.
+					if (!ctx.step.mergeBase || from.includes(":")) throw error;
+					ctx.signal.throwIfAborted();
+					// Provider-observed base tips may not be present in this clone yet.
+					// Fetch objects without touching the worktree or FETCH_HEAD.
+					await command("git", [
+						"fetch",
+						"--no-tags",
+						"--no-write-fetch-head",
+						"origin",
+						from.replace(/^refs\/remotes\/origin\//, "refs/heads/"),
+					]);
+					base = await resolve(from);
+				}
+				if (ctx.step.mergeBase)
+					base = await command("git", ["merge-base", base, target]);
 
 				const records = (
 					await command("git", [

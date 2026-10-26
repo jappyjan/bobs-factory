@@ -177,14 +177,16 @@ binding: `{url}` for one repository or `{repositories:[{id,url}]}`) and `ticket`
 (a verified `TicketReference`). Standalone launches keep Takeover's existing
 `source` and `prompt` field names. Ticket identifiers/URLs use the host's normal
 source resolution, yielding `@ticket` and the run's verified ticket reference;
-PR/MR URLs can be read directly from `source`. A prepared `@source` request is
-preferred over the raw field, and an explicit `pr` call input takes precedence.
+PR/MR URLs can be read directly from the launch `source` field, and an explicit
+`pr` call input takes precedence. In nodes-v1, `@source` is the shared launch
+context envelope above; prepared request data must be passed through the `pr` port.
 The host/caller owns selecting the existing worktree/branch; this read-only
 recipe does not switch branches, draft a request or grant delivery authority.
 
 The recipe reads the request and/or ticket when available, Git status and the
-base-to-head diff. A request's observed per-repository base SHA binds the diff;
-ticket-only launches use the scoped repository base. All assessment dependencies
+merge-base-to-head diff. A request's observed per-repository base SHA binds the
+comparison; missing base objects are fetched from `origin` without changing the
+worktree. Ticket-only launches use the scoped repository base. All assessment dependencies
 are declared statically. `assess-existing` emits the shared `requirements` and
 `plan` shapes above plus `completed`, `remaining`, `risks` and `assets` string
 arrays. The terminal `result` step emits `{requirements, plan}`; callers bind

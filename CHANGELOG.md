@@ -221,7 +221,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Move Improve codebase choices and batch approval onto Display screens, retaining targeted Ask follow-ups, complete plan review and restart-safe decisions. ([Taskbot #168](https://taskbot.apps.janjaap.de/p/bobs-factory/t/168), [#208](https://github.com/jappyjan/bobs-factory/pull/208))
+- Move Improve codebase choices and batch approval onto Display screens, retaining targeted Ask follow-ups, complete plan review, restart-safe decisions and ordered, human-readable opportunity details. ([Taskbot #168](https://taskbot.apps.janjaap.de/p/bobs-factory/t/168), [#208](https://github.com/jappyjan/bobs-factory/pull/208))
 
 - Make GitHub Actions easier to navigate with consistent workflow names, ordered release stages and documented responsibilities; share CI/release test setup, cancel superseded CI runs, and retire obsolete branch triggers and fixed-binary diagnostics while preserving release safeguards. ([#165](https://github.com/jappyjan/bobs-factory/pull/165))
 

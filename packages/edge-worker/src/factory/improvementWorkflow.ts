@@ -22,6 +22,13 @@ const agent = (
 	reads,
 	next,
 });
+const opportunityDetailLabels = {
+	consequence: "Consequence",
+	before: "Current design",
+	after: "Proposed design",
+	plan: "Plan",
+	effort: "Effort",
+};
 const baseline = { baseline: "@callInputs/baseline" };
 const common = {
 	...baseline,
@@ -279,7 +286,7 @@ export const improvementWorkflow = {
 					followUps: "/inputs/followUps",
 					decisions: "/inputs/decisions",
 				},
-				"decision-items",
+				"decision-details",
 			),
 			reads: {
 				focus: "@launchInputs/focus",
@@ -289,10 +296,33 @@ export const improvementWorkflow = {
 			},
 		},
 		{
+			id: "decision-details",
+			name: "Label opportunity details",
+			type: "transform",
+			reads: { proposals: "consolidate/outputs/proposals" },
+			transform: Object.fromEntries(
+				Object.entries(opportunityDetailLabels).map(([key, label]) => [
+					key,
+					{
+						map: "/inputs/proposals/opportunities",
+						template: {
+							id: { select: "/id" },
+							label,
+							value: { select: `/${key}` },
+						},
+					},
+				]),
+			),
+			next: "decision-items",
+		},
+		{
 			id: "decision-items",
 			name: "Arrange opportunities",
 			type: "transform",
-			reads: { proposals: "consolidate/outputs/proposals" },
+			reads: {
+				proposals: "consolidate/outputs/proposals",
+				details: "decision-details",
+			},
 			transform: {
 				items: {
 					map: "/inputs/proposals/opportunities",
@@ -302,12 +332,14 @@ export const improvementWorkflow = {
 						body: { select: "/problem" },
 						value: { select: "" },
 						details: {
-							map: "",
-							where: {
-								path: "@key",
-								in: ["consequence", "before", "after", "plan", "effort"],
+							map: Object.keys(opportunityDetailLabels).map(
+								(key) => `$/inputs/details/${key}`,
+							),
+							where: { path: "/id", equalsPath: "^/id" },
+							template: {
+								label: { select: "/label" },
+								value: { select: "/value" },
 							},
-							template: { label: { select: "@key" }, value: { select: "" } },
 						},
 					},
 				},

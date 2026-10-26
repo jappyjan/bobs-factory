@@ -122,9 +122,13 @@ describe("stock approval composition", () => {
 			opportunities: { id: string }[];
 		};
 		const outputs = { consolidate: { outputs: { proposals } } };
+		const details = await transformOutput(
+			stock.steps.find((s) => s.id === "decision-details")!.transform!,
+			{ proposals },
+		);
 		const arranged = await transformOutput(
 			stock.steps.find((s) => s.id === "decision-items")!.transform!,
-			{ proposals },
+			{ proposals, details },
 		);
 		const scope = viewScope({
 			run,

@@ -18,6 +18,8 @@ export const schema = z.object({
 	ref: gitRef.default("HEAD"),
 	from: gitRef.optional(),
 	to: gitRef.default("HEAD"),
+	/** Compare the merge base of from/to to to (three-dot semantics). */
+	mergeBase: z.boolean().default(false),
 });
 export const definition = {
 	type: "git",

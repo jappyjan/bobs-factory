@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -60,6 +60,10 @@ const assessment = {
 function fixture(
 	provider: "github" | "gitlab",
 	mode: "manual" | "call" | "ticket" | "combined",
+	options: {
+		advancedBase?: boolean;
+		missingBase?: boolean;
+	} = {},
 ) {
 	const home = mkdtempSync(join(tmpdir(), "takeover-intake-"));
 	const git = (...args: string[]) =>
@@ -76,7 +80,8 @@ function fixture(
 	writeFileSync(join(home, "work.ts"), "original\n");
 	git("add", ".");
 	git("commit", "-m", "Base");
-	const base = git("rev-parse", "HEAD");
+	const branchPoint = git("rev-parse", "HEAD");
+	let base = branchPoint;
 	git("update-ref", "refs/remotes/origin/main", base);
 	git("checkout", "-b", "existing");
 	writeFileSync(join(home, "work.ts"), "original\ncompleted work\n");
@@ -85,6 +90,24 @@ function fixture(
 	const head = git("rev-parse", "HEAD");
 	// An explicit PR base must win even if the configured tracking ref has moved.
 	if (mode !== "ticket") git("update-ref", "refs/remotes/origin/main", head);
+	if (options.advancedBase) {
+		const upstream = join(home, "state", "upstream");
+		mkdirSync(join(home, "state"));
+		git("clone", "--no-hardlinks", home, upstream);
+		const remoteGit = (...args: string[]) => git("-C", upstream, ...args);
+		remoteGit("checkout", "main");
+		remoteGit("config", "user.name", "Fixture");
+		remoteGit("config", "user.email", "fixture@example.invalid");
+		remoteGit("config", "commit.gpgsign", "false");
+		remoteGit("config", "core.hooksPath", "/dev/null");
+		writeFileSync(join(upstream, "main-only.ts"), "New main work\n");
+		remoteGit("add", ".");
+		remoteGit("commit", "-m", "Main advances after the branch point");
+		base = remoteGit("rev-parse", "HEAD");
+		git("remote", "add", "origin", upstream);
+		if (!options.missingBase)
+			git("fetch", "--no-tags", "--no-write-fetch-head", "origin", base);
+	}
 	const url =
 		provider === "github"
 			? "https://github.com/team/project/pull/7"
@@ -137,7 +160,7 @@ function fixture(
 					{
 						id: "fixture",
 						head,
-						base,
+						base: branchPoint,
 						target: head,
 						files: ["work.ts"],
 						stats: {
@@ -233,7 +256,7 @@ function fixture(
 			at: new Date().toISOString(),
 		},
 	});
-	return { runtime, run, agent, readPr, readTicket, draft, head, git };
+	return { runtime, run, agent, readPr, readTicket, draft, head, base, git };
 }
 
 describe("v2-takeover-intake", () => {
@@ -290,6 +313,24 @@ describe("v2-takeover-intake", () => {
 		expect(f.run.status, f.run.error).toBe("completed");
 		expect(f.readPr).toHaveBeenCalledOnce();
 		expect(f.readTicket).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		false,
+		true,
+	])("excludes newer main changes from the branch diff (missing base: %s)", async (missingBase) => {
+		const f = fixture("github", "manual", { advancedBase: true, missingBase });
+		const refs = f.git("for-each-ref", "--format=%(refname) %(objectname)");
+		if (missingBase)
+			expect(() => f.git("cat-file", "-e", `${f.base}^{commit}`)).toThrow();
+		await f.runtime.launch(f.run);
+		expect(f.run.status, f.run.error).toBe("completed");
+		expect(f.agent).toHaveBeenCalledOnce();
+		expect(f.git("cat-file", "-t", f.base)).toBe("commit");
+		expect(f.git("rev-parse", "HEAD")).toBe(f.head);
+		expect(f.git("for-each-ref", "--format=%(refname) %(objectname)")).toBe(
+			refs,
+		);
 	});
 
 	it("rejects an assessment that omits required plan fields", async () => {

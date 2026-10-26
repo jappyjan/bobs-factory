@@ -415,6 +415,13 @@ describe("Improve is an ordinary composed recipe", () => {
 		});
 		void f.runtime.launch(f.run);
 		const first = await waiting(f, "decide");
+		expect(first.items!.find((item) => item.id === "a")!.details).toEqual([
+			{ label: "Consequence", value: "Recovery crosses unrelated modules" },
+			{ label: "Current design", value: "Callers coordinate state" },
+			{ label: "Proposed design", value: "One owner coordinates state" },
+			{ label: "Plan", value: "Concentrate a ownership and verify recovery" },
+			{ label: "Effort", value: "Small" },
+		]);
 		const research = f.calls.filter((c) => /perspectives\//.test(c.key));
 		expect(research.filter((c) => c.key.endsWith("/coordinate"))).toHaveLength(
 			8,
