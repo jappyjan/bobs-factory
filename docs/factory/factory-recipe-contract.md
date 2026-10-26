@@ -52,17 +52,18 @@ the complete plan even for standalone data inputs that have no caller receipt.
 The snapshot's declared read still detects changes to the incoming plan. Prior
 review and human feedback is captured before drafting, so the next answer cannot
 invalidate the proposal's own feedback read. Every human acceptance checks
-`fresh("acceptance")` before completing.
+`fresh("acceptance")` before completing. Once a human has responded, a routine
+reclassification still goes through independent review and fresh human acceptance.
 
 On `revise-plan`, `output.architecture` has `accepted: false` and `planChanges`
 containing the complete proposed plan. This is revision input for the caller,
 not an accepted replacement for the `plan` port. `v2-clarify-plan` accepts optional
 `requirements` and `architecture` inputs for this return route; its agents read
 the prior requirements, proposed plan changes and human feedback before replanning.
-Routine work returns
-`meaningful: false, accepted: false`. On `to-architecture`, implementation returns
+Initially routine work returns `meaningful: false, accepted: false`. On `to-architecture`, implementation returns
 before publishing; completed `change` and `pr` ports are available only after the
-Git and PR nodes finish.
+Git and PR nodes finish. The implementer supplies a separate PR `title` capped at
+100 characters; the complete plan summary remains available for publication text.
 
 ## Ports
 

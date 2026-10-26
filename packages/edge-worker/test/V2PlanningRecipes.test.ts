@@ -281,7 +281,10 @@ it("publishes new-engine display answer protocols without legacy lifecycle miles
 	expect(track).toHaveBeenCalledTimes(1);
 });
 
-it("requests changes with per-point feedback, revises and accepts the current proposal", async () => {
+it.each([
+	true,
+	false,
+])("requires fresh acceptance after request changes even when revised meaningful=%s", async (meaningful) => {
 	let drafts = 0;
 	const { r, run } = fixture("v2-check-in", async (ctx) => {
 		if (ctx.step.id === "architecture-review")
@@ -293,7 +296,10 @@ it("requests changes with per-point feedback, revises and accepts the current pr
 					comments: { expiry: "Five minutes please" },
 				},
 			});
-		return proposal(drafts > 1);
+		return {
+			...proposal(drafts > 1),
+			meaningful: drafts === 1 || meaningful,
+		};
 	});
 	launch(r, run);
 	const first = await waiting(r, run);
@@ -307,12 +313,14 @@ it("requests changes with per-point feedback, revises and accepts the current pr
 		}),
 	);
 	await waiting(r, run, first.id);
+	expect(run.outputs.output).toBeUndefined();
+	expect(run.outputs.accepted).toMatchObject({ accepted: false });
 	await r.answerView(run.id, request(run, { action: "accept" }));
 	await done(run);
 	expect(drafts).toBe(2);
 	expect(run.outputs.output).toMatchObject({
 		architecture: {
-			meaningful: true,
+			meaningful,
 			accepted: true,
 			decisions: [{ id: "expiry", text: "Expire after five minutes" }],
 			approval: { action: "accept", bound: ["plan-input", "architecture"] },
@@ -523,13 +531,35 @@ it("resumes implementation after assistance without publishing unfinished work",
 	expect(run.checkpoint?.outcome).toBe("to-architecture");
 });
 
-it("implements, commits without hooks, pushes and opens one draft PR", async () => {
+it.each([
+	undefined,
+	"x".repeat(101),
+])("rejects an invalid PR title before publication (%s)", async (title) => {
+	const { r, run } = fixture("v2-implementation", async () => ({
+		status: "completed",
+		architectureRevision: false,
+		title,
+		summary: "Reader confirmation implemented",
+		checks: [],
+	}));
+	await r.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toMatch(/title/);
+	expect(run.nodeEffects ?? {}).toEqual({});
+});
+
+it("implements with a long plan, commits without hooks, pushes and opens one draft PR", async () => {
+	const title = "Confirm new readers before registration".padEnd(100, ".");
 	const { home, r, run } = fixture("v2-implementation", async () => ({
 		status: "completed",
 		architectureRevision: false,
+		title,
 		summary: "Reader confirmation implemented",
 		checks: ["confirmation tests passed"],
 	}));
+	const longPlan = { ...plan, summary: plan.summary.repeat(10) };
+	expect(longPlan.summary.length).toBeGreaterThan(256);
+	run.launchInputs!.plan = JSON.stringify(longPlan);
 	writeFileSync(join(home, ".git"), "gitdir: fixture");
 	let head = "a".repeat(40),
 		dirty = true;
@@ -595,8 +625,8 @@ it("implements, commits without hooks, pushes and opens one draft PR", async () 
 	expect(calls.some((args) => args[0] === "push")).toBe(true);
 	expect(create).toHaveBeenCalledTimes(1);
 	expect(create.mock.calls[0]![0]).toMatchObject({
-		title: plan.summary,
-		body: expect.stringContaining(plan.summary),
+		title,
+		body: expect.stringContaining(longPlan.summary),
 	});
 	expect(run.outputs.output).toEqual({
 		change: {

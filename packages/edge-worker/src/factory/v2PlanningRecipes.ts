@@ -291,7 +291,7 @@ const checkIn = {
 				},
 			},
 			prompt: `Before building, check the plan with the human like a colleague asking for two minutes before starting. Inspect actual module boundaries, conventions and callers, all requirements/comments/answers/decisions and the complete plan. Propose the smallest adequate design. Do not implement or invent human acceptance. Return meaningful=false with a concrete rationale for routine unsplit work using established patterns; meaningful responsibilities, boundaries, interfaces, operating/security limits or trade-offs need a check-in.
-For meaningful work return display as a version=view-v1 document with freely arranged generic components (data.literal, unique IDs). Write about two minutes of first-person everyday prose (about 350 words), leading with the human's goal and what done looks like. Show observable before/after scenes, who notices (including upgrades/configuration/breakage), the least certain human judgment calls with honest alternatives, size and a useful split if any. Use markdown, beforeAfter, points, sections, tables or other generic components as useful; technical notes may be collapsed. No paths/classes/jargon in the human overview. Preserve every acceptance criterion, honest covered/partial/deferred scope, non-goals, measurable checks and concrete risks; do not claim future physical or independent tests passed. Ground technical notes in inspected repository evidence; no invented files, hidden deliverables, unnecessary UI/packages or arbitrary measured limits.
+Once feedback.answer exists, a fresh human acceptance is required even if the revised work is routine: always include a display for renewed acceptance (unless returning planChanges). For meaningful work return display as a version=view-v1 document with freely arranged generic components (data.literal, unique IDs). Write about two minutes of first-person everyday prose (about 350 words), leading with the human's goal and what done looks like. Show observable before/after scenes, who notices (including upgrades/configuration/breakage), the least certain human judgment calls with honest alternatives, size and a useful split if any. Use markdown, beforeAfter, points, sections, tables or other generic components as useful; technical notes may be collapsed. No paths/classes/jargon in the human overview. Preserve every acceptance criterion, honest covered/partial/deferred scope, non-goals, measurable checks and concrete risks; do not claim future physical or independent tests passed. Ground technical notes in inspected repository evidence; no invented files, hidden deliverables, unnecessary UI/packages or arbitrary measured limits.
 Include itemCards for judgment points with comment:true and required:false so per-point comments are optional; use no item actions when only comments are needed. Include exactly one actions component with actions [{id:"accept",label:"Accept"},{id:"request-changes",label:"Request changes"}] and a form textarea id=feedback for general feedback. There are no fixed sections or preset. Keep settled choices, exclusions and existing work. Return decisions [{id,text}] as complete design decisions. Read feedback.answer.values, feedback.answer.comments and independent feedback.review on repeats; explain plainly what changed in response to each note. An earlier acceptance cannot authorize materially changed requirements, interfaces, limits or delivery targets. If the plan itself must change, return planChanges as the complete proposed plan (same port schema), explaining why; this returns revise-plan for independent replanning, never silently changes scope.`,
 			next: "meaningful",
 		},
@@ -299,17 +299,22 @@ Include itemCards for judgment points with comment:true and required:false so pe
 			id: "meaningful",
 			name: "Meaningful?",
 			type: "check",
-			reads: { proposal: "architecture" },
+			reads: { proposal: "architecture", feedback: "feedback" },
 			check: {
 				results: {
-					meaningful: { path: "/inputs/proposal/meaningful", equals: true },
+					needsAcceptance: {
+						any: [
+							{ path: "/inputs/proposal/meaningful", equals: true },
+							{ path: "/inputs/feedback/answer/action", exists: true },
+						],
+					},
 					revisePlan: { path: "/inputs/proposal/planChanges", exists: true },
 				},
 			},
 			branches: [
 				{ when: { path: "revisePlan", equals: true }, next: "result" },
 				{
-					when: { path: "meaningful", equals: true },
+					when: { path: "needsAcceptance", equals: true },
 					next: "architecture-review",
 				},
 			],
@@ -386,7 +391,6 @@ Include itemCards for judgment points with comment:true and required:false so pe
 				meaningful: { select: "/inputs/proposal/meaningful" },
 				accepted: {
 					all: [
-						{ path: "/inputs/proposal/meaningful", equals: true },
 						{ path: "/inputs/gate/accepted", equals: true },
 						{ not: { path: "/inputs/proposal/planChanges", exists: true } },
 					],
@@ -453,6 +457,7 @@ const implementation = {
 					...object(
 						{
 							status: { enum: ["completed", "needs-input", "blocked"] },
+							title: { ...text, maxLength: 100 },
 							summary: text,
 							checks: strings,
 							architectureRevision: { type: "boolean" },
@@ -465,7 +470,9 @@ const implementation = {
 							properties: {
 								status: { const: "completed" },
 								architectureRevision: { const: false },
+								title: {},
 							},
+							required: ["title"],
 						},
 						{
 							properties: { status: { const: "needs-input" }, display: {} },
@@ -475,7 +482,7 @@ const implementation = {
 					],
 				},
 			},
-			prompt: `Implement the complete provided plan and its assets; read answer for subsequent human responses and blockers. Follow repository conventions and proportionate verification. Preserve explicit restrictions and completed work. If execution is deferred/forbidden or missing access/a necessary decision blocks work, return status=needs-input with a display document (generic form fields/actions, version=view-v1) asking for the concrete assistance; never report unfinished work completed. Resume with the submitted answer. If steering materially changes the accepted architecture, preserve work and return status=blocked, architectureRevision=true and the concrete reason; do not implement the changed architecture under earlier acceptance. Otherwise complete the requirements and return status=completed, architectureRevision=false, summary and checks (commands/outcomes and discovered paths/purposes). Leave changes in the worktree. The following Git/PR nodes own commit, push and PR publication; do not publish or merge yourself.`,
+			prompt: `Implement the complete provided plan and its assets; read answer for subsequent human responses and blockers. Follow repository conventions and proportionate verification. Preserve explicit restrictions and completed work. If execution is deferred/forbidden or missing access/a necessary decision blocks work, return status=needs-input with a display document (generic form fields/actions, version=view-v1) asking for the concrete assistance; never report unfinished work completed. Resume with the submitted answer. If steering materially changes the accepted architecture, preserve work and return status=blocked, architectureRevision=true and the concrete reason; do not implement the changed architecture under earlier acceptance. Otherwise complete the requirements and return status=completed, architectureRevision=false, a concise PR title (at most 100 characters), summary and checks (commands/outcomes and discovered paths/purposes). Leave changes in the worktree. The following Git/PR nodes own commit, push and PR publication; do not publish or merge yourself.`,
 			next: "implementation-result",
 		},
 		{
@@ -521,10 +528,10 @@ const implementation = {
 			id: "metadata",
 			name: "Publication text",
 			type: "transform",
-			reads: { plan: "plan" },
+			reads: { plan: "plan", result: "implement" },
 			transform: {
 				message: { select: "/inputs/plan/summary" },
-				title: { select: "/inputs/plan/summary" },
+				title: { select: "/inputs/result/title" },
 				body: { select: "/inputs/plan/summary" },
 			},
 			next: "commit",

@@ -22,7 +22,10 @@ import {
 } from "../packages/edge-worker/test/fixtures/v2-planning.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
-const evidence = resolve("apps/f1/test-drives/assets/2026-10-26-v2-check-in");
+const evidence = resolve(
+	process.env.F1_CHECK_IN_EVIDENCE ??
+		"apps/f1/test-drives/assets/2026-10-26-v2-check-in",
+);
 mkdirSync(evidence, { recursive: true });
 const home = mkdtempSync(join(tmpdir(), "f1-v2-check-in-"));
 const port = Number(process.env.F1_CHECK_IN_PORT ?? 3674),
@@ -86,7 +89,10 @@ const hooks = {
 					reads.feedback.answer.comments.expiry,
 					"Five minutes please",
 				);
-			output = proposal(counts.architecture > 1);
+			output = {
+				...proposal(counts.architecture > 1),
+				meaningful: counts.architecture === 1,
+			};
 		} else output = { approved: true, feedback: [] };
 		return parseStepOutputAsync(
 			ctx.step,
@@ -264,6 +270,8 @@ try {
 	await until(
 		() => run.status === "waiting" && run.viewDecision.id !== snapshot.id,
 	);
+	assert.equal(run.outputs.architecture.meaningful, false);
+	assert.equal(run.outputs.output, undefined);
 	await page
 		.getByText("I went with five minutes, following your note.", {
 			exact: false,
@@ -278,7 +286,7 @@ try {
 	]);
 	assert.deepEqual(run.outputs.output.architecture.approval.items, {});
 	receipt.checks.push(
-		"At 390px, per-point comment + Request changes reaches resumed author, revised proposal renders, and Accept submits without mandatory item answers",
+		"At 390px, Request changes reaches resumed author; meaningful=false cannot bypass fresh acceptance; revised proposal renders and Accept submits without mandatory item answers",
 	);
 	assert.deepEqual(receipt.consoleErrors, []);
 	receipt.checks.push(
