@@ -89,9 +89,12 @@ const clarifyPlan = {
 	name: "Clarify & plan (nodes)",
 	description:
 		"Clarify the request, retain accepted decisions and independently review a self-contained plan.",
-	inputs: [],
+	inputs: ["requirements", "architecture"],
 	outcomes: ["completed"],
-	launchFields: launchFields([]),
+	launchFields: launchFields(["requirements", "architecture"]).map((field) => ({
+		...field,
+		required: field.name === "prompt",
+	})),
 	steps: [
 		{
 			id: "clarify",
@@ -99,7 +102,13 @@ const clarifyPlan = {
 			type: "agent",
 			session: "resume",
 			access: "read-only",
-			reads: { ...sourceReads, answer: "questions", previous: "decisions" },
+			reads: {
+				...sourceReads,
+				answer: "questions",
+				previous: "decisions",
+				priorRequirements: "requirements",
+				revision: "architecture",
+			},
 			output: {
 				schema: {
 					...requirementsSchema,
@@ -115,7 +124,7 @@ const clarifyPlan = {
 					],
 				},
 			},
-			prompt: `Read the launch request, ALL ticket comments, metadata, assets, previous answers and decisions. Ask only questions that materially affect implementation. Never assume an answer or implement anything. Preserve complete requirements, exclusions and accepted decisions across rounds, with stable IDs and actual sources. If work is backlog/planning only or implementation is forbidden, scope answers alone do not authorize execution: clarify whether to proceed now or retain the restriction. Preserve an explicit continuing deferral for the plan's deliveryMode.
+			prompt: `Read the launch request, ALL ticket comments, metadata, assets, previous answers and decisions. For replanning, retain priorRequirements and reconcile revision.planChanges and revision.approval feedback with the accepted scope; an unaccepted proposal alone cannot authorize new requirements. Ask only questions that materially affect implementation. Never assume an answer or implement anything. Preserve complete requirements, exclusions and accepted decisions across rounds, with stable IDs and actual sources. If work is backlog/planning only or implementation is forbidden, scope answers alone do not authorize execution: clarify whether to proceed now or retain the restriction. Preserve an explicit continuing deferral for the plan's deliveryMode.
 Return status=needs-input with a display document when an answer is needed; otherwise status=ready. The display uses version=view-v1 and freely arranged generic components with data.literal (markdown, form, actions, etc.). Forms support text, textarea, choice/select with options [{id,label,reason?}], required fields and recommendation:{answer,reason}. Recommendations need evidence; defaults never submit themselves. Include a submit action. Read answer.values and answer.comments on resumption, record the accepted answer in decisions [{id,question,answer}], and retain all earlier decisions. Return summary, requirements [{id,text,source?}], decisions and outOfScope even while asking. Delivery is repository (including repository docs/config), external (ticket content/relationships), mixed, or deferred; never infer it from an empty diff or ask to authorize unrelated repository work for an external task. Runtime tracking owns lifecycle and PR links.`,
 			next: "needs-input",
 		},
@@ -164,10 +173,11 @@ Return status=needs-input with a display document when an answer is needed; othe
 				...sourceReads,
 				requirements: "decisions",
 				feedback: "plan-review",
+				revision: "architecture",
 			},
 			instructions: ["implementation-scope", "ticket-plan"],
 			output: { schema: planSchema },
-			prompt: `Write a lean, COMPLETE self-contained implementation plan from ALL request/comments/metadata, assets, clarified requirements, accepted decisions and reviewer feedback. Preserve completed work and an existing PR/branch when present; plan only the remaining changes. The implementer must be able to work from this result alone. Return summary, deliveryMode (repository|external|mixed|deferred), steps [{id,text,requirementRefs}], risks and repositories (configured IDs). Each step's text includes observable behavior, necessary file/dependency estimates, assets, acceptance criteria and proportionate validation. Preserve every requirement including external/hardware/independent checks; state what remains unproved. Include repository/base branch and delivery targets, explicit non-goals and execution restrictions. External/mixed work needs verified target identities, complete before-state, authorized operations, preserved relationships and measurable expected after-state; do not apply external edits. Missing authorization remains deferred. Do not infer authority from an empty diff. Do not implement.`,
+			prompt: `Write a lean, COMPLETE self-contained implementation plan from ALL request/comments/metadata, assets, clarified requirements, accepted decisions and reviewer feedback. When supplied, reconcile revision.planChanges and revision.approval feedback with those requirements; preserve settled decisions and do not treat the proposal itself as authorization. Preserve completed work and an existing PR/branch when present; plan only the remaining changes. The implementer must be able to work from this result alone. Return summary, deliveryMode (repository|external|mixed|deferred), steps [{id,text,requirementRefs}], risks and repositories (configured IDs). Each step's text includes observable behavior, necessary file/dependency estimates, assets, acceptance criteria and proportionate validation. Preserve every requirement including external/hardware/independent checks; state what remains unproved. Include repository/base branch and delivery targets, explicit non-goals and execution restrictions. External/mixed work needs verified target identities, complete before-state, authorized operations, preserved relationships and measurable expected after-state; do not apply external edits. Missing authorization remains deferred. Do not infer authority from an empty diff. Do not implement.`,
 			next: "plan-review",
 		},
 		{

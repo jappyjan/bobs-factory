@@ -216,6 +216,38 @@ it("skips routine work without asking for acceptance", async () => {
 	expect(run.outputs["architecture-review"]).toBeUndefined();
 });
 
+it("replans from the explicit architecture revision port and prior requirements", async () => {
+	const revised = { ...plan, summary: "Confirm readers with expiring codes" };
+	const revision = {
+		meaningful: true,
+		accepted: false,
+		decisions: [],
+		planChanges: revised,
+		approval: {
+			action: "request-changes",
+			comments: { expiry: "Five minutes please" },
+		},
+	};
+	const { r, run } = fixture("v2-clarify-plan", async (ctx) => {
+		if (ctx.step.id === "clarify") {
+			expect(stepBindings(ctx)).toMatchObject({
+				priorRequirements: requirements,
+				revision,
+			});
+			return { ...requirements, status: "ready" };
+		}
+		if (ctx.step.id === "plan") {
+			expect(stepBindings(ctx).revision).toEqual(revision);
+			return revised;
+		}
+		return { approved: true, feedback: [] };
+	});
+	run.launchInputs!.architecture = JSON.stringify(revision);
+	await r.launch(run);
+	await done(run);
+	expect(run.outputs.output).toEqual({ requirements, plan: revised });
+});
+
 it("publishes new-engine display answer protocols without legacy lifecycle milestones", async () => {
 	const track = vi.fn(async () => {});
 	const { r, run } = fixture(

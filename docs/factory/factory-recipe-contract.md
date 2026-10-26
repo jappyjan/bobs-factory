@@ -56,7 +56,10 @@ invalidate the proposal's own feedback read. Every human acceptance checks
 
 On `revise-plan`, `output.architecture` has `accepted: false` and `planChanges`
 containing the complete proposed plan. This is revision input for the caller,
-not an accepted replacement for the `plan` port. Routine work returns
+not an accepted replacement for the `plan` port. `v2-clarify-plan` accepts optional
+`requirements` and `architecture` inputs for this return route; its agents read
+the prior requirements, proposed plan changes and human feedback before replanning.
+Routine work returns
 `meaningful: false, accepted: false`. On `to-architecture`, implementation returns
 before publishing; completed `change` and `pr` ports are available only after the
 Git and PR nodes finish.
