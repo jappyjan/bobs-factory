@@ -255,21 +255,22 @@ export async function prepareNodeGuarantee(
 			throw new Error(`Bound output ${reference} has no stamped receipt`);
 		boundDigests[key] = receiptDigest(receipt);
 		Object.assign(revisions, receipt.guarantee.revisions);
+		revisionChecks[key] = receipt.guarantee.revisions;
+		Object.assign(revisionChecks, receipt.guarantee.revisionChecks);
 	}
 	const observedRepositories = new Set<string>();
 	let localObservation: NodeRevisions | undefined;
-	const explicitScope =
+	const narrowedScope =
 		context.step.revisionScope && context.step.revisionScope !== "repository";
-	if (explicitScope) {
+	if (narrowedScope) {
 		for (const id of Object.keys(revisions)) delete revisions[id];
 		localObservation = await scopedNodeRevisions(context, observe);
 		Object.assign(revisions, localObservation);
 		for (const id of Object.keys(localObservation))
 			observedRepositories.add(id);
-	} else if (
-		context.step.type === "agent" ||
-		context.step.type === "snapshot"
-	) {
+	} else {
+		// Every repository-scoped node owns an observation before execution/wait.
+		// Inherited checks remain separate so this cannot renew old evidence.
 		if (
 			context.step.type === "agent" &&
 			accessMode(context.step) === "read-only"
@@ -300,8 +301,12 @@ export async function prepareNodeGuarantee(
 		context,
 		context.stepKey ?? context.step.id,
 	)?.guarantee;
-	if (!explicitScope && previous?.observedRepositories?.length) {
-		const current = localObservation ?? (await observe());
+	if (
+		!narrowedScope &&
+		!localObservation &&
+		previous?.observedRepositories?.length
+	) {
+		const current = await observe();
 		for (const id of previous.observedRepositories) {
 			const accepted = previous.revisions[id]!;
 			const observed = current[id];
@@ -316,18 +321,16 @@ export async function prepareNodeGuarantee(
 		version: 1,
 		revisions,
 		revisionChecks:
-			!explicitScope &&
+			!narrowedScope &&
 			context.step.type !== "agent" &&
 			context.step.type !== "snapshot" &&
-			Object.values(revisionChecks).some((checks) =>
-				Object.values(checks).some((revision) => revision.paths !== undefined),
-			)
+			Object.keys(revisionChecks).length > 0
 				? revisionChecks
 				: undefined,
 		observedRepositories: [
 			...new Set([
 				...observedRepositories,
-				...(!explicitScope ? (previous?.observedRepositories ?? []) : []),
+				...(!narrowedScope ? (previous?.observedRepositories ?? []) : []),
 			]),
 		],
 		boundDigests,

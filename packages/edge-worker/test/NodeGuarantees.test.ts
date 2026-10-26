@@ -64,11 +64,12 @@ function runtime(
 	runtimes.push(instance);
 	return { instance, home };
 }
-function recipe(steps: unknown[]) {
+function recipe(steps: unknown[], engineVersion?: "nodes-v1") {
 	return validateWorkflows([
 		...defaultWorkflows,
 		{
 			id: "guarantees",
+			engineVersion,
 			name: "Guarantees",
 			stepConfigVersion: "step-config-v1",
 			steps,
@@ -80,8 +81,9 @@ function start(
 	home: string,
 	steps: unknown[],
 	workspace = home,
+	engineVersion?: "nodes-v1",
 ) {
-	const workflow = recipe(steps);
+	const workflow = recipe(steps, engineVersion);
 	return instance.create({
 		title: "Guarantees",
 		repositoryId: "fixture",
@@ -614,10 +616,13 @@ it("does not relabel inherited stale repository evidence with a consumer's curre
 	expect(await freshNodeOutput(context(run, "last"), "consume")).toBe(false);
 	const source = run.history[0]!.guarantee!.revisions;
 	for (const receipt of run.history.filter((entry) => entry.step === "consume"))
-		expect(receipt.guarantee?.revisions).toEqual(source);
+		expect(receipt.guarantee?.revisionChecks?.source).toEqual(source);
 });
 
-it("stamps a mutating agent with its resulting revision while retaining its input digest", async () => {
+it.each([
+	undefined,
+	"nodes-v1",
+] as const)("stamps a mutating agent with its resulting revision and input digest (engine %s)", async (engineVersion) => {
 	let repo: ReturnType<typeof repository>;
 	const { instance, home } = runtime(undefined, async (ctx) => {
 		expect(ctx.input).toMatchObject({ value: 1 });
@@ -646,6 +651,7 @@ it("stamps a mutating agent with its resulting revision while retaining its inpu
 			},
 		],
 		repo.workspace,
+		engineVersion,
 	);
 	await instance.launch(run);
 	expect(run.error).toBeUndefined();
@@ -876,7 +882,7 @@ it("shares observations across preparation, reuse and multiple fresh references 
 			expect(
 				await Promise.all([ctx.fresh("sample"), ctx.fresh("bound")]),
 			).toEqual([true, true]);
-			expect(capture).toHaveBeenCalledTimes(1);
+			expect(capture).toHaveBeenCalledTimes(0); // preparation already observed
 			capture.mockClear();
 		}
 		return { again: ++cycles < 2 };
@@ -901,7 +907,7 @@ it("shares observations across preparation, reuse and multiple fresh references 
 	);
 	await instance.launch(run);
 	expect(run.error).toBeUndefined();
-	expect(capture).toHaveBeenCalledTimes(1); // prepare and fresh on reused sample
+	expect(capture).toHaveBeenCalledTimes(3); // one preparation per sample, bound and cycle
 	expect(
 		run.events.filter((event) => event.message === "reused (inputs unchanged)"),
 	).toHaveLength(1);

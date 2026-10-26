@@ -64,6 +64,7 @@ async function executeCheckBody(
 			{},
 			conforms,
 			signal,
+			await nodeFreshnessRules(step.check, context.fresh),
 		);
 	}
 	if (config.revision === "bound") {

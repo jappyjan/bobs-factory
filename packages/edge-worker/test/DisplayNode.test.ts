@@ -166,6 +166,7 @@ describe("display node", () => {
 
 	it("registers one display node, accepts bind, and returns immediately for content", async () => {
 		const { runtime, run } = fixture([
+			{ id: "upstream", name: "Upstream", type: "script", script: "fixture" },
 			display(
 				document(component("text", "markdown", { text: "A retained update" })),
 				{ bind: ["upstream"] },

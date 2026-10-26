@@ -836,7 +836,10 @@ needs execution even if its local inputs are unchanged.
 `revisionScope` controls the same revision comparison for reuse and `fresh()`:
 
 - `"repository"` (default): retain HEAD and working changes, plus inherited
-  revisions from reads and bindings.
+  revisions from reads and bindings. Display, Approve and Decide take their own
+  whole-repository observation before waiting for a human; scoped or inputs-only
+  producers cannot narrow that approval. The frozen observation survives restart,
+  and inherited checks remain separate so stale reviews cannot be renewed.
 - `{ "paths": ["src/payments/**", "shared/types.ts"] }`: compare committed tree
   entries and workspace changes only under these Git pathspecs, per repository.
   Commits outside the selected paths do not invalidate the receipt. Tracked file

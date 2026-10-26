@@ -3021,7 +3021,7 @@ export class WorkflowRuntime {
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
 				if (state.retryAt !== undefined) {
-					const retryContext = nodeContext(
+					const retryContext = await nodeContext(
 						context,
 						checkpoint,
 						workflowId,
