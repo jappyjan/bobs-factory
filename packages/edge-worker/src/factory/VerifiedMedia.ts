@@ -44,24 +44,35 @@ export function retainVerifiedMedia(
 	const inventory = context.run.verifiedMedia;
 	const stepKey = context.stepKey ?? context.step.id,
 		outputDigest = digest(output);
+	// This output replaces the previous capture for its step. Historical entries
+	// retain stable URLs/indices, but do not consume the active evidence budget.
+	const active = new Map(
+		acceptedMedia(context.run)
+			.filter((asset) => asset.stepKey !== stepKey)
+			.map((asset) => [asset.id, asset]),
+	);
+	const additions = new Map<string, VerifiedMedia>();
 	for (const candidate of candidates) {
 		const id = `asset-${digest({ stepKey, outputDigest, path: candidate.path, sha256: candidate.sha256 }).slice(0, 32)}`;
-		if (inventory.some((asset) => asset.id === id)) continue;
-		if (
-			inventory.reduce((sum, asset) => sum + asset.bytes, candidate.bytes) >
-			videoLimits.runBytes
-		)
-			throw new Error("Verified media exceeds the run byte budget");
-		if (inventory.length >= 2048)
-			throw new Error("Verified media inventory limit reached");
-		inventory.push({
-			...candidate,
-			id,
-			index: inventory.length,
-			stepKey,
-			outputDigest,
-		});
+		const asset = inventory.find((asset) => asset.id === id) ??
+			additions.get(id) ?? {
+				...candidate,
+				id,
+				index: inventory.length + additions.size,
+				stepKey,
+				outputDigest,
+			};
+		active.set(id, asset);
+		if (!inventory.some((asset) => asset.id === id)) additions.set(id, asset);
 	}
+	if (
+		[...active.values()].reduce((sum, asset) => sum + asset.bytes, 0) >
+		videoLimits.runBytes
+	)
+		throw new Error("Verified media exceeds the run byte budget");
+	if (active.size > 2048)
+		throw new Error("Verified media inventory limit reached");
+	inventory.push(...additions.values());
 }
 
 /** Rejected output candidates never enter the accepted inventory. */

@@ -39,6 +39,7 @@ function fixture() {
 	const context = {
 		run: {
 			id: "run",
+			history: [],
 			repositoryId: "repo",
 			workspace,
 			outputs: { inventory: { requirements: [{ id: "R1" }] } },

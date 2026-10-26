@@ -146,6 +146,10 @@ function fixture(
 	id: "v2-qa" | "v2-approval",
 	options: {
 		failFirst?: boolean;
+		captureFailure?: boolean;
+		noCodeFix?: boolean;
+		alwaysFail?: boolean;
+		stalePort?: "review" | "qa";
 		needed?: boolean;
 		safe?: boolean;
 		video?: boolean;
@@ -290,22 +294,34 @@ function fixture(
 			}
 			return {
 				scenarioId: item.id,
-				passed: true,
+				passed: !(
+					item.id === "screen" &&
+					options.captureFailure &&
+					(options.alwaysFail || captures.get(item.id) === 1)
+				),
 				observed: "The selection remains visible",
 				screenshots: [{ path, caption: "Saved" }],
 				videos,
 				limitations: [],
 			};
 		}
-		if (ctx.step.id === "visual-review")
+		if (ctx.step.id === "visual-review") {
+			const failed =
+				options.alwaysFail ||
+				((options.failFirst || options.captureFailure) && ++reviewRound === 1);
 			return {
-				passed: !(options.failFirst && ++reviewRound === 1),
+				passed: options.captureFailure || !failed,
 				scenarioIds: scenarios.map((s) => s.id),
 				summary: "Inspected both scenarios",
-				findings: [],
+				findings:
+					failed && !options.captureFailure
+						? [{ scenarioIds: ["screen"], message: "Capture is unreadable" }]
+						: [],
 			};
+		}
 		if (ctx.step.id === "visual-fix" || ctx.step.id === "human-fix") {
-			writeFileSync(join(workspace, "screen.ts"), "fixed\n");
+			if (!options.noCodeFix)
+				writeFileSync(join(workspace, "screen.ts"), "fixed\n");
 			return {
 				summary: "Corrected selection",
 				message: "Fix selection [skip ci]",
@@ -332,7 +348,26 @@ function fixture(
 		script: async (ctx) => JSON.parse(ctx.run.launchInputs![ctx.step.id]!),
 		tool: async () => ({}),
 	});
-	let definitions = defaultWorkflows;
+	let definitions = validateWorkflows([
+		...defaultWorkflows,
+		{
+			...defaultWorkflows.find((recipe) => recipe.id === "v2-approval")!,
+			id: "c3-approval",
+			internal: false,
+			steps: [
+				...["review", "qa"]
+					.filter((id) => id !== options.stalePort)
+					.map((id) => ({
+						id,
+						name: id,
+						type: "script",
+						script: "fixture port",
+					})),
+				...defaultWorkflows.find((recipe) => recipe.id === "v2-approval")!
+					.steps,
+			],
+		},
+	]);
 	if (options.composed)
 		definitions = validateWorkflows([
 			...defaultWorkflows,
@@ -429,7 +464,7 @@ function fixture(
 						branches: [
 							{
 								when: { path: "action", equals: "continue" },
-								next: "approval",
+								next: "requirements",
 							},
 						],
 						next: "select-authorization",
@@ -491,7 +526,13 @@ function fixture(
 		workspace,
 		input: "Keep saved settings visible",
 		workflow: definitions.find(
-			(r) => r.id === (options.composed ? "c3-revisit" : id),
+			(r) =>
+				r.id ===
+				(options.composed
+					? "c3-revisit"
+					: id === "v2-approval"
+						? "c3-approval"
+						: id),
 		)!,
 		workflowDefinitions: definitions,
 		repositories: [
@@ -524,7 +565,11 @@ function fixture(
 		},
 		triggerOrigin: {
 			type: "manual",
-			workflowId: options.composed ? "c3-revisit" : id,
+			workflowId: options.composed
+				? "c3-revisit"
+				: id === "v2-approval"
+					? "c3-approval"
+					: id,
 			at: new Date().toISOString(),
 		},
 	});
@@ -557,6 +602,9 @@ function fixture(
 		head,
 		answer,
 		provider,
+		setDraft: (value: boolean) => {
+			draft = value;
+		},
 		setSafe: (safe: boolean) => {
 			options.safe = safe;
 		},
@@ -595,6 +643,52 @@ it("captures, reviews, fixes and publishes, then reuses the unchanged scenario a
 			{ scenarioId: "other", kind: "screenshot" },
 		],
 	});
+});
+it.each([
+	true,
+	false,
+])("recaptures failed=%s evidence without a source change, retaining independent captures", async (captureFailure) => {
+	const f = fixture("v2-qa", {
+		failFirst: !captureFailure,
+		captureFailure,
+		noCodeFix: true,
+	});
+	const originalHead = f.head();
+	await f.runtime.launch(f.run);
+	expect(f.run.status, f.run.error).toBe("completed");
+	expect(f.head()).toBe(originalHead);
+	expect(Object.fromEntries(f.captures)).toEqual({ screen: 2, other: 1 });
+	expect(f.run.outputs.qa).toMatchObject({ passed: true });
+});
+it.each([
+	true,
+	false,
+])("stops repeated failed=%s captures at a human display before visit exhaustion", async (captureFailure) => {
+	const f = fixture("v2-qa", {
+		captureFailure,
+		alwaysFail: true,
+		noCodeFix: true,
+	});
+	void f.runtime.launch(f.run);
+	await waiting(f.run);
+	expect(f.run.viewDecision!.stepKey).toBe("qa-help");
+	expect(Object.fromEntries(f.captures)).toEqual({ screen: 3, other: 1 });
+	expect(f.run.outputs.qa).toBeUndefined();
+	expect(f.run.error).toBeUndefined();
+	await f.answer("retry");
+	await vi.waitFor(() => expect(f.captures.get("screen")).toBe(4));
+	await waiting(f.run);
+	expect(f.run.viewDecision!.stepKey).toBe("qa-help");
+});
+it.each([
+	"review",
+	"qa",
+] as const)("rejects an unstamped %s port before approval", async (stalePort) => {
+	const f = fixture("v2-approval", { stalePort });
+	await f.runtime.launch(f.run);
+	expect(f.run.status, f.run.error).toBe("completed");
+	expect(f.run.checkpoint?.outcome).toBe("to-review");
+	expect(f.calls).toEqual([]);
 });
 it("approves an agent-produced guide with item comments through the API", async () => {
 	const f = fixture("v2-approval");
@@ -636,6 +730,7 @@ it("approves an agent-produced guide with item comments through the API", async 
 		bound: ["guide", "published"],
 		carriedFrom: null,
 	});
+	expect((f.run.outputs.approval as any).repositories[0].isDraft).toBe(false);
 	expect(f.run.checkpoint?.outcome).toBe("completed");
 });
 it.each([
@@ -674,6 +769,7 @@ it.each([
 	const originalHead = f.head();
 	const previousPause = f.run.viewDecision!.id;
 	f.commit("minor correction");
+	f.setDraft(true);
 	await f.answer("continue");
 	await vi.waitFor(() => expect(f.calls).toContain("approval/impact"), {
 		timeout: 20000,
@@ -698,6 +794,7 @@ it.each([
 	);
 	const result = (f.run.outputs.approval as any).outputs.approval;
 	expect(result.action).toBe("approve");
+	expect(result.repositories[0].isDraft).toBe(safe);
 	const authorization = `approval/${result.authorization}`;
 	expect(
 		await freshNodeOutput(

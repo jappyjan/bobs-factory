@@ -200,19 +200,21 @@ remaining steps, including unresolved feedback and validation.
 with `{needed:false,passed:true,scenarios:[],evidence:[]}` when none are needed,
 then runs capture per stable scenario ID. A scenario contains its accepted
 expectations, fixture/environment identity and all source/configuration pathspecs.
-Only that complete scenario is read by its capture agent; `revisionScope` uses its
-paths. An uncertain dependency uses `:(glob)**`; a changing external environment
-must change the scenario fingerprint. Reuse preserves original evidence; unrelated
+Each capture reads that complete scenario and a retry marker; `revisionScope` uses
+its paths. Failed captures and scenarios named by review findings always recapture,
+even without source changes. An uncertain dependency uses `:(glob)**`; a changing
+external environment must change the scenario fingerprint. Reuse preserves original evidence; unrelated
 commits do not force independent scenarios to execute again. Capture verifies real
 media and repository file evidence. Review resolves scenario IDs and inspects actual
 playback. Failed review routes through a resumed fixer, commit and push, then back
-to capture. A successful correction returns `to-review` so D1 repeats the code
-review and CI gates before approval; an uncorrected pass returns `completed`.
+to capture. Three cycles with the same affected scenarios and capture pass/fail
+state pause at a human Display; retry never grants QA acceptance. A successful
+correction returns `to-review` so D1 repeats the code review and CI gates before approval; an uncorrected pass returns `completed`.
 Video is ordinary scenario/capture policy, with no engine flag.
 
 `v2-approval` ends at its `approval` output step. It pushes, reads provider state,
-checks clean worktrees, accepted review and QA, and current successful provider
-checks. Review/QA problems return `to-review`; provider/head/CI problems return
+checks clean worktrees, fresh accepted review and QA receipts, and current
+successful provider checks. Review/QA problems return `to-review`; provider/head/CI problems return
 `to-ci`. The freely composed guide uses output format `display`, with verified
 code references and the brief-v3 show & tell / Dig deeper substance in its prompt.
 It marks the request ready, then presents the guide with Approve, Request changes

@@ -125,7 +125,7 @@ export const v2QaRecipe = {
 			check: {
 				results: { needed: { path: "/inputs/scope/needed", equals: true } },
 			},
-			branches: route("captures"),
+			branches: route("capture-inputs"),
 			next: "skipped",
 		},
 		{
@@ -141,10 +141,54 @@ export const v2QaRecipe = {
 			next: "publication",
 		},
 		{
+			id: "capture-inputs",
+			name: "Retry failed or disputed captures",
+			type: "transform",
+			revisionScope: "none",
+			reads: {
+				scenarios: "visual-scope/scenarios",
+				captures: "captures/results",
+				review: "visual-review",
+				progress: "visual-progress",
+			},
+			transform: {
+				scenarios: {
+					map: "/inputs/scenarios",
+					template: {
+						id: { select: "/id" },
+						scenario: { select: "" },
+						retry: {
+							map: "$/inputs/captures",
+							missingAsEmpty: true,
+							where: {
+								all: [
+									{ path: "/capture/scenarioId", equalsPath: "^/id" },
+									{
+										any: [
+											{ path: "/capture/passed", equals: false },
+											{
+												path: "/capture/scenarioId",
+												within: "$/inputs/review/findings/*/scenarioIds/*",
+											},
+										],
+									},
+								],
+							},
+							template: {
+								progress: { select: "$/inputs/progress" },
+								findings: { select: "$/inputs/review/findings" },
+							},
+						},
+					},
+				},
+			},
+			next: "captures",
+		},
+		{
 			id: "captures",
 			name: "Capture each scenario",
 			type: "foreach",
-			reads: { scenarios: "visual-scope/scenarios" },
+			reads: { scenarios: "capture-inputs/scenarios" },
 			items: { from: "/inputs/scenarios" },
 			itemId: "/id",
 			concurrency: 1,
@@ -153,7 +197,7 @@ export const v2QaRecipe = {
 					id: "capture",
 					name: "Execute and capture",
 					type: "agent",
-					reads: { scenario: "@item" },
+					reads: { scenario: "@item/scenario", retry: "@item/retry" },
 					reuse: "unchanged-inputs",
 					revisionScope: { paths: { from: "/inputs/scenario/paths" } },
 					access: "workspace",
@@ -189,10 +233,16 @@ export const v2QaRecipe = {
 					passed: { type: "boolean" },
 					scenarioIds: list(text, 1),
 					summary: text,
-					findings: list(text),
+					findings: list(object({ scenarioIds: list(text, 1), message: text })),
 				}),
 			},
 			verify: [
+				{
+					check: "ids-resolve",
+					path: "/findings/*/scenarioIds/*",
+					source: "scope",
+					ids: "/scenarios/*/id",
+				},
 				{
 					check: "ids-resolve",
 					path: "/scenarioIds/*",
@@ -202,11 +252,16 @@ export const v2QaRecipe = {
 			],
 			rules: [
 				{
+					message: "Failed review must name affected scenarios",
+					when: { path: "/passed", equals: false },
+					require: { path: "/findings", minLength: 1 },
+				},
+				{
 					message: "Review every scenario exactly once",
 					require: { path: "/scenarioIds", unique: true },
 				},
 			],
-			prompt: `Independently inspect the entire planned scope, captures, exact expected/observed outcomes and actual screenshots. Inspect actual video playback, not just posters/metadata. Account for every scenario exactly once in scenarioIds, including retained unchanged captures. Missing executed evidence, failed/blocked required behavior, absent selected screenshots or required recordings cannot pass. Optional tooling limitations remain visible. Screenshots alone do not prove behavior. Do not invent larger capture matrices or turn subjective preferences into blockers. Preserve unresolved consequential findings and assess fixer rejections against concrete evidence. Return actionable findings and passed=true only when the full scope is proven. Do not execute QA again, recapture or change code.`,
+			prompt: `Independently inspect the entire planned scope, captures, exact expected/observed outcomes and actual screenshots. Inspect actual video playback, not just posters/metadata. Account for every scenario exactly once in scenarioIds, including retained unchanged captures. Missing executed evidence, failed/blocked required behavior, absent selected screenshots or required recordings cannot pass. Optional tooling limitations remain visible. Screenshots alone do not prove behavior. Do not invent larger capture matrices or turn subjective preferences into blockers. Preserve unresolved consequential findings and assess fixer rejections against concrete evidence. Return actionable findings with the affected scenarioIds and a message for each; every failure must name its scenarios so their captures are retried even without code changes. Return passed=true only when the full scope is proven. Do not execute QA again, recapture or change code.`,
 			next: "visual-gate",
 		},
 		{
@@ -256,7 +311,58 @@ export const v2QaRecipe = {
 				},
 			},
 			branches: route("accepted"),
+			next: "visual-progress",
+		},
+		{
+			id: "visual-progress",
+			name: "Detect repeated QA failures",
+			type: "converge",
+			revisionScope: "none",
+			reads: { review: "visual-review", captures: "captures/results" },
+			watch: [
+				"/inputs/review/findings/*/scenarioIds",
+				"/inputs/captures/*/capture/passed",
+			],
+			maxCycles: 3,
+			branches: [{ when: { path: "stalled", equals: true }, next: "qa-help" }],
 			next: "visual-fix",
+		},
+		{
+			id: "qa-help",
+			name: "Resolve repeated QA failures",
+			type: "display",
+			reads: { review: "visual-review" },
+			document: {
+				version: "view-v1",
+				components: [
+					{
+						id: "problem",
+						type: "markdown",
+						data: {
+							literal: {
+								text: "QA keeps failing for the same scenarios. Please resolve the capture or environment blocker, then retry. This does not approve QA.",
+							},
+						},
+					},
+					{
+						id: "findings",
+						type: "markdown",
+						data: {
+							bindings: {
+								text: { path: "/inputs/review/findings", format: "json" },
+							},
+						},
+					},
+					{
+						id: "retry",
+						type: "actions",
+						data: {
+							literal: { actions: [{ id: "retry", label: "Retry QA" }] },
+						},
+					},
+				],
+			},
+			next: "capture-inputs",
 		},
 		{
 			id: "visual-fix",
@@ -288,7 +394,7 @@ export const v2QaRecipe = {
 			name: "Publish corrections",
 			type: "git",
 			op: "push",
-			next: "captures",
+			next: "capture-inputs",
 		},
 		{
 			id: "accepted",
@@ -440,6 +546,8 @@ export const v2ApprovalRecipe = {
 					ready: {
 						all: [
 							{ path: "/inputs/review/approved", equals: true },
+							{ fresh: "review" },
+							{ fresh: "qa" },
 							{ path: "/inputs/qa/passed", equals: true },
 							allRepositories("/inputs/status/repositories", {
 								path: "/dirty",
@@ -573,7 +681,7 @@ export const v2ApprovalRecipe = {
 						id: { select: "/id" },
 						head: { select: "/head" },
 						url: { select: "/url" },
-						isDraft: false,
+						isDraft: { select: "/isDraft" },
 					},
 				},
 			},
@@ -670,7 +778,7 @@ export const v2ApprovalRecipe = {
 			id: "explicit",
 			name: "Record the approved revision",
 			type: "transform",
-			reads: { answer: "approval-display", pr: "published" },
+			reads: { answer: "approval-display", pr: "ready" },
 			bind: ["approval-display"],
 			transform: {
 				authorization: "explicit",
@@ -690,7 +798,7 @@ export const v2ApprovalRecipe = {
 						id: { select: "/id" },
 						head: { select: "/head" },
 						url: { select: "/url" },
-						isDraft: false,
+						isDraft: { select: "/isDraft" },
 					},
 				},
 				repositories: {
@@ -699,7 +807,7 @@ export const v2ApprovalRecipe = {
 						id: { select: "/id" },
 						head: { select: "/head" },
 						url: { select: "/url" },
-						isDraft: false,
+						isDraft: { select: "/isDraft" },
 					},
 				},
 			},
