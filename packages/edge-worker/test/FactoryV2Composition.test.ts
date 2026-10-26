@@ -659,10 +659,14 @@ it("carries explicit approval after a mid-merge head change, repeating review an
 it("asks for assistance before pushing an empty implementation", async () => {
 	const f = fixture("repository", "factory", { empty: true });
 	void f.runtime.launch(f.run);
-	await waitForRuntime(() =>
-		expect(f.run.step, f.run.error).toBe("implementation/empty-answer"),
-	);
-	expect(f.run.status).toBe("waiting");
+	await waitForRuntime(() => {
+		expect(f.run.step, f.run.error).toBe("implementation/empty-answer");
+		expect(f.run.status, f.run.error).toBe("waiting");
+		expect(f.run.viewDecision).toBeDefined();
+	});
+	expect(
+		mocks.command.mock.calls.some(([, , args]) => args[0] === "push"),
+	).toBe(false);
 	expect(f.provider.create).not.toHaveBeenCalled();
 	expect(f.provider.merge).not.toHaveBeenCalled();
 }, 180000);

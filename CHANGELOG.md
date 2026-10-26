@@ -223,7 +223,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Factory and Takeover now run through reusable node recipes with explicit review, delivery and approval loops. Runs created by the older recipe engine must be restarted after upgrading; their history stays readable. Legacy local forks are disabled and must be forked again from the current bundled recipe. ([Taskbot #169](https://taskbot.apps.janjaap.de/p/bobs-factory/t/169), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+- Factory and Takeover now run through reusable node recipes with explicit review, delivery and approval loops. Runs created by the older recipe engine must be restarted after upgrading; their history stays readable. Legacy local forks are disabled and must be forked again from the current bundled recipe. ([Taskbot #169](https://taskbot.apps.janjaap.de/p/bobs-factory/t/169), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#213](https://github.com/jappyjan/bobs-factory/pull/213))
 
 - Move Improve codebase choices and batch approval onto Display screens, retaining targeted Ask follow-ups, complete plan review, restart-safe decisions and ordered, human-readable opportunity details. ([Taskbot #168](https://taskbot.apps.janjaap.de/p/bobs-factory/t/168), [#208](https://github.com/jappyjan/bobs-factory/pull/208))
 
