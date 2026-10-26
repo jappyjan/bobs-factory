@@ -899,3 +899,22 @@ it.each([
 		mocks.command.mock.calls.some(([, , args]) => args[0] === "diff"),
 	).toBe(false);
 });
+it.each([
+	"ci",
+	"pr",
+])("%s summaries keep pending checks incomplete", async (type) => {
+	const { instance, run } = fixture(
+		[{ id: "op", type, op: type === "ci" ? "status" : "read" }],
+		["hub"],
+	);
+	await seedPR("hub");
+	forges
+		.get("hub")!
+		.setChecks([{ name: "build", bucket: "pending", state: "IN_PROGRESS" }]);
+	await instance.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(
+		(run.outputs.op as any).repositories[0][
+			type === "ci" ? "summary" : "checksSummary"
+		],
+	).toMatchObject({ pending: 1, complete: false });

@@ -11,6 +11,8 @@ export const schema = z.object({
 	type: z.literal("merge"),
 	requests: z.array(requestSchema).min(1).optional(),
 	method: z.enum(["merge", "squash", "rebase"]).optional(),
+	/** Take expected heads from this stamped, fresh producer rather than payload JSON. */
+	expectedRevision: z.string().min(1).max(400).optional(),
 	pollInterval: z.number().int().min(1).max(60000).default(10000),
 	timeout: z.number().int().min(1).max(86400000).default(3600000),
 });

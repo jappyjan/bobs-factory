@@ -96,6 +96,7 @@ below. Extra fields are allowed; listed fields are required unless marked option
 | `v2-approval` | `completed`, `to-review`, `to-ci` |
 | `v2-merge` | `completed`, `to-review`, `to-ci` |
 | `v2-external` | `completed`, `revise-plan` |
+| `v2-deferred` | `completed` |
 | `v2-takeover-intake` | `completed` (also emits `requirements` and `plan`, so Takeover can skip clarify/plan) |
 
 D1 composes Factory as: clarify-plan → `check` on `plan.deliveryMode` → (check-in →
@@ -268,3 +269,80 @@ D1 still owns deletion of the legacy QA/approval graphs and stock roles, `Qa`,
 `QaReuse`, video-contract adapters, `ReviewBrief`, `Guide*`, `NativeViews` and
 specialized web `review-*` presentation paths where no other legacy/custom recipe
 needs them. C3 deletes none: the legacy Factory/Takeover compositions still use them.
+
+## C4 delivery sub-recipes
+
+`factoryDeliveryRecipes.ts` adds the following internal nodes-v1 graphs alongside
+legacy Factory. Their declared inputs can be supplied on standalone launches;
+JSON launch inputs provide context, never a stamped approval or merge receipt.
+
+- `v2-ci`: inputs `pr`, `requirements`, optional `review`; outcomes `completed`
+  and `to-review`. A capacity-free Wait polls CI until every repository reports
+  complete checks **and** `headMatches`. Green completes; infrastructure-only
+  failure uses the provider rerun node (at most two visits), then waits for a
+  changed attempt/result instead of immediately rerunning the same failed attempt.
+  Unavailable or timed-out CI uses a Display to request restoration and continue
+  waiting; it never waives checks. The resumed fixer leaves changes for separate
+  Git commit/push nodes. `change`, `after-pr` and `delta` retain the corrected change port, PR and the
+  exact initial-head-to-current-head diff for D1 to refresh the public `pr`/`change`
+  bindings when routing back to review.
+- The old `after-ci-fix` rule becomes `after-fix`: named `codeChanged`,
+  `revisionChanged`, `baseChanged`, `feedbackRequiresReview`, `reviewMissing` and
+  `providerBehind` fields, followed by a short Check. Any changed revision or
+  base, missing approval, unresolved thread, changes-requested review, or
+  actionable/uncertain feedback returns `to-review`. A small read-only agent
+  judges comment dispositions; line counts and filenames do not grant review
+  exemptions. Metadata-only fixes with an unchanged reviewed revision return to
+  CI. A generic Converge bounds repeated unchanged provider/diff observations;
+  Wait owns synchronization and provider deadlines. Historical QA fingerprints,
+  domain recovery questions and repeated copies of the same predicates are not
+  recreated: D1 reruns downstream QA/approval on the review route, and Display,
+  Converge, node effect receipts and graph visit limits own recovery.
+- `v2-merge`: inputs `approval`, `pr`, optional `completion: {final: boolean}`;
+  outcomes `completed`, `to-review`, `to-ci`; output `merge` is the generic Merge
+  receipt. The approval must be the actual explicit or carried authorization
+  **producer receipt**, supplied with a Call binding. Copying JSON or binding an
+  inputs-only projection does not establish consent. Require `action: "approve"`
+  and `fresh(approval)`; carried authorization additionally requires
+  `authorization: "carried"`, `decision.safe: true`, `decision.uncertainty: []` and
+  its retained `carriedFrom`. Merge binds that receipt and uses its stamped current
+  repository head as `expectedRevision`, including for carry-forward (never the
+  original `carriedFrom` head). Stale approval, a changed provider head, or review conflicts return `to-review`;
+  pending/failed checks and branch rules return `to-ci`. Merge queues stay inside
+  Merge's capacity-free provider confirmation and retain reservations/effect
+  identities across restart. Uncertain dispatches fail visibly and reconcile on
+  retry; they never become a fresh merge visit through an automatic error route.
+- `v2-external`: inputs `requirements`, `plan`, optional `approval` and `merge` for
+  mixed delivery; outcomes `completed`, `revise-plan`; output `delivery` is
+  `{applied, verified, ticketUrl}`. Apply/correction agents operate only explicitly
+  authorized ticket content/relationships using configured integrations, retain
+  target/intent/before/after receipts and limitations, and reconcile before retrying
+  a mutation. Missing target/authorization/criteria or new scope returns
+  `revise-plan`. An independent read-only verifier fetches every target completely;
+  the originating Ticket read alone never verifies other targets. A guide precedes
+  a Display with Accept/Request changes bound to verification, guide and retained
+  repository context. Rejection preserves already-applied changes and enters
+  correction → re-read → reverify → new acceptance. Final independent target reads
+  and an exact originating-ticket comparison detect drift before explicit ticket
+  completion. Post-merge repository requests return to planning; they never replay
+  repository publication or merge.
+- `v2-deferred`: inputs `requirements`, `plan`; outcome `completed`. A content-only
+  Display and ticket comment explain the deferral; the originating ticket remains
+  open. Resuming execution requires explicit authorization and a revised plan.
+
+D1 alone routes on `plan.deliveryMode`. Repository delivery uses `v2-merge`'s
+normal completion behavior. **Mixed delivery runs the repository path first,
+with `completion: {final:false}` bound into Merge**, retaining a confirmed merge
+without marking the ticket Done. D1 then calls External with the actual repository
+`approval` authorization receipt and `merge` receipt. The final external Display
+binds repository context and external verification together, so its acceptance
+covers both halves; only that final step completes the ticket. Corrections after a
+confirmed merge affect external targets only. Deferred and external-only branches
+skip repository execution. The optional completion control is plan-independent
+recipe data produced by D1's routing branch, not another delivery-mode router.
+
+C4 deletes no legacy code: legacy Factory/Takeover still reference `ci-watch-fix`,
+`merge-work`, `delivery-routing`, `external-delivery`, the corresponding stock
+roles, FactoryTools' CI/inspection/merge/external adapters, CISupervision,
+MergeRecovery, MergeReadiness and TicketDeliveryAdapters. D1 must remove those
+only after replacing their compositions and checking frozen/custom consumers.
