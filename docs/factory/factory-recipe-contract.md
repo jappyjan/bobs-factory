@@ -348,8 +348,8 @@ JSON launch inputs provide context, never a stamped approval or merge receipt.
   repository context. Rejection preserves already-applied changes and enters
   correction → re-read → reverify → new acceptance. Final independent target reads
   and an exact originating-ticket comparison detect drift before explicit ticket
-  completion. Post-merge repository requests return to planning; they never replay
-  repository publication or merge.
+  completion. Post-merge requests requiring a new plan return to the caller's
+  external-only replanning choice; they never replay repository publication or merge.
 - `v2-deferred`: inputs `requirements`, `plan`; outcome `completed`. A content-only
   Display and ticket comment explain the deferral; the originating ticket remains
   open. Resuming execution requires explicit authorization and a revised plan.
@@ -379,7 +379,12 @@ retain the current requirement and plan ports, and a Check routes their delivery
 mode. Every call binds only declared inputs. Parent outcome branches implement
 revise-plan, to-architecture, to-review and to-ci; request reads before each review,
 CI, QA and approval call observe corrections published by the previous block.
-The existing workflow-call canvas supplies expansion/collapse without recipe policy.
+After a confirmed mixed-delivery merge, `revise-plan` displays that the repository
+part is merged and offers external-only replanning or Stop. Replanning uses a
+separate clarify-plan call and returns only to external delivery, retaining the
+original repository plan, approval and merge receipts. Stop ends execution without
+completing the ticket. The existing workflow-call canvas supplies expansion/collapse
+without recipe policy.
 
 Implementation commits with hooks disabled, then observes the merge-base diff and
 requires at least one commit ahead of the base before push/PR ensure. Empty work
@@ -392,6 +397,9 @@ queue confirmation, and `authorizationStale:true` when local authorization becom
 stale before dispatch. The merge sub-recipe routes either result to review and
 never completes the ticket from a partial or changed-head result. Reconciliation
 still retains the original expected head for an already submitted effect.
+
+Graphless Simple sessions are exempt from old-engine gating, including unmarked
+persisted conversations. Continuation checks availability before changing saved state.
 
 Legacy definitions and implementation remain for historical readers and D1b cleanup;
 their deletion is outside D1a.

@@ -992,7 +992,10 @@ export class WorkflowRuntime {
 				...(run.recoveryWorkflow ? [run.recoveryWorkflow] : []),
 			])
 				registerWorkflowConfig(definition, run.workflow.id);
-			const oldEngine = run.workflow.engineVersion !== "nodes-v1";
+			// Graphless Simple conversations predate recipe engines and remain resumable.
+			const oldEngine =
+				run.workflow.steps.length > 0 &&
+				run.workflow.engineVersion !== "nodes-v1";
 			if (oldEngine) this.oldEngineRuns.add(run.id);
 			const visitBudgetUpgraded = !oldEngine && upgradeStockStepVisits(run);
 			// Process-owned operations must reacquire after restart. Legacy broad
@@ -1084,6 +1087,7 @@ export class WorkflowRuntime {
 			if (!run.simpleExecution.agent)
 				throw new Error("Session conversation unavailable");
 		}
+		this.requireRunAvailable(run);
 		run.simplePrompt = prompt;
 		run.status = "running";
 		run.error = undefined;

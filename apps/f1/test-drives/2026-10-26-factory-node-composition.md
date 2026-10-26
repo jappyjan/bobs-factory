@@ -105,3 +105,28 @@ homes are cleaned up by the fixtures. Historical F1 evidence is preserved.
 D1b remains responsible for deleting the legacy engine, domain tools/checks and
 legacy web presentation. D1a gates legacy execution without migrating frozen
 workflows, forks, receipts or native conversations.
+
+## PR #213 fix round (2026-10-27)
+
+Tested the fix-round working tree based on `1b25bc3f`; the fixes and this addendum
+are committed together. The same scripted authenticated runtime/API drive covers
+post-merge external replanning with both explicit and carried approvals. A revised
+external-only plan retains the original repository plan and actual approval/merge
+receipts; implementation and merge each run exactly once. Stop ends the workflow
+without completing the ticket. No live model calls or hosted mutations are used.
+
+Passing focused checks:
+
+```sh
+pnpm --filter ./packages/edge-worker exec vitest run \
+  test/FactoryV2Composition.test.ts -t 'post-merge' --maxWorkers=1
+pnpm --filter ./packages/edge-worker exec vitest run \
+  test/SimpleRecipe.test.ts --maxWorkers=1
+pnpm --filter ./packages/edge-worker typecheck
+```
+
+The three post-merge scenarios and five Simple tests pass. Simple coverage includes
+reloading and continuing completed, running and waiting unmarked graphless runs,
+and rejecting unavailable continuation before changing in-memory or persisted
+state. The frozen unmarked definition is preserved. Existing old-graph gating
+coverage remains in the composition suite.

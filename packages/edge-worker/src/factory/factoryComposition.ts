@@ -241,7 +241,105 @@ function composition(takeover: boolean) {
 					merge: `merge-${kind}/merge`,
 				},
 				"end",
-				[outcome("revise-plan", "planning")],
+				[outcome("revise-plan", `external-replan-${kind}`)],
+			),
+			{
+				id: `external-replan-${kind}`,
+				name: "Repository merged; external work needs a new plan",
+				type: "display",
+				revisionScope: "none",
+				document: {
+					version: "view-v1",
+					components: [
+						{
+							id: "reason",
+							type: "markdown",
+							data: {
+								literal: {
+									text: "The repository part is already merged. The external part needs a new plan. Re-plan only the remaining external work, or stop here and leave the ticket open. Repository changes will not run again.",
+								},
+							},
+						},
+						{
+							id: "decision",
+							type: "actions",
+							data: {
+								literal: {
+									actions: [
+										{ id: "replan", label: "Re-plan external only" },
+										{ id: "stop", label: "Stop" },
+									],
+								},
+							},
+						},
+					],
+				},
+				next: `external-replan-choice-${kind}`,
+			},
+			{
+				id: `external-replan-choice-${kind}`,
+				name: "Re-plan external work?",
+				type: "check",
+				revisionScope: "none",
+				reads: { answer: `external-replan-${kind}` },
+				check: {
+					results: {
+						replan: { path: "/inputs/answer/action", equals: "replan" },
+					},
+				},
+				branches: [
+					{
+						when: { path: "replan", equals: true },
+						next: `external-revision-${kind}`,
+					},
+				],
+				next: "end",
+			},
+			{
+				id: `external-revision-${kind}`,
+				name: "Preserve merged work and external feedback",
+				type: "transform",
+				revisionScope: "none",
+				reads: {
+					plan: "plan",
+					merge: `merge-${kind}/merge`,
+					answer: `external-replan-${kind}`,
+					initial: `external-${kind}`,
+					previous: `external-retry-${kind}`,
+				},
+				transform: {
+					scope:
+						"The repository part is already merged and must remain unchanged. Re-plan only remaining external ticket work. Preserve applied operations, reconcile current state and all external feedback. Never plan repository implementation or another merge.",
+					planChanges: { select: "/inputs/plan" },
+					merge: { select: "/inputs/merge" },
+					approval: { select: "/inputs/answer" },
+					initial: { select: "/inputs/initial" },
+					previous: { select: "/inputs/previous" },
+				},
+				next: `external-planning-${kind}`,
+			},
+			call(
+				`external-planning-${kind}`,
+				"Re-plan remaining external work",
+				"v2-clarify-plan",
+				{
+					requirements: "requirements",
+					architecture: `external-revision-${kind}`,
+				},
+				`external-retry-${kind}`,
+			),
+			call(
+				`external-retry-${kind}`,
+				"Deliver revised external plan",
+				"v2-external",
+				{
+					requirements: `external-planning-${kind}/decisions`,
+					plan: `external-planning-${kind}/plan`,
+					approval: `approval/${kind}`,
+					merge: `merge-${kind}/merge`,
+				},
+				"end",
+				[outcome("revise-plan", `external-replan-${kind}`)],
 			),
 		]),
 		call("external", "External delivery", "v2-external", shared, "end", [

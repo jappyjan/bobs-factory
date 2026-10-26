@@ -110,6 +110,7 @@ function fixture(
 		empty?: boolean;
 		revision?: boolean;
 		carry?: boolean;
+		externalRevision?: boolean;
 	} = {},
 ) {
 	const home = mkdtempSync(join(tmpdir(), "factory-composition-")),
@@ -152,6 +153,7 @@ function fixture(
 		plans: 0,
 		scopes: 0,
 		revised: false,
+		externalRevised: false,
 	};
 	const checks = [
 		{ name: "build", required: true, state: "SUCCESS", bucket: "pass" },
@@ -277,7 +279,14 @@ function fixture(
 				break;
 			case "plan":
 				state.plans++;
-				value = { ...plan, deliveryMode: mode };
+				value = ctx.stepKey?.startsWith("external-planning-")
+					? {
+							...plan,
+							summary: "Only remaining external operations",
+							deliveryMode: "external",
+							repositories: [],
+						}
+					: { ...plan, deliveryMode: mode };
 				break;
 			case "plan-review":
 				value = { approved: true, feedback: [] };
@@ -362,13 +371,24 @@ function fixture(
 				};
 				break;
 			case "apply":
+				if (options.externalRevision && !state.externalRevised) {
+					state.externalRevised = true;
+					value = {
+						applied: false,
+						revisePlan: true,
+						summary: "External target needs replanning",
+						receipts: [],
+					};
+					break;
+				}
 				expect(setStatus).not.toHaveBeenCalled();
 				if (mode === "mixed") {
 					expect(state.merged).toBe(true);
-					expect(ctx.run.outputs["merge-explicit/merge"]).toMatchObject({
+					const kind = options.carry ? "carried" : "explicit";
+					expect(ctx.run.outputs[`merge-${kind}/merge`]).toMatchObject({
 						repositories: [{ merged: true }],
 					});
-					expect(ctx.run.outputs["approval/explicit"]).toMatchObject({
+					expect(ctx.run.outputs[`approval/${kind}`]).toMatchObject({
 						action: "approve",
 					});
 				}
@@ -493,7 +513,7 @@ function fixture(
 }
 async function drive(
 	f: ReturnType<typeof fixture>,
-	options: { reject?: boolean; restart?: boolean } = {},
+	options: { reject?: boolean; restart?: boolean; stopExternal?: boolean } = {},
 ) {
 	const server = () => {
 		const server = new FactoryServer(f.runtime, {
@@ -570,8 +590,11 @@ async function drive(
 			});
 		}
 		const d = f.run.viewDecision!;
-		const action =
-			f.run.step === "approval/approval-display"
+		const action = f.run.step.startsWith("external-replan-")
+			? options.stopExternal
+				? "stop"
+				: "replan"
+			: f.run.step === "approval/approval-display"
 				? options.reject && !rejected
 					? "request-changes"
 					: "approve"
@@ -617,6 +640,42 @@ it.each([
 		mode === "deferred" ? "started" : "completed",
 	);
 	expect(f.setStatus).toHaveBeenCalledTimes(mode === "deferred" ? 0 : 1);
+}, 180000);
+
+it.each([
+	{ stopExternal: false, carry: false },
+	{ stopExternal: true, carry: false },
+	{ stopExternal: false, carry: true },
+])("keeps post-merge external revisions out of implementation (%j)", async ({
+	stopExternal,
+	carry,
+}) => {
+	const kind = carry ? "carried" : "explicit";
+	const f = fixture("mixed", "factory", { externalRevision: true, carry });
+	await drive(f, { stopExternal });
+	expect(f.run.status, f.run.error).toBe("completed");
+	expect(f.provider.merge).toHaveBeenCalledOnce();
+	expect(f.state.implementations).toBe(1);
+	expect(f.state.plans).toBe(stopExternal ? 1 : 2);
+	expect(f.run.outputs.plan).toMatchObject({
+		summary: plan.summary,
+		deliveryMode: "mixed",
+	});
+	if (!stopExternal)
+		expect(f.run.outputs[`external-planning-${kind}/plan`]).toMatchObject({
+			summary: "Only remaining external operations",
+			deliveryMode: "external",
+		});
+	expect(
+		f.visits.filter((step) => step === `external-planning-${kind}/plan-review`),
+	).toHaveLength(stopExternal ? 0 : 1);
+	expect(f.run.history.some((h) => h.step === `external-replan-${kind}`)).toBe(
+		true,
+	);
+	expect((await f.ticket.read()).state?.type).toBe(
+		stopExternal ? "started" : "completed",
+	);
+	expect(f.setStatus).toHaveBeenCalledTimes(stopExternal ? 0 : 1);
 }, 180000);
 
 it("takes over an existing request and skips clarification/planning", async () => {
