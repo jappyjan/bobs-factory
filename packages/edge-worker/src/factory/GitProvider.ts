@@ -12,6 +12,10 @@ import { gitlabProvider } from "./GitlabProvider.js";
 import {
 	PullRequestSchema,
 	ReadinessSchema,
+	type RequestComment,
+	RequestCommentSchema,
+	type RequestRead,
+	RequestReadSchema,
 	type TakeoverPullRequest,
 	TakeoverPullRequestSchema,
 } from "./GitProviderContracts.js";
@@ -45,10 +49,17 @@ export function normalizeGitProviderConfig(
 		: config;
 }
 export interface GitProvider {
+	/** Optional for older custom adapters; IO nodes fail explicitly if unsupported. */
+	read?(url: string): Promise<RequestRead>;
+	update?(url: string, input: { title: string; body: string }): Promise<void>;
+	comments?(url: string): Promise<RequestComment[]>;
+	comment?(url: string, body: string): Promise<RequestComment>;
+
 	retryCheck?(
 		url: string,
 		retry: NonNullable<ProviderCheck["retry"]>,
-	): Promise<void>;
+		// biome-ignore lint/suspicious/noConfusingVoidType: Existing adapters return no retry receipt.
+	): Promise<void | { requested: boolean; reason?: string }>;
 	list(branch: string): Promise<{ url: string; isDraft: boolean }[]>;
 	create(input: {
 		branch: string;
@@ -211,7 +222,7 @@ export function gitProvider(
 	if (snapshot.type === "github") {
 		provider = githubProvider(command, repository.url, checkReceipts);
 	} else if (snapshot.type === "gitlab")
-		provider = gitlabProvider(command, repository);
+		provider = gitlabProvider(command, repository, checkReceipts);
 	else if (snapshot.type === "custom") {
 		const invoke = async (operation: string, input: unknown) => {
 			const directory = mkdtempSync(join(tmpdir(), "factory-git-provider-"));
@@ -235,6 +246,17 @@ export function gitProvider(
 			}
 		};
 		provider = {
+			read: async (url) =>
+				RequestReadSchema.parse(await invoke("read", { url })),
+			update: async (url, input) => {
+				z.object({ ok: z.literal(true) }).parse(
+					await invoke("update", { url, ...input }),
+				);
+			},
+			comments: async (url) =>
+				z.array(RequestCommentSchema).parse(await invoke("comments", { url })),
+			comment: async (url, body) =>
+				RequestCommentSchema.parse(await invoke("comment", { url, body })),
 			list: async (branch) =>
 				z
 					.array(z.object({ url: z.string().url(), isDraft: z.boolean() }))
@@ -283,6 +305,30 @@ export function gitProvider(
 	} else throw new Error("Unknown Git provider");
 	// Provider output must not redirect subsequent mutations to another repository.
 	return {
+		...(provider.read
+			? {
+					read: async (url: string) => {
+						const result = await provider.read!(checkedUrl(url));
+						sameRequest(url, result.url);
+						return result;
+					},
+				}
+			: {}),
+		...(provider.update
+			? {
+					update: (url: string, input: { title: string; body: string }) =>
+						provider.update!(checkedUrl(url), input),
+				}
+			: {}),
+		...(provider.comments
+			? { comments: (url: string) => provider.comments!(checkedUrl(url)) }
+			: {}),
+		...(provider.comment
+			? {
+					comment: (url: string, body: string) =>
+						provider.comment!(checkedUrl(url), body),
+				}
+			: {}),
 		...(provider.retryCheck
 			? {
 					retryCheck: (

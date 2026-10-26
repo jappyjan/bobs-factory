@@ -35,7 +35,7 @@ export async function inspectGithubReadiness(
 	const [owner, name] = reference.project.split("/");
 	const number = reference.number;
 	const api = new GithubApi(command, reference.url);
-	const query = `query($owner:String!,$name:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$name){squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed pullRequest(number:$number){url title headRefOid baseRefOid baseRefName baseRef{name target{oid}} state isDraft mergeable mergeStateStatus reviewDecision isMergeQueueEnabled isInMergeQueue mergeQueueEntry{id} autoMergeRequest{enabledAt} statusCheckRollup{contexts(first:100){pageInfo{hasNextPage endCursor} nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}}}} reviewThreads(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated comments(first:100){nodes{id body url author{login}} pageInfo{hasNextPage endCursor}}}}}}}`;
+	const query = `query($owner:String!,$name:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$name){squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed pullRequest(number:$number){url number title body headRefName isCrossRepository labels(first:100){nodes{name} pageInfo{hasNextPage}} headRefOid baseRefOid baseRefName baseRef{name target{oid}} state isDraft mergeable mergeStateStatus reviewDecision isMergeQueueEnabled isInMergeQueue mergeQueueEntry{id} autoMergeRequest{enabledAt} statusCheckRollup{contexts(first:100){pageInfo{hasNextPage endCursor} nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl isRequired(pullRequestNumber:$number)} ... on StatusContext{context state targetUrl isRequired(pullRequestNumber:$number)}}}} reviewThreads(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated comments(first:100){nodes{id body url author{login}} pageInfo{hasNextPage endCursor}}}}}}}`;
 	const variables = { owner, name, number };
 
 	let cursor: string | undefined;
@@ -112,7 +112,7 @@ export async function inspectGithubReadiness(
 			throw new Error("GitHub check pagination is incomplete");
 		seenChecks.add(after);
 		const payload = await api.graphql(
-			`query($owner:String!,$name:String!,$number:Int!,$cursor:String!){repository(owner:$owner,name:$name){pullRequest(number:$number){headRefOid baseRefOid baseRefName baseRef{name target{oid}} state statusCheckRollup{contexts(first:100,after:$cursor){nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}} pageInfo{hasNextPage endCursor}}}}}}`,
+			`query($owner:String!,$name:String!,$number:Int!,$cursor:String!){repository(owner:$owner,name:$name){pullRequest(number:$number){headRefOid baseRefOid baseRefName baseRef{name target{oid}} state statusCheckRollup{contexts(first:100,after:$cursor){nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl isRequired(pullRequestNumber:$number)} ... on StatusContext{context state targetUrl isRequired(pullRequestNumber:$number)}} pageInfo{hasNextPage endCursor}}}}}}`,
 			{ ...variables, cursor: after },
 		);
 		const next = payload.data?.repository?.pullRequest;
@@ -152,6 +152,7 @@ export async function inspectGithubReadiness(
 			const state = check.conclusion ?? check.state ?? check.status;
 			return {
 				name: check.name ?? check.context,
+				required: check.isRequired,
 				state,
 				link: check.detailsUrl ?? check.targetUrl,
 				bucket: ["SUCCESS", "NEUTRAL", "SKIPPED"].includes(state)
@@ -339,9 +340,37 @@ export async function inspectGithubReadiness(
 		!blockers.length
 	)
 		add("rules", `GitHub merge rules: ${pr.mergeStateStatus}`, "wait");
+	const labels = pr.labels?.pageInfo?.hasNextPage
+		? (
+				await api.pages<any>(`repos/${owner}/${name}/issues/${number}/labels`)
+			).map((label) => label.name)
+		: (pr.labels?.nodes ?? []).map((label: any) => label.name);
 	// Draft PRs can report BLOCKED because of their draft status. This is a human action,
 	// not evidence of mergeability; recheck after marking ready and never bypass GitHub rules.
 	return {
+		request: {
+			url: pr.url,
+			number: pr.number,
+			title: pr.title,
+			body: pr.body ?? "",
+			headRefName: pr.headRefName,
+			headRefOid: pr.headRefOid,
+			baseRefName: pr.baseRefName,
+			state: pr.state,
+			isDraft: pr.isDraft,
+			isCrossRepository: pr.isCrossRepository,
+			labels,
+			reviewComments: threads.flatMap((thread) => thread.comments.nodes),
+		},
+		mergeability:
+			pr.mergeable === "MERGEABLE"
+				? "mergeable"
+				: pr.mergeable === "CONFLICTING"
+					? "conflicting"
+					: "unknown",
+		providerMergeability: pr.mergeStateStatus ?? null,
+		mergeStateStatus: pr.mergeStateStatus ?? null,
+		reviewDecision: pr.reviewDecision ?? null,
 		...(typeof pr.title === "string" ? { metadata: { title: pr.title } } : {}),
 		url: pr.url,
 		headSha: pr.headRefOid,

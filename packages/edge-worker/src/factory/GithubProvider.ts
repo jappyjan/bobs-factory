@@ -49,6 +49,55 @@ export function githubProvider(
 		return `${api.pullRequestsPath}/${reference.number}`;
 	};
 	return {
+		read: async (url) => {
+			path(url);
+			const snapshot = await inspectGithubReadiness(
+				command,
+				url,
+				checkReceipts,
+			);
+			if (!snapshot.request) throw new Error("PR metadata unavailable");
+			return {
+				...snapshot.request,
+				baseSha: snapshot.baseSha,
+				mergeability: snapshot.mergeability ?? "unknown",
+				providerMergeability: snapshot.providerMergeability ?? null,
+				mergeStateStatus: snapshot.mergeStateStatus ?? null,
+				reviewDecision: snapshot.reviewDecision ?? null,
+				comments: snapshot.comments,
+				blockers: snapshot.blockers,
+				queued: snapshot.queued,
+				reviews: snapshot.reviews,
+				unresolvedThreads: snapshot.threads,
+				checks: snapshot.checks,
+			};
+		},
+		update: async (url, input) => {
+			await api.request("PATCH", path(url), input);
+		},
+		comments: async (url) => {
+			const ref = pullRequestReference(url)!;
+			path(url);
+			return (
+				await api.pages<any>(
+					`repos/${api.repository.project}/issues/${ref.number}/comments`,
+				)
+			).map((item) => ({
+				id: String(item.id),
+				body: item.body ?? "",
+				url: item.html_url,
+			}));
+		},
+		comment: async (url, body) => {
+			const ref = pullRequestReference(url)!;
+			path(url);
+			const item = await api.request<any>(
+				"POST",
+				`repos/${api.repository.project}/issues/${ref.number}/comments`,
+				{ body },
+			);
+			return { id: String(item.id), body: item.body ?? "", url: item.html_url };
+		},
 		retryCheck: async (url, retry) => {
 			if (retry.kind !== "github-run" || !/^\d+$/.test(retry.id))
 				throw new Error("Invalid GitHub retry receipt");
@@ -62,8 +111,13 @@ export function githubProvider(
 				receipt.run_attempt !== retry.attempt ||
 				receipt.status !== "completed"
 			)
-				return;
+				return {
+					requested: false,
+					reason:
+						receipt.status !== "completed" ? "in-progress" : "retry-changed",
+				};
 			await api.request("POST", `${runPath}/rerun-failed-jobs`);
+			return { requested: true };
 		},
 		list: async (branch) =>
 			(

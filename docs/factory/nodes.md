@@ -626,3 +626,155 @@ no generic reconciliation: after an
 uncertain command, the operator must reconcile its external outcome. A confirmed
 command is not run again. Arbitrary shell side effects cannot be safely inferred
 from a local exit code after a crash.
+
+## Repository IO: `git`, `pr`, `ci`
+
+All three nodes have `category: "io"`, use the run's frozen repository scope and
+return `{ repositories: [{ id, head, ...operationResult }] }`, including for a
+single repository. `head` is an actual repository commit, never a group digest.
+`base` is included when the operation observes a base commit. Repositories execute
+in scope order, with distinct durable effect names per repository. A failure stops
+the step; retry reuses earlier confirmed effects. Existing domain tools remain
+available and are not invoked by these nodes.
+
+Configuration uses the ordinary step fields, a `type` and an `op`. String payloads
+come from named `reads`, resolved by the runtime before execution. `git commit`
+reads `message`; `pr ensure` reads `title` and `body`; `pr comment` reads `body`.
+The same payload applies to each scoped repository. `body` may be empty for ensure.
+`pr read/comment/ready` and `ci status/rerun` optionally read `pr`, either a prior
+node's `{ repositories: [{ id, url }] }` result or `{ url }` for one repository.
+Without that binding they discover the unique open request for the worktree branch;
+zero or multiple matches fail. A bound URL is always checked against the selected
+repository/provider. Bind a URL to inspect a closed request.
+
+### `git`
+
+- `status`: `{ type: "git", op: "status" }` → each repository has
+  `{ id, head, branch, dirty }`.
+- `commit`: `{ type: "git", op: "commit", reads: { message: "metadata/message" } }`
+  → `{ id, head, committed }`. Stages all changes and commits only when dirty;
+  clean worktrees return `committed: false`. `hooks` defaults to `true`; set
+  `hooks: false` to pass `--no-verify` for mechanical delivery. Keeps configured
+  Git identity/signing, execution-profile credentials and the host SSH-agent
+  selection. Retains the pre-commit head and adds a `Factory-Effect` trailer to reconcile a
+  lost commit response; an unchanged head proves a failed signing/hook attempt
+  created no commit and permits a retry.
+- `push`: `{ type: "git", op: "push" }` → `{ id, head, branch, pushed: true }`.
+  Checks that HEAD still matches the observed SHA, then pushes `HEAD` to the current
+  branch on `origin` without force and sets its upstream. Recovery confirms that
+  exact remote SHA; other remote heads permit a safe non-force resend.
+- `rev-parse`: `{ type: "git", op: "rev-parse", ref: "HEAD" }`
+  → `{ id, head, ref, revision }`. Resolves a commit, with ref option injection
+  rejected. `ref` defaults to `HEAD`.
+- `diff`: `{ type: "git", op: "diff", from: "refs/remotes/origin/main", to: "HEAD" }`
+  → `{ id, head, base, target, files: string[], changes: [{ path, additions,
+  deletions }], stats: { filesChanged, additions, deletions, binaryFiles } }`.
+  Defaults to the run's `origin/<baseBranch>` and `HEAD`; compares the two exact
+  commits without fetching. Binary additions/deletions are `null`. NUL-separated
+  Git output preserves whitespace and tabs in paths; renames appear as add/delete.
+
+Commit/push require the run's dedicated linked worktree, its exact root and a
+non-base branch. Source clones and detached HEADs are rejected. These nodes do not
+create worktrees, change identity settings or disable signing.
+
+### `pr`
+
+- `ensure`: `{ type: "pr", op: "ensure", reads: { title: "metadata/title",
+  body: "metadata/body" } }` → `{ id, head, url, isDraft }`. Creates an open draft,
+  or updates an existing draft's title/body. Existing ready requests are returned
+  without changing their metadata or draft state. The branch/base must match the
+  scoped worktree; cross-repository requests are rejected.
+- `read`: `{ type: "pr", op: "read", reads: { pr: "opened" } }`
+  → `{ id, head, base, url, number, title, body, headRefName, headRefOid,
+  baseRefName, baseSha, state, isDraft, isCrossRepository, mergeability, reviews,
+  unresolvedThreads, reviewComments, comments, blockers, queued, labels, checks,
+  checksSummary, providerMergeability, mergeStateStatus?, reviewDecision? }`.
+  State is `OPEN | MERGED | CLOSED`; `mergeability` is provider-neutral
+  (`mergeable | conflicting | unknown`). `providerMergeability` retains GitHub's
+  raw `mergeStateStatus` or GitLab's `detailed_merge_status` (`null` if unavailable).
+  GitHub also exposes raw `mergeStateStatus` and `reviewDecision`. Discussion/review payloads retain provider
+  detail; GitLab approvals populate `reviews`. Checks reuse `ProviderCheck` and
+  summary is `{ total, passed, failed, pending, complete }`.
+- `comment`: `{ type: "pr", op: "comment", reads: { pr: "opened",
+  body: "metadata/body" } }` → `{ id, head, url, comment: { id, body, url? } }`.
+- `ready`: `{ type: "pr", op: "ready", reads: { pr: "opened" } }`
+  → `{ id, head, url, isDraft: false }`. Verifies the provider's ready state at
+  the requested head; already-ready requests are a no-op.
+
+Ensure/comment use `ctx.effect` with `<!-- factory-effect:<key> -->` markers in
+provider-visible bodies. Recovery reads complete provider lists: an exact marker
+and trimmed title confirms the ensure receipt. An absent request or an open
+draft without the current marker/metadata permits an idempotent resend (`null`)
+with the same key/marker. Existing ready requests remain untouched. Comment
+recovery confirms the marked body or resends when absent. Unavailable reads
+remain unknown and block resending. Ready is reconciled by provider state. The
+public `GitProvider.read/update/comments/comment` helpers retain repository URL
+validation and are reusable by other IO nodes. Custom executable adapters may
+implement the corresponding operations; their existing operations remain intact.
+
+### `ci`
+
+- `status`: `{ type: "ci", op: "status", reads: { pr: "opened" } }`
+  → `{ repositories: [{ id, head, base, url, checks: [{ name, required,
+  conclusion, status, url, failureLogExcerpt, infraFailure, retry }],
+  summary: { total, passed, failed, pending, complete }, infraFailure,
+  prHead, localHead, headMatches }] }`.
+  `status` is `pass | fail | pending`; `conclusion` retains the provider value.
+  Required/optional classification comes from GitHub's per-PR `isRequired` or
+  GitLab's `allow_failure`/pipeline requirement. Unknown custom-adapter required
+  status is `null`. URLs and unavailable failure excerpts are `null`.
+  Excerpts are bounded to 8,000 characters, using GitHub check failure output or
+  GitLab job traces (falling back to its failure reason if the trace is unavailable).
+  GitLab downloads traces only for failing jobs that count as failures, and caches
+  bounded excerpts by immutable job ID across polls.
+  `infraFailure` reuses the existing provider classifier, never check-name guesses.
+  `headMatches: false` reports provider head lag and sets `summary.complete: false`,
+  while checks still describe the old revision; recipes must check
+  `summary.complete`/`headMatches` before acting on `failed`. This is one read pass:
+  it does not poll, sleep, rerun checks or apply routing rules.
+- `rerun`: same configuration with `op: "rerun"` → the status shape plus
+  `reruns: [{ check, retry, requested, skipped? }]` per repository. Missing retry
+  identities, in-progress runs, unsupported retries and mismatched revisions are
+  skipped with `requested: false` and a reason. Only infrastructure
+  failures with a provider retry identity bound to the current head are eligible.
+  Multiple check contexts for one run/attempt produce one effect. Unknown retry
+  outcomes are not resent; recovery requires proof of a newer/running attempt.
+  Code/metadata failures are left to recipe routing. No polling is embedded here.
+
+### Operation effects and read-only wrappers
+
+The definitions conservatively declare `effect: "effect"` and publish a
+serializable `operationEffects` map through registry metadata. On parsed steps,
+server wrappers such as `wait` should call `nodeRegistry.effectFor(step)` and
+accept `"pure"` or `"read-only"` children. The registry parses the step schema
+first so operation/access defaults apply. Browser code can use `nodeEffect(step)` from
+`nodes/metadata.ts` against the hydrated catalog. Unknown operations fall back to
+the definition's conservative effect class, never an implicit read-only grant.
+
+Read-only operations are `git status/rev-parse/diff`, `pr read`, and `ci status`.
+They are classified `read-only`; `pure` is reserved for logic without IO.
+All other operations are `effect` and use `ctx.effect`. A wait wrapper executes a fresh read on
+each poll. This metadata does not confer permissions. Palette entries and the
+generic JSON settings panels come from these same definitions; defaults are
+`git status`, `pr read` and `ci status`.
+
+A minimal recipe fragment (after a `metadata` producer returning message/title/body):
+
+```json
+[
+  { "id": "commit", "name": "Commit", "type": "git", "op": "commit",
+    "reads": { "message": "metadata/message" } },
+  { "id": "push", "name": "Push", "type": "git", "op": "push" },
+  { "id": "opened", "name": "Open PR", "type": "pr", "op": "ensure",
+    "reads": { "title": "metadata/title", "body": "metadata/body" } },
+  { "id": "checks", "name": "CI status", "type": "ci", "op": "status",
+    "reads": { "pr": "opened" } }
+]
+```
+
+`RepositoryIONodes.test.ts` runs this sequence with mocked Git/providers over two
+repositories, and tests uncertain sends across cold runtime restarts.
+`GitProvider.test.ts` covers the new GitHub/GitLab transport helpers. The scripted
+F1 fixture `apps/f1/test-drives/assets/repository-io-nodes.ts` uses real Git,
+mocked agents and a simulated GitLab API, including a lost creation response and
+worker restart.

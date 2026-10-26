@@ -89,7 +89,7 @@ it("confirms a guarded CI retry with GitHub's empty HTTP 201 acknowledgement", a
 			attempt: 1,
 			headSha: "head",
 		}),
-	).resolves.toBeUndefined();
+	).resolves.toEqual({ requested: true });
 	expect(fetch).toHaveBeenCalledTimes(3);
 });
 

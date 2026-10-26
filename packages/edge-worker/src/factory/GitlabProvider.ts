@@ -14,6 +14,9 @@ import type {
 export function gitlabProvider(
 	command: ProviderCommand,
 	repository: { host: string; project: string; url: string },
+	checkReceipts: NonNullable<
+		import("./CISupervision.js").CISupervision["checkReceipts"]
+	> = {},
 ): GitProvider {
 	const root = `projects/${encodeURIComponent(repository.project)}`;
 	const api = async (
@@ -91,7 +94,63 @@ export function gitlabProvider(
 			type: note.author?.bot ? "Bot" : "User",
 		},
 	});
-	return {
+	const failureExcerpt = async (job: any) => {
+		if (job.status !== "failed" || job.allow_failure) return undefined;
+		const key = JSON.stringify([repository.url, "gitlab-job", job.id]);
+		if (checkReceipts[key]?.failureLogExcerpt !== undefined)
+			return checkReceipts[key].failureLogExcerpt;
+		try {
+			const excerpt = (
+				await command("glab", [
+					"api",
+					`${root}/jobs/${job.id}/trace`,
+					"--hostname",
+					repository.host,
+				])
+			).slice(-8000);
+			checkReceipts[key] = {
+				failure: { kind: "unknown", evidence: job.failure_reason ?? "" },
+				failureLogExcerpt: excerpt,
+			};
+			while (Object.keys(checkReceipts).length > 200)
+				delete checkReceipts[Object.keys(checkReceipts)[0]!];
+			return excerpt;
+		} catch {
+			return job.failure_reason;
+		}
+	};
+
+	const provider: GitProvider = {
+		read: async (url) => {
+			const snapshot = await provider.readiness(url);
+			if (!snapshot.request) throw new Error("MR metadata unavailable");
+			return {
+				...snapshot.request,
+				baseSha: snapshot.baseSha,
+				mergeability: snapshot.mergeability ?? "unknown",
+				providerMergeability: snapshot.providerMergeability ?? null,
+				comments: snapshot.comments,
+				blockers: snapshot.blockers,
+				queued: snapshot.queued,
+				reviews: snapshot.reviews,
+				unresolvedThreads: snapshot.threads,
+				checks: snapshot.checks,
+			};
+		},
+		update: async (url, input) => {
+			await api(requestPath(url), "PUT", {
+				title: `Draft: ${input.title.replace(/^(?:Draft:|WIP:)\s*/i, "")}`,
+				description: input.body,
+			});
+		},
+		comments: async (url) =>
+			(await pages(`${requestPath(url)}/notes`))
+				.filter((n) => !n.system)
+				.map((n) => ({ id: String(n.id), body: n.body ?? "", url: n.web_url })),
+		comment: async (url, body) => {
+			const n = await api(`${requestPath(url)}/notes`, "POST", { body });
+			return { id: String(n.id), body: n.body ?? "", url: n.web_url };
+		},
 		retryCheck: async (url, retry) => {
 			if (retry.kind !== "gitlab-job" || !/^\d+$/.test(retry.id))
 				throw new Error("Invalid GitLab retry receipt");
@@ -217,9 +276,11 @@ export function gitlabProvider(
 				const jobs = await pages(
 					`/pipelines/${pipeline.id}/jobs?include_retried=false`,
 				);
-				for (const job of jobs)
+				for (const job of currentRevision ? jobs : [])
 					checks.push({
 						name: job.name,
+						required: !job.allow_failure,
+						failureLogExcerpt: await failureExcerpt(job),
 						state: job.status,
 						link: job.web_url,
 						bucket:
@@ -263,6 +324,7 @@ export function gitlabProvider(
 				// Include aggregate/child-pipeline status; job success alone is insufficient.
 				checks.push({
 					name: "Pipeline",
+					required: Boolean(project.only_allow_merge_if_pipeline_succeeds),
 					state: pipeline.status,
 					link: pipeline.web_url,
 					bucket: !currentRevision
@@ -339,6 +401,18 @@ export function gitlabProvider(
 			if (!base.commit?.id)
 				throw new Error("GitLab target revision unavailable");
 			return {
+				request: {
+					...pr,
+					labels: mr.labels ?? [],
+					reviewComments: discussions,
+				},
+				mergeability:
+					mr.has_conflicts || status === "conflict"
+						? "conflicting"
+						: status === "mergeable" || mr.merge_status === "can_be_merged"
+							? "mergeable"
+							: "unknown",
+				providerMergeability: status ?? null,
 				url: pr.url,
 				headSha: pr.headRefOid,
 				baseSha: base.commit.id,
@@ -354,7 +428,7 @@ export function gitlabProvider(
 				checks,
 				threads,
 				comments,
-				reviews: [],
+				reviews: approvals.approved_by ?? [],
 				queued: Boolean(
 					mr.merge_when_pipeline_succeeds || mr.auto_merge_enabled,
 				),
@@ -379,4 +453,5 @@ export function gitlabProvider(
 			});
 		},
 	};
+	return provider;
 }

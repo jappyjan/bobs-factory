@@ -17,6 +17,7 @@ export const PullRequestSchema = z.object({
 	isDraft: z.boolean(),
 	isCrossRepository: z.boolean(),
 });
+export type PullRequest = z.infer<typeof PullRequestSchema>;
 export const TakeoverPullRequestSchema = PullRequestSchema.extend({
 	state: z.literal("OPEN"),
 	isCrossRepository: z.literal(false),
@@ -47,6 +48,8 @@ export const ReadinessSchema = z
 		checks: z.array(
 			z.object({
 				name: z.string(),
+				required: z.boolean().optional(),
+				failureLogExcerpt: z.string().optional(),
 				state: z.string(),
 				bucket: z.enum(["pass", "fail", "pending"]),
 				link: z.string().optional(),
@@ -114,3 +117,33 @@ export const ReadinessSchema = z
 				message: "Provider readiness contradicts its blockers, checks or state",
 			});
 	});
+
+/** Domain-free provider data for IO consumers, including closed requests. */
+export const RequestCommentSchema = z.object({
+	id: z.union([z.string(), z.number()]),
+	body: z.string(),
+	url: z.string().optional(),
+});
+export type RequestComment = z.infer<typeof RequestCommentSchema>;
+export const RequestReadSchema = PullRequestSchema.extend({
+	baseSha: z.string().min(1),
+	mergeability: z.enum(["mergeable", "conflicting", "unknown"]),
+	providerMergeability: z.string().nullable(),
+	mergeStateStatus: z.string().nullable().optional(),
+	reviewDecision: z.string().nullable().optional(),
+	comments: z.array(z.unknown()),
+	blockers: z.array(
+		z.object({
+			kind: z.string(),
+			message: z.string(),
+			action: z.enum(["fix", "wait", "human"]),
+		}),
+	),
+	queued: z.boolean(),
+	reviews: z.array(z.unknown()),
+	unresolvedThreads: z.array(z.unknown()),
+	reviewComments: z.array(z.unknown()),
+	labels: z.array(z.string()),
+	checks: z.array(z.unknown()),
+});
+export type RequestRead = z.infer<typeof RequestReadSchema>;

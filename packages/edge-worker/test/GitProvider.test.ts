@@ -11,6 +11,7 @@ import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import { TakeoverSourceSchema } from "../src/factory/Takeover.js";
 import { originatingTicket } from "../src/factory/TicketTracking.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
+import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 
 const repositoryUrl = "https://gitlab.example/team/subgroup/repo";
 const url = `${repositoryUrl}/-/merge_requests/17`;
@@ -516,4 +517,247 @@ it("confirms a GitLab fast-forward merge using its head SHA", async () => {
 		headRefOid: "head",
 		mergeCommitSha: "head",
 	});
+});
+
+it("exposes GitLab IO reads, metadata updates, comments and required/optional check evidence", async () => {
+	const baseline = gitlab(
+		{
+			labels: ["example"],
+			head_pipeline: { ...mr.head_pipeline, status: "failed" },
+		},
+		[{ id: "discussion", notes: [{ resolvable: true, resolved: false }] }],
+	);
+	const cmd = vi.fn(async (exe: string, args: string[]) => {
+		const path = args[1]!;
+		if (path.endsWith("/approvals"))
+			return JSON.stringify({
+				approvals_left: 0,
+				approved_by: [{ user: { username: "alice" } }],
+			});
+		if (path.includes("/pipelines/22/jobs"))
+			return JSON.stringify([
+				{
+					id: 5,
+					name: "build",
+					status: "failed",
+					allow_failure: false,
+					failure_reason: "runner_system_failure",
+					commit: { id: "head" },
+					pipeline: { sha: "head" },
+				},
+				{ id: 6, name: "optional", status: "failed", allow_failure: true },
+			]);
+		if (path.endsWith("/trace")) return "Runner failed to allocate a machine";
+		if (path.endsWith("/notes") && args.includes("POST"))
+			return JSON.stringify({
+				id: 42,
+				body: "Hello",
+				web_url: `${url}#note_42`,
+			});
+		return baseline(exe, args);
+	});
+	const provider = gitProvider(cmd, { type: "gitlab", repositoryUrl });
+	const result = await provider.read!(url);
+	expect(result).toMatchObject({
+		state: "OPEN",
+		headRefOid: "head",
+		baseSha: "base",
+		labels: ["example"],
+		mergeability: "unknown",
+		providerMergeability: "draft_status",
+		comments: [expect.objectContaining({ body: "Please fix it" })],
+		blockers: expect.arrayContaining([
+			expect.objectContaining({ kind: "draft" }),
+		]),
+		queued: false,
+		reviews: [{ user: { username: "alice" } }],
+		unresolvedThreads: [{ id: "discussion" }],
+	});
+	expect(result.checks).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				name: "build",
+				required: true,
+				failureLogExcerpt: "Runner failed to allocate a machine",
+				failure: {
+					kind: "infrastructure",
+					evidence: "GitLab failure_reason: runner_system_failure",
+				},
+			}),
+			expect.objectContaining({ name: "optional", required: false }),
+		]),
+	);
+	// Polling again must reuse immutable failure logs, including across adapter recreation.
+	const receipts = {};
+	const polling = gitProvider(cmd, { type: "gitlab", repositoryUrl }, receipts);
+	cmd.mockClear();
+	await polling.read!(url);
+	await gitProvider(cmd, { type: "gitlab", repositoryUrl }, receipts).read!(
+		url,
+	);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/jobs/5/trace")),
+	).toHaveLength(1);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/jobs/6/trace")),
+	).toHaveLength(0);
+	// One MR + one discussion fetch per snapshot; no separate PR-read inspection.
+	expect(
+		cmd.mock.calls.filter(([, args]) =>
+			/\/merge_requests\/17(?:\?|$)/.test(args[1]!),
+		),
+	).toHaveLength(2);
+	expect(
+		cmd.mock.calls.filter(([, args]) => args[1]?.includes("/discussions")),
+	).toHaveLength(2);
+	await provider.update!(url, { title: "New title", body: "New body" });
+	expect(cmd.mock.calls.at(-1)![1]).toEqual(
+		expect.arrayContaining([
+			"PUT",
+			"title=Draft: New title",
+			"description=New body",
+		]),
+	);
+	expect(await provider.comments!(url)).toEqual([
+		{ id: "99", body: "Please fix it", url: undefined },
+	]);
+	expect(await provider.comment!(url, "Hello")).toEqual({
+		id: "42",
+		body: "Hello",
+		url: `${url}#note_42`,
+	});
+	expect(() =>
+		provider.comment!(
+			"https://gitlab.example/other/repo/-/merge_requests/17",
+			"Hello",
+		),
+	).toThrow("selected repository");
+});
+
+it("exposes GitHub IO reads, metadata updates and comments through native transport", async () => {
+	const prUrl = "https://github.com/test/repo/pull/1";
+	const cmd = vi.fn(async (_exe: string, args: string[]) => {
+		const request = githubRequest(args);
+		if (
+			request.path.endsWith("/issues/1/comments") &&
+			request.method === "POST"
+		)
+			return JSON.stringify({
+				id: 8,
+				body: (request.body as { body: string }).body,
+				html_url: `${prUrl}#issuecomment-8`,
+			});
+		const receipt = githubApiReceipt(args, {
+			labels: { nodes: [{ name: "example" }] },
+			mergeStateStatus: "BEHIND",
+			reviewDecision: "CHANGES_REQUESTED",
+			statusCheckRollup: {
+				contexts: {
+					nodes: [
+						{
+							__typename: "CheckRun",
+							name: "runner",
+							conclusion: "STARTUP_FAILURE",
+							isRequired: true,
+						},
+						{
+							__typename: "StatusContext",
+							context: "optional",
+							state: "SUCCESS",
+							isRequired: false,
+						},
+					],
+					pageInfo: { hasNextPage: false },
+				},
+			},
+		});
+		if (request.path === "repos/test/repo/pulls/1" && request.method === "GET")
+			Object.assign(receipt, {
+				labels: [{ name: "example" }],
+				mergeable: true,
+			});
+		return JSON.stringify(receipt);
+	});
+	const provider = gitProvider(cmd, {
+		type: "github",
+		repositoryUrl: "https://github.com/test/repo",
+	});
+	const result = await provider.read!(prUrl);
+	expect(result).toMatchObject({
+		state: "OPEN",
+		labels: ["example"],
+		mergeability: "mergeable",
+		providerMergeability: "BEHIND",
+		mergeStateStatus: "BEHIND",
+		reviewDecision: "CHANGES_REQUESTED",
+		blockers: expect.arrayContaining([
+			expect.objectContaining({ kind: "stale" }),
+			expect.objectContaining({ kind: "reviews" }),
+		]),
+		queued: false,
+	});
+	expect(result.checks).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				name: "runner",
+				required: true,
+				failure: {
+					kind: "infrastructure",
+					evidence: "GitHub check conclusion: STARTUP_FAILURE",
+				},
+			}),
+			expect.objectContaining({ name: "optional", required: false }),
+		]),
+	);
+	expect(
+		cmd.mock.calls.filter(
+			([, args]) => githubRequest(args).path === "repos/test/repo/pulls/1",
+		),
+	).toHaveLength(0);
+	await provider.update!(prUrl, { title: "Title", body: "Body" });
+	expect(githubRequest(cmd.mock.calls.at(-1)![1])).toMatchObject({
+		method: "PATCH",
+		body: { title: "Title", body: "Body" },
+	});
+	expect(await provider.comments!(prUrl)).toEqual([]);
+	expect(await provider.comment!(prUrl, "Hello")).toEqual({
+		id: "8",
+		body: "Hello",
+		url: `${prUrl}#issuecomment-8`,
+	});
+	expect(() =>
+		provider.update!("https://github.com/other/repo/pull/1", {
+			title: "Title",
+			body: "Body",
+		}),
+	).toThrow("selected repository");
+});
+
+it("GitHub retryCheck reports a running Actions run as skipped", async () => {
+	const cmd = vi.fn(async (_exe: string, args: string[]) => {
+		const request = githubRequest(args);
+		if (request.path.endsWith("/actions/runs/42"))
+			return JSON.stringify({
+				id: 42,
+				head_sha: "head",
+				run_attempt: 1,
+				status: "in_progress",
+			});
+		return JSON.stringify(githubApiReceipt(args));
+	});
+	const provider = gitProvider(cmd, {
+		type: "github",
+		repositoryUrl: "https://github.com/test/repo",
+	});
+	expect(
+		await provider.retryCheck!("https://github.com/test/repo/pull/1", {
+			kind: "github-run",
+			id: "42",
+			attempt: 1,
+			headSha: "head",
+		}),
+	).toEqual({ requested: false, reason: "in-progress" });
+	expect(
+		cmd.mock.calls.some(([, args]) => githubRequest(args).method === "POST"),
+	).toBe(false);
 });

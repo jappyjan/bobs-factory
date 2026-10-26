@@ -31,6 +31,8 @@ export interface MergeBlocker {
 	action: "fix" | "wait" | "human";
 }
 export interface ProviderCheck {
+	required?: boolean;
+	failureLogExcerpt?: string;
 	name: string;
 	state: string;
 	bucket: string;
@@ -56,6 +58,15 @@ export interface ProviderCheck {
 	};
 }
 export interface MergeReadiness {
+	/** Metadata from the same inspection, reused by the generic PR read operation. */
+	request?: import("./GitProviderContracts.js").PullRequest & {
+		labels: string[];
+		reviewComments: unknown[];
+	};
+	mergeability?: "mergeable" | "conflicting" | "unknown";
+	providerMergeability?: string | null;
+	mergeStateStatus?: string | null;
+	reviewDecision?: string | null;
 	scopeDigest?: string;
 	/** Base observed before a queued correction; refreshing CI must not erase invalidation. */
 	correctionBaseSha?: string;
