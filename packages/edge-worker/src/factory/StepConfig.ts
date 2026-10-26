@@ -373,8 +373,7 @@ export interface StepConfigFields {
 	output?: StepOutput;
 	rules?: Rule[];
 	checks?: CheckReference[];
-	/** Agent evidence selectors, or the Git node’s commit-hook toggle. */
-	verify?: VerifyReference[] | boolean;
+	verify?: VerifyReference[];
 	session?: "fresh" | "resume";
 	revision?: "bound";
 	access?: StepAccess;
@@ -1023,7 +1022,7 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 		rules: step.rules ?? [],
 		checks: [
 			...(step.checks ?? []),
-			...(Array.isArray(step.verify) ? step.verify : []),
+			...(step.verify ?? []),
 		].map(normalizeCheck),
 		...(step.revision ? { revision: step.revision } : {}),
 		access,
@@ -1426,7 +1425,7 @@ export function stepConfigIssues(
 	}
 	for (const check of [
 		...(step.checks ?? []),
-		...(Array.isArray(step.verify) ? step.verify : []),
+		...(step.verify ?? []),
 	].map(normalizeCheck)) {
 		if (
 			![

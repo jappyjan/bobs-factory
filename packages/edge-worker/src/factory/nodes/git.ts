@@ -13,7 +13,8 @@ export const schema = z.object({
 	...stepFields,
 	type: z.literal("git"),
 	op: z.enum(["status", "commit", "push", "rev-parse", "diff"]),
-	verify: z.boolean().default(true),
+	/** Run commit hooks; false passes --no-verify for mechanical delivery. */
+	hooks: z.boolean().default(true),
 	ref: ref.default("HEAD"),
 	from: ref.optional(),
 	to: ref.default("HEAD"),

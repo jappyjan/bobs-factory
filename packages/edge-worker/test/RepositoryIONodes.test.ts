@@ -666,13 +666,13 @@ it.each([
 	true,
 	false,
 	undefined,
-])("git commit honors verify=%s, defaulting to hooks", async (verify) => {
+])("git commit honors hooks=%s, defaulting to hooks", async (hooks) => {
 	const { instance, run } = fixture([
 		{
 			id: "op",
 			type: "git",
 			op: "commit",
-			...(verify === undefined ? {} : { verify }),
+			...(hooks === undefined ? {} : { hooks }),
 		},
 	]);
 	await instance.launch(run);
@@ -680,7 +680,7 @@ it.each([
 	const args = mocks.command.mock.calls.find(
 		([, , args]) => args[0] === "commit",
 	)![2];
-	expect(args.includes("--no-verify")).toBe(verify === false);
+	expect(args.includes("--no-verify")).toBe(hooks === false);
 });
 
 it.each([

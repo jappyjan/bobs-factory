@@ -114,7 +114,7 @@ const workflow = WorkflowSchema.parse({
 			name: "Commit",
 			type: "git",
 			op: "commit",
-			verify: false,
+			hooks: false,
 			reads: { message: "seed/message" },
 		},
 		{ id: "push", name: "Push", type: "git", op: "push" },

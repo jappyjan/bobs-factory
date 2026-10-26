@@ -653,8 +653,8 @@ repository/provider. Bind a URL to inspect a closed request.
   `{ id, head, branch, dirty }`.
 - `commit`: `{ type: "git", op: "commit", reads: { message: "metadata/message" } }`
   → `{ id, head, committed }`. Stages all changes and commits only when dirty;
-  clean worktrees return `committed: false`. `verify` defaults to `true`; set
-  `verify: false` to pass `--no-verify` for mechanical delivery. Keeps configured
+  clean worktrees return `committed: false`. `hooks` defaults to `true`; set
+  `hooks: false` to pass `--no-verify` for mechanical delivery. Keeps configured
   Git identity/signing, execution-profile credentials and the host SSH-agent
   selection. Retains the pre-commit head and adds a `Factory-Effect` trailer to reconcile a
   lost commit response; an unchanged head proves a failed signing/hook attempt

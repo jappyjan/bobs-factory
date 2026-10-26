@@ -75,7 +75,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 			case "commit": {
 				await assertWorktree(io);
 				const message = textRead(ctx, "message");
-				const verify = ctx.step.verify;
+				const hooks = ctx.step.hooks;
 
 				// Retain the pre-commit head separately so a restart can distinguish a lost
 				// successful response from a signing/hook failure that created no commit.
@@ -84,13 +84,13 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				});
 				const { parent } = await ctx.effect(
 					`git:commit-parent:${repository.id}`,
-					{ message, verify },
+					{ message, hooks },
 					observe,
 					observe,
 				);
 				return ctx.effect(
 					`git:commit:${repository.id}`,
-					{ message, verify },
+					{ message, hooks },
 					async (key) => {
 						if ((await command("git", ["rev-parse", "HEAD"])) !== parent)
 							throw new Error("Worktree head changed before commit");
@@ -100,7 +100,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 						// Recipes may bypass hooks; identity, signing and SSH handling still apply.
 						await command("git", [
 							"commit",
-							...(verify ? [] : ["--no-verify"]),
+							...(hooks ? [] : ["--no-verify"]),
 							"-m",
 							message,
 							"--trailer",
