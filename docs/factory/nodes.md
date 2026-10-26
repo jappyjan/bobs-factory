@@ -39,7 +39,7 @@ export const definition = {
 
 Import the definition in `nodes/index.ts` and add `nodeRegistry.register(definition)`.
 Duplicate types fail immediately. Categories are `agent`, `display`, `logic`,
-`flow`, `io`; effects are `pure`, `agent`, `human`, `effect`, `flow`. They describe
+`flow`, `io`; effects are `pure`, `read-only`, `agent`, `human`, `effect`, `flow`. They describe
 nodes; they do not grant permissions or replace existing execution safeguards.
 
 `StepSchema` first applies the existing `ownStepData` preprocessor, then selects
@@ -124,8 +124,7 @@ Set `engineVersion: "nodes-v1"` on a recipe to opt into the node engine contract
 Absence retains accepted legacy definitions, including `step-config-v1` recipes;
 that older marker alone does **not** opt in. The marker belongs to each definition,
 including called recipes, and is retained when saving or forking. New recipes created in the builder use this marker. No existing
-recipe is migrated automatically. This marker is shared with the other #156 node
-work; align it with B3 if that contract changes before integration.
+recipe is migrated automatically. This marker is shared by all new-engine nodes, including Check and Transform.
 
 An agent runs a prompt and returns data. Its configuration is:
 
@@ -228,3 +227,270 @@ must match the display node's configured schema.
 lands, `test/AgentNode.test.ts` registers a tiny pure status check and fake human
 node through the registry. It tests the complete loop and a restart while waiting,
 without introducing another production human UI protocol.
+
+## Definition versions and pure Check
+
+New recipe definitions declare **`engineVersion: "nodes-v1"`** on the workflow.
+The builder sets this on a new recipe and preserves it on save/export. Omission
+means a legacy definition, including when importing an old recipe or forking a
+bundled legacy recipe. Do not silently stamp saved or running legacy graphs.
+`stepConfigVersion: "step-config-v1"` and per-step `configVersion` are independent
+configuration interpretation markers: existing evidence-backed recipes already
+use them, so they cannot distinguish the new node contract. Agent nodes use this same workflow `engineVersion` boundary. `registerWorkflowConfig` treats marked workflows as explicit, including
+steps without optional configuration; called workflows own their own version.
+
+In nodes-v1, a Check rejects the `checks` property, **even an empty array**, at
+workflow parse/save time, recursively through nested bodies and parallel groups.
+An unmarked definition retains existing code-backed evidence checks until D1.
+For either version, a Check with no configured checks takes the pure execution
+path: only rules-v1 over resolved named reads; no evidence hooks, file checks or
+revision inspection inside its executor. Existing named `check.results`, optional
+`check.passed`, boolean aggregation and ordinary branches are unchanged. The
+structured rule editor remains available; only legacy recipes show the evidence
+checks editor. Editable projection does not add `checks` to a marked Check.
+
+```json
+{
+  "id": "example", "name": "Example", "engineVersion": "nodes-v1",
+  "steps": [{
+    "id": "check", "name": "Check", "type": "check",
+    "reads": {"data": "source"},
+    "check": {"results": {"ready": {"path": "/inputs/data/ready", "equals": true}}},
+    "branches": [{"when": {"path": "passed", "equals": true}, "next": "end"}]
+  }]
+}
+```
+
+## Transform
+
+Parent pointers (`^/field`, `^@key`) and item metadata (`@key`, `@index`)
+are valid only in Transform map item scopes (templates, filters and distinct keys).
+Ordinary Check/agent rules and top-level Transform expressions reject them when
+the definition is validated. Root pointers (`$/...`) remain available everywhere.
+
+`type: "transform"`, category `logic`, effect `pure`. `transform` is an object
+whose fields are rules-v1 expressions (`select`, conditions and `aggregate`:
+`filter`, `count`, `all`, `any`), `find`, scalar literals, `{literal: <JSON>}`,
+`{merge: [<object expressions>...]}`, or a map:
+`{map: <pointer or pointer array>, where?: <condition>, distinctBy?: <pointer>,
+missingAsEmpty?: <boolean>, template: <field object>}`. Use
+`literal` for objects and arrays, including data resembling an expression.
+
+The initial document is `{inputs: <resolved reads>}`. Inside map, `select` and
+conditions read the current item; `$/inputs/...` reads the original document.
+Nested maps keep that original root. `^/field` reads the enclosing map or
+wildcard item; repeat `^` to climb further. Each `*` adds an item scope, so
+`/inputs/reviewers/*/findings/*` retains the reviewer as the finding's parent.
+`@key` is the current source key (a string, including array offsets), and `@index`
+is its zero-based position before filtering. `^@key` / `^@index` read the parent's
+metadata. Object order follows JSON property enumeration order.
+
+Map accepts arrays or keyed objects; an array of source pointers concatenates
+collections in declaration order. `missingAsEmpty: true` skips absent/null
+collections or branches, including a failed reviewer with no findings. Wrong
+scalar types still fail. The default rejects missing collections.
+`distinctBy` reads a key from each source item and keeps the first item that
+passes `where`, across all sources; missing keys fail. It does not collect duplicates.
+Aggregate and `find` collections must select arrays.
+`{find: {collection: <pointer>, key: <pointer>, value: <pointer>}}` compares each
+collection item's key with the current item's value and returns a detached copy
+of the first match, or `null`. Matching uses JSON value equality; a missing sought
+value returns `null`. Use `$/inputs/...` for an external collection.
+`merge` takes up to 20 rules-v1 expressions or `{literal: <JSON>}` values. It
+shallowly combines objects left to right (later fields win), skips `null`
+so a missing lookup leaves the original intact, and rejects scalar/array results. No field can read another field from the same
+transform; use another Transform when a subsequent calculation needs its result.
+
+```json
+{
+  "id": "shape", "name": "Shape", "type": "transform",
+  "reads": {"items": "source/items", "label": "source/label"},
+  "transform": {
+    "rows": {
+      "map": "/inputs/items",
+      "where": {"path": "/enabled", "equals": true},
+      "template": {
+        "id": {"select": "/id"},
+        "label": {"select": "$/inputs/label"},
+        "ready": {"path": "/state", "equals": "ready"}
+      }
+    },
+    "count": {"aggregate": "count", "path": "/inputs/items", "where": {"path": "/enabled", "equals": true}},
+    "version": 1,
+    "metadata": {"literal": {"source": "recipe"}}
+  },
+  "output": {"schema": {"type": "object", "required": ["rows", "count"]}}
+}
+```
+
+Output owns detached JSON. Templates have at most 50 fields per object, 12 map
+levels, and share a separate 20,000,000-unit transform work budget across every
+field/item. Rules-v1 retains its 1,000,000-unit budget. Both retain the 20,000-item
+collection and 1,000,000-character canonical output limits. Evaluation yields
+every 2,048 work units and honors cancellation. Optional
+`output: {schema: <JSON Schema>}` uses the existing bounded validator without
+coercion/default insertion. Invalid output fails before a history receipt.
+
+For example, given N parallel reviewers under a keyed `reviewers` input (each
+value has `name` and `findings`), these two steps flatten findings, retain reviewer
+and foreach keys, deduplicate by ID, apply prior disposition fields, then filter
+`rating >= 2 && status == open`. A failed reviewer with no findings contributes
+nothing. The optional extra source can contain retained findings from a previous
+round. The first step retains the complete merged record; the second publishes
+the actionable projection. Supply `prior` as `[]` for the first review round.
+
+```json
+[
+  {
+    "id": "aggregate", "name": "Aggregate review", "type": "transform",
+    "reads": {
+      "reviewers": "parallel-review/results",
+      "prior": "prior-review/dispositions",
+      "extra": "prior-review/retainedFindings"
+    },
+    "transform": {
+      "findings": {
+        "map": ["/inputs/reviewers/*/findings/*", "/inputs/extra"],
+        "missingAsEmpty": true,
+        "distinctBy": "/id",
+        "template": {
+          "reviewer": {"select": "^/name"},
+          "reviewerKey": {"select": "^@key"},
+          "findingIndex": {"select": "@index"},
+          "finding": {"merge": [
+            {"select": ""},
+            {"find": {"collection": "$/inputs/prior", "key": "/id", "value": "/id"}}
+          ]}
+        }
+      }
+    }
+  },
+  {
+    "id": "actionable", "name": "Open findings", "type": "transform",
+    "reads": {"findings": "aggregate/findings"},
+    "transform": {
+      "findings": {
+        "map": "/inputs/findings",
+        "where": {"all": [
+          {"path": "/finding/rating", "min": 2},
+          {"path": "/finding/status", "equals": "open"}
+        ]},
+        "template": {
+          "id": {"select": "/finding/id"},
+          "body": {"select": "/finding/body"},
+          "rating": {"select": "/finding/rating"},
+          "status": {"select": "/finding/status"},
+          "reviewer": {"select": "/reviewer"},
+          "reviewerKey": {"select": "/reviewerKey"}
+        }
+      }
+    }
+  }
+]
+```
+
+For `reviewers.alice = {name: "Alice", findings: [{id: "F1", body: "Fix X",
+rating: 3, status: "open"}]}` and `prior = [{id: "F1", status: "resolved",
+reason: "Fixed"}]`, `aggregate` retains the full finding with `status: "resolved"`,
+`reason: "Fixed"`, reviewer `Alice` and key `alice`. `actionable.findings` is empty.
+Without that prior disposition, the finding stays open and is emitted by
+`actionable`. Optional extra findings without a reviewer parent receive `null`
+reviewer metadata; their own fields remain available inside `finding`.
+
+The registry supplies palette/defaults and a Transform settings panel for the
+template, reads and output schema. Builder simulation uses
+`POST /api/workflows/transform/simulate` with `{step, inputs, fallback?}` and
+returns `{output, next}` using the production evaluator and normal route matching.
+It performs no provider/file IO.
+
+## Wait
+
+`type: "wait"`, category `flow`, effect `flow`. Configure `body` as **one step**,
+`interval` and `timeout` in milliseconds, and `until` as a rules-v1 condition.
+A single step object is accepted; parsing normalizes it to a one-element body
+array so existing registry graph traversals still work. The body must register
+`category: "io"` and use a registry executor (not the legacy inline boundary).
+Wait resolves `nodeRegistry.effectFor(body)`, which parses schema defaults and uses
+shared `nodeEffect` metadata. Its resolved effect must be `read-only` or `pure`;
+`agent`, `human`, `effect`, and `flow` bodies are rejected. Metadata may declare
+`operationEffects` (selected by `op`) and `accessEffects` (selected by string
+`access`), with operation taking precedence and unknown selectors falling back to
+the conservative node default. Both maps cross the JSON builder boundary. This
+supports nodes that mix read and write operations, and read-only exec access.
+The read classifications are explicit node contracts: a node author must only
+assign them to IO that does not write provider/repository state. This
+metadata is not a security sandbox. Do not wrap old tool nodes on an assumption
+that their current action happens to be read-only.
+
+```json
+{
+  "id": "wait", "name": "Wait", "type": "wait",
+  "body": {"id": "poll", "name": "Poll", "type": "registered-read-only-node", "reads": {"target": "source/target"}},
+  "interval": 10000, "timeout": 600000,
+  "until": {"path": "/output/ready", "equals": true},
+  "retry": {"max": 2, "backoff": 1000}, "onError": "handle"
+}
+```
+
+The body resolves its own reads on each poll. `until` sees
+`{output: <last body output>, inputs: <Wait reads>, polls: <attempt count>}`.
+The first poll runs immediately. Later polls wait one interval after the previous
+poll; the timeout includes IO and offline time. The deadline, next-poll time,
+last output, match and poll count checkpoint on the accepted visit and survive a
+restart. A restarted, already-expired wait returns the retained output without
+polling again. A new graph visit starts a fresh deadline; an execution retry keeps
+the same deadline. Providers should honor `ctx.signal`; the deadline also bounds
+the wait if a body promise does not settle. It cannot terminate uncooperative IO.
+
+Object output fields are returned with `{timedOut, polls}` added (these two names
+are reserved by Wait); scalar/array body output is retained under `output`.
+Timeout is an ordinary result for recipe branches, not an exception. Body errors
+are logged as failed polls, retaining the last successful output, and polling
+continues until the deadline. Optional `maxErrors` (1–10,000) caps failed polls
+across the entire visit, including restarts and wrapper retries; reaching it
+throws the body error for the wrapper's retry/onError policy. The
+embedded body cannot carry routes or retry/onError; put those on the Wait.
+
+Wait uses `ctx.phase("waiting-ci", ...)` across polling and sleeping, with no
+execution capacity request. There is one progress line per visit and one final
+history receipt, never a history record per poll. The registry adds its palette
+entry and a panel for body, durations, until and reads. Tests use a fake registered
+read-only node, independent of any particular provider integration.
+
+## Retry and onError
+
+All registered node schemas inherit optional common fields:
+
+```json
+{
+  "retry": {"max": 3, "backoff": 1000},
+  "onError": "handle"
+}
+```
+
+`max` is the number of **additional** execution attempts (0–100); `backoff` is a
+fixed delay in milliseconds (0–86,400,000). Retries reuse the accepted visit and
+its effect keys. The retry count and next-attempt time survive restart. Backoff
+uses a capacity-free phase. Each failure remains in attempt diagnostics; only a
+successful execution appends its normal output receipt. Nodes with writes must
+still use their idempotency/reconciliation contracts; retry does not make unsafe
+writes safe or waive an uncertain effect. Sending/uncertain effect failures never
+route through `onError`: the visit and action identity remain retained for operator
+reconciliation. Automatic retries count once against the convergence attempt budget.
+
+After exhaustion, `onError` routes to a step in the same lexical graph. The
+handler declares `reads: {error: "@error"}` (or `@error/message`), then reads
+`/inputs/error` from Check/Transform. The value is `{message, kind}`: `kind` is
+an explicit string error kind when present, otherwise the error's name, otherwise
+`"Error"`. This runtime-owned context is scoped to that graph frame and retains
+the last routed error through restart until the next successful step (normally
+the handler) clears it; it is not a producer output. Error routes
+must name an actual local step, not `end` or a declared return outcome. Ordinary
+visit limits still bound error-route loops.
+
+Without these properties, execution failure behaves as before. Cancellation,
+shutdown, update pauses, workflow unavailability and non-convergence pauses do
+not retry or enter an error handler. Non-convergence still requires human Continue. A false Check
+result, a timeout result, or a node's ordinary structured business result remains
+normal data for branches. Existing special recovery paths retain precedence.
+All builder node panels expose the common retry policy and error destination.

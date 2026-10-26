@@ -8,6 +8,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { isDeepStrictEqual } from "node:util";
 import type {
 	RunTitleJob,
@@ -77,6 +78,11 @@ import {
 	upgradeHandoffReadiness,
 } from "./defaultWorkflows.js";
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
+import {
+	EffectReconciliationError,
+	NonConvergenceError,
+	WorkflowUnavailableError,
+} from "./ExecutionErrors.js";
 import {
 	ExecutionProfileStore,
 	type ExecutionSelection,
@@ -371,7 +377,20 @@ export interface GraphCheckpoint {
 		target: string;
 		active?: GraphCheckpoint["active"];
 	}[];
+	error?: { message: string; kind: string };
 	active?: {
+		retries?: number;
+		retryAt?: number;
+		/** Automatic retries retain one semantic progress attempt for the accepted visit. */
+		retryProgressObservation?: string;
+		wait?: {
+			deadline: number;
+			nextPollAt: number;
+			polls: number;
+			errors?: number;
+			output?: unknown;
+			matched?: boolean;
+		};
 		viewId?: string;
 		actionId?: string;
 		attemptId?: string;
@@ -637,6 +656,7 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	error?: { message: string; kind: string };
 	/** Stable accepted definition identity, independent of Call/frame/attempt IDs. */
 	progressOperation?: string;
 	progressObservation?: string;
@@ -2554,6 +2574,7 @@ export class WorkflowRuntime {
 				: undefined;
 			const context: ExecutionContext = {
 				progressInputs: checkpoint.progressInputs,
+				error: checkpoint.error,
 				transcriptEntries: this.hooks.transcriptEntries
 					? () => this.hooks.transcriptEntries!(run.id)
 					: undefined,
@@ -2682,8 +2703,14 @@ export class WorkflowRuntime {
 				},
 				save: () => this.save(run),
 			};
-			context.beginProgressAttempt = (reason) =>
-				beginProgressAttempt(context, reason);
+			context.progressObservation = state.retryProgressObservation;
+			context.beginProgressAttempt = async (reason) => {
+				if (state.retryProgressObservation) {
+					delete state.retryProgressObservation;
+					return;
+				}
+				await beginProgressAttempt(context, reason);
+			};
 			let consumedReads: Record<string, unknown> | undefined;
 			if (step.reads) {
 				const bindings = stepBindings(
@@ -2971,6 +2998,23 @@ export class WorkflowRuntime {
 			};
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
+				if (state.retryAt !== undefined) {
+					const retryContext = nodeContext(
+						context,
+						checkpoint,
+						workflowId,
+						parallel,
+						this.nodeEngine(),
+						chat,
+						{}, // Sleeping consumes no reads; resolve them inside the execution boundary.
+					);
+					await retryContext.phase("waiting-ci", () =>
+						sleep(Math.max(0, state.retryAt! - Date.now()), undefined, {
+							signal,
+						}),
+					);
+				}
+				delete state.retryAt;
 				state.attemptId = beginStepAttempt(context);
 				await this.save(run);
 				signal.throwIfAborted();
@@ -3458,6 +3502,8 @@ export class WorkflowRuntime {
 								: {}),
 						}),
 					);
+					delete checkpoint.error;
+					delete state.retryProgressObservation;
 					state.phase = "result";
 					finishStepAttempt(
 						context,
@@ -3475,6 +3521,13 @@ export class WorkflowRuntime {
 					await this.save(run);
 					signal.throwIfAborted();
 				} catch (error) {
+					if (
+						error instanceof NonConvergenceError ||
+						error instanceof WorkflowUnavailableError
+					) {
+						finishStepAttempt(context, "interrupted");
+						throw error;
+					}
 					if (
 						!context.progressObservation &&
 						!run.progressBudget?.blocked &&
@@ -3531,6 +3584,47 @@ export class WorkflowRuntime {
 					) {
 						await this.save(run);
 						continue;
+					}
+					if (
+						!signal.aborted &&
+						!isUpdatePaused(error) &&
+						state.phase === "executing"
+					) {
+						if (step.retry && (state.retries ?? 0) < step.retry.max) {
+							state.retryProgressObservation = context.progressObservation;
+							state.retries = (state.retries ?? 0) + 1;
+							state.retryAt = Date.now() + step.retry.backoff;
+							this.log(
+								run,
+								key,
+								`Retry ${state.retries}/${step.retry.max}: ${error instanceof Error ? error.message : String(error)}`,
+							);
+							await this.save(run);
+							continue;
+						}
+						if (step.onError && !(error instanceof EffectReconciliationError)) {
+							checkpoint.error = {
+								message: error instanceof Error ? error.message : String(error),
+								kind:
+									error &&
+									typeof error === "object" &&
+									"kind" in error &&
+									typeof error.kind === "string"
+										? error.kind
+										: error instanceof Error
+											? error.name
+											: "Error",
+							};
+							checkpoint.current = step.onError;
+							checkpoint.active = undefined;
+							this.log(
+								run,
+								key,
+								`Error routed to ${step.onError}: ${checkpoint.error.message}`,
+							);
+							await this.save(run);
+							continue;
+						}
 					}
 					throw error;
 				}

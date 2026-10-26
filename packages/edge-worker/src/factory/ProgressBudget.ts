@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { passiveTools } from "./CapacityPolicy.js";
 import { digest } from "./Delivery.js";
+import { NonConvergenceError } from "./ExecutionErrors.js";
 import { foreachPointer, foreachScope } from "./Foreach.js";
 import type { ProgressPolicy } from "./ProgressPolicy.js";
 import { runRepositories } from "./RepositoryScope.js";
@@ -58,7 +59,7 @@ export interface ProgressBudget {
 		Pick<AgentCheckpoint, "runner" | "sessionId" | "idleRetries">
 	>;
 }
-export class NonConvergenceError extends Error {}
+export { NonConvergenceError } from "./ExecutionErrors.js";
 
 export function initializeProgressBudget(run: FactoryRun, legacy = false) {
 	if (run.progressBudget || !run.workflow.convergence) return;

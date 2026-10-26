@@ -1760,7 +1760,8 @@ function SimulationPanel({
 					<>
 						<p>
 							<b>{step.name}</b> — {stepSummary(step, recipes)}
-							{!["check", "foreach"].includes(step.type) && " What happens?"}
+							{!["check", "transform", "foreach"].includes(step.type) &&
+								" What happens?"}
 						</p>
 						{["snapshot", "file-issues", "launch-runs"].includes(step.type) && (
 							<p className="recipe-note">
@@ -1769,7 +1770,7 @@ function SimulationPanel({
 								repository or provider operations.
 							</p>
 						)}
-						{step.type === "check" ? (
+						{["check", "transform"].includes(step.type) ? (
 							<CheckSimulation
 								key={`${current}/${simulation.visits[current]}`}
 								step={step}
@@ -1854,7 +1855,7 @@ function CheckSimulation({
 			const evaluated = await api<{
 				output: Record<string, unknown>;
 				next: string;
-			}>("/api/workflows/check/simulate", {
+			}>(`/api/workflows/${step.type}/simulate`, {
 				method: "POST",
 				body: JSON.stringify({ step, inputs, evidence, fallback }),
 				signal: controller.signal,
@@ -1872,9 +1873,9 @@ function CheckSimulation({
 	return (
 		<div className="check-simulation">
 			<p className="recipe-note">
-				Uses the production Check evaluator and recipe route matching. Supply
-				resolved named reads as inputs. Evidence fixtures are synthetic and do
-				not verify live files, media, review receipts or approvals.
+				Uses the production {step.type === "transform" ? "Transform" : "Check"}{" "}
+				evaluator and recipe route matching. Supply resolved named reads as
+				inputs. No live IO is performed.
 			</p>
 			<div className="check-simulation-inputs">
 				<CheckJsonField
@@ -1887,16 +1888,18 @@ function CheckSimulation({
 						setInputs(value);
 					}}
 				/>
-				<CheckJsonField
-					label="Synthetic evidence"
-					value={evidence}
-					object
-					onError={reportError}
-					onChange={(value) => {
-						invalidate();
-						setEvidence(value);
-					}}
-				/>
+				{step.type === "check" && (
+					<CheckJsonField
+						label="Synthetic evidence"
+						value={evidence}
+						object
+						onError={reportError}
+						onChange={(value) => {
+							invalidate();
+							setEvidence(value);
+						}}
+					/>
+				)}
 			</div>
 			<div className="actions">
 				<Button
@@ -1904,7 +1907,7 @@ function CheckSimulation({
 					disabled={Object.values(errors).some(Boolean)}
 					onClick={() => void evaluate()}
 				>
-					Evaluate Check
+					Evaluate {step.type === "transform" ? "Transform" : "Check"}
 				</Button>
 				{pending && (
 					<Button variant="secondary" onClick={invalidate}>
@@ -1924,7 +1927,11 @@ function CheckSimulation({
 					data-passed={result.output.passed}
 				>
 					<b>
-						{result.output.passed ? "✓ Check passed" : "Check did not pass"}
+						{step.type === "transform"
+							? "Transform output"
+							: result.output.passed
+								? "✓ Check passed"
+								: "Check did not pass"}
 					</b>
 					<pre>{JSON.stringify(result.output, null, 2)}</pre>
 					<Button onClick={() => onContinue(result.next)}>

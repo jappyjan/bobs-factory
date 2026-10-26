@@ -5,6 +5,10 @@ import { CheckJsonField, CheckStepSettings } from "./check-step-settings.js";
 import { DisplayStepSettings } from "./display-step-settings.js";
 import { ForeachStepSettings } from "./foreach-step-settings.js";
 import { HumanStepSettings } from "./human-step-settings.js";
+import {
+	TransformStepSettings,
+	WaitStepSettings,
+} from "./logic-step-settings.js";
 import type { Recipe, Step } from "./recipe-graph.js";
 
 export interface NodeSettingsProps {
@@ -28,6 +32,9 @@ export function registerNodeSettings(
 	panels.set(type, panel);
 }
 registerNodeSettings("display", DisplayStepSettings);
+
+registerNodeSettings("transform", TransformStepSettings);
+registerNodeSettings("wait", WaitStepSettings);
 registerNodeSettings("inline", () => null);
 registerNodeSettings("check", (props) => <CheckStepSettings {...props} />);
 registerNodeSettings("foreach", (props) => <ForeachStepSettings {...props} />);
@@ -75,9 +82,75 @@ function ConfigurationSettings({
 		</section>
 	);
 }
+function lexicalSiblings(steps: Step[], target: Step): Step[] | undefined {
+	if (steps.includes(target)) return steps;
+	for (const step of steps) {
+		for (const children of [
+			...(step.groups ?? []),
+			...(step.body ? [step.body] : []),
+		]) {
+			const found = lexicalSiblings(children, target);
+			if (found) return found;
+		}
+	}
+	return undefined;
+}
 export function NodeStepSettings(props: NodeSettingsProps) {
 	const type =
 		nodeMetadata(props.step.type)?.builder.settings ?? props.step.type;
 	const Panel = panels.get(type) ?? ConfigurationSettings;
-	return <Panel {...props} />;
+	return (
+		<>
+			<Panel {...props} />
+			<section className="recipe-section">
+				<h3>On failure</h3>
+				<label className="recipe-check">
+					<input
+						type="checkbox"
+						disabled={props.readOnly}
+						checked={!!props.step.retry}
+						onChange={(e) =>
+							props.onChange({
+								retry: e.target.checked ? { max: 3, backoff: 1000 } : undefined,
+							})
+						}
+					/>
+					Retry failures
+				</label>
+				{props.step.retry && (
+					<CheckJsonField
+						label="Retry policy"
+						value={props.step.retry}
+						readOnly={props.readOnly}
+						object
+						onError={props.onError}
+						onChange={(retry) => props.onChange({ retry })}
+					/>
+				)}
+				<label>
+					Error route
+					<select
+						value={props.step.onError ?? ""}
+						disabled={props.readOnly}
+						onChange={(e) =>
+							props.onChange({ onError: e.target.value || undefined })
+						}
+					>
+						<option value="">Fail the run</option>
+						{(
+							lexicalSiblings(props.owner.steps, props.step) ??
+							props.owner.steps
+						).map((step) => (
+							<option key={step.id} value={step.id}>
+								{step.name}
+							</option>
+						))}
+					</select>
+				</label>
+				<small>
+					The handler can bind a read to @error to receive message and kind.
+				</small>
+			</section>
+		</>
+	);
 }

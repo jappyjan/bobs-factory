@@ -26,6 +26,14 @@ export const stepFields = {
 	resources: z.array(z.string().min(1)).min(1).optional(),
 	name: z.string().min(1),
 	next: nodeId.optional(),
+	retry: z
+		.object({
+			max: z.number().int().min(0).max(100),
+			backoff: z.number().int().min(0).max(86_400_000),
+		})
+		.strict()
+		.optional(),
+	onError: nodeId.optional(),
 	branches: z
 		.array(
 			z.object({ when: condition, next: nodeId, entry: nodeId.optional() }),

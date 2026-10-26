@@ -12,6 +12,8 @@ import { definition as script } from "./script.js";
 import { definition as show } from "./show.js";
 import { definition as snapshot } from "./snapshot.js";
 import { definition as tool } from "./tool.js";
+import { definition as transform } from "./transform.js";
+import { definition as wait } from "./wait.js";
 import { definition as workflow } from "./workflow.js";
 
 export type { NodeContext, NodeDefinition } from "./NodeDefinition.js";
@@ -32,3 +34,6 @@ nodeRegistry.register(show);
 nodeRegistry.register(foreach);
 nodeRegistry.register(fanout);
 nodeRegistry.register(workflow);
+
+nodeRegistry.register(transform);
+nodeRegistry.register(wait);

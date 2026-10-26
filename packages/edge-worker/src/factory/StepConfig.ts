@@ -190,6 +190,7 @@ export const CONTEXT_SOURCES = [
 	"item",
 	"index",
 	"callInputs",
+	"error",
 	"caller",
 	"childRuns",
 	"delivery",
@@ -1095,9 +1096,13 @@ export function materializeWorkflowConfig<
 					]),
 				),
 			});
-			// Human views share declared reads, but never acquire agent tool/rule authority
+			// Views and pure/flow nodes share reads, but never acquire legacy evidence fields
 			// merely because Recipes projects an editable definition.
-			if (!["decide", "approve", "show"].includes(step.type ?? "")) {
+			if (
+				!["decide", "approve", "show", "transform", "wait"].includes(
+					step.type ?? "",
+				)
+			) {
 				Object.assign(step, {
 					rules: structuredClone(config.rules),
 					checks: config.checks.map(({ check, args }) =>
@@ -1347,7 +1352,7 @@ export function stepConfigIssues(
 	if (step.output && "schema" in step.output)
 		for (const issue of inlineSchemaIssues(step.output.schema))
 			issues.push(`${step.id}: output schema ${issue}`);
-	if (step.output && step.type !== "agent")
+	if (step.output && !["agent", "transform"].includes(step.type ?? ""))
 		issues.push(`${step.id}: output formats apply to agent steps`);
 	if (step.output && step.json === false)
 		issues.push(`${step.id}: output formats require JSON output`);

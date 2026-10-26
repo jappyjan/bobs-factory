@@ -21,6 +21,7 @@ import {
 	resolveAgentSettings,
 } from "./AgentSettings.js";
 import { defaultWorkflows, legacyReviewSteps } from "./defaultWorkflows.js";
+import { WorkflowUnavailableError } from "./ExecutionErrors.js";
 import historicalDigests from "./historicalWorkflowDigests.json" with {
 	type: "json",
 };
@@ -727,10 +728,10 @@ export class WorkflowCatalog {
 		executionId?: string,
 	) {
 		const block = executionId ? this.blocks[executionId] : undefined;
-		if (block) throw new Error(block.reason);
+		if (block) throw new WorkflowUnavailableError(block.reason);
 		const disabled = this.unavailable(root, definitions);
 		if (disabled.length)
-			throw new Error(
+			throw new WorkflowUnavailableError(
 				`Workflow ${root.id} is unavailable: ${disabled.join(", ")}. Enable the workflow or resolve its migration conflict in Recipes. Existing blocked work needs individual Resume.`,
 			);
 	}

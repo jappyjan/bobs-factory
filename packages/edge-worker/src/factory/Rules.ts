@@ -100,7 +100,11 @@ export type RuleAggregate =
 			path: string;
 			where?: RuleCondition;
 	  };
-export type RuleExpression = RuleCondition | RuleAggregate | { select: string };
+export type RuleExpression =
+	| RuleCondition
+	| RuleAggregate
+	| { select: string }
+	| { find: { collection: string; key: string; value: string } };
 export type RuleResult =
 	| boolean
 	| number
@@ -115,142 +119,189 @@ const pointer = z
 	.string()
 	.max(400)
 	.regex(/^\$?(\/[^/]*)*$/, "Rule paths are JSON Pointers such as /status");
-const operand: z.ZodType<RuleOperand> = z.lazy(() =>
-	z.union([
-		z.number(),
-		z.object({ path: pointer }).strict(),
-		z.object({ length: pointer }).strict(),
-		z.object({ sum: z.array(operand).min(1).max(20) }).strict(),
-	]),
-);
-const pointers = z.union([pointer, z.array(pointer).min(1).max(20)]);
-export const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
-	z.union([
-		z.object({ all: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
-		z.object({ any: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
-		z.object({ not: RuleConditionSchema }).strict(),
+const transformPointer = z
+	.string()
+	.max(400)
+	.regex(
+		/^(?:\$|\^*(?:@key|@index)?)?(\/[^/]*)*$/,
+		"Rule paths are JSON Pointers such as /status",
+	);
+function ruleSchemas(pointer: z.ZodString) {
+	const operand: z.ZodType<RuleOperand> = z.lazy(() =>
+		z.union([
+			z.number(),
+			z.object({ path: pointer }).strict(),
+			z.object({ length: pointer }).strict(),
+			z.object({ sum: z.array(operand).min(1).max(20) }).strict(),
+		]),
+	);
+	const pointers = z.union([pointer, z.array(pointer).min(1).max(20)]);
+	const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
+		z.union([
+			z.object({ all: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
+			z.object({ any: z.array(RuleConditionSchema).min(1).max(20) }).strict(),
+			z.object({ not: RuleConditionSchema }).strict(),
+			z
+				.object({
+					conforms: z
+						.string()
+						.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
+						.max(100),
+					path: pointer.optional(),
+				})
+				.strict(),
+			z
+				.object({
+					compare: z
+						.object({
+							left: operand,
+							op: z.enum(["eq", "lt", "lte", "gt", "gte"]),
+							right: operand,
+						})
+						.strict(),
+				})
+				.strict(),
+			z
+				.object({
+					distinct: z.array(pointer).min(1).max(20),
+					by: pointers.optional(),
+				})
+				.strict(),
+			z
+				.object({
+					sameLength: z.object({ items: pointer, as: pointer }).strict(),
+				})
+				.strict(),
+			z
+				.object({
+					lookup: z
+						.object({ collection: pointer, key: pointer, value: pointer })
+						.strict(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					text: z
+						.object({
+							path: pointer,
+							test: z.enum([
+								"nonblank",
+								"no-local-path",
+								"no-commit-sha",
+								"repository-relative",
+							]),
+						})
+						.strict(),
+				})
+				.strict(),
+			z
+				.object({
+					each: pointer,
+					where: RuleConditionSchema.optional(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					some: pointer,
+					where: RuleConditionSchema.optional(),
+					require: RuleConditionSchema,
+				})
+				.strict(),
+			z
+				.object({
+					count: pointer,
+					where: RuleConditionSchema.optional(),
+					min: operand.optional(),
+					max: operand.optional(),
+				})
+				.strict()
+				.refine(
+					(c) => c.min !== undefined || c.max !== undefined,
+					"count needs min or max",
+				),
+			z
+				.object({
+					path: pointer,
+					equals: z.unknown().optional(),
+					notEquals: z.unknown().optional(),
+					in: z.array(z.unknown()).max(100).optional(),
+					exists: z.boolean().optional(),
+					empty: z.boolean().optional(),
+					minLength: operand.optional(),
+					maxLength: operand.optional(),
+					min: operand.optional(),
+					max: operand.optional(),
+					unique: z.literal(true).optional(),
+					by: pointers.optional(),
+					within: pointers.optional(),
+					disjoint: pointers.optional(),
+					equalsPath: pointer.optional(),
+					maxItem: operand.optional(),
+				})
+				.strict()
+				.refine(
+					(c) =>
+						[
+							"equals",
+							"notEquals",
+							"in",
+							"exists",
+							"empty",
+							"minLength",
+							"maxLength",
+							"min",
+							"max",
+							"unique",
+							"within",
+							"disjoint",
+							"equalsPath",
+							"maxItem",
+						].some((key) => Object.hasOwn(c, key)),
+					"A path condition needs an operator such as equals, empty or unique",
+				),
+		]),
+	);
+	const RuleAggregateSchema: z.ZodType<RuleAggregate> = z.union([
 		z
 			.object({
-				conforms: z
-					.string()
-					.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
-					.max(100),
-				path: pointer.optional(),
+				aggregate: z.enum(["all", "any"]),
+				path: pointer,
+				where: RuleConditionSchema.optional(),
+				require: RuleConditionSchema,
 			})
 			.strict(),
 		z
 			.object({
-				compare: z
-					.object({
-						left: operand,
-						op: z.enum(["eq", "lt", "lte", "gt", "gte"]),
-						right: operand,
-					})
-					.strict(),
+				aggregate: z.enum(["count", "filter"]),
+				path: pointer,
+				where: RuleConditionSchema.optional(),
 			})
 			.strict(),
+	]);
+	const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
+		RuleConditionSchema,
+		RuleAggregateSchema,
+		z.object({ select: pointer }).strict(),
 		z
 			.object({
-				distinct: z.array(pointer).min(1).max(20),
-				by: pointers.optional(),
-			})
-			.strict(),
-		z
-			.object({
-				sameLength: z.object({ items: pointer, as: pointer }).strict(),
-			})
-			.strict(),
-		z
-			.object({
-				lookup: z
+				find: z
 					.object({ collection: pointer, key: pointer, value: pointer })
 					.strict(),
-				require: RuleConditionSchema,
 			})
 			.strict(),
-		z
-			.object({
-				text: z
-					.object({
-						path: pointer,
-						test: z.enum([
-							"nonblank",
-							"no-local-path",
-							"no-commit-sha",
-							"repository-relative",
-						]),
-					})
-					.strict(),
-			})
-			.strict(),
-		z
-			.object({
-				each: pointer,
-				where: RuleConditionSchema.optional(),
-				require: RuleConditionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				some: pointer,
-				where: RuleConditionSchema.optional(),
-				require: RuleConditionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				count: pointer,
-				where: RuleConditionSchema.optional(),
-				min: operand.optional(),
-				max: operand.optional(),
-			})
-			.strict()
-			.refine(
-				(c) => c.min !== undefined || c.max !== undefined,
-				"count needs min or max",
-			),
-		z
-			.object({
-				path: pointer,
-				equals: z.unknown().optional(),
-				notEquals: z.unknown().optional(),
-				in: z.array(z.unknown()).max(100).optional(),
-				exists: z.boolean().optional(),
-				empty: z.boolean().optional(),
-				minLength: operand.optional(),
-				maxLength: operand.optional(),
-				min: operand.optional(),
-				max: operand.optional(),
-				unique: z.literal(true).optional(),
-				by: pointers.optional(),
-				within: pointers.optional(),
-				disjoint: pointers.optional(),
-				equalsPath: pointer.optional(),
-				maxItem: operand.optional(),
-			})
-			.strict()
-			.refine(
-				(c) =>
-					[
-						"equals",
-						"notEquals",
-						"in",
-						"exists",
-						"empty",
-						"minLength",
-						"maxLength",
-						"min",
-						"max",
-						"unique",
-						"within",
-						"disjoint",
-						"equalsPath",
-						"maxItem",
-					].some((key) => Object.hasOwn(c, key)),
-				"A path condition needs an operator such as equals, empty or unique",
-			),
-	]),
-);
+	]);
+
+	return { RuleConditionSchema, RuleAggregateSchema, RuleExpressionSchema };
+}
+const standardRules = ruleSchemas(pointer);
+const transformRules = ruleSchemas(transformPointer);
+export const {
+	RuleConditionSchema,
+	RuleAggregateSchema,
+	RuleExpressionSchema,
+} = standardRules;
 export const RuleSchema: z.ZodType<Rule> = z
 	.object({
 		id: z
@@ -320,28 +371,116 @@ export const RuleDataSchema = z.unknown().superRefine((value, context) => {
 });
 export const RulesSchema = RuleDataSchema.pipe(z.array(RuleSchema).max(50));
 
-export const RuleAggregateSchema: z.ZodType<RuleAggregate> = z.union([
-	z
-		.object({
-			aggregate: z.enum(["all", "any"]),
-			path: pointer,
-			where: RuleConditionSchema.optional(),
-			require: RuleConditionSchema,
-		})
-		.strict(),
-	z
-		.object({
-			aggregate: z.enum(["count", "filter"]),
-			path: pointer,
-			where: RuleConditionSchema.optional(),
-		})
-		.strict(),
-]);
-export const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
-	RuleConditionSchema,
-	RuleAggregateSchema,
-	z.object({ select: pointer }).strict(),
-]);
+/** Transform templates reuse rules-v1 with literals, object merging and item mapping. */
+export type TransformValue =
+	| RuleExpression
+	| string
+	| number
+	| boolean
+	| null
+	| { literal: unknown }
+	| { merge: (RuleExpression | { literal: unknown })[] }
+	| {
+			map: string | string[];
+			where?: RuleCondition;
+			template: TransformTemplate;
+			distinctBy?: string;
+			missingAsEmpty?: boolean;
+	  };
+export type TransformTemplate = Record<string, TransformValue>;
+const fieldName = z
+	.string()
+	.min(1)
+	.max(80)
+	.refine(
+		(name) => !["__proto__", "constructor", "prototype"].includes(name),
+		"Reserved transform field",
+	);
+const transformLiteralSchema = z
+	.object({
+		literal: z.unknown().superRefine((value, context) => {
+			if (!z.json().safeParse(value).success)
+				context.addIssue({
+					code: "custom",
+					message: "Transform literals must be JSON data",
+				});
+		}),
+	})
+	.strict();
+function transformSchemas(inMap: boolean) {
+	const paths = inMap ? transformPointer : pointer;
+	const expression = (inMap ? transformRules : standardRules)
+		.RuleExpressionSchema;
+	const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
+		z.union([
+			expression,
+			z
+				.object({
+					merge: z
+						.array(z.union([expression, transformLiteralSchema]))
+						.min(1)
+						.max(20),
+				})
+				.strict(),
+			z.string(),
+			z.number(),
+			z.boolean(),
+			z.null(),
+			transformLiteralSchema,
+			z
+				.object({
+					map: z.union([paths, z.array(paths).min(1).max(20)]),
+					distinctBy: transformPointer.optional(),
+					missingAsEmpty: z.boolean().optional(),
+					where: transformRules.RuleConditionSchema.optional(),
+					template: mappedTransform.TransformTemplateSchema,
+				})
+				.strict(),
+		]),
+	);
+	const TransformTemplateSchema: z.ZodType<TransformTemplate> = z.lazy(() =>
+		z
+			.record(fieldName, TransformValueSchema)
+			.refine(
+				(value) => Object.keys(value).length <= 50,
+				"At most 50 transform fields",
+			),
+	);
+	return { TransformValueSchema, TransformTemplateSchema };
+}
+const mappedTransform = transformSchemas(true);
+export const { TransformValueSchema, TransformTemplateSchema } =
+	transformSchemas(false);
+export const TransformSchema = RuleDataSchema.pipe(
+	z.unknown().superRefine((value, context) => {
+		// Inspect original keys before record parsing can discard __proto__.
+		const visit = (template: unknown, path: string[]) => {
+			if (!template || typeof template !== "object" || Array.isArray(template))
+				return;
+			for (const name of Object.keys(template)) {
+				if (["__proto__", "constructor", "prototype"].includes(name))
+					context.addIssue({
+						code: "custom",
+						path: [...path, name],
+						message: "Reserved transform field",
+					});
+				const child = (template as Record<string, unknown>)[name];
+				if (
+					child &&
+					typeof child === "object" &&
+					Object.hasOwn(child, "map") &&
+					Object.hasOwn(child, "template")
+				)
+					visit((child as { template: unknown }).template, [
+						...path,
+						name,
+						"template",
+					]);
+			}
+		};
+		visit(value, []);
+	}),
+).pipe(TransformTemplateSchema);
 
 /** Independent AST and total-work ceilings; recipe data cannot increase either. */
 export const RULE_EVALUATION_LIMITS = {
@@ -352,6 +491,15 @@ export const RULE_EVALUATION_LIMITS = {
 	dataDepth: 48,
 	canonicalCharacters: 1_000_000,
 } as const;
+export const TRANSFORM_WORK_LIMIT = 20_000_000;
+
+interface TransformScope {
+	value: unknown;
+	parent?: TransformScope;
+	key?: string;
+	index?: number;
+}
+
 type FormatValidator = (format: string, value: unknown) => boolean;
 type Task<T> = Generator<void, T, void>;
 export interface RuleEvaluationBudget {
@@ -366,6 +514,7 @@ interface Work {
 	slice: number;
 	/** Named Check inputs are lazy JSON; old condition host getters retain their API. */
 	strictJson?: boolean;
+	transformScope?: TransformScope;
 }
 const limit = () => new Error("Rules exceed the evaluation operation limit");
 function* spend(state: Work, amount = 1): Task<void> {
@@ -515,6 +664,17 @@ function* resolve(
 	requiredSelection = false,
 ): Task<unknown> {
 	yield* spend(state, path.length + 1);
+	let transformScope = state.transformScope;
+	while (path.startsWith("^")) {
+		transformScope = transformScope?.parent;
+		scope = transformScope?.value;
+		path = path.slice(1);
+	}
+	if (path.startsWith("@key") || path.startsWith("@index")) {
+		const key = path.startsWith("@key") ? "key" : "index";
+		scope = transformScope?.[key] ?? null;
+		path = path.slice(key.length + 1);
+	}
 	const fromRoot = path.startsWith("$");
 	const pointer = fromRoot ? path.slice(1) : path;
 	let current: unknown[] = [fromRoot ? root : scope];
@@ -1134,10 +1294,39 @@ function* expressionTask(
 	expression: RuleExpression,
 	document: unknown,
 	work: Work,
+	root: unknown = document,
 ): Task<RuleResult> {
+	if ("find" in expression) {
+		const sought = yield* resolve(document, root, expression.find.value, work);
+		if (sought === undefined) return null;
+		const items = yield* resolve(
+			document,
+			root,
+			expression.find.collection,
+			work,
+			true,
+		);
+		if (!Array.isArray(items))
+			throw new Error("Find collection must select an array");
+		const soughtKey = yield* canonical(sought, work);
+		for (const item of yield* collection(items, work)) {
+			if (
+				(yield* canonical(
+					yield* resolve(item, root, expression.find.key, work),
+					work,
+				)) === soughtKey
+			) {
+				const encoded = yield* canonical(item, work);
+				if (encoded === undefined) return null;
+				yield* spend(work, encoded.length + 1);
+				return JSON.parse(encoded);
+			}
+		}
+		return null;
+	}
 	if ("select" in expression) {
 		const encoded = yield* canonical(
-			yield* resolve(document, document, expression.select, work),
+			yield* resolve(document, root, expression.select, work),
 			work,
 		);
 		if (encoded === undefined) return null;
@@ -1148,14 +1337,8 @@ function* expressionTask(
 		return JSON.parse(encoded) as RuleResult;
 	}
 	if (!("aggregate" in expression))
-		return yield* conditionTask(expression, document, document, 0, work);
-	const selected = yield* resolve(
-		document,
-		document,
-		expression.path,
-		work,
-		true,
-	);
+		return yield* conditionTask(expression, document, root, 0, work);
+	const selected = yield* resolve(document, root, expression.path, work, true);
 	// An absent or malformed producer collection is not a successful empty
 	// collection. Ordinary rules retain their historical missing-path semantics.
 	if (!Array.isArray(selected))
@@ -1168,7 +1351,7 @@ function* expressionTask(
 		yield* spend(work);
 		if (
 			expression.where &&
-			!(yield* conditionTask(expression.where, item, document, 0, work))
+			!(yield* conditionTask(expression.where, item, root, 0, work))
 		)
 			continue;
 		if (expression.aggregate === "count") count++;
@@ -1177,7 +1360,7 @@ function* expressionTask(
 			const matches = yield* conditionTask(
 				expression.require,
 				item,
-				document,
+				root,
 				0,
 				work,
 			);
@@ -1311,4 +1494,216 @@ export async function selectRuleValuesAsync(
 		budget.remaining = work.remaining;
 		budget.workRemaining = work.work;
 	}
+}
+
+/** Retain each wildcard item's lexical parent and source key while flattening. */
+function* transformItems(
+	scope: TransformScope,
+	root: unknown,
+	path: string,
+	work: Work,
+	missingAsEmpty: boolean,
+): Task<TransformScope[]> {
+	let base: TransformScope | undefined = scope;
+	while (path.startsWith("^")) {
+		base = base?.parent;
+		path = path.slice(1);
+	}
+	let value = base?.value;
+	if (path.startsWith("$")) {
+		value = root;
+		path = path.slice(1);
+	}
+	let current = [{ value, scope: base }];
+	let expanded = false;
+	for (const key of path === "" ? [] : path.slice(1).split("/").map(decode)) {
+		const next: typeof current = [];
+		const add = (entry: (typeof current)[number]) => {
+			if (next.length >= MAX_VALUES)
+				throw new Error("Transform selection exceeds the limit");
+			next.push(entry);
+		};
+		for (const entry of current) {
+			yield* spend(work);
+			selected(entry.value, work);
+			if (key === "*") {
+				if (!entry.value || typeof entry.value !== "object") {
+					if (
+						missingAsEmpty &&
+						(entry.value === undefined || entry.value === null)
+					)
+						continue;
+					throw new Error("Transform map wildcard must select a collection");
+				}
+				expanded = true;
+				const keys = yield* members(entry.value, work);
+				for (let index = 0; index < keys.length; index++) {
+					const key = keys[index]!;
+					const value = own(entry.value, key, work);
+					add({
+						value,
+						scope: { value, key, index, parent: entry.scope },
+					});
+				}
+			} else if (
+				entry.value &&
+				typeof entry.value === "object" &&
+				Object.hasOwn(entry.value, key)
+			) {
+				add({ value: own(entry.value, key, work), scope: entry.scope });
+			} else if (!missingAsEmpty)
+				throw new Error(`Transform map path is missing ${key}`);
+		}
+		current = next;
+	}
+	if (expanded)
+		return current.map((entry) => ({ ...entry.scope!, value: entry.value }));
+	const items = current[0]?.value;
+	if (missingAsEmpty && (items === undefined || items === null)) return [];
+	if (!items || typeof items !== "object")
+		throw new Error("Transform map must select an array or object");
+	const keys = yield* members(items, work);
+	return keys.map((key, index) => ({
+		value: own(items, key, work),
+		key,
+		index,
+		parent: base,
+	}));
+}
+
+function* transformValueTask(
+	value: TransformValue,
+	scope: TransformScope,
+	root: unknown,
+	work: Work,
+	depth: number,
+): Task<unknown> {
+	if (depth > MAX_DEPTH) throw new Error("Transform nesting exceeds the limit");
+	yield* spend(work);
+	if (value === null || typeof value !== "object") return value;
+	if ("literal" in value) {
+		const encoded = yield* canonical(value.literal, work);
+		return encoded === undefined ? null : JSON.parse(encoded);
+	}
+	if ("merge" in value) {
+		const merged: Record<string, unknown> = {};
+		for (const expression of value.merge) {
+			const object = yield* transformValueTask(
+				expression,
+				scope,
+				root,
+				work,
+				depth + 1,
+			);
+			if (object === null) continue;
+			if (typeof object !== "object" || Array.isArray(object))
+				throw new Error("Transform merge accepts objects or null");
+			for (const key of yield* members(object, work)) {
+				Object.defineProperty(merged, key, {
+					value: own(object, key, work),
+					enumerable: true,
+					writable: true,
+					configurable: true,
+				});
+			}
+		}
+		return merged;
+	}
+	if (!("map" in value))
+		return yield* expressionTask(value, scope.value, work, root);
+	const mapped: unknown[] = [];
+	const seen = new Set<string | undefined>();
+	for (const path of Array.isArray(value.map) ? value.map : [value.map]) {
+		const items = yield* transformItems(
+			scope,
+			root,
+			path,
+			work,
+			value.missingAsEmpty ?? false,
+		);
+		for (const item of items) {
+			work.transformScope = item;
+			if (
+				value.where &&
+				!(yield* conditionTask(value.where, item.value, root, 0, work))
+			)
+				continue;
+			if (value.distinctBy !== undefined) {
+				const key = yield* canonical(
+					yield* resolve(item.value, root, value.distinctBy, work),
+					work,
+				);
+				if (key === undefined)
+					throw new Error("Transform distinctBy key is missing");
+				if (seen.has(key)) continue;
+				seen.add(key);
+			}
+			if (mapped.length >= MAX_VALUES)
+				throw new Error("Transform collection exceeds the limit");
+			mapped.push(
+				yield* transformTemplateTask(
+					value.template,
+					item,
+					root,
+					work,
+					depth + 1,
+				),
+			);
+		}
+	}
+	work.transformScope = scope;
+	return mapped;
+}
+
+function* transformTemplateTask(
+	template: TransformTemplate,
+	scope: TransformScope,
+	root: unknown,
+	work: Work,
+	depth = 0,
+): Task<Record<string, unknown>> {
+	if (depth > MAX_DEPTH) throw new Error("Transform nesting exceeds the limit");
+	const previousScope = work.transformScope;
+	work.transformScope = scope;
+	try {
+		const result: Record<string, unknown> = {};
+		for (const name of yield* members(template, work)) {
+			if (["__proto__", "constructor", "prototype"].includes(name))
+				throw new Error("Reserved transform field");
+			result[name] = yield* transformValueTask(
+				own(template, name, work) as TransformValue,
+				scope,
+				root,
+				work,
+				depth,
+			);
+		}
+		return result;
+	} finally {
+		work.transformScope = previousScope;
+	}
+}
+/** One shared work/output budget covers every field and mapped item. */
+export function evaluateTransformAsync(
+	template: TransformTemplate,
+	inputs: unknown,
+	signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+	function* task(): Task<Record<string, unknown>> {
+		const work = state({ remaining: RULE_EVALUATION_LIMITS.conditions });
+		work.work = TRANSFORM_WORK_LIMIT;
+		work.strictJson = true;
+		yield* footprint(template, work);
+		const document = { inputs };
+		const result = yield* transformTemplateTask(
+			template,
+			{ value: document },
+			document,
+			work,
+		);
+		const encoded = (yield* canonical(result, work))!;
+		yield* spend(work, encoded.length + 1);
+		return JSON.parse(encoded) as Record<string, unknown>;
+	}
+	return asynchronous(task(), signal);
 }
