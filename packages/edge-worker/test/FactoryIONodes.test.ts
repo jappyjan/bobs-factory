@@ -27,6 +27,7 @@ import {
 	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { MachineCapacity } from "../src/MachineCapacity.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [],
@@ -673,3 +674,58 @@ it("resolves effect defaults and ignores inherited operation/access map entries"
 	expect(nodeEffect({ type: "ticket", op: "toString" })).toBe("effect");
 	expect(nodeEffect({ type: "exec", access: "constructor" })).toBe("effect");
 });
+
+it.runIf(["darwin", "linux"].includes(process.platform))(
+	"wait polls read-only exec inside its phase with capacity leases and one receipt",
+	async () => {
+		const home = mkdtempSync(join(tmpdir(), "factory-wait-exec-"));
+		homes.push(home);
+		const capacity = new MachineCapacity(1, join(home, "machine-capacity"));
+		const acquire = vi.spyOn(capacity, "acquireLease");
+		const { runtime, run } = setup(
+			[
+				step("wait", {
+					body: {
+						id: "poll",
+						name: "Poll",
+						type: "exec",
+						command: "/bin/sh",
+						args: [
+							"-c",
+							`printf '{"lease":"%s"}' "$BOBS_FACTORY_EXECUTION_LEASE"`,
+						],
+						access: "read-only",
+						json: true,
+						env: [],
+					},
+					interval: 5,
+					timeout: 10000,
+					maxErrors: 1,
+					until: { path: "/polls", equals: 2 },
+				}),
+			],
+			{ capacity },
+			home,
+		);
+		try {
+			await runtime.launch(run);
+			expect(run.error).toBeUndefined();
+			expect(run.status).toBe("completed");
+			expect(run.outputs.io).toMatchObject({
+				exitCode: 0,
+				stderr: "",
+				timedOut: false,
+				polls: 2,
+				json: { lease: expect.stringMatching(/^[0-9a-f-]{36}$/) },
+			});
+			expect(acquire).toHaveBeenCalledTimes(2);
+			expect(run.history.map((entry) => entry.step)).toEqual(["io"]);
+			expect(run.nodeEffects ?? {}).toEqual({});
+			expect(run.capacityLeaves ?? {}).toEqual({});
+			expect(await capacity.snapshot()).toMatchObject({ active: 0, queued: 0 });
+		} finally {
+			await runtime.shutdown();
+			await capacity.shutdown();
+		}
+	},
+);

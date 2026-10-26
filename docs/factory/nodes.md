@@ -451,8 +451,9 @@ across the entire visit, including restarts and wrapper retries; reaching it
 throws the body error for the wrapper's retry/onError policy. The
 embedded body cannot carry routes or retry/onError; put those on the Wait.
 
-Wait uses `ctx.phase("waiting-ci", ...)` across polling and sleeping, with no
-execution capacity request. There is one progress line per visit and one final
+Wait uses `ctx.phase("waiting-ci", ...)` across polling and sleeping. Wait itself
+requests no execution capacity; a read-only Exec body acquires a lease for each
+command and releases it before the polling interval. There is one progress line per visit and one final
 history receipt, never a history record per poll. The registry adds its palette
 entry and a panel for body, durations, until and reads. Tests use a fake registered
 read-only node, independent of any particular provider integration.
@@ -494,6 +495,7 @@ not retry or enter an error handler. Non-convergence still requires human Contin
 result, a timeout result, or a node's ordinary structured business result remains
 normal data for branches. Existing special recovery paths retain precedence.
 All builder node panels expose the common retry policy and error destination.
+
 ## Merge, ticket and exec IO
 
 These nodes register their palette templates and use the generic JSON settings

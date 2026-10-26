@@ -75,3 +75,28 @@ commit in a linked worktree plus private TMPDIR writes, and network denial in
 read-only mode. Linux hosts now fail these tests when bubblewrap is missing,
 instead of silently skipping them. Host file reads remain available in both
 access modes, as documented; this is not a confidentiality sandbox.
+
+
+## Rebase integration validation
+
+2026-10-26: rebased PR #204 onto `9a8bf551` after Display (#205), Agent
+(#200), and pure Check/Transform/Wait/retry (#203). Retained main's canonical
+`nodeEffect` / `effectFor` implementation and own-property guards, with B6's
+Ticket operation and Exec access classifications on that shared mechanism.
+Both sets of node documentation and changelog entries remain intact.
+
+- `pnpm --filter ./packages/edge-worker build`: pass, including web assets.
+- The ten focused suites (FactoryIONodes, ExecSandbox, RepositoryTicketIO,
+  GitProvider, TicketTracking, FileIssues, FactoryLogicFlow, NodeRegistry,
+  AgentNode and DisplayNode): **209 tests pass**.
+- `pnpm --filter ./packages/edge-worker typecheck`: pass.
+- New Wait/Exec regression: two real sandboxed read-only polls under a one-slot
+  MachineCapacity pool pass without the wait-phase assertion. Each command
+  receives lease provenance; both leases release, no effects are recorded, and
+  only the Wait's final history receipt is appended. No runtime fix was needed.
+- Repeated the mocked F1 fixture against the rebased sources: pass, six nodes,
+  one comment, one scripted merge, zero implicit milestones and zero paid calls.
+  Artifacts: `/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-io-b6-acoqUn/`.
+  The existing fixture exercises direct Exec; Wait/Exec composition is covered
+  by the new runtime integration test above. This run used macOS enforcement;
+  it does not add new Linux or live-provider claims.
