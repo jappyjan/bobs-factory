@@ -72,8 +72,8 @@ below. Extra fields are allowed; listed fields are required unless marked option
 
 | Port | Producer | Shape |
 | --- | --- | --- |
-| `requirements` | `v2-clarify-plan` | `{ summary, requirements: [{ id, text, source? }], decisions: [{ id, question, answer }], outOfScope: [string] }` |
-| `plan` | `v2-clarify-plan` (revised by `v2-check-in`) | `{ summary, deliveryMode: "repository"\|"external"\|"mixed"\|"deferred", steps: [{ id, text, requirementRefs }], risks: [string], repositories: [id] }` |
+| `requirements` | `v2-clarify-plan`, `v2-takeover-intake` | `{ summary, requirements: [{ id, text, source? }], decisions: [{ id, question, answer }], outOfScope: [string] }` |
+| `plan` | `v2-clarify-plan`, `v2-takeover-intake` (revised by `v2-check-in`) | `{ summary, deliveryMode: "repository"\|"external"\|"mixed"\|"deferred", steps: [{ id, text, requirementRefs }], risks: [string], repositories: [id] }` |
 | `architecture` | `v2-check-in` | `{ meaningful, accepted, decisions: [{ id, text }], approval?: <display output> }` |
 | `change` | `v2-implementation`, any fixer | `{ summary, repositories: [{ id, head }] }` (git commit/push outputs) |
 | `pr` | `v2-implementation` | the `pr ensure` output (`{ repositories: [{ id, head, url, isDraft }] }`) |

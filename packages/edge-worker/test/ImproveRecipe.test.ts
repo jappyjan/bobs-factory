@@ -59,6 +59,7 @@ function fixture(
 			stdio: "pipe",
 		}).trim();
 	git("init", "-b", "main");
+	writeFileSync(join(home, ".git/info/exclude"), "state/\n");
 	git("config", "user.name", "Fixture");
 	git("config", "user.email", "fixture@example.invalid");
 	git("config", "commit.gpgsign", "false");
@@ -371,7 +372,8 @@ async function waiting(
 			expect(f.run.status).toBe("waiting");
 			if (old) expect(f.run.viewDecision!.id).not.toBe(old);
 		},
-		{ timeout: 20000 },
+		// Bound revision observations add real Git reads to this complete research graph.
+		{ timeout: 120000 },
 	);
 	return f.run.viewDecision!;
 }
@@ -600,7 +602,7 @@ describe("Improve is an ordinary composed recipe", () => {
 		).toMatchObject({
 			action: "approve",
 			documentDigest: exact.documentDigest,
-			bound: ["plan-check/plans", "checks", "plan-dependencies", "decide"],
+			bound: ["plan-check", "checks", "plan-dependencies", "decide"],
 		});
 		expect(
 			f.run.history.filter((h) => h.step === "dispatch/0/issues"),
@@ -612,9 +614,9 @@ describe("Improve is an ordinary composed recipe", () => {
 			a: { status: "merged" },
 			b: { status: "merged" },
 		});
-	}, 180000);
+	}, 240000);
 	it("forks the reachable closure and uses an edited perspective, prompt and renamed role", {
-		timeout: 120000,
+		timeout: 180000,
 	}, async () => {
 		const f = fixture();
 		const fork = f.runtime.forkWorkflow("improve-codebase");
@@ -660,7 +662,7 @@ describe("Improve is an ordinary composed recipe", () => {
 				expect(run.error).toBeUndefined();
 				expect(run.viewDecision?.kind).toBe("display");
 			},
-			{ timeout: 80000 },
+			{ timeout: 120000 },
 		);
 		expect(
 			f.calls.filter((c) => c.key.endsWith("/renamed-coordinator")),

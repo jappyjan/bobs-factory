@@ -599,7 +599,7 @@ export const improvementWorkflow = {
 			id: "approve",
 			name: "Approve batch",
 			type: "display",
-			bind: ["plan-check/plans", "checks", "plan-dependencies", "decide"],
+			bind: ["plan-check", "checks", "plan-dependencies", "decide"],
 			reads: {
 				plans: "plan-check/plans",
 				checks: "checks",
@@ -692,7 +692,13 @@ export const improvementWorkflow = {
 			reads: { answer: "approve" },
 			check: {
 				results: {
-					approved: { path: "/inputs/answer/action", equals: "approve" },
+					approved: {
+						all: [
+							{ path: "/inputs/answer/action", equals: "approve" },
+							{ fresh: "approve" },
+						],
+					},
+					current: { fresh: "approve" },
 					changes: {
 						text: { path: "/inputs/answer/values/feedback", test: "nonblank" },
 					},
@@ -700,6 +706,7 @@ export const improvementWorkflow = {
 				passed: { path: "/results/approved", equals: true },
 			},
 			branches: [
+				{ when: { path: "current", equals: false }, next: "snapshot" },
 				{ when: { path: "approved", equals: true }, next: "dispatch" },
 				{ when: { path: "changes", equals: true }, next: "decide" },
 			],

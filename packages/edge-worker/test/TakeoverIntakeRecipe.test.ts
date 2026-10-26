@@ -59,7 +59,7 @@ const assessment = {
 };
 function fixture(
 	provider: "github" | "gitlab",
-	mode: "manual" | "call" | "ticket",
+	mode: "manual" | "call" | "ticket" | "combined",
 ) {
 	const home = mkdtempSync(join(tmpdir(), "takeover-intake-"));
 	const git = (...args: string[]) =>
@@ -222,7 +222,7 @@ function fixture(
 			source: mode === "ticket" ? "T-1" : url,
 			prompt: "Retain completed work",
 		},
-		...(mode === "ticket"
+		...(mode === "ticket" || mode === "combined"
 			? { ticketReference: reference, ticketSnapshot: ticket }
 			: {}),
 		workflow,
@@ -284,6 +284,14 @@ describe("v2-takeover-intake", () => {
 			plan: assessment.plan,
 		});
 	});
+	it("reads an explicit launch request even when an originating ticket is present", async () => {
+		const f = fixture("github", "combined");
+		await f.runtime.launch(f.run);
+		expect(f.run.status, f.run.error).toBe("completed");
+		expect(f.readPr).toHaveBeenCalledOnce();
+		expect(f.readTicket).toHaveBeenCalledOnce();
+	});
+
 	it("rejects an assessment that omits required plan fields", async () => {
 		const step = defaultWorkflows
 			.find((w) => w.id === "v2-takeover-intake")!

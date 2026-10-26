@@ -85,6 +85,26 @@ function approvalRecord(dependencyGraph: typeof graph): ViewRecord {
 
 describe("stock approval composition", () => {
 	it.each([
+		true,
+		false,
+	])("dispatches an approved batch only with current=%s", async (current) => {
+		const gate = stock.steps.find((s) => s.id === "approval-check")!;
+		const result = await evaluateCheckAsync(
+			gate.check!,
+			{ answer: { action: "approve", values: {} } },
+			{},
+			conforms,
+			undefined,
+			(ref) => ref === "approve" && current,
+		);
+		expect(result).toMatchObject({
+			passed: current,
+			approved: current,
+			current,
+		});
+	});
+
+	it.each([
 		"ascii",
 		"utf8",
 	])("keeps complete corrected %s data through actual Decide, choice output and the full wrapped Approve scope", async (kind) => {

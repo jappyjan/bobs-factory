@@ -76,6 +76,7 @@ export const takeoverIntakeRecipe = {
 				pr: "@callInputs/pr",
 				ticket: "@callInputs/ticket",
 				originatingTicket: "@ticket",
+				field: "@launchInputs/source",
 			},
 			transform: {
 				pr: {
@@ -95,6 +96,37 @@ export const takeoverIntakeRecipe = {
 					any: [
 						{ path: "/inputs/pr", exists: true },
 						{ path: "/inputs/source/url", exists: true },
+						{
+							all: [
+								{ text: { path: "/inputs/field", test: "nonblank" } },
+								{
+									not: {
+										any: [
+											{
+												path: "/inputs/field",
+												equalsPath: "/inputs/ticket/id",
+											},
+											{
+												path: "/inputs/field",
+												equalsPath: "/inputs/ticket/url",
+											},
+											{
+												path: "/inputs/field",
+												equalsPath: "/inputs/originatingTicket/id",
+											},
+											{
+												path: "/inputs/field",
+												equalsPath: "/inputs/originatingTicket/identifier",
+											},
+											{
+												path: "/inputs/field",
+												equalsPath: "/inputs/originatingTicket/url",
+											},
+										],
+									},
+								},
+							],
+						},
 					],
 				},
 			},
