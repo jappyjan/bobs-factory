@@ -1020,10 +1020,9 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 		...(step.inputs ? { inputs: [...step.inputs] } : {}),
 		...(step.output ? { output: step.output } : {}),
 		rules: step.rules ?? [],
-		checks: [
-			...(step.checks ?? []),
-			...(step.verify ?? []),
-		].map(normalizeCheck),
+		checks: [...(step.checks ?? []), ...(step.verify ?? [])].map(
+			normalizeCheck,
+		),
 		...(step.revision ? { revision: step.revision } : {}),
 		access,
 		instructions: step.instructions ?? [],
@@ -1423,10 +1422,9 @@ export function stepConfigIssues(
 			}
 		}
 	}
-	for (const check of [
-		...(step.checks ?? []),
-		...(step.verify ?? []),
-	].map(normalizeCheck)) {
+	for (const check of [...(step.checks ?? []), ...(step.verify ?? [])].map(
+		normalizeCheck,
+	)) {
 		if (
 			![
 				"files-exist",
