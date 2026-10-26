@@ -689,7 +689,10 @@ repository/provider. Bind a URL to inspect a closed request.
 - `diff`: `{ type: "git", op: "diff", from: "refs/remotes/origin/main", to: "HEAD" }`
   → `{ id, head, base, target, files: string[], changes: [{ path, additions,
   deletions }], stats: { filesChanged, additions, deletions, binaryFiles } }`.
-  Defaults to the run's `origin/<baseBranch>` and `HEAD`; compares the two exact
+  `from` may also be a named read containing a ref string or a prior PR read's
+  `{ repositories: [{ id, base }] }` result; every scoped repository must have a
+  valid base. Explicit `from` configuration takes precedence. Otherwise defaults
+  to the run's `origin/<baseBranch>` and `HEAD`; compares the two exact
   commits without fetching. Binary additions/deletions are `null`. NUL-separated
   Git output preserves whitespace and tabs in paths; renames appear as add/delete.
 

@@ -1,6 +1,7 @@
 import { factoryRecipes } from "./factoryRecipes.js";
 import { improvementRecipes } from "./improvementWorkflow.js";
 import { stockWorkflowMetadata } from "./stockFactorySteps.js";
+import { takeoverIntakeRecipe } from "./takeoverIntakeRecipe.js";
 import { validateWorkflows } from "./Workflow.js";
 
 export {
@@ -18,6 +19,7 @@ export const defaultWorkflows = validateWorkflows([
 		...recipe,
 		convergence: { maxUnchangedAttempts: 8, continueAttempts: 2 },
 	})),
+	takeoverIntakeRecipe,
 	...improvementRecipes.map((recipe) => ({
 		...recipe,
 		convergence: { maxUnchangedAttempts: 8, continueAttempts: 2 },

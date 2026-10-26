@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Move Improve codebase choices and batch approval onto Display screens, retaining targeted Ask follow-ups, complete plan review and restart-safe decisions. ([Taskbot #168](https://taskbot.apps.janjaap.de/p/bobs-factory/t/168))
+
 ### Added
 
 - Build human-facing recipe steps with one generic Display node: compose forms, item actions, code tours and content freely, accept agent-produced documents, and retain exact answers across restart. Includes live builder previews, text fallbacks and stale-document checks. Item comments require explicit action choices, reactions may be optional, typing Enter cannot approve a document, and content-only loops do not exhaust the decision limit. ([Taskbot #159](https://taskbot.apps.janjaap.de/p/bobs-factory/t/159), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#205](https://github.com/jappyjan/bobs-factory/pull/205))

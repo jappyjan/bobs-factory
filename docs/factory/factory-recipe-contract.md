@@ -169,3 +169,25 @@ Legacy `review-loop`, `SpecialistReview.ts`, `Impact.ts`, `ReviewRecovery.ts`,
 `specialistSteps.ts`, stock review prompts/check adapters and `run.reviewGate`
 remain referenced by the legacy Factory and saved definitions. D1 owns their
 removal after replacing the composition. C2 removes none of that active code.
+
+## Takeover intake (C5)
+
+`v2-takeover-intake` declares optional call inputs `pr` (the repository IO request
+binding: `{url}` for one repository or `{repositories:[{id,url}]}`) and `ticket`
+(a verified `TicketReference`). Standalone launches keep Takeover's existing
+`source` and `prompt` field names. Ticket identifiers/URLs use the host's normal
+source resolution, yielding `@ticket` and the run's verified ticket reference;
+PR/MR URLs can be read directly from `source`. A prepared `@source` request is
+preferred over the raw field, and an explicit `pr` call input takes precedence.
+The host/caller owns selecting the existing worktree/branch; this read-only
+recipe does not switch branches, draft a request or grant delivery authority.
+
+The recipe reads the request and/or ticket when available, Git status and the
+base-to-head diff. A request's observed per-repository base SHA binds the diff;
+ticket-only launches use the scoped repository base. All assessment dependencies
+are declared statically. `assess-existing` emits the shared `requirements` and
+`plan` shapes above plus `completed`, `remaining`, `risks` and `assets` string
+arrays. The terminal `result` step emits `{requirements, plan}`; callers bind
+`<call>/outputs/result/requirements` and `<call>/outputs/result/plan`. Its sole
+outcome is `completed`. The plan preserves completed work and describes only
+remaining steps, including unresolved feedback and validation.

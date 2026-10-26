@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { schema } from "../git.js";
+import { gitRef, type schema } from "../git.js";
 import type { NodeContext } from "../NodeDefinition.js";
 import { assertWorktree, repositories, textRead } from "./repository-io.js";
 
@@ -23,8 +23,21 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 					]),
 				};
 			case "diff": {
-				const from =
-					ctx.step.from ?? `refs/remotes/origin/${repository.baseBranch}`;
+				const bound = ctx.reads.from;
+				const selected =
+					typeof bound === "string"
+						? bound
+						: (
+								bound as
+									| { repositories?: { id: string; base?: unknown }[] }
+									| undefined
+							)?.repositories?.find((item) => item.id === repository.id)?.base;
+				const from = gitRef.parse(
+					ctx.step.from ??
+						(bound === undefined
+							? `refs/remotes/origin/${repository.baseBranch}`
+							: selected),
+				);
 				const to = ctx.step.to;
 				// Resolve refs before diff: no path ambiguity or option injection.
 				const resolve = (ref: string) =>

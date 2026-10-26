@@ -353,21 +353,21 @@ function fixture(
 }
 async function waiting(
 	f: ReturnType<typeof fixture>,
-	kind: string,
+	step: string,
 	old?: string,
 ) {
 	await waitForRuntime(
 		() => {
 			expect(f.run.error).toBeUndefined();
 			expect(
-				f.run.viewDecision?.kind,
+				f.run.viewDecision?.stepKey,
 				JSON.stringify({
 					status: f.run.status,
 					step: f.run.step,
 					calls: f.calls.slice(-2).map((c) => c.key),
 					events: f.run.events.slice(-2).map((e) => e.message),
 				}),
-			).toBe(kind);
+			).toBe(step);
 			expect(f.run.status).toBe("waiting");
 			if (old) expect(f.run.viewDecision!.id).not.toBe(old);
 		},
@@ -383,6 +383,7 @@ const request = (run: FactoryRun, extra: Record<string, unknown>) => ({
 });
 async function choose(f: ReturnType<typeof fixture>, ask = false) {
 	const r = request(f.run, {
+		action: "continue",
 		choices: f.run.viewDecision!.items!.map((item) => ({
 			itemId: item.id,
 			action:
@@ -492,8 +493,8 @@ describe("Improve is an ordinary composed recipe", () => {
 		await f.runtime.answerView(
 			f.run.id,
 			request(f.run, {
-				approved: false,
-				feedback: "Keep the accepted recovery boundary explicit",
+				action: "changes",
+				values: { feedback: "Keep the accepted recovery boundary explicit" },
 			}),
 		);
 		await waiting(f, "decide");
@@ -525,7 +526,7 @@ describe("Improve is an ordinary composed recipe", () => {
 			f.run.viewRecords!.find((record) => record.snapshot.id === revised.id)!
 				.snapshot,
 		);
-		await f.runtime.answerView(f.run.id, request(f.run, { approved: true }));
+		await f.runtime.answerView(f.run.id, request(f.run, { action: "approve" }));
 		await waitForRuntime(() => expect(f.filed).toEqual(["later"]));
 		await waitForRuntime(() =>
 			expect(
@@ -596,7 +597,11 @@ describe("Improve is an ordinary composed recipe", () => {
 		expect(
 			f.run.viewRecords!.find((record) => record.snapshot.id === exact.id)!
 				.answer!.output,
-		).toMatchObject({ approved: true, digest: exact.digest });
+		).toMatchObject({
+			action: "approve",
+			documentDigest: exact.documentDigest,
+			bound: ["plan-check/plans", "checks", "plan-dependencies", "decide"],
+		});
 		expect(
 			f.run.history.filter((h) => h.step === "dispatch/0/issues"),
 		).toHaveLength(1);
@@ -653,7 +658,7 @@ describe("Improve is an ordinary composed recipe", () => {
 		await waitForRuntime(
 			() => {
 				expect(run.error).toBeUndefined();
-				expect(run.viewDecision?.kind).toBe("decide");
+				expect(run.viewDecision?.kind).toBe("display");
 			},
 			{ timeout: 80000 },
 		);

@@ -35,11 +35,18 @@ const call = (
 	inputMapping: Record<string, string>,
 	next: string,
 ) => ({ id, name, type: "workflow", workflow, inputMapping, next });
-const recipe = (id: string, name: string, steps: unknown[]) => ({
+const recipe = (
+	id: string,
+	name: string,
+	inputs: string[],
+	steps: unknown[],
+) => ({
 	id,
 	name,
 	internal: true,
+	inputs,
 	stepConfigVersion: "step-config-v1",
+	engineVersion: "nodes-v1",
 	allowedTriggers: ["workflow", "manual"],
 	steps,
 });
@@ -58,18 +65,24 @@ const review = (id: string, name: string, prompt: string) =>
 		},
 	);
 
-export const mapCodebaseRecipe = recipe("map-codebase", "Map the codebase", [
-	agent(
-		"map",
-		"Map the codebase",
-		"research-context-v1",
-		"Read repository instructions/domain documents and map the system. Return {summary:string,focus:string,context:string,limitations:string[]}. Source revisions/history and bounded operational observations are provided in /baseline. Share architectural context without prescribing findings to independent perspectives. State missing history/coverage and sampling limits. Read only pinned source blobs.",
-		{ ...baseline, focus: "@callInputs/focus" },
-	),
-]);
+export const mapCodebaseRecipe = recipe(
+	"map-codebase",
+	"Map the codebase",
+	["baseline", "focus"],
+	[
+		agent(
+			"map",
+			"Map the codebase",
+			"research-context-v1",
+			"Read repository instructions/domain documents and map the system. Return {summary:string,focus:string,context:string,limitations:string[]}. Source revisions/history and bounded operational observations are provided in /baseline. Share architectural context without prescribing findings to independent perspectives. State missing history/coverage and sampling limits. Read only pinned source blobs.",
+			{ ...baseline, focus: "@callInputs/focus" },
+		),
+	],
+);
 export const researchPerspectiveRecipe = recipe(
 	"research-perspective",
 	"Research a perspective",
+	["baseline", "context", "focus", "perspective"],
 	[
 		agent(
 			"coordinate",
@@ -122,6 +135,15 @@ export const consolidateProposalsRecipe = recipe(
 	"consolidate-proposals",
 	"Consolidate proposals",
 	[
+		"baseline",
+		"context",
+		"focus",
+		"reports",
+		"previous",
+		"followUps",
+		"decisions",
+	],
+	[
 		agent(
 			"proposals",
 			"Consolidate proposals",
@@ -137,29 +159,45 @@ export const consolidateProposalsRecipe = recipe(
 		),
 	],
 );
-export const refinePlanRecipe = recipe("refine-plan", "Refine into a plan", [
-	agent(
-		"plan",
-		"Refine selected item",
-		"plan-package-v1",
-		"Refine ONLY /item chosen for Fix using /proposals, /decisions, /feedback, /requestedChanges, evidence and non-goals. Return {id:string,itemIds:string[],title:string,plan:string,criteria:string[],dependencies:string[],paths:string[]}. Use exactly one package with id equal to /item/id and itemIds containing only that ID. dependencies include every accepted prerequisite item ID, never issue/skip items. Dependencies are unique and never include the package itself. If /dependencyFeedback/passed is false, its parallel ids/dependencies lists describe the rejected complete batch: remove cycles and unknown edges while preserving accepted prerequisites, then submit the corrected package for all three reviews. Keep title at most 300 characters and plan prose at most 8000; the complete rendered criteria list and paths list each fit 4000 characters. Criteria, dependencies and paths are displayed separately and the complete canonical package is passed to the child. The complete accepted JSON, including review details and canonical child text, must fit one sixteenth of the shared public JSON budget (character, UTF-8 byte, node and depth limits). Preserve every accepted requirement when correcting an overlong response. The full plan includes scoped repositories/base revisions, accepted requirements/non-goals, observable acceptance, proportionate checks and dependency assumptions. Address all failed architecture/security/dependency checks in /feedback. Do not expand scope or implement. Parent batch acceptance does not approve a delivered PR revision: ordinary Factory architecture, review, QA, human and provider merge gates remain required.",
-		{
-			...common,
-			item: "@callInputs/selected",
-			proposals: "@callInputs/proposals",
-			decisions: "@callInputs/decisions",
-			feedback: "@callInputs/feedback",
-			dependencyFeedback: "@callInputs/dependencyFeedback",
-			requestedChanges: "@callInputs/requestedChanges",
-		},
-	),
-]);
+export const refinePlanRecipe = recipe(
+	"refine-plan",
+	"Refine into a plan",
+	[
+		"baseline",
+		"context",
+		"focus",
+		"selected",
+		"proposals",
+		"decisions",
+		"feedback",
+		"dependencyFeedback",
+		"requestedChanges",
+	],
+	[
+		agent(
+			"plan",
+			"Refine selected item",
+			"plan-package-v1",
+			"Refine ONLY /item chosen for Fix using /proposals, /decisions, /feedback, /requestedChanges, evidence and non-goals. Return {id:string,itemIds:string[],title:string,plan:string,criteria:string[],dependencies:string[],paths:string[]}. Use exactly one package with id equal to /item/id and itemIds containing only that ID. dependencies include every accepted prerequisite item ID, never issue/skip items. Dependencies are unique and never include the package itself. If /dependencyFeedback/passed is false, its parallel ids/dependencies lists describe the rejected complete batch: remove cycles and unknown edges while preserving accepted prerequisites, then submit the corrected package for all three reviews. Keep title at most 300 characters and plan prose at most 8000; the complete rendered criteria list and paths list each fit 4000 characters. Criteria, dependencies and paths are displayed separately and the complete canonical package is passed to the child. The complete accepted JSON, including review details and canonical child text, must fit one sixteenth of the shared public JSON budget (character, UTF-8 byte, node and depth limits). Preserve every accepted requirement when correcting an overlong response. The full plan includes scoped repositories/base revisions, accepted requirements/non-goals, observable acceptance, proportionate checks and dependency assumptions. Address all failed architecture/security/dependency checks in /feedback. Do not expand scope or implement. Parent batch acceptance does not approve a delivered PR revision: ordinary Factory architecture, review, QA, human and provider merge gates remain required.",
+			{
+				...common,
+				item: "@callInputs/selected",
+				proposals: "@callInputs/proposals",
+				decisions: "@callInputs/decisions",
+				feedback: "@callInputs/feedback",
+				dependencyFeedback: "@callInputs/dependencyFeedback",
+				requestedChanges: "@callInputs/requestedChanges",
+			},
+		),
+	],
+);
 
 export const improvementWorkflow = {
 	id: "improve-codebase",
 	name: "Improve codebase",
 	icon: "🌱",
 	stepConfigVersion: "step-config-v1",
+	engineVersion: "nodes-v1",
 	description:
 		"Research architectural opportunities through eight perspectives. Decide what to fix, file, skip or ask Bob; review plans before dispatching ordinary Factory runs.",
 	allowedTriggers: ["manual"],
@@ -241,7 +279,7 @@ export const improvementWorkflow = {
 					followUps: "/inputs/followUps",
 					decisions: "/inputs/decisions",
 				},
-				"decide",
+				"decision-items",
 			),
 			reads: {
 				focus: "@launchInputs/focus",
@@ -251,13 +289,40 @@ export const improvementWorkflow = {
 			},
 		},
 		{
+			id: "decision-items",
+			name: "Arrange opportunities",
+			type: "transform",
+			reads: { proposals: "consolidate/outputs/proposals" },
+			transform: {
+				items: {
+					map: "/inputs/proposals/opportunities",
+					template: {
+						id: { select: "/id" },
+						title: { select: "/title" },
+						body: { select: "/problem" },
+						value: { select: "" },
+						details: {
+							map: "",
+							where: {
+								path: "@key",
+								in: ["consequence", "before", "after", "plan", "effort"],
+							},
+							template: { label: { select: "@key" }, value: { select: "" } },
+						},
+					},
+				},
+			},
+			next: "decide",
+		},
+		{
 			id: "decide",
 			name: "Decide per item",
-			type: "decide",
+			type: "display",
 			reads: {
 				proposals: "consolidate/outputs/proposals",
+				cards: "decision-items/items",
 			},
-			view: {
+			document: {
 				version: "view-v1",
 				components: [
 					{
@@ -271,29 +336,49 @@ export const improvementWorkflow = {
 						type: "points",
 						data: { path: "/inputs/proposals/limitationsDisplay" },
 					},
+					{
+						id: "opportunities",
+						type: "itemCards",
+						data: {
+							bindings: {
+								items: { path: "/inputs/cards" },
+								actions: {
+									literal: [
+										{ id: "fix", label: "Fix", comment: true },
+										{ id: "issue", label: "File issue", comment: true },
+										{ id: "skip", label: "Skip", comment: true },
+										{
+											id: "ask",
+											label: "Ask Bob",
+											comment: true,
+											followUp: true,
+										},
+									],
+								},
+							},
+						},
+					},
+					{
+						id: "continue",
+						type: "actions",
+						data: {
+							literal: { actions: [{ id: "continue", label: "Continue" }] },
+						},
+					},
 				],
 			},
-			decide: {
-				items: { path: "/inputs/proposals/opportunities" },
-				itemId: "/id",
-				title: "/title",
-				body: "/problem",
-				details: [
-					{ label: "Consequence", path: "/consequence" },
-					{ label: "Current design", path: "/before" },
-					{ label: "Proposed design", path: "/after" },
-					{ label: "Plan", path: "/plan" },
-					{ label: "Effort", path: "/effort" },
-				],
-				actions: [
-					{ id: "fix", label: "Fix", comment: true },
-					{ id: "issue", label: "File issue", comment: true },
-					{ id: "skip", label: "Skip", comment: true },
-					{ id: "ask", label: "Ask Bob", comment: true, followUp: true },
-				],
+			next: "follow-up-check",
+		},
+		{
+			id: "follow-up-check",
+			name: "Check for follow-ups",
+			type: "check",
+			reads: { answers: "decide/followUps" },
+			check: {
+				results: { requested: { path: "/inputs/answers", minLength: 1 } },
 			},
 			branches: [
-				{ when: { path: "hasFollowUps", equals: true }, next: "follow-ups" },
+				{ when: { path: "passed", equals: true }, next: "follow-ups" },
 			],
 			next: "selection-check",
 		},
@@ -373,7 +458,7 @@ export const improvementWorkflow = {
 					reads: {
 						feedback: "plan-check",
 						dependencyFeedback: "plan-dependencies",
-						requestedChanges: "approve",
+						requestedChanges: "approve/values",
 					},
 				},
 			],
@@ -513,15 +598,14 @@ export const improvementWorkflow = {
 		{
 			id: "approve",
 			name: "Approve batch",
-			type: "approve",
+			type: "display",
+			bind: ["plan-check/plans", "checks", "plan-dependencies", "decide"],
 			reads: {
 				plans: "plan-check/plans",
 				checks: "checks",
 				dependencyGraph: "plan-dependencies",
-				decisions: "decide",
-				proposals: "consolidate/outputs/proposals",
 			},
-			view: {
+			document: {
 				version: "view-v1",
 				components: [
 					{
@@ -561,6 +645,34 @@ export const improvementWorkflow = {
 							},
 						},
 					},
+					{
+						id: "feedback",
+						type: "form",
+						data: {
+							literal: {
+								fields: [
+									{
+										id: "feedback",
+										type: "textarea",
+										label:
+											"Requested changes (required when requesting changes)",
+									},
+								],
+							},
+						},
+					},
+					{
+						id: "approval-actions",
+						type: "actions",
+						data: {
+							literal: {
+								actions: [
+									{ id: "approve", label: "Approve" },
+									{ id: "changes", label: "Request changes" },
+								],
+							},
+						},
+					},
 					...(["architecture", "security", "dependencies"] as const).map(
 						(name, index) => ({
 							id: name,
@@ -571,8 +683,27 @@ export const improvementWorkflow = {
 					),
 				],
 			},
-			branches: [{ when: { path: "approved", equals: false }, next: "decide" }],
-			next: "dispatch",
+			next: "approval-check",
+		},
+		{
+			id: "approval-check",
+			name: "Check batch decision",
+			type: "check",
+			reads: { answer: "approve" },
+			check: {
+				results: {
+					approved: { path: "/inputs/answer/action", equals: "approve" },
+					changes: {
+						text: { path: "/inputs/answer/values/feedback", test: "nonblank" },
+					},
+				},
+				passed: { path: "/results/approved", equals: true },
+			},
+			branches: [
+				{ when: { path: "approved", equals: true }, next: "dispatch" },
+				{ when: { path: "changes", equals: true }, next: "decide" },
+			],
+			next: "approve",
 		},
 		{
 			id: "dispatch",
