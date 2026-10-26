@@ -197,15 +197,36 @@ export function githubTicketIO(
 			if (fields.priority !== undefined)
 				throw new Error("GitHub issues do not support numeric priority");
 			const marker = `<!-- factory-ticket:${key} -->`;
-			const matches = (
-				await api.pages<{ number: number; html_url: string; body?: string }>(
-					`${issues}?state=all`,
-				)
-			).filter((issue) => issue.body?.includes(marker));
+			// Search only candidate issues; large repositories must not scan every issue/PR.
+			const {
+				data: { search },
+			} = await api.graphql<{
+				data: {
+					search: {
+						nodes: { number: number; url: string; body: string }[];
+						pageInfo: { hasNextPage: boolean };
+					};
+				};
+			}>(
+				`query TicketMarker($query: String!) {
+				search(query: $query, type: ISSUE, first: 100) {
+					nodes { ... on Issue { number url body } }
+					pageInfo { hasNextPage }
+				}
+			}`,
+				{
+					query: `repo:${api.repository.project} is:issue in:body "factory-ticket:${key}"`,
+				},
+			);
+			if (search.pageInfo.hasNextPage)
+				throw new Error("GitHub ticket marker search is incomplete");
+			const matches = search.nodes.filter((issue) =>
+				issue.body?.includes(marker),
+			);
 			if (matches.length > 1)
 				throw new Error("Several GitHub issues match the creation marker");
 			if (matches[0])
-				return { id: String(matches[0].number), url: matches[0].html_url };
+				return { id: String(matches[0].number), url: matches[0].url };
 			if (reconcile) return undefined;
 			const created = await api.request("POST", issues, {
 				title: fields.title,

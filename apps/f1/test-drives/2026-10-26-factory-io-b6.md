@@ -47,3 +47,31 @@ Unit fakes separately cover Linear/Taskbot operations, uncertain-effect restart,
 provider queues, grouped repositories and command access/timeout failures.
 Live forge rules, live Linear/Taskbot services and Linux bubblewrap are not
 claimed by this evidence.
+
+## Review correction validation
+
+2026-10-26: repeated the same mocked fixture against the review corrections
+based on `b6a8466a` (sources committed with this note). Both package builds and
+the fixture passed. Session `session-1` again completed all six nodes with one
+comment, one scripted merge, parsed exec JSON, zero implicit milestones and zero
+paid calls. Artifacts: `/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-io-b6-xeXITM/`.
+
+Focused verification: 103 tests pass across FactoryIONodes, ExecSandbox,
+RepositoryTicketIO, GitProvider, NodeRegistry, TicketTracking and FileIssues.
+New cases cover cold restart after provider/view/readiness failure, shutdown
+while waiting for a delivery reservation or command capacity, another run
+acquiring the repository during merge confirmation, idempotent ticket retries,
+GitLab fast-forward receipts, default effect parsing and inherited-map guards.
+The edge-worker typecheck passes.
+
+The four ExecSandbox integration tests also pass on Linux arm64, with actual
+bubblewrap 0.8.0 installed in a disposable Node 24.19.0 Debian container. Namespace
+creation was enabled for the container; Vitest and commands ran as the
+unprivileged `node` user. The test source and runtime dependencies were bundled
+from this worktree with esbuild (Vitest external), then executed with Linux's
+native Node/bwrap binaries. Nothing mocked the command or sandbox boundary.
+Tests cover separate streams/env/JSON, filesystem enforcement/timeout, a Git
+commit in a linked worktree plus private TMPDIR writes, and network denial in
+read-only mode. Linux hosts now fail these tests when bubblewrap is missing,
+instead of silently skipping them. Host file reads remain available in both
+access modes, as documented; this is not a confidentiality sandbox.

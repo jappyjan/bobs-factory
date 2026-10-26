@@ -524,10 +524,14 @@ accepted as the bound revision. Only repositories selected for the run can merge
 The default method comes from the configured Git provider.
 
 Output: `{repositories: [{repositoryId, merged: true, sha, url}]}`. `sha` is the
-provider-confirmed merge commit, not the source head. Custom Git providers must
+provider-confirmed merge commit (the source head for a fast-forward merge). Custom Git providers must
 return `mergeCommitSha` from `view` for a merged request. Repository reservations
 use the same canonical repository/base identity as existing publication, and
-all admission/queue/confirmation waits use `ctx.phase("waiting-ci")`. Each
+all admission/queue/confirmation waits use `ctx.phase("waiting-ci")`. Provider
+resolution, head/readiness checks and reservation admission happen before the
+durable send boundary, so pre-dispatch failures can retry. The reservation is
+released as soon as the provider merge call settles; confirmation polling never
+holds it. Each
 repository has an independent durable effect, so partial success survives retry.
 An uncertain request is only polled for confirmation; an open PR is **unknown**,
 not evidence that the merge was absent. It never triggers another merge request.
@@ -560,8 +564,11 @@ plain-text fallback to `reads.body` when a formatted document should be posted.
 
 Mutating outputs: `{ok: true, id, url}` (the newly created identity for `create`).
 Comments contain a stable searchable marker. Status/update/link retries confirm
-current provider state; a conflicting or invisible write stays unknown instead
-of overwriting it. Confirmed effects reuse their saved receipt across restart.
+current provider state and reapply the same idempotent intent when it differs.
+Confirmed effects reuse their saved receipt across restart. GitHub creation uses
+a repository-scoped issue search for the exact body marker, rather than listing
+all issues and PRs. Search absence during reconciliation remains unknown because
+indexing can lag; it never authorizes a duplicate create.
 
 References:
 
@@ -603,10 +610,17 @@ variables are inherited; internal capacity provenance is also retained. Mutating
 
 Writes are enforced by the OS for the process and descendants: macOS
 `sandbox-exec`, or Linux `bwrap` (bubblewrap must be installed). Read-only commands
-cannot write workspace files; workspace access permits writes only under the
-resolved workspace. Unsupported/missing enforcement fails closed. A timeout or
+cannot write host files or use the network. Both access modes retain host file
+reads, including the home directory: this is not a confidentiality sandbox.
+Workspace access retains network access and permits writes under the resolved
+workspace, its Git metadata (including the linked worktree's common objects/refs),
+and a private scratch directory supplied as `TMPDIR`. Scratch is removed when
+the command settles. Other host writes remain denied. Unsupported/missing
+enforcement fails closed. A timeout or
 cancellation terminates the process group, escalating to SIGKILL. Mutating exec
-uses `ctx.effect` and deliberately has no generic reconciliation: after an
+acquires its capacity lease before entering `ctx.effect`, so a queued shutdown
+can resume without marking an unstarted command uncertain. It deliberately has
+no generic reconciliation: after an
 uncertain command, the operator must reconcile its external outcome. A confirmed
 command is not run again. Arbitrary shell side effects cannot be safely inferred
 from a local exit code after a crash.

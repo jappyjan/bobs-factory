@@ -503,3 +503,17 @@ it("supports another forge through a configured executable without shell interpo
 	).rejects.toThrow("selected repository");
 	expect(cmd).toHaveBeenCalledTimes(calls);
 });
+
+it("confirms a GitLab fast-forward merge using its head SHA", async () => {
+	const commands = gitlab({
+		state: "merged",
+		merge_commit_sha: null,
+		squash_commit_sha: null,
+	});
+	const provider = gitProvider(commands, { type: "gitlab", repositoryUrl });
+	expect(await provider.view(url)).toMatchObject({
+		state: "MERGED",
+		headRefOid: "head",
+		mergeCommitSha: "head",
+	});
+});

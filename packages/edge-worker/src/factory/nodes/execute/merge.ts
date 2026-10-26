@@ -59,11 +59,11 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 		const repository = repositories.find(
 			(repo) => repo.id === request.repositoryId,
 		)!;
-		// Everything remote is inside the durable boundary: confirmed repositories can
-		// be reused even when their provider becomes unavailable during a later retry.
-		const operate = async (key: string, reconcile: boolean) => {
-			ctx.signal.throwIfAborted();
-			const context = { ...ctx, run: repositoryRun(ctx.run, repository) };
+		const name = `merge:${repository.id}`;
+		const key = await ctx.effectKey(name);
+		const reservation = `node:${key}`;
+		const context = { ...ctx, run: repositoryRun(ctx.run, repository) };
+		const getProvider = async () => {
 			const { executeCommand } = await import("../../FactoryTools.js");
 			const provider = ctx.engine.hooks.ioGitProvider
 				? await ctx.engine.hooks.ioGitProvider(context)
@@ -74,84 +74,109 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 					);
 			repository.providerSnapshot = context.run.gitProvider;
 			await ctx.checkpoint();
-			const checkHead = (head: string) => {
-				if (head !== request.headSha)
-					throw new Error(
-						"PR head changed; bind the current revision before merging",
-					);
-			};
-			const receipt = (sha?: string) => {
-				if (!sha)
-					throw new Error("Provider confirmed merge without its commit SHA");
-				return { merged: true, sha, url: request.url };
-			};
-			const current = await provider.view(request.url);
-			checkHead(current.headRefOid);
-			if (current.state === "MERGED") return receipt(current.mergeCommitSha);
-			if (current.state !== "OPEN") throw new Error("PR closed without merge");
-			const url =
-				repository.providerSnapshot?.repositoryUrl ??
-				repository.githubUrl ??
-				repository.gitlabUrl;
-			if (!url) throw new Error("Merge needs a configured repository URL");
-			const reservation = `node:${key}`;
-			const scopes = [
-				JSON.stringify([
-					repositoryReference(url).url,
-					current.baseRefName ?? repository.baseBranch,
-				]),
-			];
-			await ctx.phase("waiting-ci", () =>
-				acquireDelivery(
-					ctx.run,
-					() => ctx.engine.runs.values(),
-					ctx.signal,
-					ctx.checkpoint,
-					ctx.log,
-					{
-						key: reservation,
-						scopes,
-						reason: "Repository mutation",
-						assertSchedulingOpen: ctx.assertSchedulingOpen,
-					},
-				),
-			);
-			try {
-				if (!reconcile) {
-					const method =
-						ctx.step.method ??
-						(await provider.readiness(request.url)).mergeMethod;
-					await provider.merge(request.url, request.headSha, method);
-				}
-				// OPEN after a lost response is unknown, never proven absence. Poll only;
-				// this includes requests still processing or admitted to a provider queue.
-				return await ctx.phase("waiting-ci", async () => {
-					const deadline = Date.now() + ctx.step.timeout;
-					while (true) {
-						ctx.signal.throwIfAborted();
-						ctx.assertSchedulingOpen?.();
-						const state = await provider.view(request.url);
-						checkHead(state.headRefOid);
-						if (state.state === "MERGED") return receipt(state.mergeCommitSha);
-						if (state.state !== "OPEN")
-							throw new Error("PR closed without merge");
-						if (Date.now() >= deadline)
-							throw new Error("Timed out waiting for provider-confirmed merge");
-						await delay(ctx.signal, ctx.step.pollInterval);
-					}
-				});
-			} finally {
-				releaseDelivery(ctx.run, "Repository operation settled", reservation);
-				await ctx.checkpoint();
-			}
+			return provider;
 		};
-		const result = await ctx.effect(
-			`merge:${repository.id}`,
-			{ ...request, method: ctx.step.method ?? "provider-default" },
-			(key) => operate(key, false),
-			(key) => operate(key, true),
-		);
-		results.push({ repositoryId: repository.id, ...result });
+		// Resolve lazily so a confirmed repository needs no provider on a grouped retry.
+		let provider: Awaited<ReturnType<typeof getProvider>> | undefined;
+		const checkHead = (head: string) => {
+			if (head !== request.headSha)
+				throw new Error(
+					"PR head changed; bind the current revision before merging",
+				);
+		};
+		const confirm = () =>
+			ctx.phase("waiting-ci", async () => {
+				provider ??= await getProvider();
+				const deadline = Date.now() + ctx.step.timeout;
+				while (true) {
+					ctx.signal.throwIfAborted();
+					ctx.assertSchedulingOpen?.();
+					const state = await provider.view(request.url);
+					checkHead(state.headRefOid);
+					if (state.state === "MERGED") {
+						if (!state.mergeCommitSha)
+							throw new Error(
+								"Provider confirmed merge without its commit SHA",
+							);
+						return {
+							merged: true,
+							sha: state.mergeCommitSha,
+							url: request.url,
+						};
+					}
+					if (state.state !== "OPEN")
+						throw new Error("PR closed without merge");
+					if (Date.now() >= deadline)
+						throw new Error("Timed out waiting for provider-confirmed merge");
+					await delay(ctx.signal, ctx.step.pollInterval);
+				}
+			});
+		const release = async () => {
+			releaseDelivery(ctx.run, "Repository operation settled", reservation);
+			await ctx.checkpoint();
+		};
+		let method = ctx.step.method;
+		let alreadyMerged = false;
+		try {
+			const record = ctx.run.nodeEffects?.[key];
+			if (!record || record.phase === "not-sent") {
+				// Failures and cancellation during preflight/admission must remain retryable.
+				ctx.signal.throwIfAborted();
+				provider = await getProvider();
+				const current = await provider.view(request.url);
+				checkHead(current.headRefOid);
+				alreadyMerged = current.state === "MERGED";
+				if (!alreadyMerged) {
+					if (current.state !== "OPEN")
+						throw new Error("PR closed without merge");
+					method ??= (await provider.readiness(request.url)).mergeMethod;
+					const url =
+						repository.providerSnapshot?.repositoryUrl ??
+						repository.githubUrl ??
+						repository.gitlabUrl;
+					if (!url) throw new Error("Merge needs a configured repository URL");
+					await ctx.phase("waiting-ci", () =>
+						acquireDelivery(
+							ctx.run,
+							() => ctx.engine.runs.values(),
+							ctx.signal,
+							ctx.checkpoint,
+							ctx.log,
+							{
+								key: reservation,
+								scopes: [
+									JSON.stringify([
+										repositoryReference(url).url,
+										current.baseRefName ?? repository.baseBranch,
+									]),
+								],
+								reason: "Repository mutation",
+								assertSchedulingOpen: ctx.assertSchedulingOpen,
+							},
+						),
+					);
+				}
+			}
+			const result = await ctx.effect(
+				name,
+				{ ...request, method: ctx.step.method ?? "provider-default" },
+				async () => {
+					try {
+						if (!alreadyMerged)
+							await provider!.merge(request.url, request.headSha, method!);
+					} finally {
+						// Provider queues can take an hour: other runs may publish while we poll.
+						await release();
+					}
+					return confirm();
+				},
+				// An OPEN PR after dispatch is unknown, including provider merge queues.
+				() => confirm(),
+			);
+			results.push({ repositoryId: repository.id, ...result });
+		} finally {
+			await release();
+		}
 	}
 	return { repositories: results };
 }

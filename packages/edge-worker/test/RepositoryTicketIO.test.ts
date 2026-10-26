@@ -15,11 +15,22 @@ it("uses scoped GitHub issue endpoints and preserves labels while mapping status
 	const command = vi.fn(async (_exe: string, args: string[]) => {
 		const request = JSON.parse(args[0]!);
 		expect(request.project).toBe("test/repo");
+		if (request.path === "graphql") {
+			expect(request.body.variables.query).toBe(
+				'repo:test/repo is:issue in:body "factory-ticket:identity"',
+			);
+			return JSON.stringify({
+				data: {
+					search: {
+						nodes: [{ ...issue, url: issue.html_url }],
+						pageInfo: { hasNextPage: false },
+					},
+				},
+			});
+		}
 		expect(request.path).toMatch(/^repos\/test\/repo\/issues/);
 		if (request.method === "GET" && request.path.includes("/comments"))
 			return JSON.stringify(comments);
-		if (request.method === "GET" && request.path.includes("?state=all"))
-			return JSON.stringify([issue]);
 		if (request.method === "POST" && request.path.endsWith("/comments")) {
 			comments.push(request.body);
 			return "{}";

@@ -98,14 +98,14 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 			if (op === "link")
 				return current.attachments.some((attachment) => attachment.url === url)
 					? result
-					: undefined;
+					: null;
 			if (op === "set-status")
 				return snapshotStatus(current) ===
 					(status === "triage" && ref.provider === "taskbot"
 						? "backlog"
 						: status)
 					? result
-					: undefined;
+					: null;
 			if (op === "update")
 				return Object.entries(fields!).every(
 					([name, value]) =>
@@ -114,7 +114,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 							: current[name]) === value,
 				)
 					? result
-					: undefined;
+					: null;
 			return undefined;
 		},
 	);

@@ -455,3 +455,9 @@ export function nodeEffect(step: {
 		(typeof step.access === "string" &&
 		node?.accessEffects &&
 		Object.hasOwn(node.accessEffects, step.access)
+			? node?.accessEffects?.[step.access]
+			: undefined) ??
+		node?.effect ??
+		"effect"
+	);
+}

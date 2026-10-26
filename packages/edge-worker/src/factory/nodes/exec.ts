@@ -1,4 +1,7 @@
-import { realpathSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { spawnExecution as spawn } from "bobs-factory-core";
 import { z } from "zod";
 import type { ExecutionContext } from "../WorkflowRuntime.js";
@@ -31,18 +34,47 @@ export interface ExecResult {
 export function execInvocation(
 	workspace: string,
 	config: z.output<typeof configuration>,
+	temporaryDirectory?: string,
 ) {
 	const root = realpathSync(workspace);
+	const writable = config.access === "workspace" ? [root] : [];
+	if (config.access === "workspace") {
+		// Linked worktrees keep their index, objects and refs outside the worktree.
+		try {
+			writable.push(
+				...execFileSync(
+					"git",
+					[
+						"rev-parse",
+						"--path-format=absolute",
+						"--git-dir",
+						"--git-common-dir",
+					],
+					{
+						cwd: root,
+						encoding: "utf8",
+						stdio: ["ignore", "pipe", "ignore"],
+						timeout: 5000,
+					},
+				)
+					.trim()
+					.split("\n")
+					.map((path) => realpathSync(path)),
+			);
+		} catch {
+			/* Non-Git workspaces need only their ordinary write boundary. */
+		}
+		if (temporaryDirectory) writable.push(realpathSync(temporaryDirectory));
+	}
 	if (process.platform === "darwin") {
-		const allow =
-			config.access === "workspace"
-				? `(allow file-write* (subpath ${JSON.stringify(root)}))`
-				: "";
+		const allow = [...new Set(writable)]
+			.map((path) => `(allow file-write* (subpath ${JSON.stringify(path)}))`)
+			.join("");
 		return {
 			command: "/usr/bin/sandbox-exec",
 			args: [
 				"-p",
-				`(version 1)(allow default)(deny file-write*)${allow}(allow file-write* (literal "/dev/null"))`,
+				`(version 1)(allow default)(deny file-write*)${config.access === "read-only" ? "(deny network*)" : ""}${allow}(allow file-write* (literal "/dev/null"))`,
 				config.command,
 				...config.args,
 			],
@@ -53,10 +85,12 @@ export function execInvocation(
 			command: "bwrap",
 			args: [
 				"--die-with-parent",
+				"--unshare-pid",
+				...(config.access === "read-only" ? ["--unshare-net"] : []),
 				"--ro-bind",
 				"/",
 				"/",
-				...(config.access === "workspace" ? ["--bind", root, root] : []),
+				...[...new Set(writable)].flatMap((path) => ["--bind", path, path]),
 				"--dev",
 				"/dev",
 				"--proc",
@@ -71,86 +105,102 @@ export function execInvocation(
 	);
 }
 
-export function executeExec(
+export async function executeExec(
 	context: ExecutionContext,
 	config: z.output<typeof configuration>,
 	key?: string,
 ): Promise<ExecResult> {
 	context.signal.throwIfAborted();
-	const invocation = execInvocation(context.run.workspace, config);
-	const source = context.execution?.environment ?? process.env;
-	const env = Object.fromEntries(
-		config.env
-			.filter((name) => source[name] !== undefined)
-			.map((name) => [name, source[name]]),
-	);
-	// Mutating scripts can use this identity to reconcile their own downstream writes.
-	if (key) env.FACTORY_EFFECT_KEY = key;
-	return new Promise((resolve, reject) => {
-		const child = spawn(invocation.command, invocation.args, {
-			cwd: context.run.workspace,
-			env,
-			detached: true,
-			stdio: ["ignore", "pipe", "pipe"],
-		});
-		let stdout = "",
-			stderr = "",
-			timedOut = false;
-		let killTimer: ReturnType<typeof setTimeout> | undefined;
-		const kill = (signal: NodeJS.Signals) => {
-			try {
-				if (child.pid) process.kill(-child.pid, signal);
-			} catch {
-				/* already exited */
-			}
-		};
-		const stop = () => {
-			kill("SIGTERM");
-			killTimer ??= setTimeout(() => kill("SIGKILL"), 1000);
-		};
-		const timer = setTimeout(() => {
-			timedOut = true;
-			stop();
-		}, config.timeout);
-		context.signal.addEventListener("abort", stop, { once: true });
-		if (context.signal.aborted) stop();
-		child.stdout.on("data", (chunk) => {
-			stdout = (stdout + chunk).slice(-1000000);
-		});
-		child.stderr.on("data", (chunk) => {
-			stderr = (stderr + chunk).slice(-1000000);
-		});
-		const cleanup = () => {
-			clearTimeout(timer);
-			if (killTimer) clearTimeout(killTimer);
-			context.signal.removeEventListener("abort", stop);
-		};
-		child.on("error", (error) => {
-			cleanup();
-			reject(error);
-		});
-		child.on("close", (code) => {
-			cleanup();
-			if (context.signal.aborted)
-				return reject(context.signal.reason ?? new Error("Run terminated"));
-			if (timedOut)
-				return reject(new Error(`Command timed out after ${config.timeout}ms`));
-			if (context.execution) {
-				stdout = context.execution.redact(stdout);
-				stderr = context.execution.redact(stderr);
-			}
-			try {
-				resolve({
-					exitCode: code ?? 128,
-					stdout,
-					stderr,
-					...(config.json ? { json: JSON.parse(stdout) } : {}),
-				});
-			} catch (error) {
+	const temporaryDirectory =
+		config.access === "workspace"
+			? mkdtempSync(join(tmpdir(), `factory-exec-${context.run.id}-`))
+			: undefined;
+	try {
+		const invocation = execInvocation(
+			context.run.workspace,
+			config,
+			temporaryDirectory,
+		);
+		const source = context.execution?.environment ?? process.env;
+		const env = Object.fromEntries(
+			config.env
+				.filter((name) => source[name] !== undefined)
+				.map((name) => [name, source[name]]),
+		);
+		// Mutating scripts can use this identity to reconcile their own downstream writes.
+		if (key) env.FACTORY_EFFECT_KEY = key;
+		if (temporaryDirectory) env.TMPDIR = temporaryDirectory;
+		return await new Promise<ExecResult>((resolve, reject) => {
+			const child = spawn(invocation.command, invocation.args, {
+				cwd: context.run.workspace,
+				env,
+				detached: true,
+				stdio: ["ignore", "pipe", "pipe"],
+			});
+			let stdout = "",
+				stderr = "",
+				timedOut = false;
+			let killTimer: ReturnType<typeof setTimeout> | undefined;
+			const kill = (signal: NodeJS.Signals) => {
+				try {
+					if (child.pid) process.kill(-child.pid, signal);
+				} catch {
+					/* already exited */
+				}
+			};
+			const stop = () => {
+				kill("SIGTERM");
+				killTimer ??= setTimeout(() => kill("SIGKILL"), 1000);
+			};
+			const timer = setTimeout(() => {
+				timedOut = true;
+				stop();
+			}, config.timeout);
+			context.signal.addEventListener("abort", stop, { once: true });
+			if (context.signal.aborted) stop();
+			child.stdout.on("data", (chunk) => {
+				stdout = (stdout + chunk).slice(-1000000);
+			});
+			child.stderr.on("data", (chunk) => {
+				stderr = (stderr + chunk).slice(-1000000);
+			});
+			const cleanup = () => {
+				clearTimeout(timer);
+				if (killTimer) clearTimeout(killTimer);
+				context.signal.removeEventListener("abort", stop);
+			};
+			child.on("error", (error) => {
+				cleanup();
 				reject(error);
-			}
+			});
+			child.on("close", (code) => {
+				cleanup();
+				if (context.signal.aborted)
+					return reject(context.signal.reason ?? new Error("Run terminated"));
+				if (timedOut)
+					return reject(
+						new Error(`Command timed out after ${config.timeout}ms`),
+					);
+				if (context.execution) {
+					stdout = context.execution.redact(stdout);
+					stderr = context.execution.redact(stderr);
+				}
+				try {
+					resolve({
+						exitCode: code ?? 128,
+						stdout,
+						stderr,
+						...(config.json ? { json: JSON.parse(stdout) } : {}),
+					});
+				} catch (error) {
+					reject(error);
+				}
+			});
 		});
-	});
+	} finally {
+		if (temporaryDirectory)
+			rmSync(temporaryDirectory, { recursive: true, force: true });
+	}
 }
 export const definition = {
 	type: "exec",
@@ -171,19 +221,22 @@ export const definition = {
 			json: false,
 		},
 	},
-	execute: async (ctx) =>
-		ctx.step.access === "read-only"
-			? executeExec(ctx, ctx.step)
-			: ctx.effect("exec", ctx.step, async (key) => {
-					const lease = await ctx.engine.hooks.capacity?.acquireLease(
-						ctx.signal,
-						ctx.capacity,
-					);
-					try {
-						const run = () => executeExec(ctx, ctx.step, key);
-						return lease ? await lease.run(run) : await run();
-					} finally {
-						await lease?.release();
-					}
-				}),
+	execute: async (ctx) => {
+		const lease = await ctx.engine.hooks.capacity?.acquireLease(
+			ctx.signal,
+			ctx.capacity,
+		);
+		try {
+			// Admission is not a command dispatch: cancellation here must remain retryable.
+			const run = () =>
+				ctx.step.access === "read-only"
+					? executeExec(ctx, ctx.step)
+					: ctx.effect("exec", ctx.step, (key) =>
+							executeExec(ctx, ctx.step, key),
+						);
+			return lease ? await lease.run(run) : await run();
+		} finally {
+			await lease?.release();
+		}
+	},
 } satisfies NodeDefinition<typeof schema>;

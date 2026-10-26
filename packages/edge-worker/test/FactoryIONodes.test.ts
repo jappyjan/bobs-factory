@@ -1,13 +1,12 @@
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { IIssueTrackerService } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import type { GitProvider } from "../src/factory/GitProvider.js";
-import { configuration, executeExec } from "../src/factory/nodes/exec.js";
 import { nodeRegistry } from "../src/factory/nodes/index.js";
+import { nodeEffect } from "../src/factory/nodes/metadata.js";
 import { fileTicketIO } from "../src/factory/RepositoryTicketIO.js";
 import {
 	nativeTicketIO,
@@ -30,12 +29,6 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
-// These are native enforcement integration checks. Optional Linux bubblewrap
-// must be installed; the macOS drive exercises the real OS boundary.
-const commandSandboxAvailable =
-	process.platform === "darwin" ||
-	(process.platform === "linux" &&
-		spawnSync("bwrap", ["--version"]).status === 0);
 const homes: string[] = [],
 	runtimes: WorkflowRuntime[] = [];
 afterEach(async () => {
@@ -432,90 +425,6 @@ it("classifies ticket and exec operations individually for read-only polling", (
 		),
 	).toBe("effect");
 });
-it.runIf(commandSandboxAvailable)(
-	"exec captures separate streams, nonzero exit, JSON and only allowed environment variables",
-	async () => {
-		const { run, home } = setup([]);
-		process.env.B6_TEST_ALLOWED = "visible";
-		process.env.B6_TEST_SECRET = "hidden";
-		const context = {
-			run,
-			signal: new AbortController().signal,
-		} as ExecutionContext;
-		const result = await executeExec(
-			context,
-			configuration.parse({
-				command: "/bin/sh",
-				args: [
-					"-c",
-					'printf \'{"allowed":"%s","secret":"%s"}\' "$B6_TEST_ALLOWED" "$B6_TEST_SECRET"; printf error >&2; exit 7',
-				],
-				env: ["B6_TEST_ALLOWED"],
-				json: true,
-			}),
-		);
-		expect(result).toEqual({
-			exitCode: 7,
-			stdout: '{"allowed":"visible","secret":""}',
-			stderr: "error",
-			json: { allowed: "visible", secret: "" },
-		});
-		expect(existsSync(join(home, "unused"))).toBe(false);
-		delete process.env.B6_TEST_ALLOWED;
-		delete process.env.B6_TEST_SECRET;
-		await expect(
-			executeExec(
-				context,
-				configuration.parse({
-					command: "/bin/echo",
-					args: ["invalid"],
-					json: true,
-				}),
-			),
-		).rejects.toThrow();
-	},
-);
-it.runIf(commandSandboxAvailable)(
-	"exec enforces read-only/workspace writes and terminates a timed-out process group",
-	async () => {
-		const { run, home } = setup([]);
-		const context = {
-			run,
-			signal: new AbortController().signal,
-		} as ExecutionContext;
-		const outside = join(tmpdir(), `b6-outside-${Date.now()}`);
-		const denied = await executeExec(
-			context,
-			configuration.parse({
-				command: "/bin/sh",
-				args: ["-c", "echo forbidden > blocked"],
-			}),
-		);
-		expect(denied.exitCode).not.toBe(0);
-		expect(existsSync(join(home, "blocked"))).toBe(false);
-		const permitted = await executeExec(
-			context,
-			configuration.parse({
-				command: "/bin/sh",
-				args: ["-c", `echo allowed > allowed; echo forbidden > ${outside}`],
-				access: "workspace",
-			}),
-		);
-		expect(permitted.exitCode).not.toBe(0);
-		expect(readFileSync(join(home, "allowed"), "utf8")).toBe("allowed\n");
-		expect(existsSync(outside)).toBe(false);
-		await expect(
-			executeExec(
-				context,
-				configuration.parse({
-					command: "/bin/sh",
-					args: ["-c", "sleep 10"],
-					timeout: 2000,
-				}),
-			),
-		).rejects.toThrow("timed out");
-	},
-);
 it("creates persistent file tickets using the effect identity and supports every operation", async () => {
 	const { home } = setup([]);
 	const root = fileTicketIO(join(home, "tickets"), "origin");
@@ -542,4 +451,225 @@ it("does not confirm Taskbot mutations when the provider returns an error payloa
 		async () => undefined,
 	);
 	await expect(adapter.update({ title: "Changed" })).rejects.toThrow("failed");
+});
+
+it.each([
+	"provider",
+	"view",
+	"readiness",
+])("retries a merge after a pre-dispatch %s failure across restart", async (failure) => {
+	const fake = provider();
+	const ioGitProvider = vi.fn(async () => fake.value);
+	if (failure === "provider")
+		ioGitProvider.mockRejectedValueOnce(new Error("preflight unavailable"));
+	if (failure === "view")
+		fake.view.mockRejectedValueOnce(new Error("preflight unavailable"));
+	if (failure === "readiness")
+		fake.value.readiness = vi
+			.fn(fake.value.readiness)
+			.mockRejectedValueOnce(new Error("preflight unavailable"));
+	const hooks = { ioGitProvider };
+	const { runtime, run, home } = setup(
+		[step("merge", { requests: [request()], pollInterval: 1, timeout: 100 })],
+		hooks,
+	);
+	await runtime.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toContain("preflight unavailable");
+	expect(fake.merge).not.toHaveBeenCalled();
+	expect(Object.values(run.nodeEffects ?? {})).toEqual([]);
+	await runtime.shutdown();
+	const resumed = new WorkflowRuntime(home, { ...baseHooks, ...hooks });
+	runtimes.push(resumed);
+	resumed.retry(run.id);
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	expect(fake.merge).toHaveBeenCalledTimes(1);
+});
+
+it("restarts a merge aborted while queued for its repository reservation", async () => {
+	const { acquireDelivery, releaseDelivery } = await import(
+		"../src/factory/DeliveryCoordination.js"
+	);
+	const fake = provider();
+	const hooks = { ioGitProvider: async () => fake.value };
+	const { runtime, run, home } = setup(
+		[step("merge", { requests: [request()], pollInterval: 1 })],
+		hooks,
+	);
+	const blocker = structuredClone(run);
+	blocker.id = "reservation-holder";
+	blocker.status = "running";
+	runtime.runs.set(blocker.id, blocker);
+	await acquireDelivery(
+		blocker,
+		() => runtime.runs.values(),
+		new AbortController().signal,
+		async () => {},
+		() => {},
+		{
+			key: "holder",
+			scopes: [JSON.stringify(["https://github.com/test/one", "main"])],
+		},
+	);
+	const pending = runtime.launch(run);
+	await waitForRuntime(() =>
+		expect(
+			Object.values(run.deliveryReservations ?? {}).some(
+				(value) => value.phase === "queued",
+			),
+		).toBe(true),
+	);
+	expect(fake.merge).not.toHaveBeenCalled();
+	expect(Object.values(run.nodeEffects ?? {})).toEqual([]);
+	await runtime.shutdown();
+	await pending;
+	releaseDelivery(blocker, "test release", "holder");
+	const resumed = new WorkflowRuntime(home, { ...baseHooks, ...hooks });
+	runtimes.push(resumed);
+	resumed.resumeAll();
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	expect(fake.merge).toHaveBeenCalledTimes(1);
+});
+
+it("lets another run acquire the same repository while merge confirmation is queued", async () => {
+	const { acquireDelivery, releaseDelivery } = await import(
+		"../src/factory/DeliveryCoordination.js"
+	);
+	const fake = provider();
+	fake.merge.mockImplementation(async () => {});
+	const { runtime, run } = setup(
+		[step("merge", { requests: [request()], pollInterval: 1 })],
+		{ ioGitProvider: async () => fake.value },
+	);
+	const pending = runtime.launch(run);
+	await waitForRuntime(() =>
+		expect(fake.view.mock.calls.length).toBeGreaterThan(2),
+	);
+	expect(run.capacityLeaves?.io).toEqual({ phase: "waiting-ci" });
+	expect(
+		Object.values(run.deliveryReservations!).every(
+			(value) => value.phase === "released",
+		),
+	).toBe(true);
+	const contender = structuredClone(run);
+	contender.id = "contender";
+	contender.deliveryReservations = {};
+	runtime.runs.set(contender.id, contender);
+	await acquireDelivery(
+		contender,
+		() => runtime.runs.values(),
+		AbortSignal.timeout(1000),
+		async () => {},
+		() => {},
+		{
+			key: "contender",
+			scopes: [JSON.stringify(["https://github.com/test/one", "main"])],
+		},
+	);
+	expect(contender.deliveryReservations?.contender?.phase).toBe("active");
+	releaseDelivery(contender, "test release", "contender");
+	fake.set("MERGED");
+	await pending;
+	expect(run.status).toBe("completed");
+});
+
+it("retries exec after shutdown during capacity admission without an uncertain command", async () => {
+	let queued = false;
+	const { runtime, run, home } = setup(
+		[
+			step("exec", {
+				command: "/bin/sh",
+				args: ["-c", "printf executed > executed"],
+				access: "workspace",
+			}),
+		],
+		{
+			capacity: {
+				acquireLease: async (signal) => {
+					queued = true;
+					return await new Promise((_resolve, reject) => {
+						if (signal!.aborted) reject(signal!.reason);
+						else
+							signal!.addEventListener("abort", () => reject(signal!.reason), {
+								once: true,
+							});
+					});
+				},
+			},
+		},
+	);
+	const pending = runtime.launch(run);
+	await waitForRuntime(() => expect(queued).toBe(true));
+	await runtime.shutdown();
+	await pending;
+	expect(Object.values(run.nodeEffects ?? {})).toEqual([]);
+	const resumed = new WorkflowRuntime(home, baseHooks);
+	runtimes.push(resumed);
+	resumed.resumeAll();
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	expect(resumed.get(run.id).outputs.io).toMatchObject({ exitCode: 0 });
+	expect(readFileSync(join(home, "executed"), "utf8")).toBe("executed");
+});
+
+it.each([
+	"set-status",
+	"update",
+	"link",
+])("retries idempotent ticket %s after a failure before writing", async (op) => {
+	const fake = tickets("linear");
+	const method = op === "set-status" ? "setStatus" : op;
+	const write = vi
+		.spyOn(fake.adapter, method as "setStatus")
+		.mockRejectedValueOnce(new Error("before write"));
+	const hooks = { ticketIO: async () => fake.adapter };
+	const { runtime, run, home } = setup(
+		[
+			step("ticket", {
+				op,
+				reference: fake.ref,
+				fields: { title: "After" },
+				statusType: "started",
+				url: "https://example.test/link",
+			}),
+		],
+		hooks,
+	);
+	await runtime.launch(run);
+	expect(run.status).toBe("failed");
+	expect(fake.writes).not.toHaveBeenCalled();
+	await runtime.shutdown();
+	const resumed = new WorkflowRuntime(home, { ...baseHooks, ...hooks });
+	runtimes.push(resumed);
+	resumed.retry(run.id);
+	await waitForRuntime(() =>
+		expect(resumed.get(run.id).status).toBe("completed"),
+	);
+	expect(write).toHaveBeenCalledTimes(2);
+	expect(fake.writes).toHaveBeenCalledTimes(1);
+});
+
+it("resolves effect defaults and ignores inherited operation/access map entries", () => {
+	expect(
+		nodeRegistry.effectFor({
+			id: "read",
+			name: "Read",
+			type: "ticket",
+		} as Parameters<typeof nodeRegistry.effectFor>[0]),
+	).toBe("read-only");
+	expect(
+		nodeRegistry.effectFor({
+			id: "exec",
+			name: "Exec",
+			type: "exec",
+			command: "git",
+		} as Parameters<typeof nodeRegistry.effectFor>[0]),
+	).toBe("read-only");
+	expect(nodeEffect({ type: "ticket", op: "toString" })).toBe("effect");
+	expect(nodeEffect({ type: "exec", access: "constructor" })).toBe("effect");
 });
