@@ -5,7 +5,10 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import type { GitProvider } from "../src/factory/GitProvider.js";
-import type { ProviderCheck } from "../src/factory/MergeReadiness.js";
+import type {
+	MergeBlocker,
+	ProviderCheck,
+} from "../src/factory/MergeReadiness.js";
 import { fileTicketIO } from "../src/factory/RepositoryTicketIO.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -91,6 +94,7 @@ function fixture(
 		threads: [] as { id: string }[],
 		decision: "APPROVED",
 		providerMergeability: "CLEAN",
+		blockers: [] as MergeBlocker[],
 		failMerge: false,
 		failStatus: false,
 		queue: false,
@@ -164,7 +168,7 @@ function fixture(
 		reviewComments: [],
 		unresolvedThreads: state.threads,
 		reviews: [],
-		blockers: [],
+		blockers: state.blockers,
 		queued: state.queued,
 		checks: checks(),
 	}));
@@ -536,6 +540,67 @@ it("CI waits for the matching head and survives restart without holding capacity
 	expect(resumed.run.history.filter((h) => h.step === "wait")).toHaveLength(1);
 	expect(resumed.run.capacityLeaves ?? {}).toEqual({});
 });
+it.each([
+	"BEHIND",
+	"DIRTY",
+])("green CI with %s fix blockers integrates the base before returning to review", async (mergeState) => {
+	const f = fixture("v2-ci");
+	const source = join(f.home, "source");
+	writeFileSync(join(source, "base.ts"), "export const base = 2;\n");
+	f.git("-C", source, "add", ".");
+	f.git("-C", source, "commit", "-qm", "advance base");
+	f.git("-C", source, "push", "origin", "main");
+	f.state.base = f.git("-C", source, "rev-parse", "HEAD");
+	f.state.providerMergeability = mergeState;
+	f.state.blockers = [
+		{ kind: "stale", message: "Integrate the base", action: "fix" },
+	];
+	const original = f.agent.getMockImplementation()!;
+	f.agent.mockImplementation(async (ctx) => {
+		if (ctx.step.id === "ci-fix") {
+			f.git("fetch", "origin", "main");
+			f.git("rebase", "origin/main");
+			f.state.providerMergeability = "CLEAN";
+			f.state.blockers = [];
+		}
+		return original(ctx);
+	});
+	await f.runtime.launch(f.run);
+	await done(f.run);
+	expect(f.agent.mock.calls.map(([ctx]) => ctx.step.id)).toEqual([
+		"ci-fix",
+		"feedback",
+	]);
+	expect(f.git("rev-parse", "HEAD")).toBe(f.state.base);
+	expect(f.state.prHead).toBe(f.state.base);
+	expect(f.run.checkpoint?.outcome).toBe("to-review");
+});
+it.each([
+	false,
+	true,
+])("CI wait routes to review only when the PR head changes (head changed=%s)", async (headChanged) => {
+	const f = fixture("v2-ci");
+	f.state.ci = "pending";
+	const pending = f.runtime.launch(f.run);
+	await waitForRuntime(() =>
+		expect(f.run.checkpoint?.active?.wait?.polls).toBeGreaterThan(1),
+	);
+	f.state.base = "concurrent-merge-base";
+	if (headChanged) {
+		const originalRead = f.read.getMockImplementation()!;
+		f.read.mockImplementation(async () => {
+			f.state.prHead = "new-provider-head";
+			return originalRead();
+		});
+	}
+	f.state.ci = "green";
+	await pending;
+	await done(f.run);
+	expect(f.run.checkpoint?.outcome).toBe(
+		headChanged ? "to-review" : "completed",
+	);
+	expect(f.agent).not.toHaveBeenCalled();
+});
 it("raw standalone approval JSON cannot authorize merge", async () => {
 	const f = fixture("v2-merge");
 	f.run.launchInputs!.approval = JSON.stringify({ action: "approve" });
@@ -585,13 +650,22 @@ it("merge queue releases reservations and capacity until provider confirmation",
 	});
 });
 it.each([
-	"pending",
-	"branch-rule",
+	"failed",
+	"behind",
 	"review",
 ])('routes merge blocker "%s" to its composition outcome', async (blocker) => {
 	const f = fixture("v2-merge", { approval: true });
-	if (blocker === "pending") f.state.ci = "pending";
-	if (blocker === "branch-rule") f.state.providerMergeability = "BLOCKED";
+	if (blocker === "failed") f.state.ci = "red";
+	if (blocker === "behind") {
+		f.state.providerMergeability = "BEHIND";
+		f.state.blockers = [
+			{
+				kind: "stale",
+				message: "Branch must be updated from the base",
+				action: "fix",
+			},
+		];
+	}
 	if (blocker === "review") f.state.threads = [{ id: "thread" }];
 	const pending = f.runtime.launch(f.run);
 	await waiting(f.run);
@@ -602,6 +676,132 @@ it.each([
 		blocker === "review" ? "to-review" : "to-ci",
 	);
 	expect(f.merge).not.toHaveBeenCalled();
+});
+it("scripted F1 merge exposes required review and retains approval across capacity-free wait and restart", async () => {
+	const f = fixture("v2-merge", { approval: true });
+	f.state.decision = "REVIEW_REQUIRED";
+	f.state.providerMergeability = "BLOCKED";
+	f.state.blockers = [
+		{
+			kind: "reviews",
+			message: "Required reviewer approval is missing",
+			action: "human",
+		},
+	];
+	const pending = f.runtime.launch(f.run);
+	await waiting(f.run, "approval");
+	await answer(f.runtime, f.run, "approve");
+	await waiting(f.run, "merge-assistance");
+	const server = new FactoryServer(f.runtime, {
+		repositories: () => [{ id: "repo", name: "Repository" }],
+		sessions: () => [],
+		entries: () => [],
+	});
+	try {
+		const activity = await server.app.inject({
+			method: "GET",
+			url: `/api/runs/${f.run.id}`,
+		});
+		expect(activity.statusCode, activity.body).toBe(200);
+		expect(activity.body).toContain("Required reviewer approval is missing");
+		const response = await server.app.inject({
+			method: "POST",
+			url: `/api/runs/${f.run.id}/view-answer`,
+			headers: { "x-factory-request": "1" },
+			payload: {
+				batchId: f.run.viewDecision!.id,
+				digest: f.run.viewDecision!.digest,
+				documentDigest: f.run.viewDecision!.documentDigest,
+				accepted: true,
+				action: "continue",
+				values: {},
+			},
+		});
+		expect(response.statusCode, response.body).toBe(200);
+		await waitForRuntime(() =>
+			expect(f.run.checkpoint?.active?.wait?.polls).toBeGreaterThan(1),
+		);
+		expect(f.merge).not.toHaveBeenCalled();
+		expect(await f.capacity.snapshot()).toMatchObject({ active: 0, queued: 0 });
+	} finally {
+		await server.stop();
+	}
+	const resumed = await restart(f);
+	await pending;
+	f.state.decision = "APPROVED";
+	f.state.providerMergeability = "CLEAN";
+	f.state.blockers = [];
+	await done(resumed.run);
+	expect(f.merge).toHaveBeenCalledTimes(1);
+	expect(resumed.run.checkpoint?.outcome).toBe("completed");
+	expect(resumed.run.history.filter((h) => h.step === "approval")).toHaveLength(
+		1,
+	);
+	expect(resumed.run.history.some((h) => h.step === "to-ci")).toBe(false);
+});
+it.each([
+	"pending",
+	"rules",
+	"queue-behind",
+])("merge waits internally for %s and merges once it clears", async (blocker) => {
+	const f = fixture("v2-merge", { approval: true });
+	if (blocker === "pending") f.state.ci = "pending";
+	else {
+		f.state.providerMergeability = blocker === "rules" ? "BLOCKED" : "BEHIND";
+		f.state.blockers =
+			blocker === "rules"
+				? [
+						{
+							kind: "rules",
+							message: "GitHub merge rules: BLOCKED",
+							action: "wait",
+						},
+					]
+				: [];
+	}
+	const pending = f.runtime.launch(f.run);
+	await waiting(f.run, "approval");
+	await answer(f.runtime, f.run, "approve");
+	await waitForRuntime(() =>
+		expect(f.run.checkpoint?.active?.wait?.polls).toBeGreaterThan(1),
+	);
+	expect(f.run.step).toBe("merge-wait");
+	expect(f.merge).not.toHaveBeenCalled();
+	expect(await f.capacity.snapshot()).toMatchObject({ active: 0, queued: 0 });
+	f.state.ci = "green";
+	f.state.providerMergeability = "CLEAN";
+	f.state.blockers = [];
+	await pending;
+	await done(f.run);
+	expect(f.merge).toHaveBeenCalledTimes(1);
+	expect(f.run.history.filter((h) => h.step === "approval")).toHaveLength(1);
+});
+it("merge wait timeout explains the provider blocker without recycling approval", async () => {
+	const f = fixture("v2-merge", { approval: true });
+	f.state.providerMergeability = "BLOCKED";
+	f.state.blockers = [
+		{
+			kind: "rules",
+			message: "Branch rule requires operator action",
+			action: "wait",
+		},
+	];
+	f.run.workflow.steps.find((s) => s.id === "merge-wait")!.timeout = 100;
+	const pending = f.runtime.launch(f.run);
+	await waiting(f.run, "approval");
+	await answer(f.runtime, f.run, "approve");
+	await waiting(f.run, "merge-assistance");
+	expect(JSON.stringify(f.run.viewDecision)).toContain(
+		"Branch rule requires operator action",
+	);
+	expect(f.merge).not.toHaveBeenCalled();
+	f.state.providerMergeability = "CLEAN";
+	f.state.blockers = [];
+	await answer(f.runtime, f.run, "continue");
+	await pending;
+	await done(f.run);
+	expect(f.merge).toHaveBeenCalledTimes(1);
+	expect(f.run.history.filter((h) => h.step === "approval")).toHaveLength(1);
 });
 it("reconciles a lost merge response after restart without double merge", async () => {
 	const f = fixture("v2-merge", { approval: true });

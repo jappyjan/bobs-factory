@@ -278,7 +278,9 @@ JSON launch inputs provide context, never a stamped approval or merge receipt.
 
 - `v2-ci`: inputs `pr`, `requirements`, optional `review`; outcomes `completed`
   and `to-review`. A capacity-free Wait polls CI until every repository reports
-  complete checks **and** `headMatches`. Green completes; infrastructure-only
+  complete checks **and** `headMatches`. Green completes only when no fix blockers remain; a behind/conflicting branch
+  reaches the fixer even when checks pass. Base movement during the wait alone
+  does not require review; a changed PR head does. Infrastructure-only
   failure uses the provider rerun node (at most two visits), then waits for a
   changed attempt/result instead of immediately rerunning the same failed attempt.
   Unavailable or timed-out CI uses a Display to request restoration and continue
@@ -308,7 +310,10 @@ JSON launch inputs provide context, never a stamped approval or merge receipt.
   its retained `carriedFrom`. Merge binds that receipt and uses its stamped current
   repository head as `expectedRevision`, including for carry-forward (never the
   original `carriedFrom` head). Stale approval, a changed provider head, or review conflicts return `to-review`;
-  pending/failed checks and branch rules return `to-ci`. Merge queues stay inside
+  failed checks and fix blockers return `to-ci`. Pending checks, provider waits
+  and branch rules stay in a capacity-free PR-read Wait. Missing required human
+  action or a wait timeout displays the actual blockers and PR links; continuing
+  retains approval and rechecks readiness rather than granting a waiver. Merge queues stay inside
   Merge's capacity-free provider confirmation and retain reservations/effect
   identities across restart. Uncertain dispatches fail visibly and reconcile on
   retry; they never become a fresh merge visit through an automatic error route.

@@ -163,20 +163,10 @@ export const factoryDeliveryRecipes = [
 				check: {
 					results: {
 						revisionChanged: {
-							any: [
-								{
-									not: {
-										path: "/inputs/before/repositories/*/head",
-										equalsPath: "/inputs/pr/repositories/*/head",
-									},
-								},
-								{
-									not: {
-										path: "/inputs/before/repositories/*/base",
-										equalsPath: "/inputs/pr/repositories/*/base",
-									},
-								},
-							],
+							not: {
+								path: "/inputs/before/repositories/*/head",
+								equalsPath: "/inputs/pr/repositories/*/head",
+							},
 						},
 						green: {
 							all: [
@@ -203,6 +193,12 @@ export const factoryDeliveryRecipes = [
 									each: "/inputs/pr/repositories",
 									require: {
 										all: [
+											{
+												not: {
+													some: "/blockers",
+													require: { path: "/action", equals: "fix" },
+												},
+											},
 											{
 												path: "/unresolvedThreads",
 												equals: [],
@@ -321,7 +317,7 @@ export const factoryDeliveryRecipes = [
 					},
 				},
 				prompt:
-					"Diagnose failing checks and actionable PR feedback from the supplied current provider data. Make the smallest correction within requirements. Fetch the base before resolving conflicts. Assess every new comment by ID, including whether it needs code review. Address each unresolved thread or post an evidence-backed response before resolving it with the configured Git provider. Never dismiss reviews, waive checks, impersonate a reviewer, merge, mark ready, commit or push. Preserve discussion and before/after evidence; include addressed thread/review/comment IDs and dispositions in summary. Add <!-- generated-by-bobs-factory --> to replies. Run relevant local checks. Return summary, message (commit subject), reviewRequired, addressedReviewIds and addressedCommentIds. Meaningful or uncertain scope/architecture changes require reviewRequired=true and a clear handback in summary.",
+					"Diagnose failing checks and actionable PR feedback from the supplied current provider data. Make the smallest correction within requirements. Fetch and integrate the base when the branch is behind or conflicts; preserve required checks. Assess every new comment by ID, including whether it needs code review. Address each unresolved thread or post an evidence-backed response before resolving it with the configured Git provider. Never dismiss reviews, waive checks, impersonate a reviewer, merge, mark ready, commit or push. Preserve discussion and before/after evidence; include addressed thread/review/comment IDs and dispositions in summary. Add <!-- generated-by-bobs-factory --> to replies. Run relevant local checks. Return summary, message (commit subject), reviewRequired, addressedReviewIds and addressedCommentIds. Meaningful or uncertain scope/architecture changes require reviewRequired=true and a clear handback in summary.",
 				maxVisits: 16,
 				next: "commit",
 			},
@@ -754,29 +750,36 @@ export const factoryDeliveryRecipes = [
 						},
 						ciBlocked: {
 							some: "/inputs/pr/repositories",
-							where: {
-								path: "/state",
-								equals: "OPEN",
-							},
+							where: { path: "/state", equals: "OPEN" },
 							require: {
 								all: [
+									{ not: { path: "/queued", equals: true } },
 									{
-										not: {
-											path: "/queued",
-											equals: true,
-										},
+										any: [
+											{ path: "/checksSummary/failed", min: 1 },
+											{
+												some: "/blockers",
+												require: { path: "/action", equals: "fix" },
+											},
+										],
 									},
+								],
+							},
+						},
+						humanBlocked: {
+							some: "/inputs/pr/repositories/*/blockers/*",
+							require: { path: "/action", equals: "human" },
+						},
+						waiting: {
+							some: "/inputs/pr/repositories",
+							where: { path: "/state", equals: "OPEN" },
+							require: {
+								all: [
+									{ not: { path: "/queued", equals: true } },
 									{
 										any: [
 											{
-												not: {
-													path: "/checksSummary/complete",
-													equals: true,
-												},
-											},
-											{
-												path: "/checksSummary/failed",
-												min: 1,
+												not: { path: "/checksSummary/complete", equals: true },
 											},
 											{
 												path: "/mergeStateStatus",
@@ -784,10 +787,7 @@ export const factoryDeliveryRecipes = [
 											},
 											{
 												some: "/blockers",
-												require: {
-													path: "/action",
-													in: ["wait", "human", "fix"],
-												},
+												require: { path: "/action", equals: "wait" },
 											},
 										],
 									},
@@ -812,7 +812,119 @@ export const factoryDeliveryRecipes = [
 						},
 						next: "to-ci",
 					},
+					{
+						when: { path: "humanBlocked", equals: true },
+						next: "merge-assistance-details",
+					},
+					{
+						when: { path: "waiting", equals: true },
+						next: "merge-wait",
+					},
 				],
+			},
+			{
+				id: "merge-wait",
+				name: "Wait for provider merge readiness",
+				type: "wait",
+				reads: { before: "current-pr" },
+				body: {
+					id: "pr",
+					name: "Read pull requests",
+					type: "pr",
+					op: "read",
+					reads: { pr: "pr" },
+				},
+				interval: 10000,
+				timeout: 3600000,
+				until: {
+					not: {
+						path: "/output/repositories",
+						equalsPath: "/inputs/before/repositories",
+					},
+				},
+				next: "merge-wait-result",
+			},
+			{
+				id: "merge-wait-result",
+				name: "Check provider wait",
+				type: "check",
+				reads: { status: "merge-wait" },
+				check: {
+					results: {
+						timedOut: { path: "/inputs/status/timedOut", equals: true },
+					},
+				},
+				next: "current-pr",
+				branches: [
+					{
+						when: { path: "timedOut", equals: true },
+						next: "merge-assistance-details",
+					},
+				],
+			},
+			{
+				id: "merge-assistance-details",
+				name: "Explain provider blockers",
+				type: "transform",
+				reads: { pr: "current-pr" },
+				transform: {
+					requests: {
+						map: "/inputs/pr/repositories",
+						template: { label: { select: "/id" }, url: { select: "/url" } },
+					},
+					blockers: {
+						map: "/inputs/pr/repositories/*/blockers/*",
+						template: {
+							label: { select: "/message" },
+							detail: { select: "/action" },
+						},
+					},
+				},
+				next: "merge-assistance",
+			},
+			{
+				id: "merge-assistance",
+				name: "Resolve provider merge blockers",
+				type: "display",
+				reads: { details: "merge-assistance-details" },
+				document: {
+					version: "view-v1",
+					components: [
+						{
+							id: "summary",
+							type: "markdown",
+							data: {
+								literal: {
+									text: "The provider still blocks merging. Resolve the required approvals or merge rules in the pull request, or restore pending checks after a timeout, then continue waiting. Existing approval is retained; continuing never waives provider requirements.",
+								},
+							},
+						},
+						{
+							id: "requests",
+							type: "points",
+							data: {
+								bindings: { items: { path: "/inputs/details/requests" } },
+							},
+						},
+						{
+							id: "blockers",
+							type: "points",
+							data: {
+								bindings: { items: { path: "/inputs/details/blockers" } },
+							},
+						},
+						{
+							id: "actions",
+							type: "actions",
+							data: {
+								literal: {
+									actions: [{ id: "continue", label: "Continue waiting" }],
+								},
+							},
+						},
+					],
+				},
+				next: "merge-wait",
 			},
 			{
 				id: "merge",

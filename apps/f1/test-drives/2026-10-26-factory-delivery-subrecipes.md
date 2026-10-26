@@ -83,3 +83,22 @@ pass. The normal pre-commit hook passes its workspace build/typecheck and Biome
 gates. Its temporary lint-staged backup is cleaned up; existing unrelated stashes
 remain untouched. The engine follow-up #207 remains unmerged at this validation
 point and is explicitly listed as a dependency in the PR.
+
+## C4 review-fix validation
+
+The maintained scripted scenario `scripted F1 merge exposes required review and
+retains approval across capacity-free wait and restart` adds coverage for a green
+PR blocked by `REVIEW_REQUIRED` and `BLOCKED`. The authenticated run API exposes
+the actual provider blocker in the pending Display. Continuing through the API
+enters a PR-read Wait with zero active/queued capacity. A cold restart retains
+that wait and the original approval; clearing the provider requirement confirms
+exactly one merge, with no `to-ci` outcome or repeated approval.
+
+Focused runtime scenarios also cover pending checks, provider wait blockers,
+queue-managed `BEHIND`, timeout assistance, and green CI with `BEHIND`/`DIRTY` fix
+blockers. The fixer fetches and rebases onto an advanced real disposable base,
+then the separate push node publishes the new head and the recipe returns to
+review. During an ordinary CI wait, base-only movement completes without another
+review; a provider head change still returns to review. Providers and agents
+remain controlled; the local Git repositories, runtime, persistence and API are
+real. Run the full focused command above to include these regressions.
