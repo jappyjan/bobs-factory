@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { digest } from "../src/factory/Delivery.js";
 import {
 	DisplayDocumentSchema,
@@ -114,11 +114,17 @@ function fixture(steps: unknown[], overrides: Partial<RuntimeHooks> = {}) {
 	return { home, runtime, run };
 }
 async function waiting(runtime: WorkflowRuntime, run: FactoryRun) {
-	void runtime.launch(run);
-	await waitForRuntime(() => {
-		expect(run.status, run.error).toBe("waiting");
-		expect(run.viewDecision).toBeDefined();
-	});
+	await Promise.race([
+		runtime.launch(run).then(() => {
+			throw new Error(
+				`Display did not wait: ${run.status}: ${run.error ?? ""}`,
+			);
+		}),
+		waitForRuntime(() => {
+			expect(run.status, run.error).toBe("waiting");
+			expect(run.viewDecision).toBeDefined();
+		}),
+	]);
 	return structuredClone(run.viewDecision!);
 }
 const request = (run: FactoryRun, extra: object = {}) => ({
@@ -223,6 +229,7 @@ describe("display node", () => {
 					{ id: "a", title: "First", value: { key: 42 } },
 					{ id: "b", title: "Second", value: null },
 				],
+				comment: true,
 				actions: [
 					{ id: "change", label: "Change", comment: true, followUp: true },
 					{ id: "keep", label: "Keep" },
@@ -265,6 +272,22 @@ describe("display node", () => {
 		await expect(
 			runtime.answerView(run.id, request(run, { action: "continue" })),
 		).rejects.toThrow(/Choose an action/);
+		for (const action of ["comment", "undeclared"]) {
+			await expect(
+				runtime.answerView(
+					run.id,
+					request(run, {
+						action: "continue",
+						choices: [
+							{ itemId: "a", action: "change" },
+							{ itemId: "b", action, comment: "A comment is not a decision" },
+						],
+					}),
+				),
+			).rejects.toThrow(/Unknown item action/);
+			expect(run.status).toBe("waiting");
+			expect(run.outputs.screen).toBeUndefined();
+		}
 		await runtime.answerView(
 			run.id,
 			request(run, {
@@ -285,6 +308,163 @@ describe("display node", () => {
 		});
 		expect(run.outputs.changed).toEqual({ step: "changed" });
 		expect(run.outputs.wrong).toBeUndefined();
+	});
+	it.each([
+		false,
+		true,
+	])("allows optional item reactions with answered=%s", async (answered) => {
+		const { runtime, run } = fixture([
+			display(
+				document(
+					component("cards", "itemCards", {
+						items: [
+							{ id: "a", title: "First", value: { key: 42 } },
+							{ id: "b", title: "Second" },
+						],
+						actions: [
+							{ id: "fix", label: "Fix" },
+							{ id: "skip", label: "Skip" },
+						],
+						comment: true,
+						required: false,
+					}),
+				),
+			),
+		]);
+		await waiting(runtime, run);
+		await expect(
+			runtime.answerView(
+				run.id,
+				request(run, {
+					choices: [
+						{
+							itemId: "b",
+							action: "comment",
+							comment: "Still not a declared action",
+						},
+					],
+				}),
+			),
+		).rejects.toThrow(/Unknown item action/);
+		await runtime.answerView(
+			run.id,
+			request(run, {
+				choices: answered
+					? [{ itemId: "a", action: "fix", comment: "Please fix" }]
+					: [],
+			}),
+		);
+		await done(run);
+		expect(run.outputs.screen).toMatchObject({
+			items: answered ? { a: { action: "fix", comment: "Please fix" } } : {},
+			itemsByAction: { fix: answered ? [{ key: 42 }] : [], skip: [] },
+			comments: answered ? { a: "Please fix" } : {},
+		});
+		expect((run.outputs.screen as { items: object }).items).not.toHaveProperty(
+			"b",
+		);
+	});
+	it("accepts the comment pseudo-action only on comment-only cards", async () => {
+		const { runtime, run } = fixture([
+			display(
+				document(
+					component("cards", "itemCards", {
+						items: [{ id: "a", title: "First" }],
+						comment: true,
+					}),
+				),
+			),
+		]);
+		await waiting(runtime, run);
+		await runtime.answerView(
+			run.id,
+			request(run, {
+				choices: [{ itemId: "a", action: "comment", comment: "Context only" }],
+			}),
+		);
+		await done(run);
+		expect(run.outputs.screen).toMatchObject({
+			items: { a: { action: "comment", comment: "Context only" } },
+			comments: { a: "Context only" },
+			itemsByAction: {},
+		});
+	});
+	it("retains over 100 foreach content displays without consuming decision snapshots", async () => {
+		const { runtime, run } = fixture([
+			{
+				id: "each",
+				name: "For each",
+				type: "foreach",
+				items: {
+					values: Array.from({ length: 101 }, (_, i) => ({
+						id: String(i),
+						text: String(i),
+					})),
+				},
+				maxItems: 101,
+				body: [
+					display(
+						document({
+							id: "text",
+							type: "markdown",
+							data: { bindings: { text: { path: "/inputs/message/text" } } },
+						}),
+						{
+							reads: { message: "@item" },
+						},
+					),
+				],
+			},
+			display(formDocument()),
+		]);
+		// The regression is the in-memory snapshot limit, not disk throughput.
+		// Restart tests below exercise real persistence; avoid hundreds of fsyncs here.
+		vi.spyOn(runtime, "save").mockResolvedValue(undefined);
+		await waiting(runtime, run);
+		expect(run.viewDisplays).toHaveLength(101);
+		expect(run.viewDisplays!.every((s) => s.interactive === false)).toBe(true);
+		expect(run.viewRecords).toHaveLength(102);
+		await runtime.answerView(
+			run.id,
+			request(run, { values: { name: "Finished" } }),
+		);
+		await done(run);
+		expect(run.viewDisplays!.at(-1)!.view.components[0]).toMatchObject({
+			data: { text: "100" },
+		});
+	}, 60000);
+	it("uses recorded interactivity on restart even when the source no longer resolves", async () => {
+		const { home, runtime, run } = fixture(
+			[
+				{
+					id: "author",
+					type: "agent",
+					name: "Author",
+					prompt: "Produce a display",
+				},
+				{
+					id: "screen",
+					type: "display",
+					name: "Choose next",
+					reads: { doc: "author" },
+					from: "/inputs/doc",
+				},
+			],
+			{ agent: async () => formDocument() },
+		);
+		const snapshot = await waiting(runtime, run);
+		run.outputs.author = { invalid: true };
+		await runtime.save(run);
+		await runtime.shutdown();
+		const restoredRuntime = makeRuntime(home);
+		restoredRuntime.resumeAll();
+		const restored = restoredRuntime.get(run.id);
+		await waitForRuntime(() => {
+			expect(restoredRuntime.isExecuting(run.id)).toBe(true);
+			expect(restored.status, restored.error).toBe("waiting");
+			expect(restored.capacityLeaves?.screen?.phase).toBe("waiting-human");
+		});
+		expect(restored.viewDecision).toEqual(snapshot);
 	});
 	it("resumes the exact waiting document and answers through the API after a cold restart", async () => {
 		const { home, runtime, run } = fixture([display(formDocument())]);

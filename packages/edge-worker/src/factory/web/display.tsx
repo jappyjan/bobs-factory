@@ -89,8 +89,21 @@ function DisplayForm({
 	const [values, setValues] = useState<Record<string, string | boolean>>(
 		answer?.values ?? {},
 	);
-	const [items, setItems] = useState<Record<string, Selection>>(
-		answer?.items ?? {},
+	const [actions, setActions] = useState<Record<string, string>>(() =>
+		Object.fromEntries(
+			Object.entries(answer?.items ?? {}).map(([id, item]) => [
+				id,
+				item.action,
+			]),
+		),
+	);
+	const [comments, setComments] = useState<Record<string, string>>(() =>
+		Object.fromEntries(
+			Object.entries(answer?.items ?? {}).map(([id, item]) => [
+				id,
+				item.comment ?? "",
+			]),
+		),
 	);
 	const [custom, setCustom] = useState<Record<string, boolean>>(() =>
 		Object.fromEntries(
@@ -116,23 +129,14 @@ function DisplayForm({
 	const pendingAsk = Object.values(snapshot.threads ?? {})
 		.flat()
 		.some((t) => t.status === "pending");
-	const setItem = (id: string, patch: Partial<Selection>) =>
-		setItems((previous) => ({
-			...previous,
-			[id]: {
-				...previous[id],
-				action: previous[id]?.action ?? "comment",
-				...patch,
-			},
-		}));
 	const comment = (id: string) => (
 		<label className="dv-field">
 			<span>Comment</span>
 			<textarea
-				value={items[id]?.comment ?? ""}
+				value={comments[id] ?? ""}
 				maxLength={12000}
 				disabled={locked}
-				onChange={(e) => setItem(id, { comment: e.target.value })}
+				onChange={(e) => setComments((c) => ({ ...c, [id]: e.target.value }))}
 			/>
 		</label>
 	);
@@ -270,15 +274,16 @@ function DisplayForm({
 													<input
 														type="radio"
 														name={`${formId}-item-${item.id}`}
-														checked={items[item.id]?.action === action.id}
-														onChange={() =>
-															setItem(item.id, {
-																action: action.id,
-																...(!component.data.comment && !action.comment
-																	? { comment: undefined }
-																	: {}),
-															})
-														}
+														checked={actions[item.id] === action.id}
+														required={component.data.required !== false}
+														onChange={() => {
+															setActions((a) => ({
+																...a,
+																[item.id]: action.id,
+															}));
+															if (!component.data.comment && !action.comment)
+																setComments((c) => ({ ...c, [item.id]: "" }));
+														}}
 													/>
 													<span>{action.label}</span>
 												</label>
@@ -287,7 +292,7 @@ function DisplayForm({
 									)}
 									{(component.data.comment ||
 										component.data.actions?.some(
-											(a) => a.id === items[item.id]?.action && a.comment,
+											(a) => a.id === actions[item.id] && a.comment,
 										)) &&
 										comment(item.id)}
 									{component.data.ask && (
@@ -341,6 +346,36 @@ function DisplayForm({
 		setBusy(true);
 		setError("");
 		try {
+			const choices = list.flatMap((component) => {
+				const ids =
+					component.type === "itemCards"
+						? component.data.items.map((item) => item.id)
+						: component.type === "codeTour" && component.data.comment
+							? component.data.files.flatMap((file) =>
+									file.notes.map((note) => note.id),
+								)
+							: [];
+				return ids.flatMap((itemId) => {
+					const comment = comments[itemId];
+					const action = actions[itemId];
+					if (!action && !comment) return [];
+					if (
+						!action &&
+						component.type === "itemCards" &&
+						component.data.actions?.length
+					)
+						throw new Error(
+							"Choose an item action before submitting its comment",
+						);
+					return [
+						{
+							itemId,
+							action: action ?? "comment",
+							...(comment === undefined ? {} : { comment }),
+						},
+					];
+				});
+			});
 			await onSubmit({
 				batchId: snapshot.id,
 				digest: snapshot.digest,
@@ -348,10 +383,7 @@ function DisplayForm({
 				accepted: true,
 				...(action === undefined ? {} : { action }),
 				values,
-				choices: Object.entries(items).map(([itemId, value]) => ({
-					itemId,
-					...value,
-				})),
+				choices,
 			});
 		} catch (e) {
 			setError(
@@ -365,9 +397,25 @@ function DisplayForm({
 		<form
 			className="human-step-panel display-document"
 			aria-label={snapshot.title}
+			onKeyDown={(e) => {
+				if (
+					e.key === "Enter" &&
+					e.target instanceof HTMLInputElement &&
+					[
+						"text",
+						"search",
+						"email",
+						"url",
+						"tel",
+						"number",
+						"password",
+					].includes(e.target.type)
+				)
+					e.preventDefault();
+			}}
 			onSubmit={(e) => {
 				e.preventDefault();
-				void send();
+				if (!bar) void send();
 			}}
 		>
 			<h2>{snapshot.title}</h2>
@@ -393,7 +441,7 @@ function DisplayForm({
 							<button
 								className="button primary"
 								key={action.id}
-								type="submit"
+								type="button"
 								disabled={locked || pendingAsk}
 								onClick={(e) => {
 									e.preventDefault();

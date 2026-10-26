@@ -45,3 +45,48 @@ per-item routing, API answers after restart, Ask threads, builder previews and a
 sixteen component renderers/text fallbacks. Existing HumanViews and registry
 regressions cover coexistence with legacy steps. This drive does not test live
 webhook ingestion, model quality or real external ticket delivery.
+
+## Review corrections
+
+Validated the correction diff on top of `ecb30c45c5af2156c66481617fd9dc7d66a5c324`
+with the same mocked agent/tracker and real authenticated dashboard/API:
+
+```sh
+F1_AGENT_MODE=mock F1_DISPLAY_RECEIPT=review-receipt.json \
+  F1_PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs \
+  bun scripts/qa-display-node.mjs
+```
+
+[Review receipt](assets/2026-10-26-display-node/review-receipt.json) records:
+
+- Typing an item comment selects no radio and cannot satisfy a required action.
+- Enter in a valid single-line text field sends zero answers, both with an action
+  bar and with plain Submit. Keyboard activation of a document button still sends
+  exactly one answer.
+- Optional reactions omit unanswered items from routing. A comment draft still
+  needs a declared action when actions exist; comment-only cards retain comments.
+- Cold restart, ticket protocol, original-value routing, code-note comments,
+  reading-position restoration and narrow light/dark layouts continue to pass.
+- No browser page errors. The normal layout is unchanged, so the original
+  screenshots and receipt above are preserved. Set
+  `F1_DISPLAY_REFRESH_SCREENSHOTS=1` only when new captures are needed.
+
+The runtime regression additionally executes 101 content-only foreach displays,
+retains all 101 history entries, and accepts the following interactive display.
+That limit test stubs routine saves to avoid hundreds of filesystem syncs; the
+restart tests and browser drive use real durable storage.
+The restart regression retains waiting-human interactivity even when the current
+source document no longer resolves. Source validation when accepting an answer
+continues to apply. No live provider or external ticket delivery was tested.
+
+Focused verification passed: **9 files, 221 tests**, including all 31 DisplayNode
+tests. Edge-worker typecheck and Biome checks for the changed source/test/script
+files passed. The focused command (from `packages/edge-worker`) was:
+
+```sh
+pnpm exec vitest run test/DisplayNode.test.ts test/View.test.ts \
+  test/HumanViewsRuntime.test.ts test/HumanViewsApi.test.ts \
+  test/FactoryViewIntegration.test.tsx test/DeclarativeView.test.ts \
+  test/NodeRegistry.test.ts test/ViewAssets.test.ts test/ForeachRuntime.test.ts \
+  --maxWorkers=2
+```

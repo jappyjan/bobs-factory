@@ -249,6 +249,7 @@ const displayCardsSchema = z
 			.max(100)
 			.refine(uniqueIds, "Item IDs must be unique"),
 		actions: displayActionsSchema.optional(),
+		required: z.boolean().optional(),
 		comment: z.boolean().optional(),
 		ask: z
 			.object({ prompt: text(12000) })

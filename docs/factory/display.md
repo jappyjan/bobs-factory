@@ -63,7 +63,11 @@ Custom answer clears the default; an explicitly empty answer stays empty (or
 fails validation for a required field).
 
 Item cards have `items: [{id,title,body?,details?,value?}]`, optional
-`actions: [{id,label,comment?,followUp?}]`, `comment` and `ask: {prompt}`.
+`actions: [{id,label,comment?,followUp?}]`, `comment`, `required` and `ask: {prompt}`.
+With actions, every item requires a declared action by default. Set `required: false`
+to allow unanswered items; they are omitted from `itemsByAction`. Comments accompany
+action choices and cannot satisfy them. The `comment` pseudo-action is available
+only on cards without actions.
 Selections route on `itemsByAction`: each array contains the original `value`
 (or the displayed item when value is absent). Ask uses the existing restricted
 context follow-up, keeps a durable thread, and changes the submission digest
@@ -105,3 +109,6 @@ rejected. A response never silently targets a newer document.
 `action` is null without document actions. The optional step `bind` is passed
 through as `bound`; the generic binding implementation owns bound-digest
 storage and freshness policy. Display does not implement `bind` or `fresh`.
+
+Content-only displays retain their history without consuming the per-run limit of
+100 decision snapshots, so a show-only `foreach` can exceed 100 iterations.

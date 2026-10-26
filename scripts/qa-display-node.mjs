@@ -171,6 +171,49 @@ runtime = new WorkflowRuntime(home, hooks);
 const definitions = validateWorkflows([
 	...defaultWorkflows,
 	{
+		id: "optional-display-drive",
+		name: "Optional reactions",
+		stepConfigVersion: "step-config-v1",
+		steps: [
+			{
+				id: "screen",
+				name: "Optional reactions",
+				type: "display",
+				document: {
+					version: "view-v1",
+					components: [
+						c("form", "form", {
+							fields: [
+								{
+									id: "name",
+									label: "Your name",
+									type: "text",
+									required: true,
+								},
+							],
+						}),
+						c("cards", "itemCards", {
+							items: [
+								{ id: "a", title: "First", value: { key: 42 } },
+								{ id: "b", title: "Unanswered" },
+							],
+							actions: [
+								{ id: "fix", label: "Fix" },
+								{ id: "skip", label: "Skip" },
+							],
+							required: false,
+							comment: true,
+						}),
+						c("comments", "itemCards", {
+							items: [{ id: "c", title: "Comment only" }],
+							comment: true,
+						}),
+					],
+				},
+			},
+		],
+	},
+	{
 		id: "display-drive",
 		name: "Display component library",
 		stepConfigVersion: "step-config-v1",
@@ -212,6 +255,7 @@ let server, browser;
 const receipt = {
 	mode: "mock",
 	screenshots: [],
+	screenshotsRefreshed: process.env.F1_DISPLAY_REFRESH_SCREENSHOTS === "1",
 	checks: [],
 	consoleErrors: [],
 };
@@ -301,7 +345,8 @@ try {
 				JSON.stringify(dimensions),
 			);
 			const name = `display-${width}-${theme}.png`;
-			await page.screenshot({ path: join(evidence, name), fullPage: true });
+			if (process.env.F1_DISPLAY_REFRESH_SCREENSHOTS === "1")
+				await page.screenshot({ path: join(evidence, name), fullPage: true });
 			receipt.screenshots.push({ name, ...dimensions });
 		}
 	await page.setViewportSize({ width: 360, height: 900 });
@@ -329,10 +374,30 @@ try {
 		),
 	);
 	receipt.checks.push(
-		"Desktop and 390px light/dark screenshots; no horizontal overflow at 360px",
+		"Desktop and 390px light/dark layouts; no horizontal overflow at 360px",
 	);
 	const name = page.getByRole("textbox", { name: "Your name" });
 	await name.fill("Ada");
+	const submissions = [];
+	page.on("request", (request) => {
+		if (request.url().endsWith("/view-answer"))
+			submissions.push(request.postDataJSON());
+	});
+	const firstComment = page
+		.locator(".dv-item-card")
+		.first()
+		.getByRole("textbox", { name: "Comment", exact: true });
+	await firstComment.fill("Keep the cache key stable");
+	await page.getByRole("button", { name: "Continue", exact: true }).click();
+	assert.equal(submissions.length, 0);
+	assert.equal(runtime.get(run.id).status, "waiting");
+	assert.equal(
+		await page.locator('.dv-item-card input[type="radio"]:checked').count(),
+		0,
+	);
+	receipt.checks.push(
+		"Typing a comment selects no item action and cannot satisfy required item choices",
+	);
 	await page.getByRole("radio", { name: "Custom answer", exact: true }).check();
 	assert.equal(
 		await page.getByRole("textbox", { name: "Your answer" }).inputValue(),
@@ -355,10 +420,20 @@ try {
 		.locator(".display-code-note")
 		.getByRole("textbox", { name: "Comment", exact: true })
 		.fill("Clear separation");
+	// All required values are now valid: Enter in the single-line input must do nothing.
+	await name.focus();
+	await page.keyboard.press("Enter");
+	await page.waitForTimeout(250);
+	assert.equal(submissions.length, 0);
+	assert.equal(runtime.get(run.id).status, "waiting");
+	receipt.checks.push(
+		"Enter in a valid single-line text field sends no answer and leaves the display waiting",
+	);
 	// Verify a real keyboard action submits once through the dashboard/API.
 	await page.getByRole("button", { name: "Continue", exact: true }).focus();
 	await page.keyboard.press("Enter");
 	await until(() => runtime.get(run.id).status === "completed");
+	assert.equal(submissions.length, 1);
 	const output = runtime.get(run.id).outputs.screen;
 	assert.equal(output.values.name, "Ada");
 	assert.equal(output.values.mode, "");
@@ -375,12 +450,86 @@ try {
 	receipt.checks.push(
 		"Ticket/terminal reply protocol accepts an identical retry without changing accepted answers",
 	);
+	const optionalWorkflow = definitions.find(
+		(d) => d.id === "optional-display-drive",
+	);
+	const optionalRun = runtime.create({
+		title: "Optional reactions",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "",
+		workflow: optionalWorkflow,
+		workflowDefinitions: definitions,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: optionalWorkflow.id,
+			at: new Date().toISOString(),
+		},
+	});
+	void runtime.launch(optionalRun);
+	await until(() => optionalRun.status === "waiting");
+	await page.goto(`${origin}/#/runs/${optionalRun.id}`);
+	const optionalForm = page.getByRole("form", { name: "Optional reactions" });
+	await optionalForm.waitFor();
+	const optionalName = optionalForm.getByRole("textbox", { name: "Your name" });
+	await optionalName.fill("Ada");
+	await optionalName.press("Enter");
+	await page.waitForTimeout(250);
+	assert.equal(submissions.length, 1);
+	assert.equal(optionalRun.status, "waiting");
+	const optionalComment = optionalForm
+		.locator(".dv-item-card")
+		.first()
+		.getByRole("textbox", { name: "Comment", exact: true });
+	await optionalComment.fill("Please fix");
+	await optionalForm
+		.getByRole("button", { name: "Submit", exact: true })
+		.click();
+	await optionalForm
+		.getByRole("alert")
+		.filter({ hasText: "Choose an item action" })
+		.waitFor();
+	assert.equal(submissions.length, 1);
+	await optionalForm
+		.getByRole("group", { name: "Action for First" })
+		.getByRole("radio", { name: "Fix", exact: true })
+		.check();
+	await optionalForm
+		.locator(".dv-item-card")
+		.last()
+		.getByRole("textbox", { name: "Comment", exact: true })
+		.fill("Context only");
+	await optionalForm
+		.getByRole("button", { name: "Submit", exact: true })
+		.click();
+	await until(() => optionalRun.status === "completed");
+	assert.equal(submissions.length, 2);
+	assert.deepEqual(
+		JSON.parse(JSON.stringify(optionalRun.outputs.screen.itemsByAction)),
+		{
+			fix: [{ key: 42 }],
+			skip: [],
+		},
+	);
+	assert.equal(optionalRun.outputs.screen.items.b, undefined);
+	assert.deepEqual(
+		JSON.parse(JSON.stringify(optionalRun.outputs.screen.comments)),
+		{
+			a: "Please fix",
+			c: "Context only",
+		},
+	);
+	assert.equal(optionalRun.outputs.screen.action, null);
+	receipt.checks.push(
+		"Plain Submit remains explicit: Enter sends nothing; optional reactions omit unanswered items, comments need declared actions, and comment-only cards submit normally",
+	);
+	receipt.optionalOutput = optionalRun.outputs.screen;
 	assert.equal(receipt.consoleErrors.length, 0);
 	receipt.ticketComments = ticket.comments.length;
 	receipt.agentCalls = agentCalls;
 	receipt.result = "passed";
 	writeFileSync(
-		join(evidence, "receipt.json"),
+		join(evidence, process.env.F1_DISPLAY_RECEIPT ?? "receipt.json"),
 		`${JSON.stringify(receipt, null, 2)}\n`,
 	);
 	console.log(JSON.stringify(receipt, null, 2));

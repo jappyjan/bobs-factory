@@ -538,7 +538,15 @@ export class HumanViews {
 			};
 			state.viewId = id;
 			run.viewRecords ??= [];
-			if (run.viewRecords.length >= 100)
+			// Content-only displays retain their history without consuming the
+			// decision snapshot budget (for example, progress inside foreach).
+			const countsTowardLimit = (snapshot: ViewSnapshot) =>
+				snapshot.kind !== "display" || snapshot.interactive !== false;
+			if (
+				countsTowardLimit(snapshot) &&
+				run.viewRecords.filter((r) => countsTowardLimit(r.snapshot)).length >=
+					100
+			)
 				throw new Error("A run supports at most 100 displayed view snapshots");
 			this.updateDigest(run, record);
 			run.viewRecords.push(record);

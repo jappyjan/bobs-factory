@@ -69,13 +69,24 @@ export function displayAnswerOutput(
 				itemsByAction[action.id] ??= [];
 			for (const item of component.data.items) {
 				const choice = choices.find((c) => c.itemId === item.id);
-				if (component.data.actions?.length && !choice)
+				if (
+					component.data.actions?.length &&
+					component.data.required !== false &&
+					!choice
+				)
 					throw new Error(`Choose an action for ${item.title}`);
 				if (!choice) continue;
 				const action = component.data.actions?.find(
 					(a) => a.id === choice.action,
 				);
-				if (!action && !(component.data.comment && choice.action === "comment"))
+				if (
+					!action &&
+					!(
+						!component.data.actions?.length &&
+						component.data.comment &&
+						choice.action === "comment"
+					)
+				)
 					throw new Error(`Unknown item action: ${choice.action}`);
 				if (choice.comment && !component.data.comment && !action?.comment)
 					throw new Error(`Comments unavailable for ${item.id}`);

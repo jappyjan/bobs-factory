@@ -51,12 +51,18 @@ export const definition = {
 	},
 	async execute(ctx) {
 		const { viewScope } = await import("../ViewRuntime.js");
-		const view = resolveDisplayDocument(
-			ctx.step.document ?? { from: ctx.step.from! },
-			viewScope(ctx),
-		);
-		if (!displayInteractive(view))
-			return ctx.engine.humanViews.execute(ctx, ctx.frame);
+		const snapshot = ctx.run.viewRecords?.find(
+			(record) => record.snapshot.id === ctx.frame.active?.viewId,
+		)?.snapshot;
+		const interactive = snapshot
+			? snapshot.interactive
+			: displayInteractive(
+					resolveDisplayDocument(
+						ctx.step.document ?? { from: ctx.step.from! },
+						viewScope(ctx),
+					),
+				);
+		if (!interactive) return ctx.engine.humanViews.execute(ctx, ctx.frame);
 		if (ctx.parallel)
 			throw new Error("Interactive displays belong outside concurrent bodies");
 		return ctx.phase("waiting-human", () =>
