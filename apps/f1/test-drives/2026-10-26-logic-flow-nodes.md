@@ -74,3 +74,37 @@ optional failed-poll caps, availability failures inside/outside Wait, retry budg
 accounting and effect recovery after restart. Edge-worker typecheck passes.
 The implementation pre-commit hook passes lint-staged, workspace build and
 workspace typecheck, with lint-staged backup disabled to honor no-stash.
+
+
+## Integration with Display and Agent nodes
+
+Validated implementation: `7371dbc08f44ac0c3bc99996f50f9509a8cba2e3`, rebased onto
+`1fccf2d2` (main with #205 and #200). Main's `nodes-v1` marker and agent
+session/verify behavior remain canonical, with B3's pure Check restriction added.
+Both documentation sections and Display/Transform/Wait settings are retained.
+Ordinary rules and top-level Transform expressions now reject map-only parent,
+key and index pointers; mapped item expressions retain those pointers.
+
+Commands and results:
+
+```sh
+pnpm --filter ./packages/edge-worker build
+pnpm --filter ./packages/edge-worker test:run test/FactoryLogicFlow.test.ts test/RulesBudget.test.ts test/ProgressBudget.test.ts test/NodeRegistry.test.ts test/WorkflowRuntime.test.ts test/WorkflowCatalog.test.ts test/ActionRuntime.test.ts test/AgentNode.test.ts test/DisplayNode.test.ts
+pnpm --filter ./packages/edge-worker typecheck
+F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/logic-flow-nodes.ts
+```
+
+All pass: **348 tests across nine suites**, edge-worker build (including web
+assets), edge-worker typecheck, and the same 18 mocked F1 assertions listed above.
+The implementation commit's pre-commit hook also passes lint-staged, workspace
+build and workspace typecheck. Lint-staged cleans up its own backup; the unrelated
+pre-existing stash remains intact.
+
+F1 returns `PASS`, source `7371dbc08f44ac0c3bc99996f50f9509a8cba2e3`, run
+`manual-3e9f2e32-5f85-43d7-a8ea-6d169f033bda`, timeout run
+`manual-3edb12b9-772c-4d03-891f-ceee94a7a6b3`, and history
+`seed → shape → check → wait → handle → finish`. The worker stops and the fixture
+is removed. This remains mocked engine/HTTP/restart evidence, with no live model
+or provider calls. New pointer-validation regression cases cover invalid nested
+conditions, operands, aggregates, find/select expressions and root map paths,
+valid scoped map expressions, ordinary root pointers and inert literal data.
