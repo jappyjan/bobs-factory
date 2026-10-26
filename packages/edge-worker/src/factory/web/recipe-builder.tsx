@@ -128,6 +128,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 					labels: [],
 					allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 					ownership: "local",
+					engineVersion: "nodes-v1",
 					stepConfigVersion: "step-config-v1",
 					steps: [newStep("agent", "work")],
 				} as Recipe)
@@ -918,7 +919,7 @@ function Inspector({
 							onChange={(e) => onChange({ prompt: e.target.value })}
 						/>
 					)}
-					{local && (
+					{local && !owner.engineVersion && (
 						<>
 							<label className="recipe-check">
 								<input
@@ -944,6 +945,7 @@ function Inspector({
 			)}
 			{step.type === "agent" && (
 				<AgentStepSettings
+					newEngine={owner.engineVersion === "nodes-v1"}
 					step={step}
 					readOnly={!local}
 					onChange={onChange}
@@ -961,53 +963,54 @@ function Inspector({
 				onError={onConfigError}
 			/>
 
-			{["agent", "tool"].includes(step.type) && (
-				<section className="recipe-section">
-					<h3>Human view</h3>
-					<p>
-						Choose what people read. Changing this view keeps the run’s existing
-						approval requirements.
-					</p>
-					{step.view ? (
-						<ViewEditor
-							value={step.view}
-							readOnly={!local}
-							paths={[
-								"/inputs/human",
-								...("components" in step.view
-									? Object.keys(step.view.reads ?? {}).map(
-											(name) => `/inputs/${name}`,
-										)
-									: []),
-							]}
-							onChange={(view) => onChange({ view })}
-							onError={onConfigError}
-						/>
-					) : (
-						<label>
-							Stock view preset
-							<select
-								value=""
-								disabled={!local}
-								onChange={(event) => {
-									if (event.target.value)
-										onChange({
-											view: nativeViewPreset(
-												event.target.value as NativeViewPreset,
-											),
-										});
-								}}
-							>
-								<option value="">Add a view…</option>
-								<option value="ask">Ask</option>
-								<option value="approve">Approve</option>
-								<option value="review">Review</option>
-								<option value="external-review">External review</option>
-							</select>
-						</label>
-					)}
-				</section>
-			)}
+			{["agent", "tool"].includes(step.type) &&
+				!(step.type === "agent" && owner.engineVersion) && (
+					<section className="recipe-section">
+						<h3>Human view</h3>
+						<p>
+							Choose what people read. Changing this view keeps the run’s
+							existing approval requirements.
+						</p>
+						{step.view ? (
+							<ViewEditor
+								value={step.view}
+								readOnly={!local}
+								paths={[
+									"/inputs/human",
+									...("components" in step.view
+										? Object.keys(step.view.reads ?? {}).map(
+												(name) => `/inputs/${name}`,
+											)
+										: []),
+								]}
+								onChange={(view) => onChange({ view })}
+								onError={onConfigError}
+							/>
+						) : (
+							<label>
+								Stock view preset
+								<select
+									value=""
+									disabled={!local}
+									onChange={(event) => {
+										if (event.target.value)
+											onChange({
+												view: nativeViewPreset(
+													event.target.value as NativeViewPreset,
+												),
+											});
+									}}
+								>
+									<option value="">Add a view…</option>
+									<option value="ask">Ask</option>
+									<option value="approve">Approve</option>
+									<option value="review">Review</option>
+									<option value="external-review">External review</option>
+								</select>
+							</label>
+						)}
+					</section>
+				)}
 			{(step.type === "tool" || step.type === "script") && local && (
 				<section className="recipe-section">
 					<h3>What runs</h3>

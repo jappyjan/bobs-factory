@@ -184,7 +184,10 @@ import { ChatSessionHandler } from "./ChatSessionHandler.js";
 import { ConfigManager, type RepositoryChanges } from "./ConfigManager.js";
 import { DefaultSkillsDeployer } from "./DefaultSkillsDeployer.js";
 import { EgressProxy } from "./EgressProxy.js";
-import { nativeInfrastructureFailure } from "./factory/AgentInfrastructure.js";
+import {
+	nativeInfrastructureFailure,
+	nativeResumeUnavailable,
+} from "./factory/AgentInfrastructure.js";
 import {
 	AgentSettingsSchema,
 	resolveAgentSettings,
@@ -335,6 +338,7 @@ import { roleAgentContext, roleContextAccess } from "./factory/RoleContext.js";
 import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
+	nativeAgentReads,
 } from "./factory/RolePrompt.js";
 import { takeoverSource, ticketSnapshot } from "./factory/RunContextSources.js";
 import {
@@ -364,6 +368,7 @@ import {
 	formatOf,
 	hasCheck,
 	hasInstruction,
+	isNodeEngineStep,
 	readOutput,
 	resolveStepConfig,
 } from "./factory/StepConfig.js";
@@ -9307,11 +9312,17 @@ ${taskSection}`;
 			delete context.inspectionBinding;
 			delete context.researchAccess;
 		}
-		if (context.step.reads)
-			context.input = {
+		if (context.step.reads) {
+			const bindings = stepBindings(context);
+			const input = {
 				...(context.input as Record<string, unknown>),
-				...stepBindings(context),
+				...bindings,
 			};
+			if (context.input && typeof context.input === "object")
+				retainTranscriptSource(context.input, input);
+			retainTranscriptSource(bindings, input);
+			context.input = input;
+		}
 		if (!context.contextAssistance)
 			context.inspectionBinding ??=
 				context.resumeAgent?.inspection ??
@@ -9334,6 +9345,21 @@ ${taskSection}`;
 			throw new Error(
 				`Output correction exhausted at ${context.step.id}; inspect persisted rejected output/issues, restore missing infrastructure if needed, then use Retry to authorize another bounded correction attempt.`,
 			);
+		const retainPreviousOutput = () => {
+			const input = {
+				...(context.input as Record<string, unknown>),
+				previousAgentOutput: context.resumeFallback?.output,
+			};
+			if (context.input && typeof context.input === "object")
+				retainTranscriptSource(context.input, input);
+			context.input = input;
+		};
+		if (context.resumeFallback) {
+			retainPreviousOutput();
+			context.log(
+				"Warning: the prior native session was not retained; starting a fresh session with the previous output and current reads.",
+			);
+		}
 		const checkpoint = context.checkpointAgent;
 		context.checkpointAgent = async (agent) => {
 			context.resumeAgent = agent;
@@ -9361,6 +9387,33 @@ ${taskSection}`;
 					return output;
 				} catch (error) {
 					context.signal.throwIfAborted();
+					if (
+						isNodeEngineStep(context.step) &&
+						context.resumeAgent?.sessionId &&
+						!context.resumeFallback &&
+						!(error instanceof OutputValidationError) &&
+						nativeResumeUnavailable(error)
+					) {
+						context.resumeFallback = {
+							output:
+								context.resumeAgent.rejected?.output ??
+								context.resumeAgent.result?.output ??
+								context.previousAgentOutput,
+						};
+						retainPreviousOutput();
+						context.log(
+							`Warning: native session cannot be resumed (${publicFailure(error instanceof Error ? error.message : String(error))}); starting a fresh session with the previous output and current reads.`,
+						);
+						await context.checkpointAgent({
+							...context.resumeAgent,
+							sessionId: undefined,
+							model: undefined,
+							result: undefined,
+							resumeFallback: context.resumeFallback,
+						});
+						continue;
+					}
+
 					if (
 						error instanceof Error &&
 						/^Agent step failed:.*codex app-server produced no activity for \d+ms/.test(
@@ -9515,7 +9568,10 @@ ${taskSection}`;
 		const runRunnerType =
 			(run.runner as RunnerType | undefined) ?? built.runnerType;
 		const runnerType =
-			(context.contextAssistance ? context.resumeAgent?.runner : undefined) ??
+			((context.contextAssistance || isNodeEngineStep(step)) &&
+			context.resumeAgent?.sessionId
+				? context.resumeAgent.runner
+				: undefined) ??
 			step.runner ??
 			runRunnerType;
 		built.config.model =
@@ -9528,8 +9584,15 @@ ${taskSection}`;
 				: this.getDefaultModelForRunner(runnerType));
 		built.config.fallbackModel =
 			this.getDefaultFallbackModelForRunner(runnerType);
-		if (context.contextAssistance && context.resumeAgent?.sessionId)
-			built.config.model = context.resumeAgent.model ?? step.model ?? run.model;
+		if (
+			(context.contextAssistance || isNodeEngineStep(step)) &&
+			context.resumeAgent?.sessionId
+		)
+			built.config.model =
+				context.resumeAgent.model ??
+				step.model ??
+				run.model ??
+				built.config.model;
 		Object.assign(
 			built.config,
 			resolveAgentSettings(runnerType, step, {
@@ -9547,6 +9610,13 @@ ${taskSection}`;
 				.update(context.stepKey ?? step.id)
 				.digest("hex"),
 		);
+		if (
+			context.resumeAgent?.sessionId &&
+			context.resumeAgent.runner !== runnerType
+		)
+			throw new Error(
+				`Cannot resume ${context.resumeAgent.runner} session with ${runnerType}; retain the original runner or choose session=fresh.`,
+			);
 		built.config.resumeSessionId = context.resumeAgent?.sessionId;
 		built.config.additionalDirectories = [
 			...(built.config.additionalDirectories ?? []),
@@ -9570,6 +9640,12 @@ ${taskSection}`;
 				agentCheckpoint = {
 					runner: runnerType,
 					sessionId: message.session_id,
+					...(isNodeEngineStep(step)
+						? {
+								model: built.config.model,
+								resumeFallback: context.resumeFallback,
+							}
+						: {}),
 					...(context.contextAssistance
 						? {
 								model: built.config.model,
@@ -9880,6 +9956,8 @@ ${taskSection}`;
 							outputCorrection: !!outputCorrection,
 							captureCorrection: !!captureCorrection,
 							resumed: !!context.resumeAgent?.sessionId,
+							resumeFallback: context.resumeFallback,
+							reads: nativeAgentReads(step, context.input),
 							evidenceDir: context.evidenceDir,
 						});
 				// Include the managed capacity addendum applied by buildRunnerForType.
@@ -9978,6 +10056,7 @@ ${taskSection}`;
 					await context.checkpointAgent?.({
 						runner: agentCheckpoint.runner,
 						sessionId: agentCheckpoint.sessionId,
+						...(isNodeEngineStep(step) ? { model: agentCheckpoint.model } : {}),
 						...(context.contextAssistance
 							? {
 									model: agentCheckpoint.model,

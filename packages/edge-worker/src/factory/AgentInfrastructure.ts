@@ -20,3 +20,11 @@ export function nativeInfrastructureFailure(
 		return;
 	return new FactoryContextInfrastructureError(message, output);
 }
+
+/** Only missing native conversations/executables justify abandoning a resume. */
+export function nativeResumeUnavailable(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+	return /(?:no (?:rollout|session|conversation|thread) found|(?:session|conversation|thread)[^\n]{0,100}(?:not found|does not exist|no longer exists)|(?:unknown|missing|invalid) (?:session|conversation|thread)(?: id)?|spawn[^\n]*ENOENT|(?:runner|executable|command)[^\n]{0,80}(?:not found|unavailable|not available|not installed))/i.test(
+		message,
+	);
+}

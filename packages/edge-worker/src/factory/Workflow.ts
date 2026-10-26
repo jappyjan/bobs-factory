@@ -137,42 +137,109 @@ export const StepSchema: z.ZodType<WorkflowStep> = z.preprocess(
 	z.unknown().transform((value, context) => nodeRegistry.parse(value, context)),
 );
 setRegisteredStepSchema(StepSchema);
-export const WorkflowSchema = z
-	.object({
-		id,
-		convergence: ProgressPolicySchema.optional(),
-		context: z.lazy(() => RoleContextPolicySchema).optional(),
-		stepConfigVersion: z.literal("step-config-v1").optional(),
-		/** Explicit input ports and terminal outcomes for reusable recipes. */
-		inputs: z.array(id).max(100).optional(),
-		outcomes: z.array(id).max(30).optional(),
-		name: z.string().min(1),
-		icon: z.string().max(32).optional(),
-		description: z.string().default(""),
-		labels: z.array(z.string().min(1)).default([]),
-		steps: z.array(StepSchema).max(100),
-		internal: z.boolean().optional(),
-		chat: z.boolean().optional(),
-		allowedTriggers: z
-			.array(z.enum(["workflow", "manual", "ticket-assignment"]))
-			.refine(
-				(values) => new Set(values).size === values.length,
-				"Duplicate allowed triggers",
-			)
-			.optional(),
-		launchFields: z
-			.array(z.lazy(() => LaunchFieldSchema))
-			.max(20)
-			.optional(),
-	})
-	.transform((workflow) => {
-		const result = {
-			...workflow,
-			allowedTriggers: workflow.allowedTriggers ?? legacyTriggers(workflow),
-		};
-		registerWorkflowConfig(result);
-		return result;
-	});
+/** New engine definitions reject legacy agent authority before defaults/unknown-key stripping. */
+function newAgentConfiguration(
+	value: unknown,
+	context: z.RefinementCtx,
+): unknown {
+	if (!value || typeof value !== "object") return value;
+	const root = Object.getOwnPropertyDescriptors(value);
+	if (root.engineVersion?.value !== "nodes-v1") return value;
+	const forbidden = [
+		"qaContract",
+		"videoContract",
+		"impactContract",
+		"impact",
+		"architectureSource",
+		"architectureContract",
+		"architectureBrief",
+		"reviewContract",
+		"guideContract",
+		"review",
+		"impactSource",
+		"inputs",
+		"askQuestions",
+		"view",
+		"checks",
+	];
+	const visit = (items: unknown, path: (string | number)[]) => {
+		if (!Array.isArray(items)) return;
+		for (const [index, item] of items.entries()) {
+			// Let ownStepData reject accessors/executable objects before reading fields.
+			const safe = ownStepData(item, context);
+			if (safe === z.NEVER) continue;
+			const step = safe as Record<string, unknown>;
+			if (step.type === "agent") {
+				for (const key of forbidden)
+					if (Object.hasOwn(step, key) && step[key] !== undefined)
+						context.addIssue({
+							code: "custom",
+							path: [...path, index, key],
+							message: `New agent nodes do not support ${key}; use reads, output, rules and verify, and a separate display node for human input.`,
+						});
+			}
+			visit(step.body, [...path, index, "body"]);
+			if (Array.isArray(step.groups))
+				for (const [group, steps] of step.groups.entries())
+					visit(steps, [...path, index, "groups", group]);
+		}
+	};
+	visit(root.steps?.value, ["steps"]);
+	return value;
+}
+export const WorkflowSchema = z.preprocess(
+	newAgentConfiguration,
+	z
+		.object({
+			id,
+			engineVersion: z.literal("nodes-v1").optional(),
+			convergence: ProgressPolicySchema.optional(),
+			context: z.lazy(() => RoleContextPolicySchema).optional(),
+			stepConfigVersion: z.literal("step-config-v1").optional(),
+			/** Explicit input ports and terminal outcomes for reusable recipes. */
+			inputs: z.array(id).max(100).optional(),
+			outcomes: z.array(id).max(30).optional(),
+			name: z.string().min(1),
+			icon: z.string().max(32).optional(),
+			description: z.string().default(""),
+			labels: z.array(z.string().min(1)).default([]),
+			steps: z.array(StepSchema).max(100),
+			internal: z.boolean().optional(),
+			chat: z.boolean().optional(),
+			allowedTriggers: z
+				.array(z.enum(["workflow", "manual", "ticket-assignment"]))
+				.refine(
+					(values) => new Set(values).size === values.length,
+					"Duplicate allowed triggers",
+				)
+				.optional(),
+			launchFields: z
+				.array(z.lazy(() => LaunchFieldSchema))
+				.max(20)
+				.optional(),
+		})
+		.transform((workflow) => {
+			const result = {
+				...workflow,
+				allowedTriggers: workflow.allowedTriggers ?? legacyTriggers(workflow),
+			};
+			if (result.engineVersion) {
+				const visit = (steps: WorkflowStep[]) => {
+					for (const step of steps) {
+						if (step.type === "agent") {
+							delete step.askQuestions;
+							step.session ??= "fresh";
+						}
+						for (const group of step.groups ?? []) visit(group);
+						if (step.body) visit(step.body);
+					}
+				};
+				visit(result.steps);
+			}
+			registerWorkflowConfig(result);
+			return result;
+		}),
+);
 export type Workflow = z.infer<typeof WorkflowSchema>;
 
 /** Resolve authored graph paths without consulting outputs or user-supplied JSON. */

@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { runEvidenceChecks } from "../src/factory/EvidenceChecks.js";
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
+import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 
 const roots: string[] = [];
@@ -158,4 +159,63 @@ it("uses each pinned repository head instead of a grouped revision fingerprint",
 			references: ["proof.ts:2"],
 		}),
 	).resolves.toEqual({ files: ["proof.ts"], references: ["proof.ts:2"] });
+});
+
+it("executes all four new agent verifications against current named reads", async () => {
+	const { context, evidenceDir } = fixture();
+	const image = join(evidenceDir, "proof.png");
+	writeFileSync(image, Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]));
+	const workflow = WorkflowSchema.parse({
+		id: "generic",
+		name: "Generic",
+		engineVersion: "nodes-v1",
+		steps: [
+			{
+				id: "produce",
+				name: "Produce",
+				type: "agent",
+				prompt: "Return evidence",
+				reads: { inventory: "@callInputs/items" },
+				verify: [
+					{ check: "files-exist", path: "/files/*" },
+					{ check: "code-refs-valid", path: "/refs/*" },
+					{ check: "media-valid", path: "/images/*", kind: "image" },
+					{
+						check: "ids-resolve",
+						path: "/selected/*",
+						source: "inventory",
+						ids: "/items/*/id",
+					},
+				],
+			},
+		],
+	});
+	context.step = workflow.steps[0]!;
+	context.input = { inventory: { items: [{ id: "current" }] } };
+	const output = {
+		files: ["proof.ts"],
+		refs: ["proof.ts:2"],
+		images: [image],
+		selected: ["current"],
+	};
+	await expect(runEvidenceChecks(context, output)).resolves.toEqual(output);
+	for (const invalid of [
+		{ ...output, files: ["missing.ts"] },
+		{ ...output, refs: ["proof.ts:900"] },
+		{ ...output, images: ["missing.png"] },
+		{ ...output, selected: ["R1"] }, // Prior run.outputs inventory is not this visit's read.
+	])
+		await expect(runEvidenceChecks(context, invalid)).rejects.toBeInstanceOf(
+			OutputValidationError,
+		);
+	const invalid = structuredClone(workflow);
+	invalid.steps[0]!.verify![3] = {
+		check: "ids-resolve",
+		path: "/selected/*",
+		source: "undeclared",
+		ids: "/items/*/id",
+	};
+	expect(() => validateWorkflows([invalid])).toThrow(
+		"ids-resolve requires a named source read",
+	);
 });

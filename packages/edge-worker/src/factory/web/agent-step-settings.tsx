@@ -79,11 +79,13 @@ function JsonSetting({
 }
 
 export function AgentStepSettings({
+	newEngine = false,
 	step,
 	readOnly,
 	onChange,
 	onError,
 }: {
+	newEngine?: boolean;
 	step: Step;
 	readOnly: boolean;
 	onChange: (patch: Partial<Step>) => void;
@@ -171,6 +173,22 @@ export function AgentStepSettings({
 			aria-label="Agent step configuration"
 		>
 			<h3>Agent step configuration</h3>
+			{newEngine && (
+				<label>
+					Session
+					<select
+						aria-label="Session"
+						disabled={readOnly}
+						value={step.session ?? "fresh"}
+						onChange={(event) =>
+							patch({ session: event.target.value as "fresh" | "resume" })
+						}
+					>
+						<option value="fresh">Fresh conversation on each visit</option>
+						<option value="resume">Resume this node’s conversation</option>
+					</select>
+				</label>
+			)}
 			{readOnly && (
 				<p className="recipe-note">
 					Bundled configuration is read-only. Fork this recipe to change its
@@ -247,13 +265,19 @@ export function AgentStepSettings({
 				help='Declarative rules: {"id":"complete","when":{"path":"/status","equals":"completed"},"require":{"path":"/blockers","empty":true},"message":"Completed output cannot retain blockers"}.'
 			/>
 			<JsonSetting
-				label="Checks"
-				value={step.checks}
+				label={newEngine ? "Verify" : "Checks"}
+				value={newEngine ? step.verify : step.checks}
 				empty={[]}
 				readOnly={readOnly}
 				onError={onError}
-				onChange={(checks) => patch({ checks })}
-				help={`Evidence library: ${(catalog?.checks ?? []).join(", ")}. Use an ID or {"check":"id", ...arguments}.`}
+				onChange={(checks) =>
+					patch(newEngine ? { verify: checks } : { checks })
+				}
+				help={
+					newEngine
+						? 'Generic verification: {"check":"files-exist","path":"/files/*"}, media-valid, code-refs-valid, or ids-resolve (source + ids selectors). Use output schemas and rules for other requirements.'
+						: `Evidence library: ${(catalog?.checks ?? []).join(", ")}. Use an ID or {"check":"id", ...arguments}.`
+				}
 			/>
 			<label className="recipe-check">
 				<input

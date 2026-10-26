@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { agentSettings } from "../AgentSettings.js";
 import { BRIEF_CONTRACTS } from "../GuideAuthoring.js";
-import { stepConfigFields } from "../StepConfig.js";
+import { stepConfigFields, VerifyReferenceSchema } from "../StepConfig.js";
 import { ViewSourceSchema } from "../View.js";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits.js";
 export const nodeId = z
@@ -45,6 +45,8 @@ export const stepFields = {
 export const AgentStepSchema = z.object({
 	...stepFields,
 	type: z.literal("agent"),
+	session: z.enum(["fresh", "resume"]).optional(),
+	verify: z.array(VerifyReferenceSchema).max(20).optional(),
 	impactContract: z.literal("impact-v1").optional(),
 	impact: impactSources.optional(),
 	architectureSource: nodeId.optional(),

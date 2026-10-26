@@ -202,6 +202,7 @@ import {
 	formatOf,
 	hasCheck,
 	inheritStepConfig,
+	isNodeEngineStep,
 	legacyToolOutput,
 	readOutput,
 	readStep,
@@ -265,7 +266,9 @@ export interface WorkflowCall {
 	workflowId: string;
 }
 export interface AgentCheckpoint {
-	/** Effective assistance settings retained with its actual native conversation. */
+	/** A lost native conversation restarts with the retained output as context. */
+	resumeFallback?: { output?: unknown };
+	/** Effective model retained with its actual native conversation. */
 	model?: string;
 	toolProfile?: "context-only";
 	/** Original bound input/repository snapshot, retained across native turn restart. */
@@ -358,7 +361,10 @@ export interface GraphCheckpoint {
 	current: string;
 	visits: Record<string, number>;
 	/** Exact native identities for the configured roles in this frame; never completed results. */
-	agentSessions?: Record<string, Pick<AgentCheckpoint, "runner" | "sessionId">>;
+	agentSessions?: Record<
+		string,
+		Pick<AgentCheckpoint, "runner" | "sessionId" | "model">
+	>;
 	additionalVisits?: Record<string, number>;
 	refreshes?: {
 		source: string;
@@ -437,6 +443,14 @@ import {
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	/** Structural step paths include call sites, branch indices and foreach item IDs, never visits. */
+	agentNodeSessions?: Record<
+		string,
+		{
+			agent?: Pick<AgentCheckpoint, "runner" | "sessionId" | "model">;
+			output?: unknown;
+		}
+	>;
 	diagnostics?: import("./RunDiagnostics.js").RunDiagnostics;
 	/** Operational item progress, separate from accepted immutable item/output receipts. */
 	foreach?: Record<string, ForeachProgress>;
@@ -686,6 +700,8 @@ export interface ExecutionContext {
 	log: (message: string, source?: RunEvent["source"]) => void;
 	evidenceDir: string;
 	resumeAgent?: AgentCheckpoint;
+	previousAgentOutput?: unknown;
+	resumeFallback?: { output?: unknown };
 	questionRecheck?: QuestionRecheck;
 	checkpointAgent?: (agent: AgentCheckpoint) => void | Promise<void>;
 	/** Persist per-repository side effects before the whole step completes. */
@@ -2270,7 +2286,10 @@ export class WorkflowRuntime {
 				outcome: frame.outcome,
 			};
 			frame.current = owner.step.id;
-			const session = frame.agentSessions?.[owner.step.id];
+			const session =
+				isNodeEngineStep(owner.step) && owner.step.session !== "resume"
+					? undefined
+					: frame.agentSessions?.[owner.step.id];
 			if (session)
 				frame.visits[owner.step.id] = (frame.visits[owner.step.id] ?? 0) + 1;
 			frame.active = session
@@ -2453,7 +2472,7 @@ export class WorkflowRuntime {
 				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
-				const session =
+				const retainedSession =
 					run.progressBudget?.sessions[key] ??
 					(definition?.outcomes?.length ||
 					reviewBaseline?.impact?.snapshot.reuseVersion === "composed-v1" ||
@@ -2463,6 +2482,15 @@ export class WorkflowRuntime {
 							"composed-v1")
 						? checkpoint.agentSessions?.[step.id]
 						: undefined);
+				const session =
+					step.type === "agent" && step.session
+						? step.session === "resume"
+							? ((isNodeEngineStep(step)
+									? run.agentNodeSessions?.[key]?.agent
+									: undefined) ?? checkpoint.agentSessions?.[step.id])
+							: undefined
+						: retainedSession;
+
 				checkpoint.active = {
 					phase: "executing",
 					...(session ? { agent: { ...session } } : {}),
@@ -2597,6 +2625,19 @@ export class WorkflowRuntime {
 					this.log(run, key, execution?.redact(message) ?? message, source),
 				evidenceDir: join(this.directory, "evidence", run.id),
 				resumeAgent: state.agent,
+				previousAgentOutput:
+					run.agentNodeSessions?.[key]?.output ?? outputs[step.id],
+				resumeFallback:
+					state.agent?.resumeFallback ??
+					(isNodeEngineStep(step) &&
+					step.session === "resume" &&
+					!state.agent?.sessionId &&
+					(run.agentNodeSessions?.[key] || checkpoint.visits[step.id]! > 1)
+						? {
+								output:
+									run.agentNodeSessions?.[key]?.output ?? outputs[step.id],
+							}
+						: undefined),
 				questionRecheck: state.questionRecheck,
 				checkpointAgent: async (agent) => {
 					if (
@@ -2619,7 +2660,19 @@ export class WorkflowRuntime {
 								sessionId: agent.sessionId,
 								idleRetries: agent.idleRetries,
 							};
+						if (isNodeEngineStep(step)) {
+							run.agentNodeSessions ??= {};
+							run.agentNodeSessions[key] = {
+								...run.agentNodeSessions[key],
+								agent: {
+									runner: agent.runner,
+									sessionId: agent.sessionId,
+									model: agent.model,
+								},
+							};
+						}
 						checkpoint.agentSessions[step.id] = {
+							...(agent.model ? { model: agent.model } : {}),
 							runner: agent.runner,
 							sessionId: agent.sessionId,
 						};
@@ -2755,7 +2808,10 @@ export class WorkflowRuntime {
 					active: state,
 				});
 				checkpoint.current = staleSource.id;
-				const session = checkpoint.agentSessions?.[staleSource.id];
+				const session =
+					isNodeEngineStep(staleSource) && staleSource.session !== "resume"
+						? undefined
+						: checkpoint.agentSessions?.[staleSource.id];
 				if (session)
 					checkpoint.visits[staleSource.id] =
 						(checkpoint.visits[staleSource.id] ?? 0) + 1;
@@ -3360,6 +3416,13 @@ export class WorkflowRuntime {
 					}
 					const acceptedBinding = await assertBoundInspectionFresh(context);
 					outputs[step.id] = output;
+					if (step.type === "agent" && isNodeEngineStep(step)) {
+						run.agentNodeSessions ??= {};
+						run.agentNodeSessions[key] = {
+							...run.agentNodeSessions[key],
+							output,
+						};
+					}
 					if (config.revision === "bound") {
 						run.boundOutputs ??= {};
 						run.boundOutputs[key] =
@@ -3434,7 +3497,13 @@ export class WorkflowRuntime {
 						finishStepAttempt(context, "interrupted");
 						this.log(run, key, error.message);
 						const session = state.agent?.sessionId
-							? { runner: state.agent.runner, sessionId: state.agent.sessionId }
+							? {
+									runner: state.agent.runner,
+									sessionId: state.agent.sessionId,
+									...(isNodeEngineStep(step)
+										? { model: state.agent.model }
+										: {}),
+								}
 							: undefined;
 						if (session)
 							checkpoint.visits[step.id] =

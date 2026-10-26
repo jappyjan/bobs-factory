@@ -1,0 +1,40 @@
+{
+	"id": "agent-input-loop",
+	"name": "Agent input loop",
+	"engineVersion": "nodes-v1",
+	"steps": [
+		{
+			"id": "compose",
+			"name": "Compose",
+			"type": "agent",
+			"prompt": "If details are missing, return status=needs-input and a display document. Otherwise return status=completed and the result.",
+			"session": "resume",
+			"reads": { "answer": "human/answer" },
+			"output": {
+				"schema": {
+					"type": "object",
+					"required": ["status"],
+					"properties": { "status": { "enum": ["needs-input", "completed"] } }
+				}
+			},
+			"next": "status"
+		},
+		{
+			"id": "status",
+			"name": "Status",
+			"type": "test-agent-status",
+			"reads": { "value": "compose/status" },
+			"branches": [
+				{ "when": { "path": "needsInput", "equals": true }, "next": "human" }
+			],
+			"next": "end"
+		},
+		{
+			"id": "human",
+			"name": "Answer",
+			"type": "test-agent-input",
+			"reads": { "document": "compose/display" },
+			"next": "compose"
+		}
+	]
+}

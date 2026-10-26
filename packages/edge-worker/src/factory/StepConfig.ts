@@ -290,6 +290,40 @@ export const CheckReferenceSchema = z
 		]),
 	);
 export type CheckReference = z.infer<typeof CheckReferenceSchema>;
+
+/** Agent verification only selects generic evidence; no runtime contract adapters. */
+const selector = z
+	.string()
+	.max(400)
+	.regex(
+		/^\/([^~]|~[01])*$/,
+		"Expected a JSON pointer selector beginning with /",
+	);
+const verifyFields = {
+	path: selector,
+	repositoryId: z.string().min(1).optional(),
+};
+export const VerifyReferenceSchema = z.discriminatedUnion("check", [
+	z.object({ check: z.literal("files-exist"), ...verifyFields }).strict(),
+	z
+		.object({
+			check: z.literal("media-valid"),
+			path: selector,
+			kind: z.enum(["image", "video"]).optional(),
+		})
+		.strict(),
+	z.object({ check: z.literal("code-refs-valid"), ...verifyFields }).strict(),
+	z
+		.object({
+			check: z.literal("ids-resolve"),
+			path: selector,
+			source: z.string().min(1).max(400),
+			ids: selector,
+		})
+		.strict(),
+]);
+export type VerifyReference = z.infer<typeof VerifyReferenceSchema>;
+
 export const ACCESS_MODES = ["read-only", "workspace", "push"] as const;
 export const AccessSchema = z.union([
 	z.enum(ACCESS_MODES),
@@ -337,6 +371,8 @@ export interface StepConfigFields {
 	output?: StepOutput;
 	rules?: Rule[];
 	checks?: CheckReference[];
+	verify?: VerifyReference[];
+	session?: "fresh" | "resume";
 	revision?: "bound";
 	access?: StepAccess;
 	instructions?: InstructionId[];
@@ -347,6 +383,8 @@ const CONFIG_KEYS = [
 	"output",
 	"rules",
 	"checks",
+	"verify",
+	"session",
 	"revision",
 	"access",
 	"instructions",
@@ -404,6 +442,7 @@ export interface ResolvedStepConfig {
 /** Where a step runs; legacy result validation depended on it. */
 export interface StepScope {
 	legacy?: boolean;
+	engineVersion?: "nodes-v1";
 	workflowId?: string;
 	rootWorkflowId?: string;
 	/** Historical graphs interpreted architecture handback only within their local decision graph. */
@@ -979,7 +1018,9 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 		...(step.inputs ? { inputs: [...step.inputs] } : {}),
 		...(step.output ? { output: step.output } : {}),
 		rules: step.rules ?? [],
-		checks: (step.checks ?? []).map(normalizeCheck),
+		checks: [...(step.checks ?? []), ...(step.verify ?? [])].map(
+			normalizeCheck,
+		),
 		...(step.revision ? { revision: step.revision } : {}),
 		access,
 		instructions: step.instructions ?? [],
@@ -989,10 +1030,17 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 const registeredScopes = new WeakMap<object, StepScope>();
 export const workflowIdForStep = (step: object) =>
 	registeredScopes.get(step)?.workflowId;
+export const isNodeEngineStep = (step: object): boolean =>
+	registeredScopes.get(step)?.engineVersion === "nodes-v1";
 const inheritedConfigOwners = new WeakMap<object, object>();
 /** Register an immutable accepted graph without adding fields or changing its digest. */
 export function registerWorkflowConfig(
-	workflow: { id: string; stepConfigVersion?: string; steps: object[] },
+	workflow: {
+		id: string;
+		engineVersion?: "nodes-v1";
+		stepConfigVersion?: string;
+		steps: object[];
+	},
 	rootWorkflowId = workflow.id,
 ): void {
 	const visit = (steps: object[], modern = false) => {
@@ -1003,7 +1051,12 @@ export function registerWorkflowConfig(
 			registeredScopes.set(step, {
 				workflowId: workflow.id,
 				rootWorkflowId,
-				legacy: !modern && !workflow.stepConfigVersion && !isExplicitStep(step),
+				legacy:
+					!workflow.engineVersion &&
+					!modern &&
+					!workflow.stepConfigVersion &&
+					!isExplicitStep(step),
+				engineVersion: workflow.engineVersion,
 				architectureRevision,
 			});
 			for (const group of (step as { groups?: object[][] }).groups ?? [])
@@ -1016,9 +1069,15 @@ export function registerWorkflowConfig(
 }
 /** Editable projection: materialize every old setting together before any single setting changes. */
 export function materializeWorkflowConfig<
-	T extends { id: string; stepConfigVersion?: string; steps: object[] },
+	T extends {
+		id: string;
+		engineVersion?: "nodes-v1";
+		stepConfigVersion?: string;
+		steps: object[];
+	},
 >(workflow: T): T {
 	registerWorkflowConfig(workflow);
+	if (workflow.engineVersion) return structuredClone(workflow);
 	const copy = structuredClone(workflow);
 	const visit = (originals: object[], copies: object[]) => {
 		for (const [index, original] of originals.entries()) {
@@ -1357,7 +1416,9 @@ export function stepConfigIssues(
 			}
 		}
 	}
-	for (const check of (step.checks ?? []).map(normalizeCheck)) {
+	for (const check of [...(step.checks ?? []), ...(step.verify ?? [])].map(
+		normalizeCheck,
+	)) {
 		if (
 			![
 				"files-exist",
@@ -1469,9 +1530,15 @@ export function legacyScopeSources(input: unknown): Record<string, unknown> {
 }
 
 type LegacyOutputRun = {
-	workflow?: { id: string; stepConfigVersion?: string; steps: object[] };
+	workflow?: {
+		id: string;
+		engineVersion?: string;
+		stepConfigVersion?: string;
+		steps: object[];
+	};
 	workflowDefinitions?: {
 		id: string;
+		engineVersion?: string;
 		stepConfigVersion?: string;
 		steps: object[];
 	}[];
@@ -1489,7 +1556,11 @@ export function usesLegacyOutputAliases(run: LegacyOutputRun): boolean {
 	);
 	const seen = new Set<string>();
 	const old = (workflow: NonNullable<typeof run.workflow>): boolean => {
-		if (workflow.stepConfigVersion || !Array.isArray(workflow.steps))
+		if (
+			workflow.engineVersion ||
+			workflow.stepConfigVersion ||
+			!Array.isArray(workflow.steps)
+		)
 			return false;
 		if (seen.has(workflow.id)) return true;
 		seen.add(workflow.id);
