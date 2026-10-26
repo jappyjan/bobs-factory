@@ -9,7 +9,7 @@ import { repositoryMetadata } from "./RepositoryScope.js";
 import { roleTranscriptSource } from "./RoleContext.js";
 import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
-import { resolveStepConfig } from "./StepConfig.js";
+import { isNodeEngineStep, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
 import { stepForRun } from "./ToolBindings.js";
 import { childRunsView } from "./ViewRuntime.js";
@@ -116,7 +116,13 @@ export function stepBindings(
 				: (repositoryMetadata(run, step) ?? [
 						{ id: run.repositoryId, workspace: run.workspace },
 					]),
-		source: takeoverSource(run),
+		source: isNodeEngineStep(step)
+			? {
+					prompt: run.input,
+					fields: run.launchInputs ?? {},
+					source: run.source,
+				}
+			: takeoverSource(run),
 		get ticket() {
 			const value = ticketSnapshot(run);
 			return options?.checkJson && step.type === "check"

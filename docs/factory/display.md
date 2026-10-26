@@ -93,6 +93,11 @@ or ticket `/view-answer` JSON command. Supply the current `batchId`, `digest`,
 current display and Ask discussion. A supplied stale document digest is also
 rejected. A response never silently targets a newer document.
 
+Interactive displays publish their validated answer protocol to an originating
+ticket in `nodes-v1` too. They use the same durable outbox, digest checks and
+deduplication as other displays. This does not enable legacy lifecycle/status
+tracking for new-engine recipes.
+
 ```json
 {
   "action": "continue",

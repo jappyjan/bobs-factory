@@ -128,6 +128,12 @@ recipe is migrated automatically. This marker is shared by all new-engine nodes,
 
 An agent runs a prompt and returns data. Its configuration is:
 
+New-engine nodes can declare `source: "@source"` to read
+`{ prompt: <original run input>, fields: <accepted launch fields>, source?: <launch label> }`.
+This is generic launch context, including inside called recipes. It grants no
+approval or provider authority. Legacy `@source` continues to describe Takeover
+state. `@ticket` retains the originating ticket snapshot in either version.
+
 ```json
 {
   "id": "compose",
