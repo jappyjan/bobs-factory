@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { digest } from "./Delivery.js";
 import { foreachPointer } from "./Foreach.js";
+import { nodeEffect } from "./nodes/metadata.js";
 import { runRepositories } from "./RepositoryScope.js";
 import { snapshotForRead } from "./RepositorySnapshot.js";
 import { captureRepositoryRevisions } from "./RevisionBinding.js";
@@ -297,6 +298,20 @@ export async function prepareNodeGuarantee(
 		for (const id of Object.keys(localObservation ?? {}))
 			observedRepositories.add(id);
 	}
+	if (!narrowedScope && nodeEffect(context.step) === "effect") {
+		// Fresh input observations are superseded by the effect's resulting state.
+		// Keep already-stale observations so an effect cannot renew stale evidence.
+		for (const [key, checks] of Object.entries(revisionChecks)) {
+			const stale: NodeRevisions = {};
+			for (const [id, accepted] of Object.entries(checks)) {
+				if (!sameRevision(accepted, (await observe(accepted.paths))[id]))
+					stale[id] = accepted;
+			}
+			if (Object.keys(stale).length) revisionChecks[key] = stale;
+			else delete revisionChecks[key];
+		}
+	}
+
 	const previous = latestNodeReceipt(
 		context,
 		context.stepKey ?? context.step.id,

@@ -13,6 +13,46 @@ import { stepBindings } from "../StepBindings.js";
 import type { ExecutionContext, GraphCheckpoint } from "../WorkflowRuntime.js";
 import type { NodeContext, NodeEngine } from "./NodeDefinition.js";
 
+/** Passive waits have no reads or accepted receipt and must never create a node stamp. */
+export function nodeWaitPhase(
+	context: ExecutionContext,
+	checkpoint: () => Promise<void>,
+): NodeContext["phase"] {
+	let phaseActive = false;
+	return async <T>(
+		kind: "waiting-ci" | "waiting-human",
+		fn: () => Promise<T>,
+	): Promise<T> => {
+		const { run, stepKey: key = context.step.id } = context;
+		const leaf = run.capacityLeaves?.[key];
+		if (
+			phaseActive ||
+			leaf?.request ||
+			(leaf && !["waiting-ci", "waiting-human"].includes(leaf.phase))
+		)
+			throw new Error(
+				"Wait phases must run outside execution capacity or another phase",
+			);
+		context.signal.throwIfAborted();
+		phaseActive = true;
+		run.capacityLeaves ??= {};
+		run.capacityLeaves[key] = { phase: kind };
+		timingOperation(run, key, {
+			kind: kind === "waiting-ci" ? "provider-ci" : "human",
+		});
+		try {
+			await checkpoint();
+			context.signal.throwIfAborted();
+			return await fn();
+		} finally {
+			phaseActive = false;
+			delete run.capacityLeaves[key];
+			timingOperation(run, key);
+			await checkpoint();
+		}
+	};
+}
+
 export async function nodeContext(
 	context: ExecutionContext,
 	frame: GraphCheckpoint,
@@ -38,7 +78,6 @@ export async function nodeContext(
 	}
 	const checkpoint = () => engine.save(context.run);
 	let identityCheckpoint: Promise<void> | undefined;
-	let phaseActive = false;
 	const effectKey = async (name: string) => {
 		if (!name) throw new Error("Effect name is required");
 		const active = frame.active;
@@ -87,38 +126,7 @@ export async function nodeContext(
 		workflowId,
 		parallel,
 		graphChat,
-		async phase<T>(
-			kind: "waiting-ci" | "waiting-human",
-			fn: () => Promise<T>,
-		): Promise<T> {
-			const { run, stepKey: key = context.step.id } = context;
-			const leaf = run.capacityLeaves?.[key];
-			if (
-				phaseActive ||
-				leaf?.request ||
-				(leaf && !["waiting-ci", "waiting-human"].includes(leaf.phase))
-			)
-				throw new Error(
-					"Wait phases must run outside execution capacity or another phase",
-				);
-			context.signal.throwIfAborted();
-			phaseActive = true;
-			run.capacityLeaves ??= {};
-			run.capacityLeaves[key] = { phase: kind };
-			timingOperation(run, key, {
-				kind: kind === "waiting-ci" ? "provider-ci" : "human",
-			});
-			try {
-				await checkpoint();
-				context.signal.throwIfAborted();
-				return await fn();
-			} finally {
-				phaseActive = false;
-				delete run.capacityLeaves[key];
-				timingOperation(run, key);
-				await checkpoint();
-			}
-		},
+		phase: nodeWaitPhase(context, checkpoint),
 		async effect<T>(
 			name: string,
 			input: unknown,

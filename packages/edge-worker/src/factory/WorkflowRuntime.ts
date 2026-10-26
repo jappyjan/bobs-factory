@@ -135,9 +135,10 @@ import {
 } from "./MergeRecovery.js";
 import { nativeViewText } from "./NativeViews.js";
 import { reusableNodeOutput, scopedNodeRevisions } from "./NodeGuarantees.js";
-import { nodeContext } from "./nodes/context.js";
+import { nodeContext, nodeWaitPhase } from "./nodes/context.js";
 import { NODE_REROUTE } from "./nodes/control.js";
 import { nodeRegistry } from "./nodes/index.js";
+import { nodeEffect } from "./nodes/metadata.js";
 import type { NodeEngine } from "./nodes/NodeDefinition.js";
 import {
 	beginProgressAttempt,
@@ -3021,16 +3022,7 @@ export class WorkflowRuntime {
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
 				if (state.retryAt !== undefined) {
-					const retryContext = await nodeContext(
-						context,
-						checkpoint,
-						workflowId,
-						parallel,
-						this.nodeEngine(),
-						chat,
-						{}, // Sleeping consumes no reads; resolve them inside the execution boundary.
-					);
-					await retryContext.phase("waiting-ci", () =>
+					await nodeWaitPhase(context, () => this.save(run))("waiting-ci", () =>
 						sleep(Math.max(0, state.retryAt! - Date.now()), undefined, {
 							signal,
 						}),
@@ -3494,9 +3486,10 @@ export class WorkflowRuntime {
 						};
 					}
 					if (
-						step.type === "agent" &&
 						!reuseHit &&
-						accessMode(step) !== "read-only"
+						((step.type === "agent" && accessMode(step) !== "read-only") ||
+							// Snapshot records its captured commit, rather than the live checkout.
+							(step.type !== "snapshot" && nodeEffect(step) === "effect"))
 					)
 						nodeCtx.recordRevisions(await scopedNodeRevisions(context));
 					const acceptedBinding = await assertBoundInspectionFresh(context);

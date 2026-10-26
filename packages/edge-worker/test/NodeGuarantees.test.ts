@@ -44,6 +44,17 @@ nodeRegistry.register({
 	builder: { label: "Fixture", icon: "◇", paletteGroup: "logic" },
 	execute: (ctx) => execute(ctx),
 });
+nodeRegistry.register({
+	type: "guarantees-effect-fixture",
+	schema: z.object({
+		...stepFields,
+		type: z.literal("guarantees-effect-fixture"),
+	}),
+	category: "io",
+	effect: "effect",
+	builder: { label: "Effect fixture", icon: "◇", paletteGroup: "io" },
+	execute: (ctx) => execute(ctx),
+});
 afterEach(async () => {
 	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const home of homes.splice(0))
@@ -304,6 +315,101 @@ it("invalidates fresh after input, dirty workspace and HEAD changes, including a
 	};
 	await expect(freshNodeOutput(aborted, "inspect")).rejects.toThrow(
 		"freshness cancelled",
+	);
+});
+
+it.each([
+	undefined,
+	{ paths: ["value"] },
+	"none",
+] as const)("refreshes generic effect revisions in scope %j while retaining explicit bindings", async (revisionScope) => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	execute.mockImplementation((ctx) => {
+		if (ctx.step.id === "source") return { message: "commit" };
+		repo.commit(ctx.step.id);
+		return { committed: true };
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("effect", {
+				type: "guarantees-effect-fixture",
+				revisionScope,
+				reads: { message: "source/message" },
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	const receipt = run.history.at(-1)!;
+	if (revisionScope === "none")
+		expect(receipt.guarantee?.revisions).toEqual({});
+	else
+		expect(receipt.guarantee?.revisions.fixture).toMatchObject({
+			headSha: repo.git("rev-parse", "HEAD"),
+			workspaceDigest: expect.any(String),
+			...(revisionScope
+				? { paths: ["value"], scopedDigest: expect.any(String) }
+				: {}),
+		});
+	expect(await freshNodeOutput(context(run), "effect")).toBe(true);
+	expect(await freshNodeOutput(context(run), "source")).toBe(false);
+	// Explicit binding keeps pre-effect evidence strict even when ordinary reads
+	// are just values used to perform an operation on the resulting revision.
+	const bound = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("bound", {
+				type: "guarantees-effect-fixture",
+				revisionScope,
+				bind: ["source"],
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(bound);
+	expect(bound.error).toBeUndefined();
+	expect(await freshNodeOutput(context(bound), "bound")).toBe(false);
+	repo.commit("later");
+	expect(await freshNodeOutput(context(run), "effect")).toBe(
+		revisionScope === "none",
+	);
+});
+
+it("does not renew already-stale inherited evidence after an effect", async () => {
+	const { instance, home } = runtime();
+	const repo = repository(home);
+	execute.mockImplementation((ctx) => {
+		if (ctx.step.id === "source") return { value: 1 };
+		repo.commit(ctx.step.id);
+		return {};
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			fixture("change", { type: "guarantees-effect-fixture" }),
+			fixture("consume", {
+				type: "guarantees-effect-fixture",
+				reads: { value: "source/value" },
+			}),
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(await freshNodeOutput(context(run), "change")).toBe(false);
+	expect(await freshNodeOutput(context(run), "consume")).toBe(false);
+	expect(run.history.at(-1)?.guarantee?.revisions.fixture?.headSha).toBe(
+		repo.git("rev-parse", "HEAD"),
 	);
 });
 

@@ -791,10 +791,24 @@ unstamped receipts remain readable but cannot establish freshness or reuse.
 Agents observe repository HEAD and working changes automatically; agents with
 workspace/push access record the resulting revision after execution. Read-only
 agents retain their input observation (or their declared Snapshot's committed
-revision). Snapshot records its actual captured commit for every repository.
+revision). After an executed node whose resolved effect class is `effect`, the
+engine also re-observes every retained local repository in the node's revision
+scope and stamps the resulting state. This includes Git commit/push, PR
+ensure/ready and merge, and applies after effect reconciliation on restart.
+Reused outputs keep their existing stamps. Snapshot retains its actual captured
+commit for every repository instead of taking a post-execution live observation.
 Non-repository runs carry no local revisions.
 
-IO nodes use this service after obtaining a verified provider/local observation:
+Effect receipts describe the resulting repository state, like mutating agents;
+their input digests still bind the consumed values, but inherited pre-effect
+revision checks do not make the receipt stale merely because its own operation
+changed HEAD or cleaned the workspace. Input revision checks that were already
+stale before the effect remain stale. Explicit `bind` references still require
+the original receipts to remain fresh recursively. Bind any evidence whose
+freshness must survive the operation, rather than just reading its output values.
+
+IO nodes can additionally use this service after obtaining a verified
+provider/local observation:
 
 ```ts
 ctx.recordRevisions({
@@ -835,11 +849,16 @@ needs execution even if its local inputs are unchanged.
 
 `revisionScope` controls the same revision comparison for reuse and `fresh()`:
 
-- `"repository"` (default): retain HEAD and working changes, plus inherited
-  revisions from reads and bindings. Display, Approve and Decide take their own
-  whole-repository observation before waiting for a human; scoped or inputs-only
-  producers cannot narrow that approval. The frozen observation survives restart,
-  and inherited checks remain separate so stale reviews cannot be renewed.
+- `"repository"` (default for every node, including pure logic): take an own
+  HEAD and working-changes observation before execution, plus inherited revisions
+  from reads and bindings. For each new visit this includes a Git diff and
+  hashing untracked content in every retained local repository. Pure default-scope
+  nodes therefore cannot reuse across commits just because their input JSON is
+  unchanged. Read-only agents can use their declared Snapshot instead. Display,
+  Approve and Decide retain their own whole-repository observation before waiting
+  for a human; scoped or inputs-only producers cannot narrow that approval. The
+  frozen observation survives restart, and inherited checks remain separate so
+  stale reviews cannot be renewed.
 - `{ "paths": ["src/payments/**", "shared/types.ts"] }`: compare committed tree
   entries and workspace changes only under these Git pathspecs, per repository.
   Commits outside the selected paths do not invalidate the receipt. Tracked file
@@ -849,7 +868,11 @@ needs execution even if its local inputs are unchanged.
   For example, `reads: { reviewer: "impact/reviewers/payments" }` lets an impact
   node choose a specialist's scope. Missing or invalid lists fail closed.
 - `"none"`: compare inputs only, with no repository stamps. The recipe must
-  ensure its declared reads carry the relevant state.
+  ensure its declared reads carry the relevant state. Prefer this for pure Check
+  and Transform nodes that only compute from upstream output values. Keep the
+  default repository scope when the result must become stale after a repository
+  change, including checks that evaluate `fresh()` without named reads. Explicit
+  bindings remain recursive freshness requirements even with `"none"`.
 
 Explicit path/none scopes replace inherited repository revisions; they do not
 remove input digests or explicit bound-receipt checks. A changed read still
@@ -861,8 +884,9 @@ receipts for provenance, but scoped comparisons use content digests instead of
 HEAD equality. Read-only agents with a Snapshot compare its scoped committed
 content against the local checkout; agents with workspace access stamp their
 resulting scope after execution. Repository observations are shared within each
-step attempt/evaluation and scope; a mutating agent gets a new observation after
-execution.
+step attempt/evaluation and scope; mutating agents and effect nodes get a new
+observation after execution. Retry backoff is only a passive wait: it does not
+resolve reads, observe repositories or create an accepted node stamp.
 
 ### Bound responses and `fresh()`
 
