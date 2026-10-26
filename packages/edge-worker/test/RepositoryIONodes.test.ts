@@ -918,3 +918,4 @@ it.each([
 			type === "ci" ? "summary" : "checksSummary"
 		],
 	).toMatchObject({ pending: 1, complete: false });
+});

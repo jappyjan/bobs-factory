@@ -191,6 +191,7 @@ function fixture(
 	commit("new");
 	const url = "https://github.com/team/project/pull/1";
 	let draft = true;
+	let merged = false;
 	const request = () => ({
 		url,
 		number: 1,
@@ -199,11 +200,16 @@ function fixture(
 		headRefName: "feature",
 		headRefOid: head(),
 		baseRefName: "main",
-		state: "OPEN",
+		state: merged ? "MERGED" : "OPEN",
+		...(merged ? { mergeCommitSha: "provider-confirmed-merge" } : {}),
 		isDraft: draft,
 		isCrossRepository: false,
 	});
 	const provider = {
+		merge: vi.fn(async (_url: string, expected: string) => {
+			expect(expected).toBe(head());
+			merged = true;
+		}),
 		list: async () => [{ url, isDraft: draft }],
 		view: async () => request(),
 		read: async () => ({
@@ -372,66 +378,24 @@ function fixture(
 		definitions = validateWorkflows([
 			...defaultWorkflows,
 			{
+				...defaultWorkflows.find((recipe) => recipe.id === "v2-merge")!,
 				id: "c3-consumer",
-				name: "Two-port merge gate fixture",
-				engineVersion: "nodes-v1",
-				allowedTriggers: ["workflow", "manual"],
-				inputs: ["approval", "pr"],
-				steps: [
-					{
-						id: "gate",
-						name: "Validate authorization",
-						type: "check",
-						reads: { approval: "approval", pr: "pr" },
-						check: {
-							results: {
-								authorized: {
-									all: [
-										{ path: "/inputs/approval/action", equals: "approve" },
-										{ fresh: "approval" },
-										{
-											any: [
-												{
-													path: "/inputs/approval/authorization",
-													equals: "explicit",
-												},
-												{
-													all: [
-														{
-															path: "/inputs/approval/authorization",
-															equals: "carried",
-														},
-														{
-															path: "/inputs/approval/decision/safe",
-															equals: true,
-														},
-														{
-															path: "/inputs/approval/decision/uncertainty",
-															empty: true,
-														},
-													],
-												},
-											],
-										},
-									],
-								},
-							},
-						},
-					},
-				],
+				name: "Consume C3 authorization with C4 Merge",
 			},
 			{
 				id: "c3-revisit",
 				name: "Revisit approval",
 				engineVersion: "nodes-v1",
-				inputs: ["requirements", "plan", "review", "qa", "pr"],
+				inputs: ["requirements", "plan", "review", "qa", "pr", "completion"],
 				steps: [
-					...["requirements", "plan", "review", "qa", "pr"].map((id) => ({
-						id,
-						name: id,
-						type: "script",
-						script: "fixture port",
-					})),
+					...["requirements", "plan", "review", "qa", "pr", "completion"].map(
+						(id) => ({
+							id,
+							name: id,
+							type: "script",
+							script: "fixture port",
+						}),
+					),
 					{
 						id: "approval",
 						name: "Approval",
@@ -495,7 +459,11 @@ function fixture(
 						name: "Consume explicit receipt",
 						type: "workflow",
 						workflow: "c3-consumer",
-						bindings: { approval: "approval/explicit", pr: "pr" },
+						bindings: {
+							approval: "approval/explicit",
+							pr: "pr",
+							completion: "completion",
+						},
 						next: "end",
 					},
 					{
@@ -503,7 +471,11 @@ function fixture(
 						name: "Consume carried receipt",
 						type: "workflow",
 						workflow: "c3-consumer",
-						bindings: { approval: "approval/carried", pr: "pr" },
+						bindings: {
+							approval: "approval/carried",
+							pr: "pr",
+							completion: "completion",
+						},
 						next: "end",
 					},
 				],
@@ -541,10 +513,12 @@ function fixture(
 				name: "Fixture",
 				workspace,
 				repositoryPath: source,
+				githubUrl: "https://github.com/team/project",
 				baseBranch: "main",
 			},
 		],
 		launchInputs: {
+			completion: JSON.stringify({ final: false }),
 			requirements: JSON.stringify({
 				summary: "Saved settings",
 				requirements: [{ id: "R1", text: "Keep selection visible" }],
@@ -830,12 +804,30 @@ it.each([
 		expect(repeated.repositories[0].head).toBe(f.head());
 		expect(f.calls.filter((s) => s === "approval/impact")).toHaveLength(2);
 	} else expect(result.carriedFrom).toBeNull();
+	// The carry-forward fixture re-drafts the PR; restore provider readiness before merge.
+	f.setDraft(false);
 	await f.answer("finish");
 	await terminal(f.run);
 	expect(
 		(f.run.outputs[safe ? "consume-carried" : "consume-explicit"] as any)
-			.outputs.gate,
-	).toMatchObject({ authorized: true });
+			.outputs["approval-current"],
+	).toMatchObject({ approved: true });
+	expect(f.provider.merge).toHaveBeenCalledExactlyOnceWith(
+		"https://github.com/team/project/pull/1",
+		f.head(),
+		undefined,
+	);
+	expect(
+		(f.run.outputs[safe ? "consume-carried" : "consume-explicit"] as any)
+			.outputs.merge.repositories,
+	).toEqual([
+		{
+			repositoryId: "repo",
+			merged: true,
+			sha: "provider-confirmed-merge",
+			url: "https://github.com/team/project/pull/1",
+		},
+	]);
 });
 it("returns to-ci when required provider checks fail", async () => {
 	const f = fixture("v2-approval", { checksPass: false });

@@ -252,9 +252,10 @@ D1 inspects the call's projected `authorization` to select the actual producer a
 binds that producer directly as C4's `approval` port: for example,
 `bindings: { approval: "approval/explicit", pr: "implementation/pr" }`, or
 `approval: "approval/carried"` after carry-forward. D1 owns those composition
-paths. C4 remains reusable with exactly two inputs, `approval` and `pr`, and never
-knows a sibling call-site path. Copied JSON, manual launch data and the presentation
-projection do not replace the authorization receipt.
+paths. C4 remains reusable with two required inputs, `approval` and `pr`, plus
+optional `completion: {final:boolean}`; it never knows a sibling call-site path.
+Copied JSON, manual launch data and the presentation projection do not replace
+the authorization receipt.
 
 C4's gate checks `approval.action == "approve" && fresh("approval")`. When the
 receipt has non-null `carriedFrom`, it additionally requires
@@ -286,8 +287,9 @@ JSON launch inputs provide context, never a stamped approval or merge receipt.
   Unavailable or timed-out CI uses a Display to request restoration and continue
   waiting; it never waives checks. The resumed fixer leaves changes for separate
   Git commit/push nodes. `change`, `after-pr` and `delta` retain the corrected change port, PR and the
-  exact initial-head-to-current-head diff for D1 to refresh the public `pr`/`change`
-  bindings when routing back to review.
+  exact initial-head-to-current-head diff (projecting saved heads to the shared
+  `from.repositories[].base` binding, with `mergeBase: false`) for D1 to refresh
+  the public `pr`/`change` bindings when routing back to review.
 - The old `after-ci-fix` rule becomes `after-fix`: named `codeChanged`,
   `revisionChanged`, `baseChanged`, `feedbackRequiresReview`, `reviewMissing` and
   `providerBehind` fields, followed by a short Check. Any changed revision or
