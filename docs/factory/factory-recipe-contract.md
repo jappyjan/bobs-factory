@@ -72,8 +72,8 @@ below. Extra fields are allowed; listed fields are required unless marked option
 
 | Port | Producer | Shape |
 | --- | --- | --- |
-| `requirements` | `v2-clarify-plan` | `{ summary, requirements: [{ id, text, source? }], decisions: [{ id, question, answer }], outOfScope: [string] }` |
-| `plan` | `v2-clarify-plan` (revised by `v2-check-in`) | `{ summary, deliveryMode: "repository"\|"external"\|"mixed"\|"deferred", steps: [{ id, text, requirementRefs }], risks: [string], repositories: [id] }` |
+| `requirements` | `v2-clarify-plan`, `v2-takeover-intake` | `{ summary, requirements: [{ id, text, source? }], decisions: [{ id, question, answer }], outOfScope: [string] }` |
+| `plan` | `v2-clarify-plan`, `v2-takeover-intake` (revised by `v2-check-in`) | `{ summary, deliveryMode: "repository"\|"external"\|"mixed"\|"deferred", steps: [{ id, text, requirementRefs }], risks: [string], repositories: [id] }` |
 | `architecture` | `v2-check-in` | `{ meaningful, accepted, decisions: [{ id, text }], approval?: <display output> }` |
 | `change` | `v2-implementation`, any fixer | `{ summary, repositories: [{ id, head }] }` (git commit/push outputs) |
 | `pr` | `v2-implementation` | the `pr ensure` output (`{ repositories: [{ id, head, url, isDraft }] }`) |
@@ -169,3 +169,27 @@ Legacy `review-loop`, `SpecialistReview.ts`, `Impact.ts`, `ReviewRecovery.ts`,
 `specialistSteps.ts`, stock review prompts/check adapters and `run.reviewGate`
 remain referenced by the legacy Factory and saved definitions. D1 owns their
 removal after replacing the composition. C2 removes none of that active code.
+
+## Takeover intake (C5)
+
+`v2-takeover-intake` declares optional call inputs `pr` (the repository IO request
+binding: `{url}` for one repository or `{repositories:[{id,url}]}`) and `ticket`
+(a verified `TicketReference`). Standalone launches keep Takeover's existing
+`source` and `prompt` field names. Ticket identifiers/URLs use the host's normal
+source resolution, yielding `@ticket` and the run's verified ticket reference;
+PR/MR URLs can be read directly from the launch `source` field, and an explicit
+`pr` call input takes precedence. In nodes-v1, `@source` is the shared launch
+context envelope above; prepared request data must be passed through the `pr` port.
+The host/caller owns selecting the existing worktree/branch; this read-only
+recipe does not switch branches, draft a request or grant delivery authority.
+
+The recipe reads the request and/or ticket when available, Git status and the
+merge-base-to-head diff. A request's observed per-repository base SHA binds the
+comparison; missing base objects are fetched from `origin` without changing the
+worktree. Ticket-only launches use the scoped repository base. All assessment dependencies
+are declared statically. `assess-existing` emits the shared `requirements` and
+`plan` shapes above plus `completed`, `remaining`, `risks` and `assets` string
+arrays. The terminal `result` step emits `{requirements, plan}`; callers bind
+`<call>/outputs/result/requirements` and `<call>/outputs/result/plan`. Its sole
+outcome is `completed`. The plan preserves completed work and describes only
+remaining steps, including unresolved feedback and validation.

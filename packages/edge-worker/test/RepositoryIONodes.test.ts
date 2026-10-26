@@ -271,6 +271,28 @@ it.each([
 		if (op === "push") expect(r.pushed).toBe(true);
 	}
 });
+it("git diff never treats a missing revision as a fetch destination refspec", async () => {
+	const { instance, run } = fixture([
+		{
+			id: "op",
+			type: "git",
+			op: "diff",
+			from: "main:refs/heads/target",
+			mergeBase: true,
+		},
+	]);
+	const command = mocks.command.getMockImplementation()!;
+	mocks.command.mockImplementation(async (ctx, exe, args) => {
+		if (args.at(-1) === "main:refs/heads/target^{commit}")
+			throw new Error("Unknown commit");
+		return command(ctx, exe, args);
+	});
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(
+		mocks.command.mock.calls.some(([, , args]) => args[0] === "fetch"),
+	).toBe(false);
+});
 it("git commit is a no-op when clean and rejects source-clone mutations", async () => {
 	const { instance, run, repos } = fixture([
 		{ id: "op", type: "git", op: "commit" },
@@ -806,4 +828,74 @@ it("ci rerun skips missing identities, in-progress runs and provider-side races"
 		{ check: "running", requested: false, skipped: "in-progress" },
 		{ check: "raced", requested: false, skipped: "in-progress" },
 	]);
+});
+
+it.each([
+	"scalar",
+	"repositories",
+	"configured",
+])("git diff resolves its %s base before comparing each repository", async (kind) => {
+	const bound =
+		kind === "scalar"
+			? "refs/tags/accepted"
+			: {
+					repositories: [
+						{ id: "hub", base },
+						{ id: "lab", base: nextHead },
+					],
+				};
+	const { instance, run } = fixture(
+		[
+			{
+				id: "base",
+				type: "transform",
+				transform: { value: { literal: bound } },
+			},
+			{
+				id: "diff",
+				type: "git",
+				op: "diff",
+				...(kind === "configured" ? { from: "refs/tags/configured" } : {}),
+				reads: { from: "base/value" },
+			},
+		],
+		["hub", "lab"],
+	);
+	await instance.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	for (const [id, ref] of [
+		["hub", base],
+		["lab", nextHead],
+	]) {
+		const expected =
+			kind === "configured"
+				? "refs/tags/configured"
+				: kind === "scalar"
+					? "refs/tags/accepted"
+					: ref;
+		expect(
+			mocks.command.mock.calls.some(
+				([context, exe, args]) =>
+					context.run.repositoryId === id &&
+					exe === "git" &&
+					args.join(" ") ===
+						`rev-parse --verify --end-of-options ${expected}^{commit}`,
+			),
+		).toBe(true);
+	}
+});
+it.each([
+	"-option",
+	"bad ref",
+	{ repositories: [{ id: "other", base }] },
+])("rejects an invalid or missing bound diff base: %j", async (bound) => {
+	const { instance, run } = fixture([
+		{ id: "base", type: "transform", transform: { value: { literal: bound } } },
+		{ id: "diff", type: "git", op: "diff", reads: { from: "base/value" } },
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(
+		mocks.command.mock.calls.some(([, , args]) => args[0] === "diff"),
+	).toBe(false);
 });

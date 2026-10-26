@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { NodeDefinition } from "./NodeDefinition.js";
 import { stepFields } from "./schema.js";
 
-const ref = z
+export const gitRef = z
 	.string()
 	.min(1)
 	.refine(
@@ -15,9 +15,11 @@ export const schema = z.object({
 	op: z.enum(["status", "commit", "push", "rev-parse", "diff"]),
 	/** Run commit hooks; false passes --no-verify for mechanical delivery. */
 	hooks: z.boolean().default(true),
-	ref: ref.default("HEAD"),
-	from: ref.optional(),
-	to: ref.default("HEAD"),
+	ref: gitRef.default("HEAD"),
+	from: gitRef.optional(),
+	to: gitRef.default("HEAD"),
+	/** Compare the merge base of from/to to to (three-dot semantics). */
+	mergeBase: z.boolean().default(false),
 });
 export const definition = {
 	type: "git",

@@ -689,9 +689,16 @@ repository/provider. Bind a URL to inspect a closed request.
 - `diff`: `{ type: "git", op: "diff", from: "refs/remotes/origin/main", to: "HEAD" }`
   → `{ id, head, base, target, files: string[], changes: [{ path, additions,
   deletions }], stats: { filesChanged, additions, deletions, binaryFiles } }`.
-  Defaults to the run's `origin/<baseBranch>` and `HEAD`; compares the two exact
-  commits without fetching. Binary additions/deletions are `null`. NUL-separated
-  Git output preserves whitespace and tabs in paths; renames appear as add/delete.
+  `from` may also be a named read containing a ref string or a prior PR read's
+  `{ repositories: [{ id, base }] }` result; every scoped repository must have a
+  valid base. Explicit `from` configuration takes precedence. Otherwise defaults
+  to the run's `origin/<baseBranch>` and `HEAD`; compares the two exact
+  commits without fetching. With `mergeBase: true`, compares their merge base to
+  `to` (three-dot semantics) and reports that merge base as `base`. If `from` is
+  missing locally, fetches its SHA/ref from `origin` without writing `FETCH_HEAD`
+  or changing the worktree before resolving it. Binary additions/deletions are
+  `null`. NUL-separated Git output preserves whitespace and tabs in paths; renames
+  appear as add/delete.
 
 Commit/push require the run's dedicated linked worktree, its exact root and a
 non-base branch. Source clones and detached HEADs are rejected. These nodes do not

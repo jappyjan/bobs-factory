@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { evaluateCheckAsync } from "../src/factory/Check.js";
 import { digest } from "../src/factory/Delivery.js";
+import { displayAnswerOutput } from "../src/factory/DisplayAnswers.js";
+import {
+	displayItems,
+	resolveDisplayDocument,
+} from "../src/factory/DisplayDocument.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { foreachPointer } from "../src/factory/Foreach.js";
-import {
-	decisionItems,
-	type ViewRecord,
-	viewAnswerOutput,
-} from "../src/factory/HumanStep.js";
+import type { ViewRecord } from "../src/factory/HumanStep.js";
+import { transformOutput } from "../src/factory/nodes/transform.js";
 import {
 	conforms,
 	parseOutputFormat,
@@ -20,8 +22,8 @@ import { viewScope } from "../src/factory/ViewRuntime.js";
 import type { FactoryRun } from "../src/factory/WorkflowRuntime.js";
 
 const stock = defaultWorkflows.find((w) => w.id === "improve-codebase")!;
-const approve = stock.steps.find((s) => s.type === "approve")!;
-const decide = stock.steps.find((s) => s.type === "decide")!;
+const approve = stock.steps.find((s) => s.id === "approve")!;
+const decide = stock.steps.find((s) => s.id === "decide")!;
 const planInputs = stock.steps.find((s) => s.id === "plan-inputs")!;
 const planDependencies = stock.steps.find((s) => s.id === "plan-dependencies")!;
 const planCheck = stock.steps.find((s) => s.id === "plan-check")!;
@@ -63,7 +65,7 @@ function approvalRecord(dependencyGraph: typeof graph): ViewRecord {
 			snapshot: {},
 		},
 	});
-	const view = resolveView(approve.view!, scope);
+	const view = resolveView(approve.document!, scope);
 	return {
 		configDigest: "fixed-config",
 		sourceDigest: digest({ view, items: undefined }),
@@ -83,6 +85,26 @@ function approvalRecord(dependencyGraph: typeof graph): ViewRecord {
 
 describe("stock approval composition", () => {
 	it.each([
+		true,
+		false,
+	])("dispatches an approved batch only with current=%s", async (current) => {
+		const gate = stock.steps.find((s) => s.id === "approval-check")!;
+		const result = await evaluateCheckAsync(
+			gate.check!,
+			{ answer: { action: "approve", values: {} } },
+			{},
+			conforms,
+			undefined,
+			(ref) => ref === "approve" && current,
+		);
+		expect(result).toMatchObject({
+			passed: current,
+			approved: current,
+			current,
+		});
+	});
+
+	it.each([
 		"ascii",
 		"utf8",
 	])("keeps complete corrected %s data through actual Decide, choice output and the full wrapped Approve scope", async (kind) => {
@@ -100,8 +122,21 @@ describe("stock approval composition", () => {
 			opportunities: { id: string }[];
 		};
 		const outputs = { consolidate: { outputs: { proposals } } };
-		const scope = viewScope({ run, step: decide, outputs });
-		const items = decisionItems(decide.decide!, scope);
+		const details = await transformOutput(
+			stock.steps.find((s) => s.id === "decision-details")!.transform!,
+			{ proposals },
+		);
+		const arranged = await transformOutput(
+			stock.steps.find((s) => s.id === "decision-items")!.transform!,
+			{ proposals, details },
+		);
+		const scope = viewScope({
+			run,
+			step: decide,
+			outputs: { ...outputs, "decision-items": arranged },
+		});
+		const decisionView = resolveDisplayDocument(decide.document!, scope);
+		const items = displayItems(decisionView);
 		const decisionRecord: ViewRecord = {
 			configDigest: "fixed",
 			sourceDigest: "fixed",
@@ -109,19 +144,20 @@ describe("stock approval composition", () => {
 			snapshot: {
 				id: "fixed",
 				stepKey: "decide",
-				kind: "decide",
+				kind: "display",
 				title: decide.name,
 				digest: "fixed",
 				createdAt: "fixed",
-				view: resolveView(decide.view!, scope),
+				view: decisionView,
+				documentDigest: digest(decisionView),
 				items: items.map(({ value: _value, ...item }) => item),
-				actions: decide.decide!.actions,
 			},
 		};
-		const choices = viewAnswerOutput(decisionRecord, {
+		const choices = displayAnswerOutput(decisionRecord, {
 			batchId: "fixed",
 			digest: "fixed",
 			accepted: true,
+			action: "continue",
 			choices: items.map(({ id }) => ({
 				itemId: id,
 				action: "fix",
@@ -204,11 +240,11 @@ describe("stock approval composition", () => {
 				snapshot: { history: "h".repeat(1_048_577) },
 			},
 		});
-		expect(full.inputs.proposals).toEqual(proposals);
-		expect(full.inputs.decisions).toEqual(choices);
+		expect(full.inputs).not.toHaveProperty("proposals");
+		expect(full.inputs).not.toHaveProperty("decisions");
 		expect(full.inputs.plans).toEqual(plans);
 		expect(full.inputs).not.toHaveProperty("baseline");
-		const view = resolveView(approve.view!, full);
+		const view = resolveView(approve.document!, full);
 		const cards = view.components.find((c) => c.type === "itemCards")!;
 		if (cards.type !== "itemCards") throw new Error("Missing reviewed plans");
 		expect(cards.data.items).toHaveLength(5);
