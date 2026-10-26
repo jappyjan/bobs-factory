@@ -383,6 +383,7 @@ export type TransformValue =
 	| null
 	| { literal: unknown }
 	| { merge: (RuleExpression | { literal: unknown })[] }
+	| { if: RuleCondition; then: TransformValue; else: TransformValue }
 	| {
 			map: string | string[];
 			where?: RuleCondition;
@@ -411,12 +412,22 @@ const transformLiteralSchema = z
 	})
 	.strict();
 function transformSchemas(inMap: boolean) {
+	const conditions = (inMap ? transformRules : standardRules)
+		.RuleConditionSchema;
 	const paths = inMap ? transformPointer : pointer;
 	const expression = (inMap ? transformRules : standardRules)
 		.RuleExpressionSchema;
 	const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
 		z.union([
 			expression,
+			z
+				.object({
+					if: conditions,
+					// biome-ignore lint/suspicious/noThenProperty: Declarative JSON branch, never a callable Promise.then.
+					then: TransformValueSchema,
+					else: TransformValueSchema,
+				})
+				.strict(),
 			z
 				.object({
 					merge: z
@@ -468,17 +479,16 @@ export const TransformSchema = RuleDataSchema.pipe(
 						message: "Reserved transform field",
 					});
 				const child = (template as Record<string, unknown>)[name];
-				if (
-					child &&
-					typeof child === "object" &&
-					Object.hasOwn(child, "map") &&
-					Object.hasOwn(child, "template")
-				)
-					visit((child as { template: unknown }).template, [
-						...path,
-						name,
-						"template",
-					]);
+				visitValue(child, [...path, name]);
+			}
+		};
+		const visitValue = (value: unknown, path: string[]) => {
+			if (!value || typeof value !== "object" || Array.isArray(value)) return;
+			if (Object.hasOwn(value, "map") && Object.hasOwn(value, "template"))
+				visit((value as { template: unknown }).template, [...path, "template"]);
+			if (Object.hasOwn(value, "if")) {
+				visitValue((value as { then: unknown }).then, [...path, "then"]);
+				visitValue((value as { else: unknown }).else, [...path, "else"]);
 			}
 		};
 		visit(value, []);
@@ -1615,6 +1625,16 @@ function* transformValueTask(
 	if ("literal" in value) {
 		const encoded = yield* canonical(value.literal, work);
 		return encoded === undefined ? null : JSON.parse(encoded);
+	}
+	if ("if" in value) {
+		const matches = yield* conditionTask(value.if, scope.value, root, 0, work);
+		return yield* transformValueTask(
+			matches ? value.then : value.else,
+			scope,
+			root,
+			work,
+			depth + 1,
+		);
 	}
 	if ("merge" in value) {
 		const merged: Record<string, unknown> = {};

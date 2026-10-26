@@ -72,3 +72,61 @@ Every human screen is a `display` node. Agents that need answers emit
 `display(from: <agent>/display)`, and the agent continues with `session: "resume"`.
 Approvals `bind` what they approve, and any gate after a human approval checks
 `fresh(<approval>)`.
+
+## C2: `v2-review-loop`
+
+The standalone recipe reads exactly `requirements`, `plan`, and `pr`, plus the
+shared `@source`/`@ticket` context. It reuses the accepted `requirements` port as
+its ID inventory instead of extracting a second competing source of scope.
+Incomplete or changed scope goes to `to-architecture` for clarification/check-in;
+reviewers cannot silently amend requirements or accept scope waivers.
+
+A pure `review-inputs` transform first retains the accepted ports under an
+executed producer, so nested reviewer freshness works for standalone launch inputs
+as well as bound Call ports. The graph observes HEAD → assesses impact → runs the six specialists in Parallel
+→ tags and retains a finding ledger → fills coverage gaps → checks approval.
+A rejection observes convergence over HEAD and open finding IDs. Two unchanged
+observations show a `display` asking for corrective direction, architecture
+revision, or CI readiness. Continue resumes the fixer; a fixer can also emit a
+needs-input display. Fixes publish through Git commit (`hooks: false`), push and
+PR ensure, then return to impact assessment. Architecture and readiness exits
+also produce the `review` output with `approved: false`.
+
+Each reviewer uses `session: "resume"`, `reuse: "unchanged-inputs"`, and
+`revisionScope: {paths: {from: "/inputs/area/paths"}}`. Impact emits one stable
+`{paths, corrections}` entry per specialist. Paths must cover all relevant shared
+dependencies/configuration; uncertainty requires the whole repository (`":/"`).
+The reviewer reads only its own entry and the accepted requirements/plan. Ledger,
+HEAD and human answers are deliberately outside those reads: unrelated commits
+and other reviewers' findings must not defeat scoped reuse. The final check also
+requires every specialist receipt to remain fresh and completed. Native sessions
+and engine receipts own restart/reuse; no review-specific runtime state is used.
+
+The `review` step emits the required port plus `ledger`, `outcome`, `pr` (the latest
+PR ensure receipt, or the original input) and `change` (the latest push receipt,
+or null). D1 can bind `call/outputs/review` and its updated `pr` field. Outcomes
+are `completed`, `to-architecture`, and `to-ci`. A readiness-only assessment cannot
+bypass a previously rejected review; human routing preserves unresolved findings
+in the output and never changes their dispositions.
+
+Finding IDs are globally stable `<specialist-id>:<local-id>` values. The transform
+keeps omitted complaints, settled findings and disagreements in the ledger; only
+an evidence-backed reviewer disposition settles them. Fixer dispositions are
+claims for reassessment. Unsupported reopening retains the prior settlement;
+reopening requires fresh evidence. Nitpicks (rating 1) stay visible in the ledger
+but do not block. Exact duplicate IDs collapse; cross-reviewer aliases suppress
+an actionable duplicate only when the original is independently actionable and
+requirement references, evidence and remedy match. Unproven/cyclic aliases remain
+independent blockers. Contradictory recommendations are `kind: "disagreement"`
+findings with the same retention and settlement rules.
+
+Coverage has one row per accepted requirement, with a missing row becoming
+`not_met`. A deliberate skip additionally requires a matching accepted decision
+with `kind: "skip"`, `requirementRefs` containing that requirement, a nonblank
+`answer`, and a nonblank source reference (`source`). These are optional extra
+fields on the shared decisions port; ordinary decisions do not authorize skips.
+
+Legacy `review-loop`, `SpecialistReview.ts`, `Impact.ts`, `ReviewRecovery.ts`,
+`specialistSteps.ts`, stock review prompts/check adapters and `run.reviewGate`
+remain referenced by the legacy Factory and saved definitions. D1 owns their
+removal after replacing the composition. C2 removes none of that active code.

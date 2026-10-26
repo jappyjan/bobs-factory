@@ -323,6 +323,20 @@ transform; use another Transform when a subsequent calculation needs its result.
 }
 ```
 
+Transform also accepts a lazy conditional expression:
+
+```json
+{"value": {"if": {"path": "/inputs/optional", "exists": true},
+           "then": {"select": "/inputs/optional"}, "else": {"literal": []}}}
+```
+
+`if` is a rules-v1 condition. Only the chosen `then` or `else` value is evaluated;
+each can be any Transform value, including a map or another conditional. This
+allows optional lookups and conservative defaults without evaluating invalid
+missing collections. Conditions and branches retain the current map scope,
+parent metadata and original root. Both branches are schema-validated even when
+unselected, and share the existing depth/work/output limits and cancellation.
+
 Output owns detached JSON. Templates have at most 50 fields per object, 12 map
 levels, and share a separate 20,000,000-unit transform work budget across every
 field/item. Rules-v1 retains its 1,000,000-unit budget. Both retain the 20,000-item
