@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/suspicious/noThenProperty: Declarative JSON branches, never callable Promise.then properties. */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -1149,4 +1150,67 @@ it("applies prior disposition fields with a shallow merge before filtering actio
 			{},
 		),
 	).toEqual({ data: reserved });
+});
+
+it("evaluates only the chosen conditional transform branch and retains map/root scopes", async () => {
+	const template = TransformSchema.parse({
+		rows: {
+			map: "/inputs/items",
+			template: {
+				result: {
+					if: { path: "/enabled", equals: true },
+					then: {
+						if: { path: "$/inputs/available", equals: true },
+						then: { select: "/value" },
+						else: "unavailable",
+					},
+					else: { literal: { skipped: true } },
+				},
+			},
+		},
+		optional: {
+			if: { path: "/inputs/missing", exists: true },
+			then: { map: "/inputs/missing", template: { value: { select: "" } } },
+			else: { literal: [] },
+		},
+	});
+	expect(
+		await evaluateTransformAsync(template, {
+			available: true,
+			items: [{ enabled: true, value: 42 }, { enabled: false }],
+		}),
+	).toEqual({
+		rows: [{ result: 42 }, { result: { skipped: true } }],
+		optional: [],
+	});
+	expect(
+		TransformSchema.safeParse({
+			value: { if: { path: "^/value", exists: true }, then: 1, else: 2 },
+		}).success,
+	).toBe(false);
+	const malicious = JSON.parse(
+		'{"value":{"if":{"path":"/inputs/ok","equals":true},"then":{"map":"/inputs/items","template":{"__proto__":1}},"else":null}}',
+	);
+	expect(TransformSchema.safeParse(malicious).success).toBe(false);
+});
+
+it("keeps conditional transform depth bounded and honors cancellation", async () => {
+	let nested: unknown = 1;
+	for (let index = 0; index < 15; index++)
+		nested = {
+			if: { path: "/inputs/ok", equals: true },
+			then: nested,
+			else: 0,
+		};
+	const template = TransformSchema.parse({ value: nested });
+	await expect(evaluateTransformAsync(template, { ok: true })).rejects.toThrow(
+		/nesting|limit/,
+	);
+	await expect(
+		evaluateTransformAsync(
+			TransformSchema.parse({ value: 1 }),
+			{},
+			AbortSignal.abort(),
+		),
+	).rejects.toBeDefined();
 });
