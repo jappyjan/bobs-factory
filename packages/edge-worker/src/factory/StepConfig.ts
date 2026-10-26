@@ -7,6 +7,7 @@ import {
 	compileInlineSchema,
 	compileInlineSchemaSync,
 } from "./InlineSchema.js";
+import { nodeMetadata } from "./nodes/metadata.js";
 import {
 	type Rule,
 	type RuleCondition,
@@ -1503,7 +1504,11 @@ export function stepConfigIssues(
 		issues.push(
 			`${step.id}: read-only access permits only ${readOnlyTools.join(", ")}`,
 		);
-	if (accessOf(step) === "read-only" && step.type !== "agent")
+	if (
+		accessOf(step) === "read-only" &&
+		step.type !== "agent" &&
+		nodeMetadata(step.type)?.accessEffects?.["read-only"] !== "read-only"
+	)
 		issues.push(`${step.id}: read-only access applies to agent steps`);
 	return issues;
 }

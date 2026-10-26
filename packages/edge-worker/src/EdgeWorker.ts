@@ -385,6 +385,11 @@ import {
 	linearDeliveryAdapter,
 	taskbotDeliveryAdapter,
 } from "./factory/TicketDeliveryAdapters.js";
+import {
+	nativeTicketIO,
+	type TicketIOAdapter,
+	taskbotTicketIO,
+} from "./factory/TicketIO.js";
 import { linearConnection, TicketManagers } from "./factory/TicketManagers.js";
 import {
 	ensureTicketTranscript,
@@ -392,6 +397,7 @@ import {
 	nativeAdapter,
 	originatingTicket,
 	type TicketAdapter,
+	type TicketReference,
 	TicketReferenceSchema,
 	TicketTracking,
 	taskbotAdapter,
@@ -8067,6 +8073,7 @@ ${taskSection}`;
 					this.fileIssueDestinations(run, signal),
 				fileIssue: (run, issue, signal) =>
 					this.fileRecipeIssue(run, issue, signal),
+				ticketIO: (run, ref, signal) => this.factoryTicketIO(run, ref, signal),
 				availabilityChanged: (_id, enabled) => {
 					if (!enabled) this.interruptDisabledSessions();
 				},
@@ -8918,6 +8925,100 @@ ${taskSection}`;
 			throw new Error(
 				`${provider === "linear" ? "Linear" : "Taskbot"} ticket manager is disabled. Enable it in Settings → Ticket managers to resume ticket synchronization.`,
 			);
+	}
+	private async factoryTicketIO(
+		run: FactoryRun,
+		ref: TicketReference,
+		signal: AbortSignal,
+	): Promise<TicketIOAdapter> {
+		this.assertTicketManagerEnabled(
+			ref.provider === "taskbot" ? "taskbot" : ref.platform,
+		);
+		const config = await this.factoryMcpConfig(run);
+		const create: TicketIOAdapter["create"] = async (
+			fields,
+			key,
+			reconcile,
+		) => {
+			const snapshot =
+				ref.provider === "native" && !fields.teamId
+					? await (
+							await this.factoryTicketAdapter(
+								{ ...run, ticketReference: ref },
+								signal,
+							)
+						).read()
+					: undefined;
+			const destination =
+				ref.provider === "taskbot"
+					? {
+							provider: "taskbot" as const,
+							server: ref.server,
+							instance: ref.instance,
+							project: ref.project,
+						}
+					: {
+							provider: "linear" as const,
+							workspaceId: ref.workspaceId,
+							teamId:
+								fields.teamId ??
+								String((snapshot?.team as { id?: string })?.id ?? ""),
+						};
+			const marker = `<!-- factory-ticket:${key} -->`;
+			const intent = {
+				itemId: key,
+				key,
+				marker,
+				title: fields.title,
+				body: `${fields.description ?? ""}\n\n${marker}`,
+				labels: [],
+				...(fields.priority !== undefined ? { priority: fields.priority } : {}),
+				destination,
+				phase: reconcile ? ("uncertain" as const) : ("pending" as const),
+			};
+			if (ref.provider === "taskbot")
+				return fileTaskbotIssue(
+					intent,
+					(tool, args) =>
+						config.callTool(ref.server, tool, args, signal, 60000),
+					async () => {},
+					signal,
+				);
+			const tracker = this.issueTrackers.get(ref.workspaceId) as
+				| (IIssueTrackerService & { getClient?: () => LinearClient })
+				| undefined;
+			const client = tracker?.getClient?.();
+			if (!client || ref.platform !== "linear")
+				throw new Error(
+					"Native ticket creation needs a configured creation adapter",
+				);
+			for (const tool of ["get_issue", "save_issue"])
+				assertFactoryToolAllowed(
+					`mcp__linear__${tool}`,
+					config.built.config.allowedTools,
+					config.built.config.disallowedTools,
+				);
+			return fileLinearIssue(client, intent, async () => {}, signal, reconcile);
+		};
+		if (ref.provider === "native") {
+			const tracker = this.issueTrackers.get(ref.workspaceId);
+			if (!tracker || tracker.getPlatformType() !== ref.platform)
+				throw new Error("Ticket tracker unavailable");
+			if (ref.platform === "linear")
+				await this.ensureLinearTokenFresh(ref.workspaceId);
+			return nativeTicketIO(
+				ref,
+				tracker,
+				ref.platform === "linear" ? create : undefined,
+			);
+		}
+		if (taskbotServer(ref.instance, config.servers) !== ref.server)
+			throw new Error("Taskbot transport identity changed");
+		return taskbotTicketIO(
+			ref,
+			(tool, args) => config.callTool(ref.server, tool, args, signal, 60000),
+			create,
+		);
 	}
 	private async factoryTicketAdapter(
 		run: FactoryRun,
@@ -11273,7 +11374,11 @@ ${taskSection}`;
 		run: FactoryRun,
 		reassess = false,
 	): Promise<void> {
-		if (run.workflow.id === "simple") return;
+		if (
+			run.workflow.id === "simple" ||
+			run.workflow.engineVersion === "nodes-v1"
+		)
+			return;
 		await this.resolveFactoryTicket(run, new AbortController().signal);
 		if (!run.ticketReference) return;
 		if (run.ticketSync) {

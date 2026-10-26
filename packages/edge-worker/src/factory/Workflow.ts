@@ -246,7 +246,8 @@ export const WorkflowSchema = z.preprocess(
 						context.addIssue({
 							code: "custom",
 							path: [...at, "checks"],
-							message: "nodes-v1 Check is pure; checks is a legacy-only property",
+							message:
+								"nodes-v1 Check is pure; checks is a legacy-only property",
 						});
 					for (const [group, children] of (step.groups ?? []).entries())
 						visit(children, [...at, "groups", group]);

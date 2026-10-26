@@ -4,6 +4,10 @@ This changelog documents internal development changes, refactors, tooling update
 
 ## [Unreleased]
 
+### Added
+
+- Add recipe IO nodes for provider-confirmed merge, explicit ticket operations and commands with enforced workspace access; retain durable restart receipts and legacy ticket tracking. Retry pre-dispatch failures, release merge reservations during queue confirmation, support linked-worktree Git/temp writes, and enforce read-only command networking. Read-only Exec can be polled by Wait with a capacity lease per command and one final receipt. ([Taskbot #163](https://taskbot.apps.janjaap.de/p/bobs-factory/t/163), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#204](https://github.com/jappyjan/bobs-factory/pull/204))
+
 ### Changed
 
 - Add opt-in generic Factory agents with fresh/resumed native sessions, current reads on each turn, selector-only `verify` checks and a separate human-node loop. Preserve generic agent reads and verification inside For each, resume sessions across revisited Parallel branches, item IDs and recipe calls after restart, retain saved runner/model settings, and recover unavailable sessions with a warning and prior output. Respect fresh sessions during dependency refreshes. Reject legacy domain flags and embedded UI in `nodes-v1` definitions while preserving accepted legacy prompts and behavior. ([Taskbot #161](https://taskbot.apps.janjaap.de/p/bobs-factory/t/161), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#200](https://github.com/jappyjan/bobs-factory/pull/200))

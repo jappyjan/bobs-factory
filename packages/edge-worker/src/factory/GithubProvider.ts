@@ -18,6 +18,9 @@ export function githubPullRequest(value: any) {
 		body: value.body ?? "",
 		headRefName: value.head?.ref,
 		headRefOid: value.head?.sha,
+		...(value.merged && value.merge_commit_sha
+			? { mergeCommitSha: value.merge_commit_sha }
+			: {}),
 		baseRefName: value.base?.ref,
 		state: value.merged ? "MERGED" : value.state === "open" ? "OPEN" : "CLOSED",
 		isDraft: value.draft,

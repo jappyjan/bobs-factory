@@ -11,6 +11,7 @@ export const PullRequestSchema = z.object({
 	body: z.string(),
 	headRefName: branch,
 	headRefOid: z.string().min(1),
+	mergeCommitSha: z.string().min(1).optional(),
 	baseRefName: branch,
 	state: z.enum(["OPEN", "MERGED", "CLOSED"]),
 	isDraft: z.boolean(),

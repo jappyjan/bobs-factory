@@ -59,7 +59,13 @@ export interface GitProvider {
 	view(
 		url: string,
 		fields?: string,
-	): Promise<{ state: string; isDraft: boolean; headRefOid: string }>;
+	): Promise<{
+		state: string;
+		isDraft: boolean;
+		headRefOid: string;
+		mergeCommitSha?: string;
+		baseRefName?: string;
+	}>;
 	inspect(url: string): Promise<TakeoverPullRequest>;
 	readiness(url: string): Promise<MergeReadiness>;
 	draft(url: string, draft: boolean): Promise<void>;

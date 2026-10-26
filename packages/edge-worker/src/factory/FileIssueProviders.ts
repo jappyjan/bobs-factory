@@ -23,6 +23,7 @@ export async function fileLinearIssue(
 	issue: Intent,
 	save: () => Promise<void>,
 	signal?: AbortSignal,
+	reconcileOnly = false,
 ) {
 	if (issue.destination.provider !== "linear")
 		throw new Error("Linear destination required");
@@ -91,6 +92,8 @@ export async function fileLinearIssue(
 		return { id: value.id, url: value.url };
 	};
 	if (existing.nodes.length) return check(existing.nodes[0]!);
+	if (reconcileOnly)
+		throw new Error("Original Linear ticket creation is not confirmed");
 	const team = await client.team(destination.teamId);
 	const states = await team.states();
 	const backlog = states.nodes.find((state) => state.type === "backlog");
@@ -143,6 +146,7 @@ export async function fileLinearIssue(
 		id,
 		teamId: destination.teamId,
 		title: issue.title.slice(0, 250),
+		...(issue.priority !== undefined ? { priority: issue.priority } : {}),
 		description: issue.body,
 		stateId: backlog.id,
 		assigneeId: null,
@@ -240,6 +244,7 @@ export async function fileTaskbotIssue(
 				await call("create_ticket", {
 					project,
 					title: issue.title,
+					...(issue.priority !== undefined ? { priority: issue.priority } : {}),
 					body: issue.body,
 					status: "backlog",
 					labels: [...new Set([...(issue.labels ?? []), label])],

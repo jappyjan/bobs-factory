@@ -25,6 +25,7 @@ export interface FileIssueAccepted {
 	title: string;
 	body: string;
 	labels: string[];
+	priority?: number;
 	destination: IssueDestination;
 }
 export interface FileIssueIntent extends FileIssueAccepted {
