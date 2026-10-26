@@ -447,10 +447,14 @@ export function nodeEffect(step: {
 }): NodeEffect {
 	const node = nodeMetadata(step.type);
 	return (
-		(typeof step.op === "string"
+		(typeof step.op === "string" &&
+		node?.operationEffects &&
+		Object.hasOwn(node.operationEffects, step.op)
 			? node?.operationEffects?.[step.op]
 			: undefined) ??
-		(typeof step.access === "string"
+		(typeof step.access === "string" &&
+		node?.accessEffects &&
+		Object.hasOwn(node.accessEffects, step.access)
 			? node?.accessEffects?.[step.access]
 			: undefined) ??
 		node?.effect ??

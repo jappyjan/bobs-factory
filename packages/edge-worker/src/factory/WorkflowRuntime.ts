@@ -79,6 +79,11 @@ import {
 } from "./defaultWorkflows.js";
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
 import {
+	EffectReconciliationError,
+	NonConvergenceError,
+	WorkflowUnavailableError,
+} from "./ExecutionErrors.js";
+import {
 	ExecutionProfileStore,
 	type ExecutionSelection,
 	type ExecutionSnapshot,
@@ -376,10 +381,13 @@ export interface GraphCheckpoint {
 	active?: {
 		retries?: number;
 		retryAt?: number;
+		/** Automatic retries retain one semantic progress attempt for the accepted visit. */
+		retryProgressObservation?: string;
 		wait?: {
 			deadline: number;
 			nextPollAt: number;
 			polls: number;
+			errors?: number;
 			output?: unknown;
 			matched?: boolean;
 		};
@@ -2695,8 +2703,14 @@ export class WorkflowRuntime {
 				},
 				save: () => this.save(run),
 			};
-			context.beginProgressAttempt = (reason) =>
-				beginProgressAttempt(context, reason);
+			context.progressObservation = state.retryProgressObservation;
+			context.beginProgressAttempt = async (reason) => {
+				if (state.retryProgressObservation) {
+					delete state.retryProgressObservation;
+					return;
+				}
+				await beginProgressAttempt(context, reason);
+			};
 			let consumedReads: Record<string, unknown> | undefined;
 			if (step.reads) {
 				const bindings = stepBindings(
@@ -3488,6 +3502,8 @@ export class WorkflowRuntime {
 								: {}),
 						}),
 					);
+					delete checkpoint.error;
+					delete state.retryProgressObservation;
 					state.phase = "result";
 					finishStepAttempt(
 						context,
@@ -3505,6 +3521,13 @@ export class WorkflowRuntime {
 					await this.save(run);
 					signal.throwIfAborted();
 				} catch (error) {
+					if (
+						error instanceof NonConvergenceError ||
+						error instanceof WorkflowUnavailableError
+					) {
+						finishStepAttempt(context, "interrupted");
+						throw error;
+					}
 					if (
 						!context.progressObservation &&
 						!run.progressBudget?.blocked &&
@@ -3568,6 +3591,7 @@ export class WorkflowRuntime {
 						state.phase === "executing"
 					) {
 						if (step.retry && (state.retries ?? 0) < step.retry.max) {
+							state.retryProgressObservation = context.progressObservation;
 							state.retries = (state.retries ?? 0) + 1;
 							state.retryAt = Date.now() + step.retry.backoff;
 							this.log(
@@ -3578,7 +3602,7 @@ export class WorkflowRuntime {
 							await this.save(run);
 							continue;
 						}
-						if (step.onError) {
+						if (step.onError && !(error instanceof EffectReconciliationError)) {
 							checkpoint.error = {
 								message: error instanceof Error ? error.message : String(error),
 								kind:

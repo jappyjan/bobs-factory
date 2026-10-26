@@ -1,6 +1,11 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 import {
+	EffectReconciliationError,
+	NonConvergenceError,
+	WorkflowUnavailableError,
+} from "../ExecutionErrors.js";
+import {
 	evaluateRulesAsync,
 	RuleConditionSchema,
 	RuleDataSchema,
@@ -40,6 +45,7 @@ export const schema = z.object({
 				});
 		}),
 	interval: z.number().int().min(1).max(86_400_000),
+	maxErrors: z.number().int().min(1).max(10000).optional(),
 	timeout: z.number().int().min(1).max(604_800_000),
 	until: RuleDataSchema.pipe(RuleConditionSchema),
 	checks: z.never().optional(),
@@ -111,6 +117,7 @@ export const definition = {
 					ctx.engine,
 					ctx.graphChat,
 				);
+				let polled = false;
 				try {
 					// No graph dispatch: polls never append output/history receipts.
 					state.output = await new Promise<unknown>((resolve, reject) => {
@@ -125,17 +132,42 @@ export const definition = {
 							.finally(() => signal.removeEventListener("abort", cancel));
 						if (signal.aborted) cancel();
 					});
-					ctx.signal.throwIfAborted();
-					const issues = await evaluateRulesAsync(
-						[{ message: "waiting", require: ctx.step.until }],
-						{ inputs: ctx.reads, output: state.output, polls: state.polls },
-						undefined,
-						signal,
-					);
-					state.matched = issues.length === 0 && Date.now() < state.deadline;
+					polled = true;
 				} catch (error) {
 					ctx.signal.throwIfAborted();
-					if (!deadline.aborted) throw error;
+					if (
+						error instanceof NonConvergenceError ||
+						error instanceof WorkflowUnavailableError ||
+						error instanceof EffectReconciliationError
+					)
+						throw error;
+					if (!deadline.aborted) {
+						state.errors = (state.errors ?? 0) + 1;
+						ctx.log(
+							`Poll ${state.polls} failed: ${error instanceof Error ? error.message : String(error)}`,
+						);
+						await ctx.checkpoint();
+						if (
+							ctx.step.maxErrors !== undefined &&
+							state.errors >= ctx.step.maxErrors
+						)
+							throw error;
+					}
+				}
+				if (polled) {
+					try {
+						ctx.signal.throwIfAborted();
+						const issues = await evaluateRulesAsync(
+							[{ message: "waiting", require: ctx.step.until }],
+							{ inputs: ctx.reads, output: state.output, polls: state.polls },
+							undefined,
+							signal,
+						);
+						state.matched = issues.length === 0 && Date.now() < state.deadline;
+					} catch (error) {
+						ctx.signal.throwIfAborted();
+						if (!deadline.aborted) throw error;
+					}
 				}
 				state.nextPollAt = Date.now() + ctx.step.interval;
 				await ctx.checkpoint();

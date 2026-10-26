@@ -158,14 +158,35 @@ checks editor. Editable projection does not add `checks` to a marked Check.
 
 `type: "transform"`, category `logic`, effect `pure`. `transform` is an object
 whose fields are rules-v1 expressions (`select`, conditions and `aggregate`:
-`filter`, `count`, `all`, `any`), scalar literals, `{literal: <JSON>}`, or a map:
-`{map: <JSON Pointer>, where?: <condition>, template: <field object>}`. Use
+`filter`, `count`, `all`, `any`), `find`, scalar literals, `{literal: <JSON>}`,
+`{merge: [<object expressions>...]}`, or a map:
+`{map: <pointer or pointer array>, where?: <condition>, distinctBy?: <pointer>,
+missingAsEmpty?: <boolean>, template: <field object>}`. Use
 `literal` for objects and arrays, including data resembling an expression.
 
 The initial document is `{inputs: <resolved reads>}`. Inside map, `select` and
 conditions read the current item; `$/inputs/...` reads the original document.
-Nested maps keep that original root. Map/aggregate must select arrays; missing
-or malformed collections fail. No field can read another field from the same
+Nested maps keep that original root. `^/field` reads the enclosing map or
+wildcard item; repeat `^` to climb further. Each `*` adds an item scope, so
+`/inputs/reviewers/*/findings/*` retains the reviewer as the finding's parent.
+`@key` is the current source key (a string, including array offsets), and `@index`
+is its zero-based position before filtering. `^@key` / `^@index` read the parent's
+metadata. Object order follows JSON property enumeration order.
+
+Map accepts arrays or keyed objects; an array of source pointers concatenates
+collections in declaration order. `missingAsEmpty: true` skips absent/null
+collections or branches, including a failed reviewer with no findings. Wrong
+scalar types still fail. The default rejects missing collections.
+`distinctBy` reads a key from each source item and keeps the first item that
+passes `where`, across all sources; missing keys fail. It does not collect duplicates.
+Aggregate and `find` collections must select arrays.
+`{find: {collection: <pointer>, key: <pointer>, value: <pointer>}}` compares each
+collection item's key with the current item's value and returns a detached copy
+of the first match, or `null`. Matching uses JSON value equality; a missing sought
+value returns `null`. Use `$/inputs/...` for an external collection.
+`merge` takes up to 20 rules-v1 expressions or `{literal: <JSON>}` values. It
+shallowly combines objects left to right (later fields win), skips `null`
+so a missing lookup leaves the original intact, and rejects scalar/array results. No field can read another field from the same
 transform; use another Transform when a subsequent calculation needs its result.
 
 ```json
@@ -191,10 +212,78 @@ transform; use another Transform when a subsequent calculation needs its result.
 ```
 
 Output owns detached JSON. Templates have at most 50 fields per object, 12 map
-levels, and share the existing rules-v1 total-work, collection and output budgets
-across every field/item. Evaluation yields and honors cancellation. Optional
+levels, and share a separate 20,000,000-unit transform work budget across every
+field/item. Rules-v1 retains its 1,000,000-unit budget. Both retain the 20,000-item
+collection and 1,000,000-character canonical output limits. Evaluation yields
+every 2,048 work units and honors cancellation. Optional
 `output: {schema: <JSON Schema>}` uses the existing bounded validator without
 coercion/default insertion. Invalid output fails before a history receipt.
+
+For example, given N parallel reviewers under a keyed `reviewers` input (each
+value has `name` and `findings`), these two steps flatten findings, retain reviewer
+and foreach keys, deduplicate by ID, apply prior disposition fields, then filter
+`rating >= 2 && status == open`. A failed reviewer with no findings contributes
+nothing. The optional extra source can contain retained findings from a previous
+round. The first step retains the complete merged record; the second publishes
+the actionable projection. Supply `prior` as `[]` for the first review round.
+
+```json
+[
+  {
+    "id": "aggregate", "name": "Aggregate review", "type": "transform",
+    "reads": {
+      "reviewers": "parallel-review/results",
+      "prior": "prior-review/dispositions",
+      "extra": "prior-review/retainedFindings"
+    },
+    "transform": {
+      "findings": {
+        "map": ["/inputs/reviewers/*/findings/*", "/inputs/extra"],
+        "missingAsEmpty": true,
+        "distinctBy": "/id",
+        "template": {
+          "reviewer": {"select": "^/name"},
+          "reviewerKey": {"select": "^@key"},
+          "findingIndex": {"select": "@index"},
+          "finding": {"merge": [
+            {"select": ""},
+            {"find": {"collection": "$/inputs/prior", "key": "/id", "value": "/id"}}
+          ]}
+        }
+      }
+    }
+  },
+  {
+    "id": "actionable", "name": "Open findings", "type": "transform",
+    "reads": {"findings": "aggregate/findings"},
+    "transform": {
+      "findings": {
+        "map": "/inputs/findings",
+        "where": {"all": [
+          {"path": "/finding/rating", "min": 2},
+          {"path": "/finding/status", "equals": "open"}
+        ]},
+        "template": {
+          "id": {"select": "/finding/id"},
+          "body": {"select": "/finding/body"},
+          "rating": {"select": "/finding/rating"},
+          "status": {"select": "/finding/status"},
+          "reviewer": {"select": "/reviewer"},
+          "reviewerKey": {"select": "/reviewerKey"}
+        }
+      }
+    }
+  }
+]
+```
+
+For `reviewers.alice = {name: "Alice", findings: [{id: "F1", body: "Fix X",
+rating: 3, status: "open"}]}` and `prior = [{id: "F1", status: "resolved",
+reason: "Fixed"}]`, `aggregate` retains the full finding with `status: "resolved"`,
+`reason: "Fixed"`, reviewer `Alice` and key `alice`. `actionable.findings` is empty.
+Without that prior disposition, the finding stays open and is emitted by
+`actionable`. Optional extra findings without a reviewer parent receive `null`
+reviewer metadata; their own fields remain available inside `finding`.
 
 The registry supplies palette/defaults and a Transform settings panel for the
 template, reads and output schema. Builder simulation uses
@@ -244,7 +333,10 @@ the wait if a body promise does not settle. It cannot terminate uncooperative IO
 Object output fields are returned with `{timedOut, polls}` added (these two names
 are reserved by Wait); scalar/array body output is retained under `output`.
 Timeout is an ordinary result for recipe branches, not an exception. Body errors
-fail the Wait, allowing the wrapper's retry/onError policy to handle them. The
+are logged as failed polls, retaining the last successful output, and polling
+continues until the deadline. Optional `maxErrors` (1–10,000) caps failed polls
+across the entire visit, including restarts and wrapper retries; reaching it
+throws the body error for the wrapper's retry/onError policy. The
 embedded body cannot carry routes or retry/onError; put those on the Wait.
 
 Wait uses `ctx.phase("waiting-ci", ...)` across polling and sleeping, with no
@@ -270,19 +362,23 @@ its effect keys. The retry count and next-attempt time survive restart. Backoff
 uses a capacity-free phase. Each failure remains in attempt diagnostics; only a
 successful execution appends its normal output receipt. Nodes with writes must
 still use their idempotency/reconciliation contracts; retry does not make unsafe
-writes safe or waive an uncertain effect.
+writes safe or waive an uncertain effect. Sending/uncertain effect failures never
+route through `onError`: the visit and action identity remain retained for operator
+reconciliation. Automatic retries count once against the convergence attempt budget.
 
 After exhaustion, `onError` routes to a step in the same lexical graph. The
 handler declares `reads: {error: "@error"}` (or `@error/message`), then reads
 `/inputs/error` from Check/Transform. The value is `{message, kind}`: `kind` is
 an explicit string error kind when present, otherwise the error's name, otherwise
 `"Error"`. This runtime-owned context is scoped to that graph frame and retains
-the last routed error through restart; it is not a producer output. Error routes
+the last routed error through restart until the next successful step (normally
+the handler) clears it; it is not a producer output. Error routes
 must name an actual local step, not `end` or a declared return outcome. Ordinary
 visit limits still bound error-route loops.
 
 Without these properties, execution failure behaves as before. Cancellation,
-shutdown and update pauses do not retry or enter an error handler. A false Check
+shutdown, update pauses, workflow unavailability and non-convergence pauses do
+not retry or enter an error handler. Non-convergence still requires human Continue. A false Check
 result, a timeout result, or a node's ordinary structured business result remains
 normal data for branches. Existing special recovery paths retain precedence.
 All builder node panels expose the common retry policy and error destination.

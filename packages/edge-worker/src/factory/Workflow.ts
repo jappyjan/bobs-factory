@@ -55,6 +55,7 @@ export interface WorkflowStep extends StepConfigFields {
 	transform?: import("./Rules.js").TransformTemplate;
 	interval?: number;
 	timeout?: number;
+	maxErrors?: number;
 	until?: import("./Rules.js").RuleCondition;
 	branches: {
 		when: { path: string; equals?: unknown };

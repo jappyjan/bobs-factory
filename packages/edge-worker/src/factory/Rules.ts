@@ -100,7 +100,11 @@ export type RuleAggregate =
 			path: string;
 			where?: RuleCondition;
 	  };
-export type RuleExpression = RuleCondition | RuleAggregate | { select: string };
+export type RuleExpression =
+	| RuleCondition
+	| RuleAggregate
+	| { select: string }
+	| { find: { collection: string; key: string; value: string } };
 export type RuleResult =
 	| boolean
 	| number
@@ -114,7 +118,10 @@ const MAX_VALUES = 20_000;
 const pointer = z
 	.string()
 	.max(400)
-	.regex(/^\$?(\/[^/]*)*$/, "Rule paths are JSON Pointers such as /status");
+	.regex(
+		/^(?:\$|\^*(?:@key|@index)?)?(\/[^/]*)*$/,
+		"Rule paths are JSON Pointers such as /status",
+	);
 const operand: z.ZodType<RuleOperand> = z.lazy(() =>
 	z.union([
 		z.number(),
@@ -341,9 +348,16 @@ export const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
 	RuleConditionSchema,
 	RuleAggregateSchema,
 	z.object({ select: pointer }).strict(),
+	z
+		.object({
+			find: z
+				.object({ collection: pointer, key: pointer, value: pointer })
+				.strict(),
+		})
+		.strict(),
 ]);
 
-/** Transform templates reuse rules-v1, adding only literals and item mapping. */
+/** Transform templates reuse rules-v1 with literals, object merging and item mapping. */
 export type TransformValue =
 	| RuleExpression
 	| string
@@ -351,7 +365,14 @@ export type TransformValue =
 	| boolean
 	| null
 	| { literal: unknown }
-	| { map: string; where?: RuleCondition; template: TransformTemplate };
+	| { merge: (RuleExpression | { literal: unknown })[] }
+	| {
+			map: string | string[];
+			where?: RuleCondition;
+			template: TransformTemplate;
+			distinctBy?: string;
+			missingAsEmpty?: boolean;
+	  };
 export type TransformTemplate = Record<string, TransformValue>;
 const fieldName = z
 	.string()
@@ -361,27 +382,38 @@ const fieldName = z
 		(name) => !["__proto__", "constructor", "prototype"].includes(name),
 		"Reserved transform field",
 	);
+const transformLiteralSchema = z
+	.object({
+		literal: z.unknown().superRefine((value, context) => {
+			if (!z.json().safeParse(value).success)
+				context.addIssue({
+					code: "custom",
+					message: "Transform literals must be JSON data",
+				});
+		}),
+	})
+	.strict();
 export const TransformValueSchema: z.ZodType<TransformValue> = z.lazy(() =>
 	z.union([
 		RuleExpressionSchema,
+		z
+			.object({
+				merge: z
+					.array(z.union([RuleExpressionSchema, transformLiteralSchema]))
+					.min(1)
+					.max(20),
+			})
+			.strict(),
 		z.string(),
 		z.number(),
 		z.boolean(),
 		z.null(),
+		transformLiteralSchema,
 		z
 			.object({
-				literal: z.unknown().superRefine((value, context) => {
-					if (!z.json().safeParse(value).success)
-						context.addIssue({
-							code: "custom",
-							message: "Transform literals must be JSON data",
-						});
-				}),
-			})
-			.strict(),
-		z
-			.object({
-				map: pointer,
+				map: pointers,
+				distinctBy: pointer.optional(),
+				missingAsEmpty: z.boolean().optional(),
 				where: RuleConditionSchema.optional(),
 				template: TransformTemplateSchema,
 			})
@@ -437,6 +469,15 @@ export const RULE_EVALUATION_LIMITS = {
 	dataDepth: 48,
 	canonicalCharacters: 1_000_000,
 } as const;
+export const TRANSFORM_WORK_LIMIT = 20_000_000;
+
+interface TransformScope {
+	value: unknown;
+	parent?: TransformScope;
+	key?: string;
+	index?: number;
+}
+
 type FormatValidator = (format: string, value: unknown) => boolean;
 type Task<T> = Generator<void, T, void>;
 export interface RuleEvaluationBudget {
@@ -451,6 +492,7 @@ interface Work {
 	slice: number;
 	/** Named Check inputs are lazy JSON; old condition host getters retain their API. */
 	strictJson?: boolean;
+	transformScope?: TransformScope;
 }
 const limit = () => new Error("Rules exceed the evaluation operation limit");
 function* spend(state: Work, amount = 1): Task<void> {
@@ -600,6 +642,17 @@ function* resolve(
 	requiredSelection = false,
 ): Task<unknown> {
 	yield* spend(state, path.length + 1);
+	let transformScope = state.transformScope;
+	while (path.startsWith("^")) {
+		transformScope = transformScope?.parent;
+		scope = transformScope?.value;
+		path = path.slice(1);
+	}
+	if (path.startsWith("@key") || path.startsWith("@index")) {
+		const key = path.startsWith("@key") ? "key" : "index";
+		scope = transformScope?.[key] ?? null;
+		path = path.slice(key.length + 1);
+	}
 	const fromRoot = path.startsWith("$");
 	const pointer = fromRoot ? path.slice(1) : path;
 	let current: unknown[] = [fromRoot ? root : scope];
@@ -1221,6 +1274,34 @@ function* expressionTask(
 	work: Work,
 	root: unknown = document,
 ): Task<RuleResult> {
+	if ("find" in expression) {
+		const sought = yield* resolve(document, root, expression.find.value, work);
+		if (sought === undefined) return null;
+		const items = yield* resolve(
+			document,
+			root,
+			expression.find.collection,
+			work,
+			true,
+		);
+		if (!Array.isArray(items))
+			throw new Error("Find collection must select an array");
+		const soughtKey = yield* canonical(sought, work);
+		for (const item of yield* collection(items, work)) {
+			if (
+				(yield* canonical(
+					yield* resolve(item, root, expression.find.key, work),
+					work,
+				)) === soughtKey
+			) {
+				const encoded = yield* canonical(item, work);
+				if (encoded === undefined) return null;
+				yield* spend(work, encoded.length + 1);
+				return JSON.parse(encoded);
+			}
+		}
+		return null;
+	}
 	if ("select" in expression) {
 		const encoded = yield* canonical(
 			yield* resolve(document, root, expression.select, work),
@@ -1393,50 +1474,192 @@ export async function selectRuleValuesAsync(
 	}
 }
 
+/** Retain each wildcard item's lexical parent and source key while flattening. */
+function* transformItems(
+	scope: TransformScope,
+	root: unknown,
+	path: string,
+	work: Work,
+	missingAsEmpty: boolean,
+): Task<TransformScope[]> {
+	let base: TransformScope | undefined = scope;
+	while (path.startsWith("^")) {
+		base = base?.parent;
+		path = path.slice(1);
+	}
+	let value = base?.value;
+	if (path.startsWith("$")) {
+		value = root;
+		path = path.slice(1);
+	}
+	let current = [{ value, scope: base }];
+	let expanded = false;
+	for (const key of path === "" ? [] : path.slice(1).split("/").map(decode)) {
+		const next: typeof current = [];
+		const add = (entry: (typeof current)[number]) => {
+			if (next.length >= MAX_VALUES)
+				throw new Error("Transform selection exceeds the limit");
+			next.push(entry);
+		};
+		for (const entry of current) {
+			yield* spend(work);
+			selected(entry.value, work);
+			if (key === "*") {
+				if (!entry.value || typeof entry.value !== "object") {
+					if (
+						missingAsEmpty &&
+						(entry.value === undefined || entry.value === null)
+					)
+						continue;
+					throw new Error("Transform map wildcard must select a collection");
+				}
+				expanded = true;
+				const keys = yield* members(entry.value, work);
+				for (let index = 0; index < keys.length; index++) {
+					const key = keys[index]!;
+					const value = own(entry.value, key, work);
+					add({
+						value,
+						scope: { value, key, index, parent: entry.scope },
+					});
+				}
+			} else if (
+				entry.value &&
+				typeof entry.value === "object" &&
+				Object.hasOwn(entry.value, key)
+			) {
+				add({ value: own(entry.value, key, work), scope: entry.scope });
+			} else if (!missingAsEmpty)
+				throw new Error(`Transform map path is missing ${key}`);
+		}
+		current = next;
+	}
+	if (expanded)
+		return current.map((entry) => ({ ...entry.scope!, value: entry.value }));
+	const items = current[0]?.value;
+	if (missingAsEmpty && (items === undefined || items === null)) return [];
+	if (!items || typeof items !== "object")
+		throw new Error("Transform map must select an array or object");
+	const keys = yield* members(items, work);
+	return keys.map((key, index) => ({
+		value: own(items, key, work),
+		key,
+		index,
+		parent: base,
+	}));
+}
+
+function* transformValueTask(
+	value: TransformValue,
+	scope: TransformScope,
+	root: unknown,
+	work: Work,
+	depth: number,
+): Task<unknown> {
+	if (depth > MAX_DEPTH) throw new Error("Transform nesting exceeds the limit");
+	yield* spend(work);
+	if (value === null || typeof value !== "object") return value;
+	if ("literal" in value) {
+		const encoded = yield* canonical(value.literal, work);
+		return encoded === undefined ? null : JSON.parse(encoded);
+	}
+	if ("merge" in value) {
+		const merged: Record<string, unknown> = {};
+		for (const expression of value.merge) {
+			const object = yield* transformValueTask(
+				expression,
+				scope,
+				root,
+				work,
+				depth + 1,
+			);
+			if (object === null) continue;
+			if (typeof object !== "object" || Array.isArray(object))
+				throw new Error("Transform merge accepts objects or null");
+			for (const key of yield* members(object, work)) {
+				Object.defineProperty(merged, key, {
+					value: own(object, key, work),
+					enumerable: true,
+					writable: true,
+					configurable: true,
+				});
+			}
+		}
+		return merged;
+	}
+	if (!("map" in value))
+		return yield* expressionTask(value, scope.value, work, root);
+	const mapped: unknown[] = [];
+	const seen = new Set<string | undefined>();
+	for (const path of Array.isArray(value.map) ? value.map : [value.map]) {
+		const items = yield* transformItems(
+			scope,
+			root,
+			path,
+			work,
+			value.missingAsEmpty ?? false,
+		);
+		for (const item of items) {
+			work.transformScope = item;
+			if (
+				value.where &&
+				!(yield* conditionTask(value.where, item.value, root, 0, work))
+			)
+				continue;
+			if (value.distinctBy !== undefined) {
+				const key = yield* canonical(
+					yield* resolve(item.value, root, value.distinctBy, work),
+					work,
+				);
+				if (key === undefined)
+					throw new Error("Transform distinctBy key is missing");
+				if (seen.has(key)) continue;
+				seen.add(key);
+			}
+			if (mapped.length >= MAX_VALUES)
+				throw new Error("Transform collection exceeds the limit");
+			mapped.push(
+				yield* transformTemplateTask(
+					value.template,
+					item,
+					root,
+					work,
+					depth + 1,
+				),
+			);
+		}
+	}
+	work.transformScope = scope;
+	return mapped;
+}
+
 function* transformTemplateTask(
 	template: TransformTemplate,
-	scope: unknown,
+	scope: TransformScope,
 	root: unknown,
 	work: Work,
 	depth = 0,
 ): Task<Record<string, unknown>> {
 	if (depth > MAX_DEPTH) throw new Error("Transform nesting exceeds the limit");
-	const result: Record<string, unknown> = {};
-	for (const name of yield* members(template, work)) {
-		if (["__proto__", "constructor", "prototype"].includes(name))
-			throw new Error("Reserved transform field");
-		const value = own(template, name, work) as TransformValue;
-		yield* spend(work);
-		if (value === null || typeof value !== "object") result[name] = value;
-		else if ("literal" in value) {
-			const encoded = yield* canonical(value.literal, work);
-			result[name] = encoded === undefined ? null : JSON.parse(encoded);
-		} else if ("map" in value) {
-			const items = yield* resolve(scope, root, value.map, work, true);
-			if (!Array.isArray(items))
-				throw new Error(`Transform map path ${value.map} must select an array`);
-			const mapped: unknown[] = [];
-			for (const item of yield* collection(items, work)) {
-				if (
-					value.where &&
-					!(yield* conditionTask(value.where, item, root, 0, work))
-				)
-					continue;
-				mapped.push(
-					yield* transformTemplateTask(
-						value.template,
-						item,
-						root,
-						work,
-						depth + 1,
-					),
-				);
-			}
-			result[name] = mapped;
-		} else result[name] = yield* expressionTask(value, scope, work, root);
-		yield* footprint(result[name], work);
+	const previousScope = work.transformScope;
+	work.transformScope = scope;
+	try {
+		const result: Record<string, unknown> = {};
+		for (const name of yield* members(template, work)) {
+			if (["__proto__", "constructor", "prototype"].includes(name))
+				throw new Error("Reserved transform field");
+			result[name] = yield* transformValueTask(
+				own(template, name, work) as TransformValue,
+				scope,
+				root,
+				work,
+				depth,
+			);
+		}
+		return result;
+	} finally {
+		work.transformScope = previousScope;
 	}
-	return result;
 }
 /** One shared work/output budget covers every field and mapped item. */
 export function evaluateTransformAsync(
@@ -1446,12 +1669,13 @@ export function evaluateTransformAsync(
 ): Promise<Record<string, unknown>> {
 	function* task(): Task<Record<string, unknown>> {
 		const work = state({ remaining: RULE_EVALUATION_LIMITS.conditions });
+		work.work = TRANSFORM_WORK_LIMIT;
 		work.strictJson = true;
 		yield* footprint(template, work);
 		const document = { inputs };
 		const result = yield* transformTemplateTask(
 			template,
-			document,
+			{ value: document },
 			document,
 			work,
 		);

@@ -1497,3 +1497,70 @@ it.each([
 		expect(new Set(facts).size).toBe(3);
 	}
 });
+
+it("does not retry or route a non-convergence pause from a Check correction loop", async () => {
+	const { runtime, create } = fixture();
+	const run = create([
+		{
+			id: "proof",
+			name: "Proof",
+			type: "check",
+			maxVisits: 100,
+			check: { results: { ok: { path: "/inputs/missing", exists: false } } },
+			retry: { max: 2, backoff: 0 },
+			onError: "handle",
+			next: "proof",
+		},
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			transform: { handled: true },
+		},
+	]);
+	await runtime.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.progressBudget!.blocked).toMatchObject({
+		step: "proof",
+		attempts: 2,
+		limit: 2,
+	});
+	expect(run.outputs.handle).toBeUndefined();
+	expect(run.checkpoint?.active?.retries).toBeUndefined();
+	expect(run.history.map((entry) => entry.step)).toEqual(["proof", "proof"]);
+	runtime.retry(run.id);
+	await settled(runtime, run);
+	expect(run.progressBudget!.grants).toHaveLength(1);
+	expect(run.history.map((entry) => entry.step)).toEqual([
+		"proof",
+		"proof",
+		"proof",
+	]);
+	expect(run.outputs.handle).toBeUndefined();
+});
+
+it("counts a step's automatic retries once against convergence", async () => {
+	let executions = 0;
+	const { runtime, create } = fixture({
+		tool: async () => {
+			if (++executions < 3) throw new Error("temporary transport failure");
+			return { ok: true };
+		},
+	});
+	const run = create([
+		{
+			id: "read",
+			name: "Read",
+			type: "tool",
+			tool: "fixture",
+			retry: { max: 2, backoff: 0 },
+		},
+	]);
+	await runtime.launch(run);
+	expect(run.status).toBe("completed");
+	expect(executions).toBe(3);
+	expect(attempts(run)).toBe(1);
+	expect(run.progressBudget!.blocked).toBeUndefined();
+	expect(run.progressBudget!.recent).toHaveLength(1);
+	expect(run.stepAttempts).toHaveLength(3);
+});

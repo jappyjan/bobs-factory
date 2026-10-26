@@ -44,12 +44,15 @@ process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
 delete process.env.BOBS_FACTORY_FACTORY_ORIGIN;
 delete process.env.BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN;
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
+let sends = 0;
 const schema = z.object({
 	...stepFields,
 	type: z.literal("f1-read-state"),
 	op: z.enum(["read", "write"]).default("read"),
 	readyAfter: z.number().default(2),
 	fail: z.boolean().default(false),
+	transientPoll: z.number().default(0),
+	uncertain: z.boolean().default(false),
 });
 nodeRegistry.register({
 	type: "f1-read-state",
@@ -59,6 +62,16 @@ nodeRegistry.register({
 	operationEffects: { read: "pure", write: "effect" },
 	builder: { label: "Fixture read", icon: "◇", paletteGroup: "io" },
 	execute(ctx) {
+		if (ctx.step.uncertain)
+			return ctx.effect("create", { title: "accepted" }, async () => {
+				sends++;
+				throw new Error("Response lost after creation");
+			});
+		if (
+			ctx.step.transientPoll &&
+			ctx.frame.active?.wait?.polls === ctx.step.transientPoll
+		)
+			throw new Error("Transient poll failure");
 		if (ctx.step.fail) throw new Error("Fixture read failed");
 		return {
 			ready: (ctx.frame.active?.wait?.polls ?? 0) >= ctx.step.readyAfter,
@@ -115,7 +128,13 @@ const parent = WorkflowSchema.parse({
 			id: "wait",
 			name: "Wait",
 			type: "wait",
-			body: { id: "poll", name: "Poll", type: "f1-read-state" },
+			body: {
+				id: "poll",
+				name: "Poll",
+				type: "f1-read-state",
+				transientPoll: 2,
+				readyAfter: 3,
+			},
 			interval: 2000,
 			timeout: 60000,
 			until: { path: "/output/ready", equals: true },
@@ -162,6 +181,55 @@ const timeoutRecipe = WorkflowSchema.parse({
 			interval: 5000,
 			timeout: 2000,
 			until: { path: "/output/ready", equals: true },
+		},
+	],
+});
+const effectRecipe = WorkflowSchema.parse({
+	id: "uncertain-fixture",
+	name: "Uncertain fixture",
+	engineVersion: "nodes-v1",
+	allowedTriggers: ["manual"],
+	steps: [
+		{
+			id: "send",
+			name: "Send",
+			type: "f1-read-state",
+			op: "write",
+			uncertain: true,
+			retry: { max: 2, backoff: 0 },
+			onError: "handle",
+		},
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			transform: { handled: true },
+			next: "send",
+		},
+	],
+});
+const progressRecipe = WorkflowSchema.parse({
+	id: "progress-fixture",
+	name: "Progress fixture",
+	engineVersion: "nodes-v1",
+	allowedTriggers: ["manual"],
+	convergence: { maxUnchangedAttempts: 2, continueAttempts: 1 },
+	steps: [
+		{
+			id: "proof",
+			name: "Proof",
+			type: "check",
+			maxVisits: 100,
+			check: { results: { ok: { path: "/inputs/absent", exists: false } } },
+			retry: { max: 2, backoff: 0 },
+			onError: "handle",
+			next: "proof",
+		},
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			transform: { handled: true },
 		},
 	],
 });
@@ -224,6 +292,8 @@ try {
 		...runtime().listWorkflows(),
 		parent,
 		timeoutRecipe,
+		effectRecipe,
+		progressRecipe,
 	]);
 	const catalog = await request("/api/config?view=recipes");
 	for (const type of ["transform", "wait"]) {
@@ -275,7 +345,7 @@ try {
 		ready: true,
 		value: 7,
 		timedOut: false,
-		polls: 2,
+		polls: 3,
 	});
 	assert.equal(run.history.filter((entry) => entry.step === "wait").length, 1);
 	assert.deepEqual(run.outputs.handle, {
@@ -303,6 +373,158 @@ try {
 		timedOut: true,
 		polls: 1,
 	});
+	assert.equal(run.checkpoint?.error, undefined);
+	assert(
+		run.events.some((event) =>
+			event.message.includes("Transient poll failure"),
+		),
+	);
+	const aggregate = await request("/api/workflows/transform/simulate", {
+		step: {
+			id: "aggregate",
+			name: "Aggregate",
+			type: "transform",
+			transform: {
+				findings: {
+					map: ["/inputs/reviewers/*/findings/*", "/inputs/optional"],
+					missingAsEmpty: true,
+					distinctBy: "/id",
+					where: {
+						all: [
+							{ path: "/rating", min: 2 },
+							{ path: "/status", equals: "open" },
+						],
+					},
+					template: {
+						id: { select: "/id" },
+						reviewer: { select: "^/name" },
+						reviewerKey: { select: "^@key" },
+						index: { select: "@index" },
+						prior: {
+							find: { collection: "$/inputs/prior", key: "/id", value: "/id" },
+						},
+					},
+				},
+			},
+		},
+		inputs: {
+			reviewers: {
+				alice: {
+					name: "Alice",
+					findings: [{ id: "a", rating: 3, status: "open" }],
+				},
+				failed: {},
+				bob: {
+					name: "Bob",
+					findings: [{ id: "a", rating: 3, status: "open" }],
+				},
+			},
+			prior: [{ id: "a", disposition: "confirmed" }],
+		},
+	});
+	assert.deepEqual(aggregate.output, {
+		findings: [
+			{
+				id: "a",
+				reviewer: "Alice",
+				reviewerKey: "alice",
+				index: 0,
+				prior: { id: "a", disposition: "confirmed" },
+			},
+		],
+	});
+	const merged = await request("/api/workflows/transform/simulate", {
+		step: {
+			id: "merge",
+			name: "Merge disposition",
+			type: "transform",
+			transform: {
+				finding: {
+					merge: [
+						{ select: "/inputs/finding" },
+						{
+							find: {
+								collection: "/inputs/prior",
+								key: "/id",
+								value: "/inputs/finding/id",
+							},
+						},
+					],
+				},
+			},
+		},
+		inputs: {
+			finding: { id: "a", rating: 3, status: "open", body: "Retained body" },
+			prior: [{ id: "a", status: "resolved" }],
+		},
+	});
+	assert.deepEqual(merged.output.finding, {
+		id: "a",
+		rating: 3,
+		status: "resolved",
+		body: "Retained body",
+	});
+	const actionable = await request("/api/workflows/transform/simulate", {
+		step: {
+			id: "filter",
+			name: "Actionable",
+			type: "transform",
+			transform: {
+				findings: {
+					aggregate: "filter",
+					path: "/inputs/findings",
+					where: {
+						all: [
+							{ path: "/rating", min: 2 },
+							{ path: "/status", equals: "open" },
+						],
+					},
+				},
+			},
+		},
+		inputs: { findings: [merged.output.finding] },
+	});
+	assert.deepEqual(actionable.output, { findings: [] });
+
+	const uncertain = await request("/api/runs", {
+		workflow: effectRecipe.id,
+		repositoryId: "fixture",
+		prompt: "Exercise uncertain send",
+	});
+	await wait(
+		() => runtime().get(uncertain.id).status === "failed",
+		"Uncertain effect did not block",
+	);
+	const uncertainRun = runtime().get(uncertain.id);
+	assert.equal(sends, 1);
+	assert.equal(uncertainRun.outputs.handle, undefined);
+	assert(uncertainRun.checkpoint?.active?.actionId);
+	assert.equal(Object.values(uncertainRun.nodeEffects!)[0]!.phase, "uncertain");
+	const progress = await request("/api/runs", {
+		workflow: progressRecipe.id,
+		repositoryId: "fixture",
+		prompt: "Exercise convergence pause",
+	});
+	await wait(
+		() =>
+			runtime().get(progress.id).status === "failed" &&
+			!runtime().isExecuting(progress.id),
+		"Convergence did not pause",
+	);
+	const progressRun = runtime().get(progress.id);
+	assert.equal(progressRun.progressBudget?.blocked?.attempts, 2);
+	assert.equal(progressRun.outputs.handle, undefined);
+	assert.equal(progressRun.checkpoint?.active?.retries, undefined);
+	const before = progressRun.history.length;
+	await request(`/api/runs/${progress.id}/retry`, {});
+	await wait(
+		() =>
+			progressRun.status === "failed" && !runtime().isExecuting(progress.id),
+		"Continue did not settle",
+	);
+	assert.equal(progressRun.progressBudget?.grants.length, 1);
+	assert.equal(progressRun.history.length, before + 1);
+	assert.equal(progressRun.outputs.handle, undefined);
 	const activity = await request(`/api/runs/${run.id}/activity?limit=100`);
 	assert(JSON.stringify(activity).includes("finish"));
 	assert.equal(
@@ -327,6 +549,12 @@ try {
 					"registry palette metadata",
 					"production HTTP transform simulation",
 					"map/filter/count",
+					"keyed reviewer aggregation and disposition lookup",
+					"apply prior disposition before actionable filtering",
+					"transient failed poll recovery",
+					"uncertain effect refuses error routing",
+					"non-convergence requires explicit Continue",
+					"routed error cleared after handler",
 					"pure check",
 					"read-only wait",
 					"capacity-free sleep",

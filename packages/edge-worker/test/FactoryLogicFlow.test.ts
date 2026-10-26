@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { nodeRegistry, stepFields } from "../src/factory/nodes/index.js";
-import { paletteNodes } from "../src/factory/nodes/metadata.js";
+import { nodeEffect, paletteNodes } from "../src/factory/nodes/metadata.js";
 import type { NodeContext } from "../src/factory/nodes/NodeDefinition.js";
 import { transformOutput } from "../src/factory/nodes/transform.js";
 import {
@@ -53,8 +53,13 @@ function recipe(steps: unknown[], modern = true) {
 		steps,
 	});
 }
-function start(instance: WorkflowRuntime, home: string, steps: unknown[]) {
-	const workflow = recipe(steps);
+function start(
+	instance: WorkflowRuntime,
+	home: string,
+	steps: unknown[],
+	convergence?: { maxUnchangedAttempts: number; continueAttempts: number },
+) {
+	const workflow = WorkflowSchema.parse({ ...recipe(steps), convergence });
 	return instance.create({
 		title: "Logic fixture",
 		repositoryId: "fixture",
@@ -108,6 +113,10 @@ it("maps filtered items with root reads, aggregates and literals, retaining inpu
 				tag: { select: "$/inputs/tag" },
 				accepted: { path: "/score", min: 2 },
 				nested: { map: "/values", template: { value: { select: "" } } },
+				global: {
+					map: "$/inputs/shared",
+					template: { parent: { select: "^/id" }, value: { select: "" } },
+				},
 			},
 		},
 		count: {
@@ -131,6 +140,7 @@ it("maps filtered items with root reads, aggregates and literals, retaining inpu
 	});
 	const inputs = {
 		tag: "batch",
+		shared: ["common"],
 		items: [
 			{ id: "a", enabled: true, score: 3, values: [1, 2] },
 			{ id: "b", enabled: false, score: 0, values: [] },
@@ -144,6 +154,7 @@ it("maps filtered items with root reads, aggregates and literals, retaining inpu
 				tag: "batch",
 				accepted: true,
 				nested: [{ value: 1 }, { value: 2 }],
+				global: [{ parent: "a", value: "common" }],
 			},
 		],
 		count: 1,
@@ -577,6 +588,8 @@ it("resolves per-operation and per-access IO effects with schema defaults before
 		execute: () => ({ ready: true }),
 	});
 	const base = { id: "poll", name: "Poll", type };
+	expect(nodeEffect({ type, op: "constructor" })).toBe("effect");
+	expect(nodeEffect({ type, op: "toString" })).toBe("effect");
 	const step = StepSchema.parse(waitStep(base));
 	expect(nodeRegistry.effectFor(step.body![0]!)).toBe("pure");
 	expect(() => StepSchema.parse(waitStep({ ...base, op: "write" }))).toThrow(
@@ -622,4 +635,411 @@ it("resolves per-operation and per-access IO effects with schema defaults before
 	await instance.launch(run);
 	expect(run.status).toBe("completed");
 	expect(run.outputs.wait).toEqual({ ready: true, timedOut: false, polls: 1 });
+});
+
+it("transforms realistic reviewer bodies and large passthrough collections within its independent budget", async () => {
+	const reviewers = Array.from({ length: 8 }, (_, reviewer) => ({
+		name: `Reviewer ${reviewer}`,
+		findings: Array.from({ length: 60 }, (_, index) => ({
+			id: `${reviewer}-${index}`,
+			body: "x".repeat(1200),
+		})),
+	}));
+	const template = TransformSchema.parse({
+		rows: {
+			map: "/inputs/reviewers/*/findings/*",
+			template: {
+				id: { select: "/id" },
+				body: { select: "/body" },
+				reviewer: { select: "^/name" },
+			},
+		},
+	});
+	const output = await evaluateTransformAsync(template, { reviewers });
+	const rows = output.rows as { id: string; body: string; reviewer: string }[];
+	expect(rows).toHaveLength(480);
+	expect(rows.at(-1)).toEqual({
+		id: "7-59",
+		body: "x".repeat(1200),
+		reviewer: "Reviewer 7",
+	});
+	for (const [count, length] of [
+		[300, 200],
+		[2000, 10],
+		[1000, 200],
+	]) {
+		const items = Array.from({ length: count! }, () => "x".repeat(length!));
+		expect(
+			await evaluateTransformAsync(
+				{ items: { select: "/inputs/items" } },
+				{ items },
+			),
+		).toEqual({ items });
+	}
+});
+
+it("flattens keyed reviewer findings, concatenates optional sources, deduplicates and joins prior dispositions", async () => {
+	const inputs = {
+		reviewers: {
+			alice: {
+				name: "Alice",
+				findings: [
+					{ id: "a", rating: 3, status: "open" },
+					{ id: "b", rating: 1, status: "open" },
+				],
+			},
+			failed: { name: "Failed" },
+			bob: {
+				name: "Bob",
+				findings: [
+					{ id: "a", rating: 4, status: "open" },
+					{ id: "c", rating: 2, status: "closed" },
+				],
+			},
+		},
+		extra: [{ id: "d", rating: 2, status: "open" }],
+		prior: [{ id: "a", disposition: "confirmed" }],
+	};
+	const flattened = await evaluateTransformAsync(
+		TransformSchema.parse({
+			findings: {
+				map: [
+					"/inputs/reviewers/*/findings/*",
+					"/inputs/absent",
+					"/inputs/extra",
+				],
+				missingAsEmpty: true,
+				distinctBy: "/id",
+				where: {
+					all: [
+						{ path: "/rating", min: 2 },
+						{ path: "/status", equals: "open" },
+					],
+				},
+				template: {
+					id: { select: "/id" },
+					reviewer: { select: "^/name" },
+					reviewerKey: { select: "^@key" },
+					key: { select: "@key" },
+					index: { select: "@index" },
+					prior: {
+						find: { collection: "$/inputs/prior", key: "/id", value: "/id" },
+					},
+				},
+			},
+		}),
+		inputs,
+	);
+	expect(flattened).toEqual({
+		findings: [
+			{
+				id: "a",
+				reviewer: "Alice",
+				reviewerKey: "alice",
+				key: "0",
+				index: 0,
+				prior: inputs.prior[0],
+			},
+			{
+				id: "d",
+				reviewer: null,
+				reviewerKey: null,
+				key: "0",
+				index: 0,
+				prior: null,
+			},
+		],
+	});
+	(flattened.findings as { prior: { id: string } }[])[0]!.prior.id = "changed";
+	expect(inputs.prior[0]!.id).toBe("a");
+	expect(
+		await evaluateTransformAsync(
+			{
+				rows: {
+					map: "/inputs/reviewers",
+					template: {
+						key: { select: "@key" },
+						index: { select: "@index" },
+						findings: {
+							map: "/findings",
+							missingAsEmpty: true,
+							template: {
+								reviewer: { select: "^/name" },
+								key: { select: "^@key" },
+							},
+						},
+					},
+				},
+			},
+			inputs,
+		),
+	).toEqual({
+		rows: [
+			{
+				key: "alice",
+				index: 0,
+				findings: [
+					{ reviewer: "Alice", key: "alice" },
+					{ reviewer: "Alice", key: "alice" },
+				],
+			},
+			{ key: "failed", index: 1, findings: [] },
+			{
+				key: "bob",
+				index: 2,
+				findings: [
+					{ reviewer: "Bob", key: "bob" },
+					{ reviewer: "Bob", key: "bob" },
+				],
+			},
+		],
+	});
+	await expect(
+		evaluateTransformAsync(
+			{ rows: { map: "/inputs/reviewers/*/findings/*", template: {} } },
+			inputs,
+		),
+	).rejects.toThrow(/missing/);
+	await expect(
+		evaluateTransformAsync(
+			{ rows: { map: "/inputs/value", missingAsEmpty: true, template: {} } },
+			{ value: 3 },
+		),
+	).rejects.toThrow(/array or object/);
+});
+
+it("cancels an in-flight realistic transform between work slices", async () => {
+	const controller = new AbortController();
+	const pending = evaluateTransformAsync(
+		{ items: { select: "/inputs/items" } },
+		{ items: Array(2000).fill("x".repeat(200)) },
+		controller.signal,
+	);
+	setImmediate(() => controller.abort(new Error("cancel transform")));
+	await expect(pending).rejects.toThrow("cancel transform");
+});
+
+it("treats transient body errors as failed polls and persists an optional error cap", async () => {
+	let polls = 0;
+	const body = readNode(() => {
+		if (++polls < 3) throw new Error("temporary read failure");
+		return { ready: true };
+	});
+	const { instance, home } = runtime();
+	const run = start(instance, home, [waitStep(body)]);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(run.outputs.wait).toEqual({ ready: true, timedOut: false, polls: 3 });
+	expect(
+		run.events.filter((event) =>
+			/Poll .* failed: temporary read failure/.test(event.message),
+		),
+	).toHaveLength(2);
+	const failing = readNode(() => {
+		throw new Error("always down");
+	});
+	const capped = start(instance, home, [waitStep(failing, { maxErrors: 2 })]);
+	await instance.launch(capped);
+	expect(capped.status).toBe("failed");
+	expect(capped.checkpoint?.active?.wait).toMatchObject({
+		polls: 2,
+		errors: 2,
+	});
+});
+
+it("clears routed @error after the handler succeeds", async () => {
+	const fail = readNode(() => {
+		throw new Error("handled");
+	});
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{ ...fail, onError: "handle" },
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			reads: { error: "@error" },
+			transform: { error: { select: "/inputs/error" } },
+		},
+		{ ...readNode((ctx) => ({ error: ctx.error ?? null })), id: "after" },
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(run.outputs.handle).toEqual({
+		error: { message: "handled", kind: "Error" },
+	});
+	expect(run.outputs.after).toEqual({ error: null });
+	expect(run.checkpoint?.error).toBeUndefined();
+});
+
+it("does not route an uncertain effect back into a fresh sending visit", async () => {
+	const send = vi.fn(async () => {
+		throw new Error("response lost after creation");
+	});
+	const effect = readNode(
+		(ctx) => ctx.effect("create", { title: "accepted" }, send),
+		"effect",
+	);
+	const { instance, home } = runtime();
+	const run = start(instance, home, [
+		{ ...effect, id: "send", retry: { max: 2, backoff: 0 }, onError: "handle" },
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			transform: { handled: true },
+			next: "send",
+		},
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toContain("requires reconciliation");
+	expect(run.outputs.handle).toBeUndefined();
+	expect(run.checkpoint?.active?.actionId).toBeTruthy();
+	expect(Object.values(run.nodeEffects!)).toHaveLength(1);
+	expect(Object.values(run.nodeEffects!)[0]!.phase).toBe("uncertain");
+	expect(send).toHaveBeenCalledTimes(1);
+	await instance.shutdown();
+	const resumed = runtime(home).instance;
+	const loaded = resumed.get(run.id);
+	await resumed.launch(loaded);
+	expect(loaded.status).toBe("failed");
+	expect(loaded.outputs.handle).toBeUndefined();
+	expect(send).toHaveBeenCalledTimes(1);
+});
+
+it("counts retried registry preflight failures once against convergence", async () => {
+	let executions = 0;
+	const body = readNode(() => {
+		if (++executions < 3) throw new Error("transient");
+		return { ready: true };
+	});
+	const { instance, home } = runtime();
+	const run = start(
+		instance,
+		home,
+		[{ ...body, retry: { max: 2, backoff: 0 } }],
+		{ maxUnchangedAttempts: 2, continueAttempts: 1 },
+	);
+	await instance.launch(run);
+	expect(run.status).toBe("completed");
+	expect(executions).toBe(3);
+	expect(
+		Object.values(run.progressBudget!.observations).map(
+			(observation) => observation.attempts,
+		),
+	).toEqual([1]);
+	expect(run.progressBudget!.recent.map((entry) => entry.reason)).toEqual([
+		"preflight-failure",
+	]);
+});
+
+it.each([
+	false,
+	true,
+])("does not retry or route unavailable workflows from requireRunAvailable (wait=%s)", async (polling) => {
+	const { instance, home } = runtime();
+	const disabled = WorkflowSchema.parse({
+		...recipe([
+			{ id: "unused", name: "Unused", type: "transform", transform: {} },
+		]),
+		id: "disabled",
+	});
+	instance.updateWorkflows([...instance.listWorkflows(), disabled]);
+	instance.setWorkflowEnabled(disabled.id, false);
+	const execute = vi.fn((ctx: NodeContext) =>
+		instance.requireRunAvailable({ ...ctx.run, workflow: disabled }),
+	);
+	const body = readNode(execute);
+	const run = start(instance, home, [
+		{
+			...(polling ? waitStep(body) : body),
+			retry: { max: 2, backoff: 0 },
+			onError: "handle",
+		},
+		{
+			id: "handle",
+			name: "Handle",
+			type: "transform",
+			transform: { handled: true },
+		},
+	]);
+	await instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toContain("unavailable");
+	expect(execute).toHaveBeenCalledTimes(1);
+	expect(run.outputs.handle).toBeUndefined();
+});
+
+it("applies prior disposition fields with a shallow merge before filtering actionable findings", async () => {
+	const joined = await evaluateTransformAsync(
+		TransformSchema.parse({
+			rows: {
+				map: "/inputs/findings",
+				template: {
+					finding: {
+						merge: [
+							{ select: "" },
+							{
+								find: {
+									collection: "$/inputs/dispositions",
+									key: "/id",
+									value: "/id",
+								},
+							},
+						],
+					},
+				},
+			},
+		}),
+		{
+			findings: [
+				{ id: "a", body: "kept", rating: 3, status: "open" },
+				{ id: "b", body: "fixed", rating: 2, status: "open" },
+			],
+			dispositions: [
+				{ id: "b", status: "resolved", reason: "fixed in current revision" },
+			],
+		},
+	);
+	expect(joined).toEqual({
+		rows: [
+			{ finding: { id: "a", body: "kept", rating: 3, status: "open" } },
+			{
+				finding: {
+					id: "b",
+					body: "fixed",
+					rating: 2,
+					status: "resolved",
+					reason: "fixed in current revision",
+				},
+			},
+		],
+	});
+	const actionable = await evaluateTransformAsync(
+		{
+			rows: {
+				map: "/inputs/rows",
+				where: {
+					all: [
+						{ path: "/finding/rating", min: 2 },
+						{ path: "/finding/status", equals: "open" },
+					],
+				},
+				template: { id: { select: "/finding/id" } },
+			},
+		},
+		joined,
+	);
+	expect(actionable).toEqual({ rows: [{ id: "a" }] });
+	await expect(
+		evaluateTransformAsync({ bad: { merge: [3] } }, {}),
+	).rejects.toThrow("merge accepts objects");
+	const reserved = JSON.parse('{"__proto__":{"safe":true}}');
+	expect(
+		await evaluateTransformAsync(
+			{ data: { merge: [{ literal: reserved }] } },
+			{},
+		),
+	).toEqual({ data: reserved });
 });

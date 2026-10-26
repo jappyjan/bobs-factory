@@ -12,8 +12,9 @@ export function TransformStepSettings({
 		<section className="recipe-section">
 			<h3>Transform fields</h3>
 			<p className="recipe-note">
-				Fields use rules-v1 expressions or literals. Map uses an item template;
-				$/inputs reads the original inputs.
+				Fields use rules-v1 expressions, find, or literals. Map supports
+				multiple sources and distinctBy. $/inputs reads the original inputs; ^
+				reads the parent item; @key and @index retain source keys.
 			</p>
 			<CheckJsonField
 				label="Transform template"
@@ -98,6 +99,22 @@ export function WaitStepSettings({
 					/>
 				</label>
 			))}
+			<label>
+				Failed poll limit (optional)
+				<input
+					type="number"
+					min={1}
+					max={10000}
+					readOnly={readOnly}
+					value={step.maxErrors ?? ""}
+					onChange={(e) =>
+						onChange({
+							maxErrors:
+								e.target.value === "" ? undefined : Number(e.target.value),
+						})
+					}
+				/>
+			</label>
 			<ConditionEditor
 				label="Until"
 				value={step.until ?? { path: "/output/ready", equals: true }}
