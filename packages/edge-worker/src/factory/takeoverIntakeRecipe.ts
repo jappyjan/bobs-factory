@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/suspicious/noThenProperty: Declarative JSON branches. */
 // Recipe-owned data and prompts; the nodes know nothing about Takeover.
 const text = { type: "string" };
 const strings = { type: "array", items: text };
@@ -59,32 +60,20 @@ export const takeoverIntakeRecipe = {
 	],
 	steps: [
 		{
-			id: "launch-pr",
-			name: "Read launch fields",
-			type: "transform",
-			reads: { source: "@launchInputs/source" },
-			transform: { url: { select: "/inputs/source" } },
-			next: "targets",
-		},
-		{
 			id: "targets",
 			name: "Resolve declared sources",
 			type: "transform",
 			reads: {
-				launch: "launch-pr",
 				source: "@source",
 				pr: "@callInputs/pr",
 				ticket: "@callInputs/ticket",
 				originatingTicket: "@ticket",
-				field: "@launchInputs/source",
 			},
 			transform: {
 				pr: {
-					merge: [
-						{ select: "/inputs/launch" },
-						{ select: "/inputs/source" },
-						{ select: "/inputs/pr" },
-					],
+					if: { path: "/inputs/pr", exists: true },
+					then: { select: "/inputs/pr" },
+					else: { select: "/inputs/source/request" },
 				},
 				hasTicket: {
 					any: [
@@ -95,38 +84,7 @@ export const takeoverIntakeRecipe = {
 				hasPr: {
 					any: [
 						{ path: "/inputs/pr", exists: true },
-						{ path: "/inputs/source/url", exists: true },
-						{
-							all: [
-								{ text: { path: "/inputs/field", test: "nonblank" } },
-								{
-									not: {
-										any: [
-											{
-												path: "/inputs/field",
-												equalsPath: "/inputs/ticket/id",
-											},
-											{
-												path: "/inputs/field",
-												equalsPath: "/inputs/ticket/url",
-											},
-											{
-												path: "/inputs/field",
-												equalsPath: "/inputs/originatingTicket/id",
-											},
-											{
-												path: "/inputs/field",
-												equalsPath: "/inputs/originatingTicket/identifier",
-											},
-											{
-												path: "/inputs/field",
-												equalsPath: "/inputs/originatingTicket/url",
-											},
-										],
-									},
-								},
-							],
-						},
+						{ path: "/inputs/source/request", exists: true },
 					],
 				},
 			},
@@ -143,7 +101,7 @@ export const takeoverIntakeRecipe = {
 				},
 			},
 			branches: [{ when: { path: "passed", equals: true }, next: "ticket" }],
-			next: "pr",
+			next: "pr-check",
 		},
 		{
 			id: "ticket",

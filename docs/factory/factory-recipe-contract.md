@@ -2,15 +2,19 @@
 
 Epic #156 rebuilds Factory and Takeover as `engineVersion: "nodes-v1"` compositions of
 sub-recipes built only from generic nodes (see `nodes.md` and `display.md`). The C tickets
-build the sub-recipes in parallel; D1 composes them and deletes the legacy graph. This
+build the sub-recipes in parallel; D1a composes them and gates old execution; D1b deletes the legacy engine. This
 file is the contract between them. Change it in the same PR as any recipe that needs a
 different shape.
 
 ## Transition rules
 
-- New sub-recipes are bundled `internal` recipes with `engineVersion: "nodes-v1"` and ids
-  prefixed `v2-`. The legacy `factory`, `takeover` and their sub-recipes keep running
-  unchanged until D1 swaps the composition.
+- Bundled `factory` and `takeover` now use `engineVersion: "nodes-v1"` and call
+  internal sub-recipes whose ids remain prefixed `v2-`. Existing nonterminal runs
+  with an older frozen engine stop with "Created by an older recipe engine; restart it".
+  Their history stays readable and they cannot resume or retry. Saved legacy local
+  graphs are disabled with "Fork again from current bundled recipe". No frozen
+  definition, fork, receipt or native conversation is migrated. Simple retains its
+  direct native conversation path under a nodes-v1 definition; Improve stays nodes-v1.
 - A C ticket deletes legacy code only when nothing still references it. D1 removes the
   rest.
 - Every sub-recipe declares `inputs` (only the ports it reads) and `outcomes`, can be
@@ -27,14 +31,18 @@ Every sub-recipe may read `@source` (the launch prompt and fields) and `@ticket`
 originating ticket, when there is one). Nothing else is implicit.
 
 In `nodes-v1`, `@source` is `{ prompt, fields, source? }`: the original run input,
-accepted launch fields, and optional launch source label. Unmarked legacy recipes
+accepted launch fields, optional launch source label, and optional `request` containing
+the host-resolved existing PR/MR reference. Callers can use this verified request
+without interpreting raw launch text or inheriting a parent's launch-field schema. Unmarked legacy recipes
 retain their original Takeover-specific `@source` meaning.
 
 ### C1 output locations
 
 The three C1 recipes also collect their public ports on a Transform named
 `output` for standalone/API consumers. Call `bindings` must name actual producer
-steps, not properties inside an output. Bind the ports to these flat producers:
+steps, not properties inside an output. Call envelopes use `revisionScope: "none"`;
+child evidence and approval producers retain their own revision guarantees, avoiding
+inheritance of a container's pre-effect checkout. Bind the ports to these flat producers:
 
 - `requirements`: `<planning-call>/decisions`
 - `plan`: `<planning-call>/plan`
@@ -126,7 +134,7 @@ executed producer, so nested reviewer freshness works for standalone launch inpu
 as well as bound Call ports. The graph observes HEAD → assesses impact → runs the six specialists in Parallel
 → tags and retains a finding ledger → fills coverage gaps → checks approval.
 A rejection observes convergence over HEAD and open finding IDs. Two unchanged
-observations show a `display` asking for corrective direction, architecture
+observations, or four rejected rounds even with changing HEADs, show a `display` asking for corrective direction, architecture
 revision, or CI readiness. Continue resumes the fixer; a fixer can also emit a
 needs-input display. Fixes publish through Git commit (`hooks: false`), push and
 PR ensure, then return to impact assessment. Architecture and readiness exits
@@ -148,6 +156,11 @@ or null). D1 can bind `call/outputs/review` and its updated `pr` field. Outcomes
 are `completed`, `to-architecture`, and `to-ci`. A readiness-only assessment cannot
 bypass a previously rejected review; human routing preserves unresolved findings
 in the output and never changes their dispositions.
+
+Ledger transforms use inputs-only revision scope: retained claims from earlier heads are
+data, not current approval evidence. The final review port stamps the whole current
+repository content after the independent reviewer freshness gate, keeping historical
+fix/help receipts from permanently invalidating a later accepted review.
 
 Finding IDs are globally stable `<specialist-id>:<local-id>` values. The transform
 keeps omitted complaints, settled findings and disagreements in the ledger; only
@@ -178,8 +191,9 @@ binding: `{url}` for one repository or `{repositories:[{id,url}]}`) and `ticket`
 (a verified `TicketReference`). Standalone launches keep Takeover's existing
 `source` and `prompt` field names. Ticket identifiers/URLs use the host's normal
 source resolution, yielding `@ticket` and the run's verified ticket reference;
-PR/MR URLs can be read directly from the launch `source` field, and an explicit
-`pr` call input takes precedence. In nodes-v1, `@source` is the shared launch
+The host resolves PR/MR URLs into `@source.request`, and an explicit
+`pr` call input takes precedence. Intake never guesses whether raw source text is a
+request by comparing ticket aliases or identifiers. In nodes-v1, `@source` is the shared launch
 context envelope above; prepared request data must be passed through the `pr` port.
 The host/caller owns selecting the existing worktree/branch; this read-only
 recipe does not switch branches, draft a request or grant delivery authority.
@@ -222,7 +236,7 @@ It marks the request ready, then presents the guide with Approve, Request change
 and optional item/code-note comments. The display binds both `guide` and `published`, the provider-verified current
 `pr` receipt (rather than trusting standalone launch JSON as a stamped producer). Only Approve plus `fresh(approval-display)` creates an explicit receipt;
 rejection or a new head goes through a resumed fixer, commit/push and `to-review`.
-No legacy recipe has been switched over.
+D1a composes the bundled Factory and Takeover from these graphs.
 
 ### Approval carry-forward and the merge gate
 
@@ -251,8 +265,11 @@ selects this visit's exit for presentation;
 D1 inspects the call's projected `authorization` to select the actual producer and
 binds that producer directly as C4's `approval` port: for example,
 `bindings: { approval: "approval/explicit", pr: "implementation/pr" }`, or
-`approval: "approval/carried"` after carry-forward. D1 owns those composition
-paths. C4 remains reusable with two required inputs, `approval` and `pr`, plus
+`approval: "approval/carried"` after carry-forward. The composition owns those paths, selecting `approval/explicit` or
+`approval/carried` after the call completes and binding `approval/published` as the
+latest provider-read `pr` receipt. Both merge calls receive `completion.final:false`
+for mixed work, then pass the same actual approval and confirmed merge producer
+to external delivery. Only that final external acceptance completes a mixed ticket. C4 remains reusable with two required inputs, `approval` and `pr`, plus
 optional `completion: {final:boolean}`; it never knows a sibling call-site path.
 Copied JSON, manual launch data and the presentation projection do not replace
 the authorization receipt.
@@ -331,8 +348,8 @@ JSON launch inputs provide context, never a stamped approval or merge receipt.
   repository context. Rejection preserves already-applied changes and enters
   correction → re-read → reverify → new acceptance. Final independent target reads
   and an exact originating-ticket comparison detect drift before explicit ticket
-  completion. Post-merge repository requests return to planning; they never replay
-  repository publication or merge.
+  completion. Post-merge requests requiring a new plan return to the caller's
+  external-only replanning choice; they never replay repository publication or merge.
 - `v2-deferred`: inputs `requirements`, `plan`; outcome `completed`. A content-only
   Display and ticket comment explain the deferral; the originating ticket remains
   open. Resuming execution requires explicit authorization and a revised plan.
@@ -353,3 +370,36 @@ C4 deletes no legacy code: legacy Factory/Takeover still reference `ci-watch-fix
 roles, FactoryTools' CI/inspection/merge/external adapters, CISupervision,
 MergeRecovery, MergeReadiness and TicketDeliveryAdapters. D1 must remove those
 only after replacing their compositions and checking frozen/custom consumers.
+
+## D1a execution and composition
+
+Factory starts with clarify-plan; Takeover starts with intake and consumes its
+requirements/remaining plan without clarifying again. Parent Transform producers
+retain the current requirement and plan ports, and a Check routes their delivery
+mode. Every call binds only declared inputs. Parent outcome branches implement
+revise-plan, to-architecture, to-review and to-ci; request reads before each review,
+CI, QA and approval call observe corrections published by the previous block.
+After a confirmed mixed-delivery merge, `revise-plan` displays that the repository
+part is merged and offers external-only replanning or Stop. Replanning uses a
+separate clarify-plan call and returns only to external delivery, retaining the
+original repository plan, approval and merge receipts. Stop ends execution without
+completing the ticket. The existing workflow-call canvas supplies expansion/collapse
+without recipe policy.
+
+Implementation commits with hooks disabled, then observes the merge-base diff and
+requires at least one commit ahead of the base before push/PR ensure. Empty work
+waits at a Display and resumes the implementer with the answer. Review corrections
+require a display document when reporting needs-input and have a four-round human
+assistance budget in addition to stalled-state convergence.
+
+A merge node reports `headChanged:true` if provider heads move during preflight or
+queue confirmation, and `authorizationStale:true` when local authorization becomes
+stale before dispatch. The merge sub-recipe routes either result to review and
+never completes the ticket from a partial or changed-head result. Reconciliation
+still retains the original expected head for an already submitted effect.
+
+Graphless Simple sessions are exempt from old-engine gating, including unmarked
+persisted conversations. Continuation checks availability before changing saved state.
+
+Legacy definitions and implementation remain for historical readers and D1b cleanup;
+their deletion is outside D1a.

@@ -63,6 +63,7 @@ function fixture(
 	options: {
 		advancedBase?: boolean;
 		missingBase?: boolean;
+		source?: string;
 	} = {},
 ) {
 	const home = mkdtempSync(join(tmpdir(), "takeover-intake-"));
@@ -178,7 +179,7 @@ function fixture(
 				],
 			},
 			fields: {
-				source: mode === "ticket" ? "T-1" : url,
+				source: mode === "ticket" ? (options.source ?? "T-1") : url,
 				prompt: "Retain completed work",
 			},
 		});
@@ -242,7 +243,7 @@ function fixture(
 		],
 		input: "Retain completed work",
 		launchInputs: {
-			source: mode === "ticket" ? "T-1" : url,
+			source: mode === "ticket" ? (options.source ?? "T-1") : url,
 			prompt: "Retain completed work",
 		},
 		...(mode === "ticket" || mode === "combined"
@@ -256,6 +257,7 @@ function fixture(
 			at: new Date().toISOString(),
 		},
 	});
+	if (mode === "manual" || mode === "combined") run.takeoverSource = { url };
 	return { runtime, run, agent, readPr, readTicket, draft, head, base, git };
 }
 
@@ -296,8 +298,11 @@ describe("v2-takeover-intake", () => {
 		expect(f.readPr).toHaveBeenCalledOnce();
 		expect(f.readTicket).toHaveBeenCalledOnce();
 	});
-	it("reads a prepared ticket-only launch without requiring an open request", async () => {
-		const f = fixture("github", "ticket");
+	it.each([
+		"T-1",
+		"https://linear.app/team/issue/T-1/an-alias",
+	])("reads a host-resolved ticket-only launch (%s) without requiring a request", async (source) => {
+		const f = fixture("github", "ticket", { source });
 		await f.runtime.launch(f.run);
 		expect(f.run.status, f.run.error).toBe("completed");
 		expect(f.readTicket).toHaveBeenCalledOnce();

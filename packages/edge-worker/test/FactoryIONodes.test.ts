@@ -212,7 +212,8 @@ it("does not merge a changed revision or treat an open PR as proof a merge was a
 		ioGitProvider: async () => fake.value,
 	});
 	await runtime.launch(run);
-	expect(run.error).toContain("head changed");
+	expect(run.status, run.error).toBe("completed");
+	expect(run.outputs.io).toEqual({ headChanged: true, repositories: [] });
 	expect(fake.merge).not.toHaveBeenCalled();
 });
 

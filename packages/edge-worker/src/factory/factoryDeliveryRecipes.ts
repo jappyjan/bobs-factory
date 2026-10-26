@@ -935,6 +935,13 @@ export const factoryDeliveryRecipes = [
 				reads: {
 					requests: "target-heads/requests",
 				},
+				branches: [
+					{ when: { path: "headChanged", equals: true }, next: "to-review" },
+					{
+						when: { path: "authorizationStale", equals: true },
+						next: "to-review",
+					},
+				],
 				next: "has-ticket",
 			},
 			{

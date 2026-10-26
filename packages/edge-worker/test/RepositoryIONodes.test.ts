@@ -155,6 +155,8 @@ beforeEach(() => {
 					return "pushed";
 				case "ls-remote":
 					return s.remote ? `${s.remote}\trefs/heads/feature` : "";
+				case "rev-list":
+					return "1";
 				case "diff":
 					return "2\t1\tfile.ts\0-\t-\t binary\tname.png\0";
 			}
@@ -200,9 +202,19 @@ function fixture(steps: object[], ids = ["hub"], title = "Example") {
 	const workflow = WorkflowSchema.parse({
 		id: "io",
 		name: "IO",
+		engineVersion: "nodes-v1",
 		stepConfigVersion: "step-config-v1",
 		steps: [
-			{ id: "seed", name: "Seed", type: "tool", tool: "seed" },
+			{
+				id: "seed",
+				name: "Seed",
+				type: "transform",
+				transform: {
+					message: "feat: example",
+					title: { literal: title },
+					body: "Body",
+				},
+			},
 			...steps.map((s) => ({
 				name: "IO",
 				reads: {
@@ -264,6 +276,7 @@ it.each([
 			expect(r).toMatchObject({
 				base,
 				target: head,
+				commitsAhead: 1,
 				files: ["file.ts", " binary\tname.png"],
 				stats: { filesChanged: 2, additions: 2, deletions: 1, binaryFiles: 1 },
 			});

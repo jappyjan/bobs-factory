@@ -582,6 +582,8 @@ it("implements with a long plan, commits without hooks, pushes and opens one dra
 					head = next;
 					dirty = false;
 					return "committed";
+				case "rev-list":
+					return "1";
 				case "push":
 					return "pushed";
 				default:

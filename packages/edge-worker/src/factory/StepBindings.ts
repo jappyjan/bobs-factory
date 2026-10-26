@@ -122,6 +122,7 @@ export function stepBindings(
 					prompt: run.input,
 					fields: run.launchInputs ?? {},
 					source: run.source,
+					...(run.takeoverSource ? { request: run.takeoverSource } : {}),
 				}
 			: takeoverSource(run),
 		get ticket() {

@@ -254,11 +254,15 @@ function RecipeCard({
 					</span>
 				</span>
 			</button>
-			{!!recipe.unavailable?.length && (
-				<p className="error recipe-card-warning">
-					Unavailable: {recipe.unavailable.join(", ")}. Enable the dependency or
-					edit a local graph.
-				</p>
+			{recipe.disabledReason ? (
+				<p className="error recipe-card-warning">{recipe.disabledReason}</p>
+			) : (
+				!!recipe.unavailable?.length && (
+					<p className="error recipe-card-warning">
+						Unavailable: {recipe.unavailable.join(", ")}. Enable the dependency
+						or edit a local graph.
+					</p>
+				)
 			)}
 			<footer>
 				{!recipe.internal && (

@@ -443,6 +443,7 @@ function fixture(
 		retryCheck,
 		ticket,
 		capacity,
+		provider,
 		read,
 	};
 }
@@ -1101,4 +1102,26 @@ it("a remote-only head change after approval routes back to review before dispat
 	await done(f.run);
 	expect(f.run.checkpoint?.outcome).toBe("to-review");
 	expect(f.merge).not.toHaveBeenCalled();
+});
+
+it.each([
+	false,
+	true,
+])("a head change during merge preflight or queue confirmation returns to review (queue=%s)", async (queue) => {
+	const f = fixture("v2-merge", { approval: true });
+	f.state.queue = queue;
+	const pending = f.runtime.launch(f.run);
+	await waiting(f.run, "approval");
+	const original = vi.mocked(f.provider.view).getMockImplementation()!;
+	vi.mocked(f.provider.view).mockImplementation(async (...args) => {
+		if (queue ? f.state.queued : f.run.step === "merge")
+			f.state.prHead = "new-remote-head";
+		return original(...args);
+	});
+	await answer(f.runtime, f.run, "approve");
+	await pending;
+	await done(f.run);
+	expect(f.run.checkpoint?.outcome).toBe("to-review");
+	expect(f.merge).toHaveBeenCalledTimes(queue ? 1 : 0);
+	expect((await f.ticket.read()).state).toEqual({ type: "started" });
 });

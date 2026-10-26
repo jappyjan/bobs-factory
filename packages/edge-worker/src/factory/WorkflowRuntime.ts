@@ -900,6 +900,7 @@ export class WorkflowRuntime {
 	>();
 	private shuttingDown = false;
 	private defaultWorkflow = "simple";
+	private oldEngineRuns = new Set<string>();
 	private titleSettings: AgentSettings = {};
 	private viewStates: Record<string, RunViewState> = {};
 	private chats = new Map<string, ChatMessage[]>();
@@ -991,7 +992,12 @@ export class WorkflowRuntime {
 				...(run.recoveryWorkflow ? [run.recoveryWorkflow] : []),
 			])
 				registerWorkflowConfig(definition, run.workflow.id);
-			const visitBudgetUpgraded = upgradeStockStepVisits(run);
+			// Graphless Simple conversations predate recipe engines and remain resumable.
+			const oldEngine =
+				run.workflow.steps.length > 0 &&
+				run.workflow.engineVersion !== "nodes-v1";
+			if (oldEngine) this.oldEngineRuns.add(run.id);
+			const visitBudgetUpgraded = !oldEngine && upgradeStockStepVisits(run);
 			// Process-owned operations must reacquire after restart. Legacy broad
 			// ownership cannot block restored passive parent/CI frames.
 			if (["running", "waiting", "interrupted"].includes(run.status))
@@ -1006,11 +1012,18 @@ export class WorkflowRuntime {
 			if (run.reviewRounds) immutableTranscript(run.reviewRounds);
 			this.runs.set(run.id, run);
 			registerOutputHistory(run, () => this.historyPreviews(run));
-			if (this.catalog.getBlock(run.id)) {
+			if (!oldEngine && this.catalog.getBlock(run.id)) {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
 			}
-			if (visitBudgetUpgraded) this.save(run);
+			if (
+				oldEngine &&
+				!["completed", "failed", "stopped"].includes(run.status)
+			) {
+				run.status = "stopped";
+				run.error = "Created by an older recipe engine; restart it";
+				this.save(run);
+			} else if (visitBudgetUpgraded) this.save(run);
 		}
 		this.launchAssets.cleanupRuns(new Set(this.runs.keys()));
 		cleanupVideoEvidence(
@@ -1074,6 +1087,7 @@ export class WorkflowRuntime {
 			if (!run.simpleExecution.agent)
 				throw new Error("Session conversation unavailable");
 		}
+		this.requireRunAvailable(run);
 		run.simplePrompt = prompt;
 		run.status = "running";
 		run.error = undefined;
@@ -1124,6 +1138,8 @@ export class WorkflowRuntime {
 		this.catalog.requireAvailable(workflow, definitions, id);
 	}
 	requireRunAvailable(run: FactoryRun): void {
+		if (this.oldEngineRuns.has(run.id))
+			throw new Error("Created by an older recipe engine; restart it");
 		this.requireAvailable(run.workflow, run.workflowDefinitions ?? [], run.id);
 	}
 	availabilityImpact(id: string): string[] {
@@ -1224,6 +1240,8 @@ export class WorkflowRuntime {
 			throw new Error(
 				"Resume requires blocked work whose executor has finished stopping",
 			);
+		if (this.oldEngineRuns.has(id))
+			throw new Error("Created by an older recipe engine; restart it");
 		this.requireAvailable(run.workflow, run.workflowDefinitions ?? []);
 		if (run.workflowBlock) {
 			const prior = run.workflowBlock.priorStatus;
@@ -5606,6 +5624,7 @@ export class WorkflowRuntime {
 		const run = this.get(id);
 		return (
 			!this.shuttingDown &&
+			!this.oldEngineRuns.has(id) &&
 			run.status === "stopped" &&
 			!this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
 				.length &&

@@ -670,7 +670,10 @@ export class WorkflowCatalog {
 		const unavailable = this.unavailable(w, definitions);
 		return {
 			ownership: reserved.has(id) ? "bundled" : "local",
-			enabled: this.state.enabled[id] !== false,
+			enabled: this.state.enabled[id] !== false && !this.legacyLocal(w),
+			disabledReason: this.legacyLocal(w)
+				? "Fork again from current bundled recipe"
+				: undefined,
 			provenance: this.state.provenance[id],
 			unavailable,
 		};
@@ -705,12 +708,19 @@ export class WorkflowCatalog {
 		};
 		return { root: copy(root), definitions: definitions.map(copy) };
 	}
+	private legacyLocal(workflow: Workflow): boolean {
+		return (
+			this.state.locals.some((local) => local.id === workflow.id) &&
+			workflow.engineVersion !== "nodes-v1"
+		);
+	}
 	unavailable(root: Workflow, definitions: Workflow[]): string[] {
 		const policy = this.policyGraph(root, definitions);
 		return workflowClosure(policy.root, policy.definitions)
 			.filter(
 				(w) =>
 					this.state.enabled[w.id] === false ||
+					this.legacyLocal(w) ||
 					this.state.migration?.conflicts[w.id],
 			)
 			.map((w) => w.id);
@@ -730,6 +740,15 @@ export class WorkflowCatalog {
 		const block = executionId ? this.blocks[executionId] : undefined;
 		if (block) throw new WorkflowUnavailableError(block.reason);
 		const disabled = this.unavailable(root, definitions);
+		if (
+			disabled.some((id) => {
+				const w = definitions.find((item) => item.id === id);
+				return w && this.legacyLocal(w);
+			})
+		)
+			throw new WorkflowUnavailableError(
+				"Fork again from current bundled recipe",
+			);
 		if (disabled.length)
 			throw new WorkflowUnavailableError(
 				`Workflow ${root.id} is unavailable: ${disabled.join(", ")}. Enable the workflow or resolve its migration conflict in Recipes. Existing blocked work needs individual Resume.`,
