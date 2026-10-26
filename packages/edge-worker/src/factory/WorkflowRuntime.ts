@@ -1854,7 +1854,8 @@ export class WorkflowRuntime {
 	): Promise<void> {
 		try {
 			if (
-				run.workflow.engineVersion === "nodes-v1" ||
+				(run.workflow.engineVersion === "nodes-v1" &&
+					!milestone.viewDecision) ||
 				!run.ticketReference ||
 				!this.hooks.track
 			)

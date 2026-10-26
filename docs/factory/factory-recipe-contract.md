@@ -26,6 +26,41 @@ different shape.
 Every sub-recipe may read `@source` (the launch prompt and fields) and `@ticket` (the
 originating ticket, when there is one). Nothing else is implicit.
 
+In `nodes-v1`, `@source` is `{ prompt, fields, source? }`: the original run input,
+accepted launch fields, and optional launch source label. Unmarked legacy recipes
+retain their original Takeover-specific `@source` meaning.
+
+### C1 output locations
+
+The three C1 recipes also collect their public ports on a Transform named
+`output` for standalone/API consumers. Call `bindings` must name actual producer
+steps, not properties inside an output. Bind the ports to these flat producers:
+
+- `requirements`: `<planning-call>/decisions`
+- `plan`: `<planning-call>/plan`
+- `architecture`: `<check-in-call>/result`
+- `change`: `<implementation-call>/change`
+- `pr`: `<implementation-call>/pr`
+
+Read `outcome` on the Call before consuming completed ports. Standalone launches
+accept the declared ports as JSON launch fields. `inputMapping` can alternatively
+select properties from a Call result envelope as ordinary data.
+
+`v2-check-in` snapshots its incoming `plan` port in the local `plan-input` Transform
+before each proposal. Its display binds `plan-input` and `architecture`: this binds
+the complete plan even for standalone data inputs that have no caller receipt.
+The snapshot's declared read still detects changes to the incoming plan. Prior
+review and human feedback is captured before drafting, so the next answer cannot
+invalidate the proposal's own feedback read. Every human acceptance checks
+`fresh("acceptance")` before completing.
+
+On `revise-plan`, `output.architecture` has `accepted: false` and `planChanges`
+containing the complete proposed plan. This is revision input for the caller,
+not an accepted replacement for the `plan` port. Routine work returns
+`meaningful: false, accepted: false`. On `to-architecture`, implementation returns
+before publishing; completed `change` and `pr` ports are available only after the
+Git and PR nodes finish.
+
 ## Ports
 
 Calls bind ports by name. The producing sub-recipe's output step must emit the shape

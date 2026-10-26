@@ -4,6 +4,7 @@ import {
 	stockWorkflowMetadata,
 } from "./stockFactorySteps.js";
 import { v2ReviewRecipe } from "./v2ReviewRecipe.js";
+import { v2PlanningRecipes } from "./v2PlanningRecipes.js";
 
 /** Actual producer paths shared by these sequential Calls; public JSON never supplies identity. */
 const sources = {
@@ -1674,6 +1675,7 @@ const takeoverComposition = composition.map((call) => ({
 }));
 
 export const factoryRecipes = [
+	...v2PlanningRecipes,
 	{ ...stockWorkflowMetadata.factory, steps: composition },
 	{
 		...stockWorkflowMetadata.takeover,
