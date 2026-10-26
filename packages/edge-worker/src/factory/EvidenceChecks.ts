@@ -1,8 +1,7 @@
 import { execFile } from "node:child_process";
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { realpathSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
-import { verifiedScreenshot } from "./FactoryTools.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -20,8 +19,46 @@ import {
 	readOutput,
 	resolveStepConfig,
 } from "./StepConfig.js";
-import { evidenceFile, probeVideo } from "./Video.js";
+import {
+	inspectMedia,
+	type MediaCandidate,
+	retainVerifiedMedia,
+} from "./VerifiedMedia.js";
+import { evidenceFile } from "./Video.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
+
+/** Generic Display components retain their ordinary shapes during reference verification. */
+function codeReferences(value: unknown, depth = 0): unknown[] {
+	if (depth > 8) throw new Error("Code reference sections exceed eight levels");
+	if (!value || typeof value !== "object") return [value];
+	const component = value as Record<string, any>;
+	if (!["code", "codeTour", "section"].includes(component.type)) {
+		// A selected non-code Display component contains no code references.
+		return typeof component.type === "string" && component.data ? [] : [value];
+	}
+	const data = component.data?.literal;
+	if (!data || typeof data !== "object")
+		throw new Error(
+			"Code reference verification requires literal Display component data",
+		);
+	if (component.type === "section")
+		return (data.components ?? []).flatMap((child: unknown) =>
+			codeReferences(child, depth + 1),
+		);
+	if (component.type === "code")
+		return [
+			{ file: data.file, line: data.startLine ?? 1, lineEnd: data.endLine },
+		];
+	return (data.files ?? []).flatMap((file: Record<string, any>) =>
+		file.notes?.length
+			? file.notes.map((note: Record<string, any>) => ({
+					file: file.path,
+					line: note.line,
+					side: note.side,
+				}))
+			: [{ file: file.path, line: 1 }],
+	);
+}
 
 export type EvidencePhase = "correction" | "finalization";
 /** Runtime-owned adapters retain their historical stage, retry and failure semantics. */
@@ -173,6 +210,7 @@ export async function runEvidenceChecks(
 			throw new Error(`${path}: expected file paths or IDs`);
 		return selected as string[];
 	};
+	const verifiedMedia: MediaCandidate[] = [];
 	let operations = 0;
 	const checkpoint = async () => {
 		context.signal.throwIfAborted();
@@ -212,7 +250,9 @@ export async function runEvidenceChecks(
 					const repo = repository(context, args.repositoryId);
 					for (const file of await selectedStrings(output, args.path)) {
 						await checkpoint();
-						if (resolveStepConfig(context.step).revision === "bound") {
+						if (isNodeEngineStep(context.step) && isAbsolute(file)) {
+							evidenceFile(file, context.evidenceDir);
+						} else if (resolveStepConfig(context.step).revision === "bound") {
 							const head = await revision(context, repo.id, repo.workspace);
 							await repositoryBlob(context, repo.workspace, head, file);
 						} else fileInWorkspace(repo.workspace, file);
@@ -220,7 +260,9 @@ export async function runEvidenceChecks(
 					break;
 				}
 				case "code-refs-valid": {
-					for (const reference of await selectedValues(output, args.path)) {
+					for (const reference of (
+						await selectedValues(output, args.path)
+					).flatMap((value) => codeReferences(value))) {
 						await checkpoint();
 						const match =
 							typeof reference === "string"
@@ -250,10 +292,21 @@ export async function runEvidenceChecks(
 								entry.repositoryId ?? args.repositoryId,
 							),
 							head = await revision(context, repo.id, repo.workspace);
+						// Old-side tour notes refer to the common base, not the new file.
+						const referenceHead =
+							entry.side === "old"
+								? (
+										await exec(
+											"git",
+											["merge-base", `origin/${repo.baseBranch}`, head],
+											{ cwd: repo.workspace, signal: context.signal },
+										)
+									).stdout.trim()
+								: head;
 						const blob = await repositoryBlob(
 							context,
 							repo.workspace,
-							head,
+							referenceHead,
 							file,
 						);
 						const { stdout } = await exec("git", ["cat-file", "blob", blob], {
@@ -305,17 +358,15 @@ export async function runEvidenceChecks(
 					break;
 				}
 				case "media-valid": {
-					for (const file of await selectedStrings(output, args.path)) {
+					for (const value of await selectedValues(output, args.path)) {
 						await checkpoint();
-						if (args.kind === "video")
-							await probeVideo(
-								evidenceFile(file, context.evidenceDir),
-								context.signal,
-							);
-						else {
-							const path = verifiedScreenshot(file, context.evidenceDir);
-							if (!readFileSync(path).length) throw new Error("Image is empty");
-						}
+						verifiedMedia.push(
+							await inspectMedia(
+								context,
+								value,
+								args.kind === "video" ? "video" : "image",
+							),
+						);
 					}
 					break;
 				}
@@ -339,5 +390,7 @@ export async function runEvidenceChecks(
 			throw new OutputValidationError(output, issues);
 		}
 	}
+	if (isNodeEngineStep(context.step))
+		retainVerifiedMedia(context, output, verifiedMedia);
 	return output;
 }

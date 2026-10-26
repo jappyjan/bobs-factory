@@ -3,8 +3,9 @@ import {
 	stockTakeoverSteps,
 	stockWorkflowMetadata,
 } from "./stockFactorySteps.js";
-import { v2ReviewRecipe } from "./v2ReviewRecipe.js";
 import { v2PlanningRecipes } from "./v2PlanningRecipes.js";
+import { v2QaApprovalRecipes } from "./v2QaApprovalRecipes.js";
+import { v2ReviewRecipe } from "./v2ReviewRecipe.js";
 
 /** Actual producer paths shared by these sequential Calls; public JSON never supplies identity. */
 const sources = {
@@ -1696,6 +1697,7 @@ export const factoryRecipes = [
 	implementationRecipe,
 	reviewRecipe,
 	v2ReviewRecipe,
+	...v2QaApprovalRecipes,
 	qaRecipe,
 	ciRecipe,
 	approvalRecipe,

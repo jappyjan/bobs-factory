@@ -79,7 +79,7 @@ below. Extra fields are allowed; listed fields are required unless marked option
 | `pr` | `v2-implementation` | the `pr ensure` output (`{ repositories: [{ id, head, url, isDraft }] }`) |
 | `review` | `v2-review-loop` | `{ approved, findings: [{ id, rating, status, title, requirementRefs, reviewer }], coverage: [{ requirementId, status }] }` |
 | `qa` | `v2-qa` | `{ needed, passed, scenarios: [{ id, title }], evidence: [{ scenarioId, kind: "screenshot"\|"video", path }] }` |
-| `approval` | `v2-approval` | the approval `display` output, `bind`ing `pr` and the guide. Carry-forward adds `{ carriedFrom, decision }` |
+| `approval` | `v2-approval` | the selected stamped `explicit` or `carried` authorization receipt (see below); display answer fields plus `{ authorization, approvedRepositories, repositories, carriedFrom, decision }` |
 | `merge` | `v2-merge` | the `merge` output |
 | `delivery` | `v2-external` | `{ applied, verified, ticketUrl }` |
 
@@ -193,3 +193,78 @@ arrays. The terminal `result` step emits `{requirements, plan}`; callers bind
 `<call>/outputs/result/requirements` and `<call>/outputs/result/plan`. Its sole
 outcome is `completed`. The plan preserves completed work and describes only
 remaining steps, including unresolved feedback and validation.
+
+## QA and approval composition (C3)
+
+`v2-qa` ends at its `qa` output step. It scopes observable demonstrations, skips
+with `{needed:false,passed:true,scenarios:[],evidence:[]}` when none are needed,
+then runs capture per stable scenario ID. A scenario contains its accepted
+expectations, fixture/environment identity and all source/configuration pathspecs.
+Each capture reads that complete scenario and a retry marker; `revisionScope` uses
+its paths. Failed captures and scenarios named by review findings always recapture,
+even without source changes. An uncertain dependency uses `:(glob)**`; a changing
+external environment must change the scenario fingerprint. Reuse preserves original evidence; unrelated
+commits do not force independent scenarios to execute again. Capture verifies real
+media and repository file evidence. Review resolves scenario IDs and inspects actual
+playback. Failed review routes through a resumed fixer, commit and push, then back
+to capture. Three cycles with the same affected scenarios and capture pass/fail
+state pause at a human Display; retry never grants QA acceptance. A successful
+correction returns `to-review` so D1 repeats the code review and CI gates before approval; an uncorrected pass returns `completed`.
+Video is ordinary scenario/capture policy, with no engine flag.
+
+`v2-approval` ends at its `approval` output step. It pushes, reads provider state,
+checks clean worktrees, fresh accepted review and QA receipts, and current
+successful provider checks. Review/QA problems return `to-review`; provider/head/CI problems return
+`to-ci`. The freely composed guide uses output format `display`, with verified
+code references and the brief-v3 show & tell / Dig deeper substance in its prompt.
+It marks the request ready, then presents the guide with Approve, Request changes
+and optional item/code-note comments. The display binds both `guide` and `published`, the provider-verified current
+`pr` receipt (rather than trusting standalone launch JSON as a stamped producer). Only Approve plus `fresh(approval-display)` creates an explicit receipt;
+rejection or a new head goes through a resumed fixer, commit/push and `to-review`.
+No legacy recipe has been switched over.
+
+### Approval carry-forward and the merge gate
+
+Repeated calls **at the same call site** retain the original `explicit` approval and the latest human gate result. On a
+later visit, an impact agent compares the cumulative diff from the original
+`approvedRepositories` heads to the current provider heads. A previous carried
+decision does not reset this comparison point. Small safe production fixes are
+eligible; meaningful changes, weakened tests, unknown dependencies or uncertainty
+require a new human decision. A later human rejection or stale-answer failure disables carry-forward until a new explicit approval succeeds.
+The impact decision cannot replace review, QA or required provider checks.
+
+The exported approval keeps the display answer fields and adds:
+
+- `authorization: "explicit" | "carried"`, selecting this visit's receipt;
+- `approvedRepositories`, the original explicitly human-approved heads;
+- `repositories`, the currently authorized provider heads;
+- `carriedFrom` and `decision` (null on an explicit decision), retaining the
+  earlier approval and the independently evidenced cumulative-impact assessment.
+
+The actual authorization producers are `explicit` (binds `approval-display`) and
+`carried` (binds `impact`, `published` and `checks`). Both contain the current
+authorized repository heads in their stamped receipt. The `approval` projection
+selects this visit's exit for presentation;
+**the projection is data, not consent**.
+
+D1 inspects the call's projected `authorization` to select the actual producer and
+binds that producer directly as C4's `approval` port: for example,
+`bindings: { approval: "approval/explicit", pr: "implementation/pr" }`, or
+`approval: "approval/carried"` after carry-forward. D1 owns those composition
+paths. C4 remains reusable with exactly two inputs, `approval` and `pr`, and never
+knows a sibling call-site path. Copied JSON, manual launch data and the presentation
+projection do not replace the authorization receipt.
+
+C4's gate checks `approval.action == "approve" && fresh("approval")`. When the
+receipt has non-null `carriedFrom`, it additionally requires
+`authorization == "carried"`, `decision.safe == true` and empty
+`decision.uncertainty`. `merge` with `expectedRevision: "approval"` takes each
+expected provider head from that actual bound receipt. Recheck provider requirements
+at merge: local `fresh()` does not detect remote-only pushes. Never use the old
+`carriedFrom` head as the expected merge head. A refused carry-forward regenerates
+the guide with a short cumulative delta and the human's requests first.
+
+D1 still owns deletion of the legacy QA/approval graphs and stock roles, `Qa`,
+`QaReuse`, video-contract adapters, `ReviewBrief`, `Guide*`, `NativeViews` and
+specialized web `review-*` presentation paths where no other legacy/custom recipe
+needs them. C3 deletes none: the legacy Factory/Takeover compositions still use them.

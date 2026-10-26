@@ -8,6 +8,7 @@ import { CaptureSchema } from "./FactoryTools.js";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
 import { presentationOutputKeys } from "./RunOutputRoles.js";
 import { outputForCheck } from "./ToolBindings.js";
+import { acceptedMedia, mediaCurrent, verifiedVideo } from "./VerifiedMedia.js";
 import { evidenceFile, type VideoCapture, videoLimits } from "./Video.js";
 import {
 	type ResolvedView,
@@ -102,6 +103,35 @@ export async function readViewScreenshot(
 		!/^[a-f0-9]{64}$/.test(expected)
 	)
 		throw new Error("Invalid screenshot reference");
+	const media = acceptedMedia(run).find(
+		(asset) =>
+			asset.kind === "image" &&
+			asset.index === index &&
+			asset.sha256 === expected,
+	);
+	if (media) {
+		if (!(await mediaCurrent(run, media)))
+			throw new Error("Displayed image belongs to an earlier revision");
+		const path = evidenceFile(
+			media.path,
+			join(directory, "evidence", run.id),
+			10 * 1024 * 1024,
+		);
+		stamps?.push(() => {
+			try {
+				return (
+					evidenceFile(
+						media.path,
+						join(directory, "evidence", run.id),
+						10 * 1024 * 1024,
+					) === path
+				);
+			} catch {
+				return false;
+			}
+		});
+		return (await verifyBytes(path, expected, 10 * 1024 * 1024, true, stamps))!;
+	}
 	const key = presentationOutputKeys(run).capture;
 	const shot = CaptureSchema.parse(key ? run.outputs[key] : undefined)
 		.screenshots[index];
@@ -176,6 +206,34 @@ export async function prepareViewAssetCheck(
 			}
 		}
 		if (component.type === "video") {
+			const generic = verifiedVideo(run, component.data.taskId);
+			if (generic) {
+				if (
+					generic.validation.sha256 !== component.data.sha256 ||
+					!(await mediaCurrent(run, generic.asset))
+				)
+					throw new Error("Displayed video belongs to an earlier revision");
+				await verifyBytes(
+					protectedFile(generic.path, videoLimits.bytes),
+					generic.validation.sha256,
+					videoLimits.bytes,
+					false,
+					stamps,
+				);
+				for (const asset of [
+					generic.validation.poster,
+					generic.validation.captions,
+				])
+					if (asset)
+						await verifyBytes(
+							protectedFile(asset.path, 10 * 1024 * 1024),
+							asset.sha256,
+							10 * 1024 * 1024,
+							false,
+							stamps,
+						);
+				continue;
+			}
 			const ref = component.data,
 				video = (
 					outputForCheck(run, "capture-evidence") as VideoCapture | undefined
