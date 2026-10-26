@@ -11,6 +11,7 @@ import {
 import { timingOperation } from "../RunDiagnostics.js";
 import { stepBindings } from "../StepBindings.js";
 import type { ExecutionContext, GraphCheckpoint } from "../WorkflowRuntime.js";
+import { nodeEffect } from "./metadata.js";
 import type { NodeContext, NodeEngine } from "./NodeDefinition.js";
 
 /** Passive waits have no reads or accepted receipt and must never create a node stamp. */
@@ -69,6 +70,10 @@ export async function nodeContext(
 	const active = frame.active;
 	if (!active) throw new Error("Node context requires an active visit");
 	const observe = nodeRevisionObserver(context);
+	// Retry/restart may follow repository changes after inherited checks were pruned.
+	// Freeze the stamp only once an effect identity requires reconciliation.
+	if (!active.actionId && nodeEffect(context.step) === "effect")
+		delete active.nodeStamp;
 	const guarantee = active.nodeStamp
 		? structuredClone(active.nodeStamp.guarantee)
 		: await prepareNodeGuarantee(context, observe);

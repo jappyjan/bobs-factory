@@ -65,3 +65,23 @@ also passed. The normal pre-commit hook passed its Biome, workspace build and
 workspace typecheck gates. The focused run includes the maintained scripted drive
 above. [PR #207](https://github.com/jappyjan/bobs-factory/pull/207) retains the
 implementation and this evidence.
+
+## PR #207 retry fix round (2026-10-26)
+
+Validation starts from `4c4afe3f` with the node-context retry refresh applied.
+Before an effect identity is recorded, every execution attempt rebuilds and
+persists its stamp using a new revision observer. Existing effect identities
+continue to retain their accepted stamp for reconciliation.
+
+The added real-Git regression in `NodeGuarantees.test.ts` reads reviewer metadata
+at S1, fails PR provider setup before effect dispatch, commits S2 during backoff,
+and resumes from disk. PR ensure succeeds at S2, but both its receipt and the
+bound Display remain stale because the review covered S1. This test failed on
+the previous implementation (`fresh(pr)` incorrectly returned true) and passes
+with the fix. The provider is scripted; no external PR is created.
+
+The same eight-file focused command above passes **184 tests**, including the
+maintained authenticated API F1 drive. The edge-worker typecheck and changed-file
+Biome checks also pass. The retry regression exercises real Git, production PR
+ensure/Display execution and persisted restart with a scripted provider; the
+existing F1 drive verifies commit/push/PR and interactive Display behavior.
