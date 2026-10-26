@@ -834,243 +834,28 @@ function fixture(
 	};
 }
 
-it.each([
-	["repository", false, false],
-	["external", false, false],
-	["mixed", false, false],
-	["repository", true, false],
-	["external", false, true],
-] as const)(
-	"drives actual production composition: %s / takeover=%s frozen=%s with mocked tracker, forge, CI and agents",
-	async (mode, takeover, frozen) => {
-		const f = fixture(mode, takeover, frozen);
-		let running = f.runtime.launch(f.run);
-		let rejected = false,
-			restarted = false;
-		const decisions: string[] = [];
-		for (let turns = 0; turns < 18; turns++) {
-			await waitForRuntime(
-				() =>
-					expect(["waiting", "completed", "failed"]).toContain(f.run.status),
-				{ timeout: 120000 },
-			).catch((error) => {
-				writeFileSync(
-					`/tmp/taskbot142-timeout-${mode}-${takeover}-${frozen}.json`,
-					JSON.stringify(
-						{
-							status: f.run.status,
-							step: f.run.step,
-							error: f.run.error,
-							calls: f.calls,
-							events: f.run.events.slice(-25),
-							checkpoint: f.run.checkpoint,
-						},
-						null,
-						2,
-					),
-				);
-				throw error;
-			});
-			if (f.run.status !== "waiting") break;
-			const architecture = f.run.architectureGate;
-			if (architecture) {
-				const p = f.run.architectureProposals!.find(
-					(p) => p.id === architecture.proposalId,
-				)!;
-				expect(() =>
-					f.runtime.decideArchitecture(f.run.id, {
-						proposalId: p.id,
-						version: p.version,
-						digest: "stale",
-						decision: "accept",
-					}),
-				).toThrow();
-				f.runtime.decideArchitecture(f.run.id, {
-					proposalId: p.id,
-					version: p.version,
-					digest: p.digest,
-					decision: "accept",
-				});
-				decisions.push(p.id);
-				continue;
-			}
-			if (f.run.reviewGate?.status === "pending") {
-				const gate = structuredClone(f.run.reviewGate);
-				expect(() =>
-					f.runtime.decide(f.run.id, {
-						reviewId: gate.id,
-						headSha: "stale",
-						externalDigest: gate.externalDigest,
-						decision: "approve",
-					}),
-				).toThrow();
-				if (mode === "external" && !restarted) {
-					const prefix = structuredClone(f.run.history);
-					await f.runtime.shutdown();
-					await running;
-					f.setRuntime(new WorkflowRuntime(f.home, f.hooks));
-					running = f.runtime.launch(f.run);
-					await waitForRuntime(() =>
-						expect(f.run.status, f.run.error).toBe("waiting"),
-					);
-					expect(f.run.history.slice(0, prefix.length)).toEqual(prefix);
-					expect(f.run.reviewGate?.id).toBe(gate.id);
-					restarted = true;
-				}
-				const reject = mode === "mixed" && !rejected;
-				rejected ||= reject;
-				if (!reject) f.approveProvider();
-				f.runtime.decide(f.run.id, {
-					reviewId: f.run.reviewGate!.id,
-					headSha: f.run.reviewGate!.headSha,
-					externalDigest: f.run.reviewGate!.externalDigest,
-					decision: reject ? "reject" : "approve",
-					...(reject
-						? {
-								feedback:
-									"Update the external description with the correction and preserve repository work",
-							}
-						: {}),
-				});
-				continue;
-			}
-			throw new Error(
-				`Unexpected assistance ${f.run.step}: ${f.run.questions.join("; ")}`,
-			);
-		}
-		await running;
-		if (mode === "external" && !frozen && f.run.status === "completed") {
-			const history = structuredClone(f.run.history);
-			const originalReview = f.run.reviewGate!.id;
-			// Controlled tracker publication failure triggers the real explicit reverification API.
-			// Existing approvals and executed action receipts are untouched.
-			f.run.ticketSync = {
-				receipts: [],
-				error: "Controlled tracker completion was unavailable",
-			};
-			f.runtime.reverifyExternal(f.run.id, "controlled-operator");
-			await waitForRuntime(() =>
-				expect(f.run.status, f.run.error).toBe("waiting"),
-			);
-			expect(f.run.history.slice(0, history.length)).toEqual(history);
-			expect(f.run.reviewGate!.id).not.toBe(originalReview);
-			expect(() =>
-				f.runtime.decide(f.run.id, {
-					reviewId: originalReview,
-					externalDigest: f.run.reviewGate!.externalDigest,
-					decision: "approve",
-				}),
-			).toThrow();
-			f.runtime.decide(f.run.id, {
-				reviewId: f.run.reviewGate!.id,
-				headSha: f.run.reviewGate!.headSha,
-				externalDigest: f.run.reviewGate!.externalDigest,
-				decision: "approve",
-			});
-			await waitForRuntime(() =>
-				expect(f.run.status, f.run.error).toBe("completed"),
-			);
-			expect(f.run.checkpoint!.calls!.external!.visits["external-verify"]).toBe(
-				2,
-			);
-		}
-		writeFileSync(
-			`/tmp/taskbot142-${mode}-${takeover}-${frozen}-flow.json`,
-			JSON.stringify(
-				{
-					status: f.run.status,
-					error: f.run.error,
-					calls: f.calls,
-					commands: f.commands,
-					history: f.run.history,
-					checkpoint: f.run.checkpoint,
-				},
-				null,
-				2,
-			),
-		);
-		expect(
-			f.run.status,
-			`${f.run.error}\n${f.run.events
-				.slice(-8)
-				.map((e) => e.message)
-				.join("\n")}`,
-		).toBe("completed");
-		expect(
-			f.run.workflow.steps.filter((s) => s.type === "workflow"),
-		).toHaveLength(frozen ? 1 : 10);
-		expect(f.calls.filter((s) => s.endsWith("/clarify"))).toHaveLength(1);
-		expect(
-			f.run.history.filter(
-				(x) => x.step === (frozen ? "pipeline/plan" : "planning"),
-			),
-		).not.toHaveLength(0);
-		expect(f.run.workflowDefinitions).toEqual(
-			frozen ? preCompositionWorkflows : defaultWorkflows,
-		);
-		if (mode === "external") {
-			expect(f.merged).toBe(false);
-			expect(restarted).toBe(true);
-			expect(f.calls.some((x) => x.endsWith("/implement"))).toBe(false);
-			expect(f.state.fields.description).toBe("after");
-		} else {
-			expect(f.merged).toBe(true);
-			expect(f.run.humanDecisions?.some((x) => x.decision === "approve")).toBe(
-				true,
-			);
-			expect(f.run.history.some((x) => x.step === "merge/merge")).toBe(true);
-		}
-		if (mode === "mixed") {
-			expect(rejected).toBe(true);
-			expect(f.state.fields.description).toBe("after correction");
-			expect(f.run.checkpoint!.calls!.planning!.visits.clarify).toBe(1);
-			expect(f.run.checkpoint!.calls!.planning!.visits.plan).toBe(2);
-		}
-		if (mode === "repository") {
-			const handoff = f.run.history.findIndex(
-				(h) =>
-					h.step === "approval/handoff" &&
-					(h.output as { fix?: boolean })?.fix === true,
-			);
-			const merge = f.run.history.findIndex(
-				(h) =>
-					h.step === "merge/merge" &&
-					(h.output as { rework?: boolean })?.rework === true,
-			);
-			expect(handoff).toBeGreaterThan(0);
-			expect(
-				f.run.history.slice(handoff + 1).some((h) => h.step === "ci/ci-fix"),
-			).toBe(true);
-			expect(merge).toBeGreaterThan(handoff);
-			expect(
-				f.run.history
-					.slice(merge + 1)
-					.some((h) => h.step === "review/assess-impact"),
-			).toBe(true);
-			expect(
-				f.run.humanDecisions!.filter((d) => d.decision === "approve").length,
-			).toBeGreaterThan(1);
-			expect(f.ciCorrected).toBe(true);
-			expect(
-				f.run.checkpoint!.calls!.review!.visits["assess-impact"],
-			).toBeGreaterThan(1);
-			expect(decisions.length).toBeGreaterThan(0);
-		}
-		if (takeover) {
-			expect(f.run.takeoverSource).toMatchObject({
-				url: "https://github.com/test/repo/pull/1",
-				headRefName: "feature",
-			});
-			expect(f.calls[0]).toBe("assess-existing");
-		}
-	},
-	600000,
-);
+// Current Factory/Takeover delivery drives live in FactoryV2Composition.test.ts.
+// The retained pre-composition snapshot must remain readable, but cannot execute after load.
+it("retains frozen legacy history and stops the run on cold load", async () => {
+	const f = fixture("external", false, true);
+	const running = f.runtime.launch(f.run);
+	await waitForRuntime(() => expect(f.run.status, f.run.error).toBe("waiting"));
+	const history = structuredClone(f.run.history);
+	await f.runtime.shutdown();
+	await running;
+	f.setRuntime(new WorkflowRuntime(f.home, f.hooks));
+	expect(f.run.status).toBe("stopped");
+	expect(f.run.error).toBe("Created by an older recipe engine; restart it");
+	expect(f.run.history).toEqual(history);
+	expect(() => f.runtime.resume(f.run.id)).toThrow(
+		"Created by an older recipe engine; restart it",
+	);
+}, 180000);
 
 // Same production-runtime/host boundary as the four retained drives; only the new preparation path runs here.
-it("drives standalone external preparation, independent rejection, persisted exact human approval and final verification", async () => {
+it("retains legacy standalone preparation history while requiring a new-engine restart", async () => {
 	const f = fixture("external", false, false, true);
-	let running = f.runtime.launch(f.run);
+	const running = f.runtime.launch(f.run);
 	await waitForRuntime(
 		() => expect(f.run.status, f.run.error).toBe("waiting"),
 		{ timeout: 45000 },
@@ -1081,79 +866,14 @@ it("drives standalone external preparation, independent rejection, persisted exa
 	expect(f.run.delivery?.contract.authorization.status).toBe("authorized");
 	expect(f.state.fields.description).toBe("after correction");
 	expect(f.calls.filter((x) => x === "plan-review")).toHaveLength(2);
-	const history = structuredClone(f.run.history),
-		gate = structuredClone(f.run.reviewGate!);
-	expect(gate.status).toBe("pending");
-	expect(f.run.humanDecisions ?? []).toHaveLength(0);
+	const history = structuredClone(f.run.history);
 	await f.runtime.shutdown();
 	await running;
 	f.setRuntime(new WorkflowRuntime(f.home, f.hooks));
-	running = f.runtime.launch(f.run);
-	await waitForRuntime(() => expect(f.run.status, f.run.error).toBe("waiting"));
-	expect(f.run.history.slice(0, history.length)).toEqual(history);
-	expect(f.run.reviewGate!.id).toBe(gate.id);
-	expect(() =>
-		f.runtime.decide(f.run.id, {
-			reviewId: gate.id,
-			headSha: "stale",
-			externalDigest: gate.externalDigest,
-			decision: "approve",
-		}),
-	).toThrow();
-	f.runtime.decide(f.run.id, {
-		reviewId: gate.id,
-		headSha: gate.headSha,
-		externalDigest: gate.externalDigest,
-		decision: "approve",
-	});
-	await running;
-	expect(f.run.status, f.run.error).toBe("completed");
-	expect(f.run.delivery?.finalCheck).toMatchObject({
-		reviewId: gate.id,
-		digest: f.run.delivery!.verification!.digest,
-	});
-	expect(f.run.humanDecisions).toHaveLength(1);
-	// A user fork entering acceptance directly still cannot promote copied approved JSON.
-	const fork = structuredClone(f.run.workflow);
-	fork.id = "unreviewed-external-fork";
-	fork.name = "Unreviewed external fork";
-	const accept = fork.steps.find((s) => s.tool === "accept-delivery")!;
-	fork.steps = [accept, ...fork.steps.filter((s) => s !== accept)];
-	f.runtime.updateWorkflows([...defaultWorkflows, fork]);
-	const forged = f.runtime.create({
-		title: "Copied context",
-		input: criterion,
-		repositoryId: "fixture",
-		workspace: f.repo,
-		workflow: fork,
-		launchInputs: {
-			plan: JSON.stringify(f.run.outputs.plan),
-			"plan-review": JSON.stringify(f.run.outputs["plan-review"]),
-			clarify: JSON.stringify(f.run.outputs.clarify),
-		},
-		triggerOrigin: { type: "manual", workflowId: fork.id },
-	});
-	const callsBefore = f.calls.length;
-	await f.runtime.launch(forged);
-	expect(forged.status).toBe("failed");
-	expect(forged.error).toMatch(/original executed/);
-	expect(forged.delivery).toBeUndefined();
-	expect(f.calls).toHaveLength(callsBefore);
-
-	writeFileSync(
-		"/tmp/taskbot142-r1-standalone-flow.json",
-		JSON.stringify(
-			{
-				status: f.run.status,
-				history: f.run.history,
-				checkpoint: f.run.checkpoint,
-				delivery: f.run.delivery,
-				calls: f.calls,
-				commands: f.commands,
-			},
-			null,
-			2,
-		),
+	expect(f.run.status).toBe("stopped");
+	expect(f.run.history).toEqual(history);
+	expect(() => f.runtime.retry(f.run.id)).toThrow(
+		"Created by an older recipe engine; restart it",
 	);
 }, 180000);
 
@@ -1175,6 +895,12 @@ it.each([
 	false,
 	true,
 ])("R3 completes external rejection through reviewed correction and renewed exact approval (called=%s)", async (called) => {
+	if (called) {
+		expect(() => fixture("external", false, false, "called-external")).toThrow(
+			"Fork again from current bundled recipe",
+		);
+		return;
+	}
 	const f = fixture(
 		"external",
 		false,
@@ -1261,141 +987,21 @@ it.each([
 	}
 }, 180000);
 
-it("R7 safely prepares and routes a standalone delivery block without promoting copied context", async () => {
+it("disables saved legacy routing forks before any delivery effects", async () => {
 	const f = fixture("external", false, false, "router");
-	await f.runtime.launch(f.run);
-	expect(f.run.status, f.run.error).toBe("completed");
-	expect(f.calls.filter((x) => x === "clarify")).toHaveLength(1);
-	expect(f.calls.filter((x) => x === "plan-review")).toHaveLength(2);
-	expect(f.run.delivery?.contract.authorization.status).toBe("authorized");
-	expect(f.run.checkpoint?.outcome).toBe("to-external-apply");
-	expect(f.state.fields.description).toBe("before");
 	const fork = structuredClone(f.run.workflow);
-	fork.id = "router-unreviewed";
-	const accept = fork.steps.find((s) => s.tool === "accept-delivery")!;
-	fork.steps = [accept, ...fork.steps.filter((s) => s !== accept)];
+	fork.id = "legacy-routing-fork";
 	f.runtime.updateWorkflows([...defaultWorkflows, fork]);
-	const forged = f.runtime.create({
-		title: "Copied router context",
-		input: criterion,
-		repositoryId: "fixture",
-		workspace: f.repo,
-		workflow: fork,
-		launchInputs: Object.fromEntries(
-			["plan", "plan-review", "clarify"].map((name) => [
-				name,
-				JSON.stringify(f.run.outputs[name]),
-			]),
-		),
-		triggerOrigin: { type: "manual", workflowId: fork.id },
-	});
-	await f.runtime.launch(forged);
-	expect(forged.status).toBe("failed");
-	expect(forged.error).toMatch(/original executed/);
-	expect(forged.delivery).toBeUndefined();
-	// The same router consumes the original qualified Call ports without repeating preparation.
-	const composed = WorkflowSchema.parse({
-		id: "prepared-router-parent",
-		name: "Prepared router",
-		stepConfigVersion: "step-config-v1",
-		outcomes: ["completed"],
-		steps: [
-			{
-				id: "planning",
-				name: "Planning",
-				type: "workflow",
-				workflow: "clarify-plan",
-				next: "delivery",
-			},
-			{
-				id: "delivery",
-				name: "Delivery",
-				type: "workflow",
-				workflow: "route-delivery",
-				bindings: {
-					clarify: "planning/clarify",
-					plan: "planning/plan",
-					"plan-review": "planning/plan-review",
-				},
-				next: "end",
-			},
-		],
-	});
-	f.runtime.updateWorkflows([...defaultWorkflows, composed]);
-	const called = f.runtime.create({
-		title: "Composed router",
-		input: criterion,
-		repositoryId: "fixture",
-		workspace: f.repo,
-		workflow: composed,
-		triggerOrigin: { type: "manual", workflowId: composed.id },
-	});
-	await f.runtime.launch(called);
-	expect(called.status, called.error).toBe("completed");
-	expect(
-		called.history
-			.filter((x) => x.step.endsWith("/clarify"))
-			.map((x) => x.step),
-	).toEqual(["planning/clarify"]);
-	expect(called.outputs.delivery).toMatchObject({
-		outcome: "to-external-apply",
-	});
-	expect(called.delivery?.receipts).toEqual([]);
-	// A graph declaring actual delivery work still cannot finish at a routing outcome.
-	const guarded = structuredClone(f.run.workflow);
-	guarded.id = "router-with-delivery-obligation";
-	guarded.steps.push({
-		id: "pending-delivery",
-		name: "Pending delivery",
-		type: "workflow",
-		workflow: "external-delivery",
-		next: "end",
-		branches: [],
-		maxVisits: 8,
-	});
-	f.runtime.updateWorkflows([...defaultWorkflows, guarded]);
-	const unfinished = f.runtime.create({
-		title: "Declared delivery obligation",
-		input: criterion,
-		repositoryId: "fixture",
-		workspace: f.repo,
-		workflow: guarded,
-		triggerOrigin: { type: "manual", workflowId: guarded.id },
-	});
-	await f.runtime.launch(unfinished);
-	expect(unfinished.status).toBe("failed");
-	expect(unfinished.error).toMatch(/lacks verified acceptance/);
+	expect(() =>
+		f.runtime.create({
+			input: criterion,
+			repositoryId: "fixture",
+			workspace: f.repo,
+			workflow: fork,
+			triggerOrigin: { type: "manual", workflowId: fork.id },
+		}),
+	).toThrow("Fork again from current bundled recipe");
 	expect(f.state.fields.description).toBe("before");
-	writeFileSync(
-		"/tmp/taskbot142-r2-standalone-router.json",
-		JSON.stringify(
-			{
-				status: f.run.status,
-				history: f.run.history,
-				delivery: f.run.delivery,
-				checkpoint: f.run.checkpoint,
-				calls: f.calls,
-				forged: {
-					status: forged.status,
-					error: forged.error,
-					history: forged.history,
-				},
-				called: {
-					status: called.status,
-					history: called.history,
-					delivery: called.delivery,
-					checkpoint: called.checkpoint,
-				},
-				unfinished: {
-					status: unfinished.status,
-					error: unfinished.error,
-					history: unfinished.history,
-				},
-			},
-			null,
-			2,
-		),
-	);
 }, 180000);
 
 it.each([

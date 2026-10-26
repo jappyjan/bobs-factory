@@ -94,6 +94,9 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				return {
 					base,
 					target,
+					commitsAhead: Number(
+						await command("git", ["rev-list", "--count", `${base}..${target}`]),
+					),
 					files: changes.map((c) => c.path),
 					changes,
 					stats: {

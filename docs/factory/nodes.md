@@ -1034,3 +1034,14 @@ sending another merge. Unstamped JSON cannot supply expected-revision authority.
 
 CI/PR check summaries report `complete: false` while any check is pending; CI
 additionally reports incomplete while provider and local heads differ.
+
+Git `diff` also reports `commitsAhead` per repository: the count of commits reachable
+from its resolved target and absent from its resolved base (after optional merge-base
+selection). Recipes can distinguish an empty implementation from existing commits
+before publication without inferring delivery mode from file changes.
+
+Merge reports `{headChanged:true,repositories:[...]}` when provider head validation
+fails, including during queue confirmation, or
+`{authorizationStale:true,repositories:[...]}` when its expected-revision receipt
+becomes stale before dispatch. The repositories array retains only confirmed merges;
+recipes must route those flags before treating the result as completed delivery.

@@ -10744,10 +10744,7 @@ ${taskSection}`;
 				run.ticketReference?.url ?? originatingTicket(prompt, input.source);
 			const nativeSource =
 				ticketSource && !taskbotSource(ticketSource) ? ticketSource : undefined;
-			if (
-				(workflow.id === "takeover" && isPullRequestSource(input.source)) ||
-				nativeSource
-			) {
+			if (isPullRequestSource(input.source) || nativeSource) {
 				if (input.source && isPullRequestSource(input.source)) {
 					const setupContext: ExecutionContext = {
 						factoryHome: this.factoryHome,

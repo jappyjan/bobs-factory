@@ -11,6 +11,8 @@ import { repositoryRun, runRepositories } from "../../RepositoryScope.js";
 import { requestSchema, type schema } from "../merge.js";
 import type { NodeContext } from "../NodeDefinition.js";
 
+class HeadChanged extends Error {}
+
 export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 	const raw = ctx.step.requests ?? ctx.reads.requests;
 	const grouped = raw as
@@ -93,7 +95,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 		let provider: Awaited<ReturnType<typeof getProvider>> | undefined;
 		const checkHead = (head: string) => {
 			if (head !== request.headSha)
-				throw new Error(
+				throw new HeadChanged(
 					"PR head changed; bind the current revision before merging",
 				);
 		};
@@ -138,7 +140,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 					ctx.step.expectedRevision &&
 					!(await ctx.fresh(ctx.step.expectedRevision))
 				)
-					throw new Error("Merge expectedRevision is stale");
+					return { authorizationStale: true, repositories: results };
 				ctx.signal.throwIfAborted();
 				provider = await getProvider();
 				const current = await provider.view(request.url);
@@ -181,7 +183,12 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				async () => {
 					try {
 						if (!alreadyMerged)
-							await provider!.merge(request.url, request.headSha, method!);
+							await provider!
+								.merge(request.url, request.headSha, method!)
+								.catch(async (error) => {
+									checkHead((await provider!.view(request.url)).headRefOid);
+									throw error;
+								});
 					} finally {
 						// Provider queues can take an hour: other runs may publish while we poll.
 						await release();
@@ -192,6 +199,13 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 				() => confirm(),
 			);
 			results.push({ repositoryId: repository.id, ...result });
+		} catch (error) {
+			if (
+				error instanceof HeadChanged ||
+				(error instanceof Error && error.cause instanceof HeadChanged)
+			)
+				return { headChanged: true, repositories: results };
+			throw error;
 		} finally {
 			await release();
 		}

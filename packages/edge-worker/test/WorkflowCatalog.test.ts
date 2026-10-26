@@ -67,7 +67,12 @@ function local(
 		{ id: "work", name: "Work", type: "agent", prompt: "Execute fixture" },
 	],
 ) {
-	const workflow = WorkflowSchema.parse({ id, name: id, steps });
+	const workflow = WorkflowSchema.parse({
+		id,
+		name: id,
+		engineVersion: "nodes-v1",
+		steps,
+	});
 	runtime.updateWorkflows([...runtime.listWorkflows(), workflow]);
 	return workflow;
 }
@@ -157,7 +162,10 @@ it("preserves genuine custom graph behavior, private dependencies and default in
 		mapping = migrated.catalog.read().migration!.mappings;
 	expect(migrated.getDefaultWorkflow()).toBe(mapping.factory);
 	expect(mapping["factory-pipeline"]).toBeDefined();
-	const root = migrated.selectWorkflow([], "manual", mapping.factory);
+	expect(() => migrated.selectWorkflow([], "manual", mapping.factory)).toThrow(
+		"Fork again from current bundled recipe",
+	);
+	const root = migrated.listWorkflows().find((w) => w.id === mapping.factory)!;
 	expect(root.steps[0]!.workflow).not.toBe("factory-pipeline");
 	const child = migrated
 		.listWorkflows()
@@ -226,7 +234,7 @@ it("creates independent private fork graphs and keeps standards authoritative at
 			.steps[0]!.prompt,
 	).not.toBe("Only first fork");
 	const forged = {
-		...defaultWorkflows[1]!,
+		...defaultWorkflows.find((w) => w.id === "factory")!,
 		steps: [
 			StepSchema.parse({
 				id: "inject",
@@ -301,19 +309,33 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 		},
 	});
 	const fork = runtime.forkWorkflow("factory");
-	runtime.setWorkflowEnabled("review-loop", false);
+	runtime.setWorkflowEnabled("v2-review-loop", false);
 	expect(() => runtime.selectWorkflow([], "manual", "factory")).toThrow(
-		"review-loop",
+		"v2-review-loop",
 	);
 	expect(runtime.selectWorkflow([], "manual", fork.id).id).toBe(fork.id);
-	runtime.setWorkflowEnabled("review-loop", true);
+	runtime.setWorkflowEnabled("v2-review-loop", true);
 	const workflow = local(runtime, "wait", [
 		{
 			id: "work",
 			name: "Work",
-			type: "agent",
-			prompt: "Wait",
-			askQuestions: true,
+			type: "display",
+			document: {
+				version: "view-v1",
+				components: [
+					{
+						id: "choice",
+						type: "form",
+						data: {
+							literal: {
+								fields: [
+									{ id: "choice", type: "text", label: "Which choice?" },
+								],
+							},
+						},
+					},
+				],
+			},
 		},
 	]);
 	(runtime as any).hooks.agent = async () => ({ questions: ["Which choice?"] });
@@ -328,8 +350,8 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 		status: "blocked",
 		workflowBlock: run.workflowBlock,
 	});
-	expect(run.questions).toEqual(["Which choice?"]);
-	expect(() => runtime.answer(run.id, "A")).toThrow("disabled");
+	expect(run.viewDecision?.view.components[0]?.id).toBe("choice");
+	expect(() => runtime.requireRunAvailable(run)).toThrow("disabled");
 	runtime.setWorkflowEnabled("wait", true);
 	expect(() => runtime.retry(run.id)).toThrow("disabled");
 	const restarted = new WorkflowRuntime(home, (runtime as any).hooks);
@@ -344,7 +366,9 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 	expect(restarted.get(run.id).workflow).toEqual(accepted);
 	restarted.resume(run.id);
 	await vi.waitFor(() => expect(restarted.get(run.id).status).toBe("waiting"));
-	expect(restarted.get(run.id).questions).toEqual(["Which choice?"]);
+	expect(restarted.get(run.id).viewDecision?.view.components[0]?.id).toBe(
+		"choice",
+	);
 	restarted.stop(run.id);
 	await restarted.shutdown();
 });
@@ -355,6 +379,7 @@ it("interrupts executing work and rejects late results and preparation after dis
 	const subsequent = vi.fn();
 	const { runtime } = fixture({
 		agent: async (ctx) => {
+			if (ctx.step.id === "later") return subsequent();
 			started();
 			await new Promise<void>((resolve) => {
 				finish = resolve;
@@ -366,7 +391,7 @@ it("interrupts executing work and rejects late results and preparation after dis
 	});
 	const workflow = local(runtime, "active", [
 		{ id: "work", name: "Work", type: "agent", prompt: "Wait" },
-		{ id: "later", name: "Later", type: "script", script: "true" },
+		{ id: "later", name: "Later", type: "agent", prompt: "Later" },
 	]);
 	const run = create(runtime, workflow),
 		execution = runtime.launch(run);
@@ -383,14 +408,24 @@ it("cancels queued leaves and releases capacity without invoking the disabled to
 	const capacity = new SessionSemaphore(1),
 		lease = await capacity.acquireLease(),
 		invoke = vi.fn();
-	const { runtime } = fixture({ capacity, tool: invoke });
+	const { runtime } = fixture({
+		capacity,
+		agent: async (ctx) => {
+			const queued = await capacity.acquireLease(ctx.signal);
+			try {
+				ctx.signal.throwIfAborted();
+				return invoke();
+			} finally {
+				await queued.release();
+			}
+		},
+	});
 	const workflow = local(runtime, "queued", [
 		{
 			id: "work",
 			name: "Work",
-			type: "tool",
-			tool: "custom",
-			computeIntensive: true,
+			type: "agent",
+			prompt: "Queued fixture",
 		},
 	]);
 	const run = create(runtime, workflow),

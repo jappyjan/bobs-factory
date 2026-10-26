@@ -728,3 +728,39 @@ it("requires all six reviewers completed even when findings and coverage look cl
 		false,
 	);
 });
+
+it("asks for human help after four rejected rounds even when each correction changes HEAD", async () => {
+	let corrections = 0;
+	const f = fixture({
+		reviewer: (id) =>
+			receipt(id, id === "correctness-review" ? [complaint()] : []),
+		fix: () => {
+			writeFileSync(
+				join(f.workspace, "correctness-review.txt"),
+				`attempt ${++corrections}`,
+			);
+		},
+	});
+	const run = f.create();
+	void f.instance.launch(run);
+	await waitForRuntime(() => expect(run.viewDecision, run.error).toBeDefined());
+	expect(run.step).toBe("assistance");
+	expect(corrections).toBe(3);
+	expect(run.outputs["round-budget"]).toMatchObject({
+		stalled: true,
+		cycles: 4,
+	});
+});
+
+it("rejects needs-input corrections without a display before publication", async () => {
+	const f = fixture({
+		reviewer: (id) =>
+			receipt(id, id === "correctness-review" ? [complaint()] : []),
+		fix: () => ({ status: "needs-input" }),
+	});
+	const run = f.create();
+	await f.instance.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toContain("needs-input requires a display document");
+	expect(run.outputs.push).toBeUndefined();
+});

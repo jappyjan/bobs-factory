@@ -450,6 +450,7 @@ const implementation = {
 				architecture: "architecture",
 				repositories: "@repository",
 				answer: "questions",
+				emptyAnswer: "empty-answer",
 			},
 			instructions: ["implementation-scope"],
 			output: {
@@ -543,7 +544,77 @@ const implementation = {
 			op: "commit",
 			hooks: false,
 			reads: { message: "metadata/message" },
-			next: "push",
+			next: "implementation-diff",
+		},
+		{
+			id: "implementation-diff",
+			name: "Observe commits ahead of base",
+			type: "git",
+			op: "diff",
+			mergeBase: true,
+			next: "has-implementation",
+		},
+		{
+			id: "has-implementation",
+			name: "Require an implementation before publication",
+			type: "check",
+			reads: { diff: "implementation-diff" },
+			check: {
+				results: {
+					implemented: {
+						some: "/inputs/diff/repositories",
+						require: {
+							compare: { left: { path: "/commitsAhead" }, op: "gt", right: 0 },
+						},
+					},
+				},
+			},
+			branches: [{ when: { path: "implemented", equals: true }, next: "push" }],
+			next: "empty-answer",
+		},
+		{
+			id: "empty-answer",
+			name: "Implementation needs assistance",
+			type: "display",
+			document: {
+				version: "view-v1",
+				components: [
+					{
+						id: "reason",
+						type: "markdown",
+						data: {
+							literal: {
+								text: "No implementation commits are ahead of the base. Provide direction before continuing; unfinished work cannot be published.",
+							},
+						},
+					},
+					{
+						id: "notes",
+						type: "form",
+						data: {
+							literal: {
+								fields: [
+									{
+										id: "notes",
+										type: "textarea",
+										label: "Direction or missing access",
+									},
+								],
+							},
+						},
+					},
+					{
+						id: "actions",
+						type: "actions",
+						data: {
+							literal: {
+								actions: [{ id: "continue", label: "Continue implementation" }],
+							},
+						},
+					},
+				],
+			},
+			next: "implement",
 		},
 		{ id: "push", name: "Push", type: "git", op: "push", next: "pr" },
 		{

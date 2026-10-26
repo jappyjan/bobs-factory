@@ -36,6 +36,7 @@ export type Recipe = {
 	enabled?: boolean;
 	provenance?: { kind: string; source: string; version?: string };
 	unavailable?: string[];
+	disabledReason?: string;
 };
 
 /** Keep a correction entry only when it is a real entry in the new destination. */

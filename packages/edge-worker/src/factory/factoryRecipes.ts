@@ -1,7 +1,10 @@
+import {
+	factoryComposition,
+	takeoverComposition as nodeTakeoverComposition,
+} from "./factoryComposition.js";
 import { factoryDeliveryRecipes } from "./factoryDeliveryRecipes.js";
 import {
 	stockFactorySteps as roles,
-	stockTakeoverSteps,
 	stockWorkflowMetadata,
 } from "./stockFactorySteps.js";
 import { v2PlanningRecipes } from "./v2PlanningRecipes.js";
@@ -1666,27 +1669,18 @@ const composition = [
 	},
 ];
 
-// Takeover's own assessment is bound into every composed role; Factory has none.
-const takeoverComposition = composition.map((call) => ({
-	...call,
-	bindings: {
-		...call.bindings,
-		"existing-work": "existing-work",
-		"assess-existing": "assess-existing",
-	},
-}));
-
 export const factoryRecipes = [
 	...factoryDeliveryRecipes,
 	...v2PlanningRecipes,
-	{ ...stockWorkflowMetadata.factory, steps: composition },
+	{
+		...stockWorkflowMetadata.factory,
+		engineVersion: "nodes-v1",
+		steps: factoryComposition,
+	},
 	{
 		...stockWorkflowMetadata.takeover,
-		steps: [
-			stockTakeoverSteps["existing-work"]!,
-			stockTakeoverSteps["assess-existing"]!,
-			...takeoverComposition,
-		],
+		engineVersion: "nodes-v1",
+		steps: nodeTakeoverComposition,
 	},
 	{
 		...stockWorkflowMetadata["factory-pipeline"],

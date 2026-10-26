@@ -11,7 +11,11 @@ it("keeps Simple on its original direct conversation path", async () => {
 	const home = mkdtempSync(join(tmpdir(), "simple-smoke-"));
 	const workflow = defaultWorkflows.find((w) => w.id === "simple")!;
 	expect(workflow).toEqual(
-		WorkflowSchema.parse({ ...stockWorkflowMetadata.simple, steps: [] }),
+		WorkflowSchema.parse({
+			...stockWorkflowMetadata.simple,
+			engineVersion: "nodes-v1",
+			steps: [],
+		}),
 	);
 	const simple = vi.fn(async (run) => {
 		expect(run.input).toBe("Explain this codebase");

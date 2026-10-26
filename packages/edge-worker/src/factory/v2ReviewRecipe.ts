@@ -166,7 +166,7 @@ export const v2ReviewRecipe = {
 			type: "git",
 			op: "rev-parse",
 			next: "assess-impact",
-			maxVisits: 200,
+			maxVisits: 16,
 		},
 		{
 			id: "assess-impact",
@@ -174,7 +174,7 @@ export const v2ReviewRecipe = {
 			type: "agent",
 			reuse: "unchanged-inputs",
 			access: "read-only",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: {
 				requirements: "review-inputs/requirements",
 				plan: "review-inputs/plan",
@@ -226,7 +226,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "readiness",
 			name: "Check readiness-only handoff",
 			type: "check",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: { previous: "actionable", approved: "approved/approved" },
 			check: {
 				results: {
@@ -255,7 +255,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "specialist-review",
 			name: "Parallel specialist review",
 			type: "fanout",
-			maxVisits: 200,
+			maxVisits: 16,
 			groups: specialists.map(([id, name, brief]) => [
 				{
 					id,
@@ -264,7 +264,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 					session: "resume",
 					access: "read-only",
 					reuse: "unchanged-inputs",
-					maxVisits: 200,
+					maxVisits: 16,
 					reads: {
 						requirements: "review-inputs/requirements",
 						plan: "review-inputs/plan",
@@ -335,7 +335,9 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "collect",
 			name: "Tag findings and look up prior dispositions",
 			type: "transform",
-			maxVisits: 200,
+			// The ledger retains historical claims as data; current reviewers own evidence.
+			revisionScope: "none",
+			maxVisits: 16,
 			reads: { reviewers: "specialist-review", prior: "aggregate/ledger" },
 			transform: {
 				findings: {
@@ -364,7 +366,9 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "aggregate",
 			name: "Retain finding ledger and settled dispositions",
 			type: "transform",
-			maxVisits: 200,
+			// The ledger retains historical claims as data; current reviewers own evidence.
+			revisionScope: "none",
+			maxVisits: 16,
 			reads: { current: "collect/findings", prior: "aggregate/ledger" },
 			transform: {
 				ledger: {
@@ -401,7 +405,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "coverage",
 			name: "Complete requirement coverage",
 			type: "transform",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: {
 				requirements: "review-inputs/requirements",
 				rows: "specialist-review/5/requirements-review/coverage",
@@ -427,7 +431,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "actionable",
 			name: "Open consequential findings and coverage gaps",
 			type: "transform",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: {
 				ledger: "aggregate/ledger",
 				coverage: "coverage/rows",
@@ -500,7 +504,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "approved",
 			name: "Check independent review approval",
 			type: "check",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: { review: "actionable", reviewers: "specialist-review" },
 			check: {
 				results: {
@@ -535,10 +539,24 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "convergence",
 			name: "Detect stalled corrections",
 			type: "converge",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: { head: "head", findings: "actionable/findings" },
 			watch: ["/inputs/head/repositories/*/head", "/inputs/findings/*/id"],
 			maxCycles: 2,
+			branches: [
+				{ when: { path: "stalled", equals: true }, next: "assistance" },
+			],
+			next: "round-budget",
+		},
+		{
+			id: "round-budget",
+			name: "Bound correction rounds",
+			type: "converge",
+			revisionScope: "none",
+			reads: {},
+			watch: ["/inputs"],
+			maxCycles: 4,
+			maxVisits: 16,
 			branches: [
 				{ when: { path: "stalled", equals: true }, next: "assistance" },
 			],
@@ -548,7 +566,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			id: "assistance",
 			name: "Help the stalled review proceed",
 			type: "display",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: { review: "actionable", reviewers: "specialist-review" },
 			document: {
 				version: "view-v1",
@@ -618,7 +636,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			type: "agent",
 			session: "resume",
 			access: "push",
-			maxVisits: 200,
+			maxVisits: 16,
 			reads: {
 				requirements: "review-inputs/requirements",
 				plan: "review-inputs/plan",
@@ -665,6 +683,15 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			],
 			rules: [
 				{
+					message: "needs-input requires a display document",
+					require: {
+						any: [
+							{ not: { path: "/status", equals: "needs-input" } },
+							{ path: "/display", exists: true },
+						],
+					},
+				},
+				{
 					message: "Disposition IDs must be unique",
 					require: { path: "/dispositions", unique: true, by: "/id" },
 				},
@@ -688,7 +715,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			reads: { author: "code-fix" },
 			from: "/inputs/author/display",
 			next: "code-fix",
-			maxVisits: 200,
+			maxVisits: 16,
 		},
 		{
 			id: "commit",
@@ -698,7 +725,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			hooks: false,
 			reads: { message: "code-fix/message" },
 			next: "push",
-			maxVisits: 200,
+			maxVisits: 16,
 		},
 		{
 			id: "push",
@@ -706,7 +733,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			type: "git",
 			op: "push",
 			next: "publish-correction",
-			maxVisits: 200,
+			maxVisits: 16,
 		},
 		{
 			id: "publish-correction",
@@ -715,12 +742,15 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 			op: "ensure",
 			reads: { title: "code-fix/title", body: "code-fix/body" },
 			next: "head",
-			maxVisits: 200,
+			maxVisits: 16,
 		},
 		{
 			id: "review",
 			name: "Review output port",
 			type: "transform",
+			// Keep historical fix/help receipts in the report without inheriting their
+			// superseded heads. The approval check verifies every current reviewer.
+			revisionScope: { paths: [":(glob)**"] },
 			reads: {
 				approved: "approved/approved",
 				review: "actionable",

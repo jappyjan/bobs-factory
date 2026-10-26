@@ -50,6 +50,7 @@ it("drives scoped reuse across commits, bound freshness and convergence through 
 		{
 			id: "guarantees-f1",
 			name: "Guarantees F1",
+			engineVersion: "nodes-v1",
 			stepConfigVersion: "step-config-v1",
 			steps: [
 				{
@@ -63,8 +64,8 @@ it("drives scoped reuse across commits, bound freshness and convergence through 
 				{
 					id: "change",
 					name: "Change",
-					type: "script",
-					script: "scripted-change",
+					type: "agent",
+					prompt: "Scripted change",
 				},
 				{
 					id: "observe",
@@ -80,8 +81,8 @@ it("drives scoped reuse across commits, bound freshness and convergence through 
 				{
 					id: "response",
 					name: "Response",
-					type: "script",
-					script: "scripted-response",
+					type: "agent",
+					prompt: "Scripted response",
 					revisionScope: { paths: ["value"] },
 					bind: ["sample"],
 				},
@@ -110,16 +111,19 @@ it("drives scoped reuse across commits, bound freshness and convergence through 
 		);
 	};
 	const hooks = {
-		agent: async () => {
-			agentCalls++;
-			return { value: 1 };
-		},
-		script: async (ctx: ExecutionContext) => {
+		agent: async (ctx: ExecutionContext) => {
+			if (ctx.step.id === "sample") {
+				agentCalls++;
+				return { value: 1 };
+			}
 			if (ctx.step.id === "change") {
 				if (++changes === 1) outsideCommit("outside");
 				else if (changes === 2) commit("inside");
 			}
 			return { accepted: true };
+		},
+		script: async () => {
+			throw new Error("Unexpected legacy script");
 		},
 		tool: async () => ({}),
 	};

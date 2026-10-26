@@ -392,7 +392,7 @@ export function assertForeachBody(
 }
 
 export function validateWorkflows(value: unknown): Workflow[] {
-	const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+	const workflows = z.array(WorkflowSchema).min(1).max(200).parse(value);
 	const ids = new Set<string>();
 	for (const workflow of workflows) {
 		registerWorkflowConfig(workflow);
