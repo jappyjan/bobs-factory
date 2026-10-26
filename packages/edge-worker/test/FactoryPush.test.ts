@@ -11,7 +11,6 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import webPush from "web-push";
 import { FactoryPush } from "../src/factory/FactoryPush.js";
-import type { MergeReadiness } from "../src/factory/MergeReadiness.js";
 import {
 	type PushEvent,
 	type PushSession,
@@ -22,12 +21,10 @@ import {
 	publicAddress,
 	SubscriptionSchema,
 } from "../src/factory/PushTransport.js";
-import { validateWorkflows } from "../src/factory/Workflow.js";
 import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
-import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 const home = () => {
@@ -80,76 +77,7 @@ it("configures push from the Bob’s Factory environment and preserves its store
 		vi.unstubAllEnvs();
 	}
 });
-it.each([
-	false,
-	true,
-])("keeps the same question alert after rephrasing (nested=%s)", (nested) => {
-	const original = {
-		id: "run",
-		status: "waiting",
-		step: "clarify",
-		answers: [],
-		questions: ["Which tests?"],
-		questionChoices: [
-			{
-				questionIndex: 0,
-				selection: "single",
-				options: [
-					{ id: "mock", answer: "Simulated tests" },
-					{ id: "live", answer: "Paid tests" },
-				],
-				preselectedOptionIds: ["mock"],
-			},
-		],
-	} as unknown as FactoryRun;
-	const checkpoint = {
-		current: "clarify",
-		visits: { clarify: 1 },
-		active: {
-			phase: "waiting" as const,
-			questionDisplay: {
-				source: { questions: original.questions },
-				questions: ["Use simulated tests or authorize paid tests?"],
-			},
-		},
-	};
-	const rephrased = {
-		...original,
-		questions: checkpoint.active.questionDisplay.questions,
-		checkpoint: nested
-			? {
-					current: "fanout",
-					visits: {},
-					active: { phase: "executing" as const, children: [checkpoint] },
-				}
-			: checkpoint,
-	};
-	expect(runPushEvent(rephrased)).toEqual(runPushEvent(original));
-	expect(
-		runPushEvent({
-			...original,
-			questionChoices: [
-				{ ...original.questionChoices![0]!, preselectedOptionIds: ["live"] },
-			],
-		})?.identity,
-	).not.toBe(runPushEvent(original)?.identity);
-	// Persisted explanation provenance also survives a restart.
-	expect(runPushEvent(JSON.parse(JSON.stringify(rephrased)))).toEqual(
-		runPushEvent(original),
-	);
-	expect(
-		runPushEvent({ ...rephrased, questions: ["A different decision?"] })
-			?.identity,
-	).not.toBe(runPushEvent(original)?.identity);
-	expect(
-		runPushEvent({
-			...rephrased,
-			answers: [
-				{ questions: original.questions, answer: "Proceed", at: "now" },
-			],
-		})?.identity,
-	).not.toBe(runPushEvent(original)?.identity);
-});
+
 it("baselines attention, deduplicates saves, captures eligible devices and coalesces destinations", async () => {
 	vi.useFakeTimers();
 	const sender = vi.fn(async () => {});
@@ -250,112 +178,12 @@ it("rechecks disable/generation and does not replay claimed or queued events acr
 	expect(statSync(join(path, "factory/push.json")).mode & 0o777).toBe(0o600);
 	await push.stop();
 });
-it.each([
-	"question",
-	"review",
-] as const)("retains unresolved %s through ticket-backed restart preparation, then sends new attention", async (category) => {
-	vi.useFakeTimers();
-	const path = home();
-	const sender = vi.fn(async () => {});
-	const hooks = {
-		prepare: async () => {},
-		agent: async () => ({ questions: ["Choose an option"] }),
-		script: async () => ({}),
-		tool: async () => ({ headSha: "revision", url: "https://example.com/pr" }),
-	};
-	let runtime = new WorkflowRuntime(path, hooks);
-	let push = new FactoryPush(path, sender, Date.now, subject);
-	const source = { sessions: () => [], subscribe: () => () => {} };
-	push.attach(runtime, source);
-	push.register({ label: "one", subscription: subscription("one") });
-	const workflow = validateWorkflows([
-		...runtime.listWorkflows(),
-		{
-			id: "fixture",
-			name: "Fixture",
-			steps: [
-				category === "question"
-					? {
-							id: "attention",
-							name: "Question",
-							type: "agent",
-							prompt: "Ask",
-							askQuestions: true,
-							maxVisits: 3,
-						}
-					: {
-							id: "attention",
-							name: "Review",
-							type: "tool",
-							tool: "human-review",
-							maxVisits: 3,
-							branches: [
-								{
-									when: { path: "decision", equals: "reject" },
-									next: "attention",
-								},
-							],
-						},
-			],
-		},
-	]).at(-1)!;
-	let run = runtime.create({
-		workflow,
-		triggerOrigin: {
-			type: "manual",
-			workflowId: workflow.id,
-			at: new Date().toISOString(),
-		},
-		repositoryId: "fixture",
-		workspace: path,
-		input: "Fixture",
-		ticketReference: {
-			provider: "taskbot",
-			instance: "https://example.com",
-			project: "fixture",
-			id: 1,
-			url: "https://example.com/t/1",
-		},
-	});
-	void runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
-	await waitFor(() => expect(sender).toHaveBeenCalledTimes(1));
-	const original = runPushEvent(run);
-	await runtime.shutdown();
-	await push.stop();
-	runtime = new WorkflowRuntime(path, hooks);
-	push = new FactoryPush(path, sender, Date.now, subject);
-	push.attach(runtime, source);
-	run = runtime.get(run.id);
-	runtime.resumeAll();
-	await waitFor(() => expect(run.status).toBe("waiting"));
-	expect(runPushEvent(run)).toEqual(original);
-	await runtime.flush(run.id);
-	await tick();
-	expect(sender).toHaveBeenCalledTimes(1);
-	if (category === "question") runtime.answer(run.id, "Ask again");
-	else
-		runtime.decide(run.id, {
-			reviewId: run.reviewGate!.id,
-			headSha: run.reviewGate!.headSha,
-			decision: "reject",
-			feedback: "Revise",
-		});
-	await waitFor(() => expect(run.status).toBe("waiting"));
-	await waitFor(() => expect(sender).toHaveBeenCalledTimes(2));
-	expect(JSON.parse(sender.mock.calls[1]![1]).category).toBe(category);
-	await runtime.shutdown();
-	await push.stop();
-});
+
 it("defers native completion while work is pending, then sends the final completion once", async () => {
 	vi.useFakeTimers();
 	const sender = vi.fn(async () => {});
 	const push = new FactoryPush(home(), sender, Date.now, subject);
-	const runtime = new WorkflowRuntime(home(), {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home(), { agent: async () => ({}) });
 	const session: PushSession = { id: "native", status: "active" };
 	let notify = () => {};
 	push.attach(runtime, {
@@ -469,39 +297,30 @@ it("restricts outbound destinations and sets zero provider TTL with encrypted VA
 	expect(publicAddress("142.250.1.1")).toBe(true);
 	expect(publicAddress("2607:f8b0::1")).toBe(true);
 });
-it("classifies explicit attention and completion, excluding ordinary activity and automatic recovery", () => {
-	const base = {
-		id: "run",
-		status: "running",
-		questions: [],
-		answers: [],
-		outputs: {},
-	} as unknown as FactoryRun;
+it("classifies Display decisions and completion without interpreting legacy fields", () => {
+	const base = { id: "run", status: "running", outputs: {} } as FactoryRun;
 	expect(runPushEvent(base)).toBeUndefined();
-	const question = {
+	const pending = {
 		...base,
 		status: "waiting",
-		step: "clarify",
-		questions: ["Secret ticket text"],
-	} as FactoryRun;
-	expect(runPushEvent(question)?.category).toBe("question");
-	expect(
-		runPushEvent({ ...question, title: "changed", updatedAt: "new" }),
-	).toEqual(runPushEvent(question));
-	expect(
-		runPushEvent({ ...question, questions: ["Changed"] })?.identity,
-	).not.toBe(runPushEvent(question)?.identity);
+		viewDecision: {
+			id: "display-1",
+			kind: "display",
+			digest: "content-1",
+			view: { version: "view-v1", components: [] },
+		},
+	} as unknown as FactoryRun;
+	expect(runPushEvent(pending)?.category).toBe("question");
+	expect(runPushEvent(pending)?.destination).toBe("/#/runs/run");
+	expect(runPushEvent({ ...pending, title: "Changed" })).toEqual(
+		runPushEvent(pending),
+	);
 	expect(
 		runPushEvent({
-			...question,
-			reviewGate: {
-				id: "gate",
-				status: "pending",
-				headSha: "abc",
-				url: "private",
-			},
-		})?.destination,
-	).toBe("/#/runs/run/review");
+			...pending,
+			viewDecision: { ...pending.viewDecision!, digest: "content-2" },
+		})?.identity,
+	).not.toBe(runPushEvent(pending)?.identity);
 	for (const status of ["failed", "interrupted"])
 		expect(runPushEvent({ ...base, status } as FactoryRun)?.category).toBe(
 			"failure",
@@ -510,56 +329,6 @@ it("classifies explicit attention and completion, excluding ordinary activity an
 	expect(runPushEvent({ ...base, status: "completed" })?.category).toBe(
 		"completion",
 	);
-	const readiness: MergeReadiness = {
-		headSha: "abc",
-		baseSha: "base",
-		url: "https://github.com/example/project/pull/1",
-		state: "OPEN",
-		isDraft: false,
-		approved: false,
-		reviewReady: false,
-		fix: false,
-		blockers: [{ kind: "rules", action: "human", message: "approval" }],
-		checks: [],
-		threads: [],
-		comments: [],
-		reviews: [],
-		queued: false,
-		mergeMethod: "squash",
-	};
-	expect(runPushEvent({ ...base, mergeReadiness: readiness })?.category).toBe(
-		"blocker",
-	);
-	expect(
-		runPushEvent({
-			...base,
-			reviewGate: {
-				id: "existing",
-				headSha: "abc",
-				status: "approve",
-				url: "private",
-			},
-			mergeReadiness: {
-				...readiness,
-				blockers: [
-					{ kind: "draft", action: "human", message: "approve guide" },
-				],
-			},
-		}),
-	).toBeUndefined();
-
-	expect(
-		runPushEvent({
-			...base,
-			mergeReadiness: {
-				...readiness,
-				blockers: [
-					...readiness.blockers,
-					{ kind: "ci", action: "wait", message: "checks running" },
-				],
-			},
-		}),
-	).toBeUndefined();
 	expect(sessionPushEvent({ id: "simple", status: "complete" })?.category).toBe(
 		"completion",
 	);
@@ -645,11 +414,7 @@ it("protects corrupt and unwritable stores from configuration", async () => {
 it("baselines attached native attention on late configuration", async () => {
 	vi.useFakeTimers();
 	const path = home();
-	const runtime = new WorkflowRuntime(path, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(path, { agent: async () => ({}) });
 	let sessions: PushSession[] = [{ id: "native", status: "awaitingInput" }];
 	let changed = () => {};
 	const sender = vi.fn(async () => {});

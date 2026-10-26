@@ -1,12 +1,4 @@
-import { createHash } from "node:crypto";
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,115 +11,10 @@ import type { ResolvedLaunchRequest } from "../src/factory/LaunchFields.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { formatActivities } from "../src/factory/web/activity.js";
-import { reviewContext } from "../src/factory/web/review-context.js";
-import { proposal } from "./fixtures/architecture.js";
+
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
-
-it("serves question images only from the requested run, rejecting traversal, external symlinks and non-images", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-question-images-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-		start: async () => {
-			throw new Error("Unused");
-		},
-		stop: (id) => runtime.stop(id),
-	});
-	const create = (id: string) =>
-		runtime.create({
-			id,
-			triggerOrigin: {
-				type: "manual",
-				workflowId: "factory",
-				at: new Date().toISOString(),
-			},
-			title: "Question",
-			repositoryId: "repo",
-			workspace: home,
-			input: "",
-			workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
-			workflowDefinitions: defaultWorkflows,
-		});
-	const run = create("with-image");
-	create("without-image");
-	const directory = join(runtime.directory, "evidence", run.id);
-	mkdirSync(directory, { recursive: true });
-	const png = Buffer.from(
-		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aNNsAAAAASUVORK5CYII=",
-		"base64",
-	);
-	writeFileSync(join(directory, "context.png"), png);
-	writeFileSync(join(home, "outside.png"), png);
-	writeFileSync(join(directory, "text.png"), "Private text is not an image");
-	symlinkSync(join(home, "outside.png"), join(directory, "external.png"));
-	const get = (id: string, name: string) =>
-		server.app.inject({
-			url: `/api/runs/${id}/question-images/${name}`,
-			headers: { host: "localhost" },
-		});
-	try {
-		const image = await get(run.id, "context.png");
-		expect(image.statusCode).toBe(200);
-		expect(image.headers["content-type"]).toBe("image/png");
-		expect(image.headers["cache-control"]).toBe("no-store");
-		expect(image.rawPayload).toEqual(png);
-		expect((await get("without-image", "context.png")).statusCode).toBe(404);
-		expect((await get(run.id, "missing.png")).statusCode).toBe(404);
-		expect((await get(run.id, "external.png")).statusCode).toBe(409);
-		expect((await get(run.id, "text.png")).statusCode).toBe(409);
-		expect((await get(run.id, "..%2F..%2Foutside.png")).statusCode).toBe(400);
-		// Completed receipts retain their original paths after a home move.
-		const imageSha256 = createHash("sha256").update(png).digest("hex");
-		run.outputs["qa/capture"] = {
-			screenshots: [
-				{
-					path: join(
-						home,
-						"retired",
-						"factory",
-						"evidence",
-						run.id,
-						"context.png",
-					),
-					imageSha256,
-					area: "Question",
-					caption: "Accepted image",
-				},
-			],
-			unavailable: [],
-		};
-		run.history.push({
-			step: "qa/capture",
-			at: new Date().toISOString(),
-			output: run.outputs["qa/capture"],
-		});
-		const screenshot = () =>
-			server.app.inject({
-				url: `/api/runs/${run.id}/screenshots/0?v=${imageSha256}`,
-				headers: { host: "localhost" },
-			});
-		const retained = await screenshot();
-		expect(retained.statusCode).toBe(200);
-		expect(retained.rawPayload).toEqual(png);
-		writeFileSync(
-			join(directory, "context.png"),
-			Buffer.concat([png, Buffer.from("changed")]),
-		);
-		expect((await screenshot()).statusCode).toBe(409);
-	} finally {
-		await runtime.shutdown();
-		await server.stop();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
 
 it("accepts failed-run retries through the protected API and rejects duplicate retries", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-retry-api-"));
@@ -140,8 +27,6 @@ it("accepts failed-run retries through the protected API and rejects duplicate r
 					{ once: true },
 				);
 			}),
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -165,6 +50,7 @@ it("accepts failed-run retries through the protected API and rejects duplicate r
 		workflow: validateWorkflows([
 			...defaultWorkflows,
 			{
+				engineVersion: "nodes-v1",
 				id: "retry-api",
 				name: "Retry",
 				steps: [{ id: "work", name: "Work", type: "agent", prompt: "Work" }],
@@ -213,427 +99,12 @@ it("accepts failed-run retries through the protected API and rejects duplicate r
 	}
 });
 
-it("starts, displays, answers and terminates runs through the local API", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-api-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({ questions: ["Which provider?"] }),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
-	let execution: Promise<void> | undefined;
-	const server = new FactoryServer(runtime, {
-		repositories: () => [{ id: "repo", name: "Repo" }],
-		sessions: () => [],
-		entries: () => [],
-		start: async (input) => {
-			const workflow = structuredClone(
-				defaultWorkflows.find((item) => item.id === "factory-pipeline")!,
-			);
-			workflow.id = "question-fixture";
-			workflow.steps = [workflow.steps[0]!];
-			workflow.allowedTriggers = ["manual"];
-			const run = runtime.create({
-				triggerOrigin: {
-					type: "manual",
-					workflowId: workflow.id,
-					at: new Date().toISOString(),
-				},
-				runner: input.runner,
-				reasoningEffort: input.reasoningEffort,
-				modelVariant: input.modelVariant,
-				serviceTier: input.serviceTier,
-				repositoryId: input.repositoryId,
-				workspace: home,
-				input: input.prompt,
-				workflow,
-			});
-			execution = runtime.launch(run);
-			return run;
-		},
-		stop: (id) => runtime.stop(id),
-	});
-	const headers = { host: "localhost", "x-factory-request": "1" };
-	try {
-		expect(
-			(await server.app.inject({ url: "/api/config", headers })).json()
-				.defaultWorkflow,
-		).toBe("simple");
-		const settings = await server.app.inject({
-			method: "PUT",
-			url: "/api/workflows",
-			headers,
-			payload: { workflows: defaultWorkflows, defaultWorkflow: "factory" },
-		});
-		expect(settings.statusCode).toBe(200);
-		expect(settings.json().defaultWorkflow).toBe("factory");
-		const savedConfig = (
-			await server.app.inject({ url: "/api/config", headers })
-		).json();
-		const rejectedSettings = await server.app.inject({
-			method: "PUT",
-			url: "/api/workflows",
-			headers: { ...headers, "x-factory-config": "stale" },
-			payload: { workflows: defaultWorkflows, defaultWorkflow: "simple" },
-		});
-		expect(rejectedSettings.statusCode).toBe(409);
-		expect(runtime.getDefaultWorkflow()).toBe("factory");
-		const unchangedSettings = await server.app.inject({
-			method: "PUT",
-			url: "/api/workflows",
-			headers: { ...headers, "x-factory-config": savedConfig.configRevision },
-			payload: { workflows: defaultWorkflows, defaultWorkflow: "factory" },
-		});
-		expect(unchangedSettings.statusCode).toBe(200);
-		expect(unchangedSettings.json().configRevision).toBe(
-			savedConfig.configRevision,
-		);
-		expect(settings.json().workflows).toEqual(savedConfig.workflows);
-		expect(
-			settings
-				.json()
-				.workflows.find((workflow: { id: string }) => workflow.id === "simple")
-				.launchFields,
-		).toMatchObject([
-			{ name: "prompt", required: true },
-			{ name: "attachments", type: "files", required: false },
-		]);
-		expect(runtime.selectWorkflow([], "manual").id).toBe("factory");
-		expect(
-			(await server.app.inject({ url: "/api/config", headers })).json()
-				.defaultWorkflow,
-		).toBe("factory");
-		expect(
-			(
-				await server.app.inject({
-					method: "PUT",
-					url: "/api/workflows",
-					headers,
-					payload: { workflows: defaultWorkflows, defaultWorkflow: "missing" },
-				})
-			).statusCode,
-		).toBe(409);
-		expect(
-			(
-				await server.app.inject({
-					method: "PUT",
-					url: "/api/workflows",
-					headers,
-					payload: { workflows: defaultWorkflows },
-				})
-			).statusCode,
-		).toBe(400);
-		expect(
-			(
-				await server.app.inject({
-					method: "PUT",
-					url: "/api/workflows",
-					headers,
-					payload: defaultWorkflows,
-				})
-			).statusCode,
-		).toBe(200);
-		expect(runtime.getDefaultWorkflow()).toBe("factory");
-		const started = await server.app.inject({
-			method: "POST",
-			url: "/api/runs",
-			headers,
-			payload: {
-				title: "Task",
-				prompt: "Build",
-				repositoryId: "repo",
-				workflow: "factory",
-				runner: "codex",
-				reasoningEffort: "high",
-				serviceTier: "fast",
-			},
-		});
-		expect(started.statusCode).toBe(202);
-		const id = started.json().id;
-		expect(started.json()).toEqual({
-			accepted: true,
-			id,
-			title: runtime.get(id).title,
-			status: runtime.get(id).status,
-		});
-		expect(runtime.get(id).reasoningEffort).toBe("high");
-		expect(runtime.get(id).serviceTier).toBe("fast");
-		await waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
-		const detail = await server.app.inject({ url: `/api/runs/${id}`, headers });
-		expect(detail.json().questions).toEqual(["Which provider?"]);
-		const staleAnswer = await server.app.inject({
-			method: "POST",
-			url: `/api/runs/${id}/answer`,
-			headers,
-			payload: {
-				answer: "Old draft",
-				context: { questions: ["Old question?"], step: detail.json().step },
-			},
-		});
-		expect(staleAnswer.statusCode).toBe(409);
-		expect(runtime.get(id).answers).toHaveLength(0);
-		const staleBatch = await server.app.inject({
-			method: "POST",
-			url: `/api/runs/${id}/answer`,
-			headers,
-			payload: {
-				answer: "Old batch",
-				context: {
-					questions: detail.json().questions,
-					step: detail.json().step,
-					questionBatchId: "previous-batch",
-				},
-			},
-		});
-		expect(staleBatch.statusCode).toBe(409);
-		expect(runtime.get(id).answers).toHaveLength(0);
-
-		const answered = await server.app.inject({
-			method: "POST",
-			url: `/api/runs/${id}/answer`,
-			headers,
-			payload: {
-				answer: "Codex",
-				context: {
-					questions: detail.json().questions,
-					questionBatchId: detail.json().questionBatchId,
-					step: detail.json().step,
-				},
-			},
-		});
-		expect(answered.statusCode).toBe(200);
-		expect(answered.json()).toMatchObject({
-			accepted: true,
-			id,
-			status: expect.any(String),
-		});
-		expect(answered.rawPayload.length).toBeLessThan(500);
-		await waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
-		expect(
-			(
-				await server.app.inject({
-					method: "POST",
-					url: `/api/runs/${id}/stop`,
-					headers,
-				})
-			).statusCode,
-		).toBe(200);
-		await execution;
-		expect(runtime.get(id).status).toBe("stopped");
-		expect(
-			(
-				await server.app.inject({
-					method: "POST",
-					url: `/api/runs/${id}/answer`,
-					headers,
-					payload: { answer: "Late" },
-				})
-			).statusCode,
-		).toBe(409);
-		expect(
-			(
-				await server.app.inject({
-					method: "POST",
-					url: "/api/runs",
-					headers,
-					payload: {},
-				})
-			).statusCode,
-		).toBe(400);
-		expect(
-			(
-				await server.app.inject({
-					method: "POST",
-					url: "/api/runs",
-					headers: { ...headers, origin: "https://other.example" },
-					payload: {},
-				})
-			).statusCode,
-		).toBe(403);
-		expect(
-			(
-				await server.app.inject({
-					url: "/api/config",
-					headers: { host: "other.example" },
-				})
-			).statusCode,
-		).toBe(403);
-	} finally {
-		runtime.shutdown();
-		await execution;
-		await server.app.close();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
-it("validates the selected workflow's fields, accepts source-only Takeover, and persists custom inputs", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-fields-"));
-	const hooks = {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
-	const runtime = new WorkflowRuntime(home, hooks);
-	const custom = validateWorkflows([
-		...defaultWorkflows,
-		{
-			id: "deploy",
-			name: "Deploy",
-			steps: [
-				{ id: "execute", name: "Execute", type: "script", script: "true" },
-			],
-			launchFields: [
-				{ name: "target", label: "Deployment target", required: true },
-				{
-					name: "environment",
-					label: "Environment",
-					type: "select",
-					required: true,
-					defaultValue: "staging",
-					options: [
-						{ value: "staging", label: "Staging" },
-						{ value: "production", label: "Production" },
-					],
-				},
-			],
-		},
-	]).at(-1)!;
-	runtime.updateWorkflows([...defaultWorkflows, custom]);
-	const start = vi.fn(async (input: ResolvedLaunchRequest) =>
-		runtime.create({
-			triggerOrigin: {
-				type: "manual",
-				workflowId: input.workflow ?? runtime.getDefaultWorkflow(),
-				at: new Date().toISOString(),
-			},
-			repositoryId: input.repositoryId,
-			workspace: home,
-			input: input.prompt,
-			launchInputs: input.inputs,
-			source: input.source,
-			workflow: runtime.selectWorkflow([], "manual", input.workflow),
-		}),
-	);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [{ id: "repo", name: "Repo" }],
-		sessions: () => [],
-		entries: () => [],
-		start,
-		stop: (id) => runtime.stop(id),
-	});
-	const headers = { host: "localhost", "x-factory-request": "1" };
-	const launch = (workflow: string, fields = {}) =>
-		server.app.inject({
-			method: "POST",
-			url: "/api/runs",
-			headers,
-			payload: { repositoryId: "repo", workflow, ...fields },
-		});
-	try {
-		const config = (
-			await server.app.inject({ url: "/api/config", headers })
-		).json();
-		expect(
-			config.workflows
-				.find((w) => w.id === "takeover")
-				.launchFields.map((f) => [f.name, f.required]),
-		).toEqual([
-			["source", true],
-			["prompt", false],
-			["attachments", false],
-		]);
-		for (const fields of [
-			{ source: "DEF-1" },
-			{ inputs: { source: "DEF-1" } },
-		]) {
-			const result = await launch("takeover", fields);
-			expect(result.statusCode).toBe(202);
-			expect(start.mock.lastCall?.[0]).toMatchObject({
-				source: "DEF-1",
-				prompt: "",
-				inputs: { source: "DEF-1", prompt: "" },
-			});
-		}
-		expect((await launch("takeover")).statusCode).toBe(400);
-		const beforeInvalidSource = start.mock.calls.length;
-		for (const source of [
-			"Add UI to configure projects and Linear",
-			"https://example.com/ATT-1127",
-			"https://github.com/owner/repo/issues/3",
-		]) {
-			const invalid = await launch("takeover", { inputs: { source } });
-			expect(invalid.statusCode).toBe(400);
-			expect(invalid.json().error).toContain("Additional instructions");
-		}
-		expect(start).toHaveBeenCalledTimes(beforeInvalidSource);
-		for (const source of [
-			"https://linear.app/attraccess/issue/ATT-1127/power-consumption-billing",
-			"https://github.com/owner/repo/pull/3",
-		]) {
-			expect(
-				(await launch("takeover", { inputs: { source } })).statusCode,
-			).toBe(202);
-		}
-		expect((await launch("factory", { title: "Build" })).statusCode).toBe(400);
-		expect(
-			(await launch("simple", { title: "Build", prompt: "Implement it" }))
-				.statusCode,
-		).toBe(202);
-		const calls = start.mock.calls.length;
-		for (const inputs of [
-			{},
-			{ target: " " },
-			{ target: "App", environment: "invalid" },
-			{ target: "App", undeclared: "hidden" },
-		]) {
-			expect((await launch("deploy", { inputs })).statusCode).toBe(400);
-		}
-		expect(start).toHaveBeenCalledTimes(calls);
-		const result = await launch("deploy", { inputs: { target: " App " } });
-		expect(result.statusCode).toBe(202);
-		expect(result.json()).toEqual({
-			accepted: true,
-			id: result.json().id,
-			title: result.json().id,
-			status: runtime.get(result.json().id).status,
-		});
-		expect(runtime.get(result.json().id)).toMatchObject({
-			input: "",
-			launchInputs: { target: "App", environment: "staging" },
-		});
-		const restarted = new WorkflowRuntime(home, hooks);
-		expect(restarted.get(result.json().id).launchInputs).toEqual({
-			target: "App",
-			environment: "staging",
-		});
-		// Saved definitions predating launchFields receive the same useful defaults.
-		const legacy = structuredClone(defaultWorkflows);
-		delete legacy.find((w) => w.id === "takeover")!.launchFields;
-		expect(() => runtime.updateWorkflows(legacy)).toThrow("read-only");
-		expect((await launch("takeover", { source: "DEF-1" })).statusCode).toBe(
-			202,
-		);
-		runtime.updateWorkflows([
-			...defaultWorkflows,
-			{ ...custom, launchFields: [] },
-		]);
-		expect((await launch("deploy")).statusCode).toBe(202);
-	} finally {
-		runtime.shutdown();
-		await server.app.close();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
 it.each([
 	"current",
 	"legacy",
 ])("loads large %s artifacts lazily and persists view state without changing a run", async (storage) => {
 	const home = mkdtempSync(join(tmpdir(), "factory-lazy-"));
-	let runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	let runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	let run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
@@ -644,7 +115,7 @@ it.each([
 		repositoryId: "repo",
 		workspace: home,
 		input: "",
-		workflow: defaultWorkflows[1]!,
+		workflow: defaultWorkflows.find((w) => w.id === "factory")!,
 	});
 	run.status = "completed";
 	run.ticketSync = {
@@ -727,270 +198,9 @@ it.each([
 			).statusCode,
 		).toBe(200);
 		expect(
-			new WorkflowRuntime(home, {
-				agent: async () => ({}),
-				script: async () => ({}),
-				tool: async () => ({}),
-			}).viewState(run.id),
+			new WorkflowRuntime(home, { agent: async () => ({}) }).viewState(run.id),
 		).toEqual(state);
 		expect(run.status).toBe("completed");
-	} finally {
-		await server.stop();
-		await runtime.shutdown();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
-it("keeps focus and overview reads independent of cold checkpoint, artifact and history bodies", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-cold-focus-"));
-	let runtime = new WorkflowRuntime(home, {});
-	let run = runtime.create({
-		id: "cold-focus",
-		title: "A saved question",
-		repositoryId: "repo",
-		workspace: home,
-		input: "Keep the native conversation",
-		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "factory",
-			at: new Date().toISOString(),
-		},
-	});
-	run.status = "stopped";
-	run.questions = ["Which database should Bob use?"];
-	run.questionBatchId = "exact-batch";
-	run.step = "pipeline/clarify";
-	run.checkpoint = {
-		current: "pipeline",
-		visits: {},
-		outputs: { retained: "checkpoint".repeat(50000) },
-	};
-	run.outputs.custom = {
-		summary: "An explicit artifact",
-		notes: "artifact".repeat(50000),
-	};
-	run.history.push({
-		step: "pipeline/plan",
-		at: new Date().toISOString(),
-		output: { notes: "history".repeat(50000) },
-	});
-	await runtime.save(run);
-	await runtime.shutdown();
-	const manifest = JSON.parse(
-		readFileSync(join(runtime.directory, "runs", `${run.id}.json`), "utf8"),
-	);
-	const chunks = new Set<string>([
-		...manifest.fields.checkpoint.reference.chunks,
-		...manifest.fields.outputs.record.custom.reference.chunks,
-		...manifest.fields.history.pages.flatMap(
-			(page: { chunks: string[] }) => page.chunks,
-		),
-	]);
-	const retained = [...chunks].map((hash) => {
-		const path = join(runtime.directory, "run-chunks", `${hash}.json`);
-		const bytes = readFileSync(path);
-		rmSync(path);
-		return { path, bytes };
-	});
-	runtime = new WorkflowRuntime(home, {});
-	run = runtime.get(run.id);
-	const readEntries = vi.fn(() => []);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: readEntries,
-		start: async () => run,
-		stop: () => {},
-	});
-	try {
-		const flush = vi.spyOn(runtime, "flush");
-		const events = Object.getOwnPropertyDescriptor(run, "events")!;
-		Object.defineProperty(run, "events", {
-			configurable: true,
-			get: () => {
-				throw new Error("Question/recovery cards must not load activity");
-			},
-		});
-		const focus = await server.app.inject({
-			url: `/api/runs/${run.id}?view=focus`,
-		});
-		Object.defineProperty(run, "events", events);
-		expect(focus.statusCode).toBe(200);
-		expect(readEntries).not.toHaveBeenCalled();
-		expect(flush).not.toHaveBeenCalled();
-		expect(focus.json()).toMatchObject({
-			id: run.id,
-			questions: run.questions,
-			questionBatchId: "exact-batch",
-			step: "pipeline/clarify",
-			resumeAvailable: true,
-		});
-		expect(focus.json().checkpoint).toBeUndefined();
-		expect(focus.json().outputs.custom).toBeUndefined();
-		expect(focus.rawPayload.length).toBeLessThan(50000);
-		const dashboard = await server.app.inject({
-			url: `/api/runs/${run.id}?view=dashboard`,
-		});
-		expect(dashboard.statusCode).toBe(200);
-		expect(dashboard.json().outputs.custom).toMatchObject({
-			__artifactPreview: true,
-			summary: "An explicit artifact",
-		});
-		expect(dashboard.json().history).toEqual([
-			{ step: "pipeline/plan", at: expect.any(String) },
-		]);
-		expect(dashboard.rawPayload.length).toBeLessThan(50000);
-		for (const { path, bytes } of retained) writeFileSync(path, bytes);
-		const artifact = await server.app.inject({
-			url: `/api/runs/${run.id}/artifacts/custom`,
-		});
-		expect(artifact.json()).toEqual({
-			summary: "An explicit artifact",
-			notes: "artifact".repeat(50000),
-		});
-	} finally {
-		for (const { path, bytes } of retained) writeFileSync(path, bytes);
-		await server.stop();
-		await runtime.shutdown();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
-it("keeps retained architecture versions out of summaries and reads them explicitly", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-architecture-projection-"));
-	const runtime = new WorkflowRuntime(home, {});
-	const run = runtime.create({
-		id: "architecture-summary",
-		title: "Review a design",
-		repositoryId: "repo",
-		workspace: home,
-		input: "",
-		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "factory",
-			at: new Date().toISOString(),
-		},
-	});
-	run.architectureProposals = Array.from({ length: 10 }, (_, index) => ({
-		id: `proposal-${index}`,
-		version: index + 1,
-		digest: `digest-${index}`,
-		status: "pending",
-		content: proposal(),
-		source: "retained source".repeat(20000),
-		assetDigests: [],
-		feedback: [],
-		at: new Date().toISOString(),
-	}));
-	run.answers.push({
-		questions: ["Which source?"],
-		answer: "Keep the complete human answer.",
-		at: new Date().toISOString(),
-	});
-	run.ticketReference = {
-		provider: "native",
-		platform: "linear",
-		workspaceId: "workspace",
-		id: "ticket",
-		url: "https://linear.app/team/issue/TEST-1",
-	};
-	await runtime.save(run);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-		start: async () => run,
-		stop: () => {},
-	});
-	try {
-		const summary = await server.app.inject({
-			url: `/api/runs/${run.id}?view=dashboard`,
-		});
-		expect(summary.statusCode).toBe(200);
-		expect(summary.json().answers).toEqual(run.answers);
-		expect(summary.json().ticketReference).toEqual(run.ticketReference);
-		expect(summary.json().architectureProposals).toEqual([
-			{
-				id: "proposal-9",
-				version: 10,
-				status: "pending",
-				content: {
-					title: proposal().title,
-					summary: proposal().summary,
-					decisions: proposal().decisions.map(({ status }) => ({ status })),
-				},
-			},
-		]);
-		expect(summary.rawPayload.length).toBeLessThan(50000);
-		const architecture = await server.app.inject({
-			url: `/api/runs/${run.id}?view=architecture`,
-		});
-		expect(architecture.statusCode).toBe(200);
-		expect(architecture.json().architectureProposals).toEqual(
-			run.architectureProposals,
-		);
-		const raw = await server.app.inject({ url: `/api/runs/${run.id}` });
-		expect(raw.json().architectureProposals).toEqual(run.architectureProposals);
-	} finally {
-		await server.stop();
-		await runtime.shutdown();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
-it("preserves fork provenance when dashboard artifacts generate review branch links", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-fork-preview-"));
-	const runtime = new WorkflowRuntime(home, {});
-	const run = runtime.create({
-		id: "fork-preview",
-		title: "Review a fork",
-		repositoryId: "repo",
-		workspace: home,
-		input: "",
-		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "factory",
-			at: new Date().toISOString(),
-		},
-	});
-	const source = {
-		summary: "s".repeat(1800),
-		notes: "n".repeat(780),
-		url: "https://github.com/target/repo/pull/1",
-		headRefName: "fork-branch",
-		isCrossRepository: true,
-	};
-	run.takeoverSource = source;
-	await runtime.save(run);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-		start: async () => run,
-		stop: () => {},
-	});
-	const context = async () => {
-		const response = await server.app.inject({
-			url: `/api/runs/${run.id}?view=dashboard`,
-		});
-		expect(response.statusCode).toBe(200);
-		return reviewContext(response.json());
-	};
-	try {
-		expect(await context()).toMatchObject({
-			branch: "fork-branch",
-			branchUrl: undefined,
-			pr: { url: source.url },
-		});
-		run.takeoverSource = { ...source, isCrossRepository: false };
-		await runtime.save(run);
-		expect(await context()).toMatchObject({
-			branch: "fork-branch",
-			branchUrl: "https://github.com/target/repo/tree/fork-branch",
-		});
 	} finally {
 		await server.stop();
 		await runtime.shutdown();
@@ -1050,11 +260,7 @@ it("retains the final reply for completed event-only sessions in the focus view"
 
 it("streams coalesced changes, reconnects with a fresh snapshot, and closes subscriptions", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-sse-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	let notify: ((id: string) => void) | undefined;
 	let unsubscribed = false;
 	const server = new FactoryServer(runtime, {
@@ -1112,11 +318,7 @@ it("streams coalesced changes, reconnects with a fresh snapshot, and closes subs
 
 it("returns normalized permissions and rejects forged manual requests before the start hook, exposing both origins", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-permissions-api-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const origin = {
 		type: "ticket-assignment" as const,
 		workflowId: "simple",
@@ -1236,11 +438,7 @@ it("returns normalized permissions and rejects forged manual requests before the
 
 it("protects chat delivery, validates input, preserves messages and refuses disabled or failed delivery", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-chat-api-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	let enabled = true;
 	const message = vi.fn();
 	const server = new FactoryServer(runtime, {
@@ -1323,11 +521,7 @@ it("protects chat delivery, validates input, preserves messages and refuses disa
 
 it("serves a coherent installable shell with protected versioned writes and explicit static routes", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-pwa-api-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const start = vi.fn(async () => ({ id: "test" }) as any);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -1475,11 +669,7 @@ it("serves a coherent installable shell with protected versioned writes and expl
 
 it("protects title retries and accepts existing standalone sessions", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-title-retry-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const retryTitle = vi.fn();
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -1541,11 +731,7 @@ it("protects title retries and accepts existing standalone sessions", async () =
 
 it("protects and persists global title settings independently of workflow configuration", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-title-settings-"));
-	const hooks = {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { agent: async () => ({}) };
 	const runtime = new WorkflowRuntime(home, hooks);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -1663,10 +849,8 @@ it("protects tracking-only retries and leaves development checkpoints intact", a
 	const home = mkdtempSync(join(tmpdir(), "factory-tracking-api-"));
 	const retryTracking = vi.fn(async () => {});
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
 		retryTracking,
+		agent: async () => ({}),
 	});
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -1735,11 +919,7 @@ it("protects tracking-only retries and leaves development checkpoints intact", a
 
 it("rejects title saves overtaken during body parsing and simultaneous saves", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-title-save-race-"));
-	const hooks = {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { agent: async () => ({}) };
 	const runtime = new WorkflowRuntime(home, hooks);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -1837,10 +1017,8 @@ it("protects and validates machine settings, exposing durable cross-worker polic
 	const other = new MachineCapacity(undefined, join(home, "capacity"));
 	await Promise.all([capacity.ready(), other.ready()]);
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
 		capacity,
+		agent: async () => ({}),
 	});
 	const server = new FactoryServer(runtime, {
 		capacity,
@@ -1955,11 +1133,7 @@ it.each([
 	const home = mkdtempSync(join(tmpdir(), "factory-push-api-"));
 	const sender = vi.fn(async () => {}),
 		push = new FactoryPush(home, sender, Date.now, "mailto:test@example.com");
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new ProtectedFactoryServer(runtime, {
 		push,
 		repositories: () => [],
@@ -2200,11 +1374,7 @@ it.each([
 
 it("bounds binary uploads, checks declared fields and configuration, and retains files after failed admission", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-launch-uploads-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const start = vi.fn(async () => {
 		throw new Error("Admission failed");
 	});
@@ -2293,11 +1463,7 @@ it("bounds binary uploads, checks declared fields and configuration, and retains
 
 it("returns an unavailable error when push configuration has no sender hook", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-no-push-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -2323,69 +1489,6 @@ it("returns an unavailable error when push configuration has no sender hook", as
 	} finally {
 		await runtime.shutdown();
 		await server.stop();
-		rmSync(home, { recursive: true, force: true });
-	}
-});
-
-it("supplies only the adjacent retained guide in the protected dashboard for legacy progress migration", async () => {
-	const home = mkdtempSync(join(tmpdir(), "factory-reader-migration-"));
-	const runtime = new WorkflowRuntime(home, {});
-	const run = runtime.create({
-		id: "reader",
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "factory",
-			at: new Date().toISOString(),
-		},
-		title: "Reader",
-		repositoryId: "repo",
-		workspace: home,
-		input: "",
-		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
-		workflowDefinitions: defaultWorkflows,
-	});
-	const old = {
-		chapters: [{ id: "authorization" }],
-		reviewFiles: { headSha: "old" },
-	};
-	run.outputs["approval/guide"] = { previousHeadSha: "old" };
-	run.history.push(
-		{ step: "approval/guide", at: new Date().toISOString(), output: old },
-		{
-			step: "qa/capture",
-			at: new Date().toISOString(),
-			output: { notes: "Large unrelated evidence" },
-		},
-		{
-			step: "custom/guide",
-			at: new Date().toISOString(),
-			output: { ...old, chapters: [{ id: "unrelated-guide" }] },
-		},
-	);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-	});
-	try {
-		const response = await server.app.inject({
-			method: "GET",
-			url: "/api/runs/reader?view=dashboard",
-		});
-		expect(response.statusCode).toBe(200);
-		expect(response.json().previousReviewGuide).toEqual(old);
-		expect(response.json().history.every((entry: any) => !entry.output)).toBe(
-			true,
-		);
-		run.outputs["approval/guide"] = { previousHeadSha: "missing" };
-		const missing = await server.app.inject({
-			method: "GET",
-			url: "/api/runs/reader?view=dashboard",
-		});
-		expect(missing.json().previousReviewGuide).toBeUndefined();
-	} finally {
-		await server.stop();
-		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
 });

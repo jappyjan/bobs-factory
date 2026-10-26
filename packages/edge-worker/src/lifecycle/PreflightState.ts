@@ -13,8 +13,6 @@ export function preflightFactoryState(home: string) {
 	};
 	const runtime = new WorkflowRuntime(home, {
 		agent: forbidden,
-		script: forbidden,
-		tool: forbidden,
 	});
 	return {
 		stateCompatible: true as const,

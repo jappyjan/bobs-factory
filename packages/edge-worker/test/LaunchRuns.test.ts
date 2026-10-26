@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { LaunchRunsConfigurationSchema } from "../src/factory/ActionSteps.js";
-import { repositoryCompletionProven } from "../src/factory/Delivery.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import {
 	assertLaunchTarget,
 	type LaunchRunBatch,
@@ -26,6 +26,7 @@ const workflow = (
 	],
 ) =>
 	WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id,
 		name: id,
 		allowedTriggers: ["workflow", "manual"],
@@ -56,8 +57,8 @@ function makeRun(id = "parent"): FactoryRun {
 		workflowDefinitions: [
 			workflow("parent"),
 			workflow("factory", [
-				{ id: "publish", name: "Publish", type: "tool", tool: "draft-pr" },
-				{ id: "finish", name: "Finish", type: "tool", tool: "merge" },
+				{ id: "publish", name: "Publish", type: "pr", op: "ensure" },
+				{ id: "finish", name: "Finish", type: "merge" },
 			]),
 		],
 		status: "running",
@@ -179,35 +180,36 @@ function merged(child: FactoryRun, grouped = false) {
 			headSha: "head-b",
 		},
 	];
-	const published = grouped
-		? {
-				scopeVersion: 1,
-				deliveries: revisions.map(({ repositoryId, name, ...output }) => ({
-					repositoryId,
-					name,
-					output,
-				})),
-			}
-		: { url: revisions[0]!.url, headSha: revisions[0]!.headSha };
-	child.outputs = {
-		publish: published,
-		finish: { ...published, merged: true },
+	const delivered = grouped ? revisions : revisions.slice(0, 1);
+	const output = {
+		repositories: delivered.map((r) => ({
+			repositoryId: r.repositoryId,
+			url: r.url,
+			sha: `merged-${r.headSha}`,
+			merged: true,
+		})),
 	};
+	child.outputs = { finish: output };
 	child.history = [
-		{ step: "publish", output: published, at: child.createdAt },
 		{
-			step: "finish",
-			output: { ...published, merged: true },
+			step: "publish",
+			output: { repositories: delivered },
 			at: child.createdAt,
 		},
-	];
-	child.humanDecisions = [
 		{
-			reviewId: "human-exact",
-			decision: "approve",
-			headSha: "head-a",
+			step: "finish",
+			output,
 			at: child.createdAt,
-			...(grouped ? { repositories: revisions } : {}),
+			inputDigest: digest({ requests: delivered }),
+			guarantee: {
+				version: 1,
+				revisions: Object.fromEntries(
+					delivered.map((r) => [r.repositoryId, { headSha: r.headSha }]),
+				),
+				boundDigests: {},
+				scope: { outputs: {}, historyLength: 1 },
+				outputDigest: digest(output),
+			},
 		},
 	];
 }
@@ -408,7 +410,7 @@ describe("generic Launch runs", () => {
 			f.batch.accepted.items.find((i) => i.id === "first")!.runId,
 		)!;
 		merged(first, true);
-		first.humanDecisions![0]!.repositories![1]!.headSha = "stale-head";
+		first.history[1]!.guarantee!.outputDigest = "stale-digest";
 		await tickLaunchRuns(run, f.batch, f.host);
 		expect(f.runtime.create).toHaveBeenCalledTimes(2);
 		expect(f.batch.progress.second).toMatchObject({ status: "blocked" });
@@ -488,7 +490,6 @@ describe("generic Launch runs", () => {
 		];
 		// Characterize the retained legacy adapter; the generic effect must never
 		// grant its compatibility alias authority to an ordinary agent output.
-		expect(repositoryCompletionProven(child)).toBe(true);
 		expect(launchRepositoryCompletionProven(child)).toBe(false);
 		await tickLaunchRuns(run, f.batch, f.host);
 		expect(f.runtime.create).toHaveBeenCalledTimes(1);
@@ -499,8 +500,8 @@ describe("generic Launch runs", () => {
 	it("requires original executed tool receipts instead of current output aliases or empty historical tool results", () => {
 		const child = makeRun("child");
 		child.workflow = workflow("factory", [
-			{ id: "draft-pr", name: "Publish", type: "tool", tool: "draft-pr" },
-			{ id: "merge", name: "Merge", type: "tool", tool: "merge" },
+			{ id: "draft-pr", name: "Publish", type: "pr", op: "ensure" },
+			{ id: "merge", name: "Merge", type: "merge" },
 		]);
 		const publication = {
 			url: "https://forge.test/project/pull/1",
@@ -522,13 +523,12 @@ describe("generic Launch runs", () => {
 			{ step: "draft-pr", output: undefined, at: child.createdAt },
 			{ step: "merge", output: undefined, at: child.createdAt },
 		];
-		expect(repositoryCompletionProven(child)).toBe(true);
 		expect(launchRepositoryCompletionProven(child)).toBe(false);
 		child.history = [
 			{ step: "draft-pr", output: publication, at: child.createdAt },
 			{ step: "merge", output: merge, at: child.createdAt },
 		];
-		expect(launchRepositoryCompletionProven(child)).toBe(true);
+		expect(launchRepositoryCompletionProven(child)).toBe(false);
 		child.history[1]!.output = { ...publication, merged: false };
 		expect(launchRepositoryCompletionProven(child)).toBe(false);
 	});

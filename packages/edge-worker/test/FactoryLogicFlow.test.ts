@@ -37,16 +37,21 @@ const evidence = vi.fn(async () => {
 function runtime(home = mkdtempSync(join(tmpdir(), "factory-logic-"))) {
 	if (!homes.includes(home)) homes.push(home);
 	const instance = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
 		evidence,
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-tool")
+				return (async () => ({}))(context);
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async () => ({}))(context);
+		},
 	});
 	runtimes.push(instance);
 	return { instance, home };
 }
 function recipe(steps: unknown[], modern = true) {
 	return WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "logic",
 		name: "Logic",
 		stepConfigVersion: "step-config-v1",
@@ -342,7 +347,7 @@ it("bounds expansion across all map fields, rejects accessors and reserved outpu
 	).rejects.toThrow(/limit/);
 });
 
-it("rejects checks on nodes-v1 checks recursively but retains legacy checks and editable projections", () => {
+it("rejects checks on nodes-v1 checks recursively and keeps editable projections valid", () => {
 	const check = {
 		id: "check",
 		name: "Check",
@@ -354,7 +359,7 @@ it("rejects checks on nodes-v1 checks recursively but retains legacy checks and 
 	expect(() =>
 		recipe([{ id: "f", name: "F", type: "fanout", groups: [[check]] }]),
 	).toThrow("legacy-only");
-	expect(recipe([check], false).steps[0]!.checks).toEqual([]);
+
 	const workflow = recipe([{ ...check, checks: undefined }]);
 	expect(() =>
 		WorkflowSchema.parse(materializeWorkflowConfig(workflow)),
@@ -373,7 +378,7 @@ it("executes a pure check with reads and preserves passed/branch semantics", asy
 			check: { results: { ok: { path: "/inputs/seed/value", equals: 42 } } },
 			branches: [{ when: { path: "passed", equals: true }, next: "end" }],
 		},
-		{ id: "unused", name: "Unused", type: "script", script: "unused" },
+		{ id: "unused", name: "Unused", type: "agent", prompt: "unused" },
 	]);
 	await instance.launch(run);
 	expect(run.status).toBe("completed");
@@ -520,13 +525,13 @@ it("retries inline tool nodes and leaves unhandled failure behavior unchanged", 
 		.fn()
 		.mockRejectedValueOnce(new Error("transient"))
 		.mockResolvedValue({ ready: true });
-	instance.hooks.tool = tool;
+	instance.hooks.agent = tool;
 	const run = start(instance, home, [
 		{
 			id: "op",
 			name: "Op",
-			type: "tool",
-			tool: "fixture",
+			type: "agent",
+			prompt: "fixture-tool",
 			retry: { max: 1, backoff: 0 },
 		},
 	]);

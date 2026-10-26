@@ -1148,10 +1148,13 @@ it("starts ticket Simple execution with its ID while independent title work is u
 it("returns a manual launch immediately, preserves source naming data and mirrors completion before title", async () => {
 	const { edge, runtime, home } = setup();
 	const workflow = {
+		engineVersion: "nodes-v1",
 		id: "custom-title",
 		name: "Custom title",
 		allowedTriggers: ["manual"],
-		steps: [{ id: "work", name: "Work", type: "script", script: "true" }],
+		steps: [
+			{ id: "work", name: "Work", type: "transform", transform: { ok: true } },
+		],
 	};
 	runtime.updateWorkflows([...runtime.listWorkflows(), workflow]);
 	vi.spyOn(edge.gitService, "createGitWorktree").mockResolvedValue({
@@ -1179,7 +1182,7 @@ it("returns a manual launch immediately, preserves source naming data and mirror
 	await vi.waitFor(() => expect(run.status).toBe("completed"), {
 		timeout: 10000,
 	});
-	expect(titleStart).toHaveBeenCalledOnce();
+	await vi.waitFor(() => expect(titleStart).toHaveBeenCalledOnce());
 	expect(JSON.parse(titleStart.mock.calls[0][1].context).instructions).toBe(
 		"https://taskbot.apps.janjaap.de/p/test/t/68",
 	);
@@ -1331,9 +1334,17 @@ it.each([
 	runtime.updateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "title-fixture",
 			name: "Title fixture",
-			steps: [{ id: "work", name: "Work", type: "script", script: "true" }],
+			steps: [
+				{
+					id: "work",
+					name: "Work",
+					type: "transform",
+					transform: { ok: true },
+				},
+			],
 		},
 	]);
 	const workflow = runtime.selectWorkflow([], "manual", "title-fixture");
@@ -1405,10 +1416,18 @@ it.each([
 	runtime.updateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: localId,
 			name: workflowId,
 			labels: [`workflow:${localId}`],
-			steps: [{ id: "work", name: "Work", type: "script", script: "true" }],
+			steps: [
+				{
+					id: "work",
+					name: "Work",
+					type: "transform",
+					transform: { ok: true },
+				},
+			],
 		},
 	]);
 
@@ -1434,7 +1453,7 @@ it.each([
 	await vi.waitFor(() => expect(run.status).toBe("completed"), {
 		timeout: 10000,
 	});
-	expect(start).toHaveBeenCalledOnce();
+	await vi.waitFor(() => expect(start).toHaveBeenCalledOnce());
 	expect(JSON.parse(start.mock.calls[0][1].context)).toMatchObject({
 		ticketTitle: "Ticket",
 		ticketBody: "Instructions",
@@ -1453,16 +1472,20 @@ async function nativeManualFixture() {
 	const issue = await tracker.createIssue({
 		teamId: "team-default",
 		title: "Native ticket",
+		stateId: "state-todo",
 	});
 	const data = tracker.getState().issues.get(issue.id)!;
 	data.url = `https://linear.app/test/issue/${issue.identifier}`;
 	data.branchName = "not-yet-created-ticket-head";
 	f.edge.issueTrackers.set("cli-workspace", tracker);
 	const workflow = {
+		engineVersion: "nodes-v1",
 		id: "native-fixture",
 		name: "Native fixture",
 		allowedTriggers: ["manual"],
-		steps: [{ id: "work", name: "Work", type: "script", script: "true" }],
+		steps: [
+			{ id: "work", name: "Work", type: "transform", transform: { ok: true } },
+		],
 	};
 	f.runtime.updateWorkflows([...f.runtime.listWorkflows(), workflow]);
 	f.edge.titleGenerator = { start() {}, cancel() {}, async shutdown() {} };
@@ -1573,8 +1596,9 @@ it("retains the parent's native origin when follow-up instructions name another 
 	expect(run.ticketReference).toEqual(parent.ticketReference);
 	expect(run.issueId).toBe(f.issue.id);
 	expect(run.outputs.ticket.id).toBe(f.issue.id);
+	await f.edge.ticketTracking.flush(run);
 	expect((await (await f.tracker.fetchIssue(f.issue.id)).state)?.type).toBe(
-		"started",
+		"unstarted",
 	);
 	expect((await f.tracker.fetchComments(other.id)).nodes).toHaveLength(0);
 	expect((await (await f.tracker.fetchIssue(other.id)).state)?.type).toBe(
@@ -1619,47 +1643,6 @@ it("discovers Taskbot from the accepted Cursor runner despite the default Claude
 		type: "http",
 		url: "https://taskbot.example/mcp",
 	});
-});
-
-it("reconstructs missing legacy merged receipts during tracking-only retry after source access recovers", async () => {
-	const f = await nativeManualFixture();
-	const run = f.runtime.create({
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "native-fixture",
-			at: new Date().toISOString(),
-		},
-		repositoryId: "repo",
-		workflow: f.workflow,
-		workspace: f.home,
-		input: f.issue.url,
-	});
-	run.status = "completed";
-	run.outputs.merge = {
-		merged: true,
-		url: "https://github.com/org/repo/pull/1",
-	};
-	const history = structuredClone(run.history);
-	const fetch = f.tracker.fetchIssue.bind(f.tracker);
-	const unavailable = vi
-		.spyOn(f.tracker, "fetchIssue")
-		.mockRejectedValue(new Error("offline"));
-	await f.edge.recoverFactoryTicketTracking(run);
-	expect(run.ticketSync).toBeUndefined();
-	unavailable.mockImplementation(fetch);
-	await f.runtime.retryTracking(run.id);
-	expect(run.ticketSync?.receipts[0]?.delivered).toBe(true);
-	expect((await (await f.tracker.fetchIssue(f.issue.id)).state)?.type).toBe(
-		"completed",
-	);
-	expect(run.history).toEqual(history);
-	expect(f.worktree).not.toHaveBeenCalled();
-	const comments = (await f.tracker.fetchComments(f.issue.id)).nodes.length;
-	await f.runtime.retryTracking(run.id);
-	expect((await f.tracker.fetchComments(f.issue.id)).nodes).toHaveLength(
-		comments,
-	);
-	expect(await f.tracker.fetchIssueAttachments(f.issue.id)).toHaveLength(1);
 });
 
 it.each([

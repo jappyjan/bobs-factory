@@ -26,6 +26,7 @@ const role = (id: string, next = "end") => ({
 	next,
 });
 const reader = {
+	engineVersion: "nodes-v1",
 	id: "port-reader",
 	name: "Reader",
 	stepConfigVersion: "step-config-v1",
@@ -74,6 +75,7 @@ it.each([
 					next: "end",
 				};
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "lexical-caller",
 		name: "Caller",
 		stepConfigVersion: "step-config-v1",
@@ -95,8 +97,6 @@ it.each([
 			seen.push(source);
 			return { read: true };
 		},
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	runtimes.push(r);
 	r.updateWorkflows(defs, parent.id);
@@ -129,6 +129,7 @@ it.each([
 			...defaultWorkflows,
 			reader,
 			{
+				engineVersion: "nodes-v1",
 				id: "invalid-port",
 				name: "Invalid",
 				stepConfigVersion: "step-config-v1",
@@ -148,6 +149,7 @@ it("does not import inherited JSON in place of an unexecuted configured producer
 	const h = mkdtempSync(join(tmpdir(), "unexecuted-call-"));
 	homes.push(h);
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "unexecuted",
 		name: "Unexecuted",
 		inputs: ["original"],
@@ -164,8 +166,6 @@ it("does not import inherited JSON in place of an unexecuted configured producer
 			expect(producerValue(c.run, "original")).toBeUndefined();
 			return { read: true };
 		},
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	runtimes.push(r);
 	r.updateWorkflows(defs, parent.id);
@@ -186,6 +186,7 @@ it("forwards declared enclosing ports through Parallel lexical frames", async ()
 	const h = mkdtempSync(join(tmpdir(), "forwarded-ports-"));
 	homes.push(h);
 	const outer = {
+		engineVersion: "nodes-v1",
 		id: "outer-ports",
 		name: "Outer",
 		stepConfigVersion: "step-config-v1",
@@ -206,6 +207,7 @@ it("forwards declared enclosing ports through Parallel lexical frames", async ()
 		],
 	};
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "forwarded-parent",
 		name: "Parent",
 		stepConfigVersion: "step-config-v1",
@@ -231,8 +233,6 @@ it("forwards declared enclosing ports through Parallel lexical frames", async ()
 			consumed++;
 			return { read: true };
 		},
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	runtimes.push(r);
 	r.updateWorkflows(defs, parent.id);

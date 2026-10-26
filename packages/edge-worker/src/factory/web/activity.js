@@ -422,7 +422,7 @@ function compactCiActivity(run, activities) {
 	const visit = (steps, prefix = "", ancestors = []) => {
 		for (const step of steps ?? []) {
 			const key = prefix + step.id;
-			if (step.type === "tool" && step.tool === "ci") ci.add(key);
+			if (step.type === "ci") ci.add(key);
 			if (step.type === "workflow" && !ancestors.includes(step.workflow)) {
 				const definition = run.workflowDefinitions?.find(
 					(item) => item.id === step.workflow,

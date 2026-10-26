@@ -1,16 +1,16 @@
 import { createHash } from "node:crypto";
-export function qaDigest(value: unknown): string {
-	const canonical = (item: unknown): unknown =>
-		Array.isArray(item)
-			? item.map(canonical)
-			: item && typeof item === "object"
+export function digest(value: unknown): string {
+	const canonical = (v: unknown): unknown =>
+		Array.isArray(v)
+			? v.map(canonical)
+			: v && typeof v === "object"
 				? Object.fromEntries(
-						Object.entries(item)
+						Object.entries(v)
 							.sort(([a], [b]) => a.localeCompare(b))
-							.map(([key, v]) => [key, canonical(v)]),
+							.map(([k, x]) => [k, canonical(x)]),
 					)
-				: item;
+				: v;
 	return createHash("sha256")
-		.update(JSON.stringify(canonical(value)))
+		.update(JSON.stringify(canonical(value)) ?? "null")
 		.digest("hex");
 }

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { boundStepKey, boundToolOutput } from "../src/factory/ToolBindings.js";
+import { boundStepKey, producerValue } from "../src/factory/ToolBindings.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
@@ -29,13 +29,14 @@ const role = (id: string, extra = {}) => ({
 });
 function setup(
 	agent: RuntimeHooks["agent"],
-	tool: RuntimeHooks["tool"] = async () => ({}),
+	tool: RuntimeHooks["agent"] = async () => ({}),
 ) {
 	const home = mkdtempSync(join(tmpdir(), "call-outcomes-"));
 	homes.push(home);
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "a",
 			name: "A",
 			stepConfigVersion: "step-config-v1",
@@ -52,6 +53,7 @@ function setup(
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "b",
 			name: "B",
 			stepConfigVersion: "step-config-v1",
@@ -61,14 +63,15 @@ function setup(
 				{
 					id: "publish",
 					name: "Publish",
-					type: "tool",
+					type: "agent",
 					configVersion: "step-config-v1",
-					tool: "draft-pr",
+					prompt: "fixture-publication",
 					next: "end",
 				},
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "parent",
 			name: "Parent",
 			stepConfigVersion: "step-config-v1",
@@ -102,8 +105,10 @@ function setup(
 		},
 	]);
 	const runtime = new WorkflowRuntime(home, {
-		agent,
-		tool,
+		agent: async (context) =>
+			context.step.prompt === "fixture-publication"
+				? tool(context)
+				: agent(context),
 		script: async () => ({}),
 	});
 	instances.push(runtime);
@@ -130,7 +135,10 @@ it("routes corrections across Calls with original frame visits, produced-only ou
 			seen.push(context.stepKey!);
 			if (context.step.id === "verify") {
 				expect(boundStepKey(context, "publication")).toBe("second/publish");
-				const actual = boundToolOutput(context, "publication", "draft-pr");
+				const actual = producerValue(
+					context.run,
+					boundStepKey(context, "publication")!,
+				);
 				return { retry: !actual, publication: actual ?? null };
 			}
 			return { prepared: true };
@@ -174,7 +182,22 @@ it("retains the outcome frame and accepted producer receipts through waiting, sh
 	// A real ordinary assistance wait inside the correction recipe, after its first produced action.
 	const b = definitions.find((w) => w.id === "b")!;
 	b.steps.push({
-		...role("ask", { askQuestions: true, next: "end" }),
+		id: "ask",
+		name: "Ask",
+		type: "display",
+		next: "end",
+		document: {
+			version: "view-v1",
+			components: [
+				{
+					id: "submit",
+					type: "actions",
+					data: {
+						literal: { actions: [{ id: "continue", label: "Continue" }] },
+					},
+				},
+			],
+		},
 		branches: [],
 		maxVisits: 100,
 	} as never);
@@ -188,10 +211,6 @@ it("retains the outcome frame and accepted producer receipts through waiting, sh
 	await pending;
 	const resumed = new WorkflowRuntime(home, {
 		agent: async (c) => (c.step.id === "ask" ? { questions: [] } : agent(c)),
-		tool: async () => {
-			throw new Error("accepted publication replayed");
-		},
-		script: async () => ({}),
 	});
 	instances.push(resumed);
 	const restored = resumed.get(run.id);
@@ -199,7 +218,12 @@ it("retains the outcome frame and accepted producer receipts through waiting, sh
 	await waitForRuntime(() =>
 		expect(restored.status, restored.error).toBe("waiting"),
 	);
-	resumed.answer(restored.id, "Continue");
+	await resumed.answerView(restored.id, {
+		batchId: restored.viewDecision!.id,
+		digest: restored.viewDecision!.digest,
+		accepted: true,
+		action: "continue",
+	});
 	await waitForRuntime(() =>
 		expect(["completed", "failed"]).toContain(restored.status),
 	);

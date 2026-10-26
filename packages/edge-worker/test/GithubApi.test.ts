@@ -9,7 +9,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ResolvedExecutionEnvironment } from "../src/factory/ExecutionEnvironment.js";
-import { executeCommand } from "../src/factory/FactoryTools.js";
 import {
 	executeGithubApi,
 	GITHUB_API_COMMAND,
@@ -18,6 +17,7 @@ import {
 } from "../src/factory/GithubApi.js";
 import { inspectGithubReadiness } from "../src/factory/GithubReadiness.js";
 import { gitProvider } from "../src/factory/GitProvider.js";
+import { executeCommand } from "../src/factory/nodes/execute/command.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";

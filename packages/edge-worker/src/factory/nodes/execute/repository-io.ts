@@ -1,15 +1,15 @@
 import { lstatSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { executeCommand } from "../../FactoryTools.js";
 import { type GitProvider, resolveGitProvider } from "../../GitProvider.js";
 import { PullRequestSchema } from "../../GitProviderContracts.js";
-import type { ProviderCommand } from "../../MergeReadiness.js";
 import {
 	type RunRepository,
 	repositoryRun,
 	runRepositories,
 } from "../../RepositoryScope.js";
 import type { NodeContext } from "../NodeDefinition.js";
+import type { ProviderCommand } from "./command.js";
+import { executeCommand } from "./command.js";
 
 export interface RepositoryIO {
 	repository: RunRepository;
@@ -23,7 +23,7 @@ export async function repositories<T>(
 	execute: (io: RepositoryIO) => Promise<T>,
 ) {
 	// Repository runs are shallow copies; keep provider evidence on their shared owner.
-	ctx.run.ciSupervision ??= { retries: [] };
+	ctx.run.providerChecks ??= {};
 	const result = [];
 	for (const repository of runRepositories(ctx.run)) {
 		ctx.signal.throwIfAborted();

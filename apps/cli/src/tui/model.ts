@@ -5,7 +5,6 @@ import {
 	active,
 	attention,
 	finished,
-	type QuestionChoices,
 	type RunSummary,
 	settleReason,
 	workingLabel,
@@ -58,24 +57,10 @@ export interface RunItem extends RunSummary {
 	step?: string;
 	error?: string;
 	workflowBlock?: { reason: string };
-	reviewGate?: {
-		id?: string;
-		headSha?: string;
-		url?: string;
-		status?: string;
-		mode?: string;
-		externalDigest?: string;
-	};
 	titleGeneration?: { status?: string };
-}
-export interface Recommendation {
-	questionIndex: number;
-	answer: string;
-	reason?: string;
 }
 export interface RunDetail extends Omit<RunItem, "workflow"> {
 	viewText?: string;
-	nativeView?: { digest: string; authority: string; preset: string };
 	viewDecision?: {
 		id: string;
 		digest: string;
@@ -85,16 +70,11 @@ export interface RunDetail extends Omit<RunItem, "workflow"> {
 		actions?: { id: string; label: string }[];
 		answer?: unknown;
 	};
-	recheckAvailable?: boolean;
 	resumeAvailable?: boolean;
 	workflow?: Workflow;
 	runner?: string;
 	model?: string;
 	history?: { step: string; at: string }[];
-	questions?: string[];
-	questionRecommendations?: Recommendation[];
-	questionChoices?: QuestionChoices[];
-	questionBatchId?: string;
 	iterationLimit?: { step: string; visits: number; limit: number };
 	resumeEligible?: boolean;
 	chat?: {
@@ -198,10 +178,7 @@ export function stateLabel(
 			text: run.status === "interrupted" ? "interrupted" : "stuck",
 			tone: "stuck",
 		};
-	if (kind === "review")
-		return run.reviewGate?.status === "pending"
-			? { text: "ready for review", tone: "review" }
-			: { text: "finished", tone: "review" };
+	if (kind === "review") return { text: "finished", tone: "review" };
 	if (active(run.status)) {
 		const label = workingLabel(run);
 		if (label !== "Working")

@@ -12,6 +12,7 @@ it("uses corrected mapped inputs on the next outcome Call visit while retaining 
 	const received: number[] = [];
 	const sessions: (string | undefined)[] = [];
 	const child = {
+		engineVersion: "nodes-v1",
 		id: "mapped-reader",
 		name: "Reader",
 		stepConfigVersion: "step-config-v1",
@@ -23,6 +24,7 @@ it("uses corrected mapped inputs on the next outcome Call visit while retaining 
 				name: "Inspect",
 				type: "agent",
 				prompt: "Inspect plan",
+				session: "resume",
 				reads: { plan: "@callInputs/plan" },
 				output: { format: "json-v1" },
 				maxVisits: 2,
@@ -32,6 +34,7 @@ it("uses corrected mapped inputs on the next outcome Call visit while retaining 
 		],
 	};
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "mapping-caller",
 		name: "Caller",
 		stepConfigVersion: "step-config-v1",
@@ -70,8 +73,6 @@ it("uses corrected mapped inputs on the next outcome Call visit while retaining 
 			received.push(v);
 			return { retry: v < 2 };
 		},
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	try {
 		r.updateWorkflows(defs, parent.id);

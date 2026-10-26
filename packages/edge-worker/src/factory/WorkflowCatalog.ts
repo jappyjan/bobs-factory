@@ -20,23 +20,11 @@ import {
 	AgentSettingsSchema,
 	resolveAgentSettings,
 } from "./AgentSettings.js";
-import { defaultWorkflows, legacyReviewSteps } from "./defaultWorkflows.js";
+import { defaultWorkflows } from "./defaultWorkflows.js";
 import { WorkflowUnavailableError } from "./ExecutionErrors.js";
-import historicalDigests from "./historicalWorkflowDigests.json" with {
-	type: "json",
-};
 import { getLaunchFields } from "./LaunchFields.js";
+import { registerWorkflowConfig } from "./StepConfig.js";
 import {
-	hasLegacyFlags,
-	registerWorkflowConfig,
-	STEP_CONFIG_VERSION,
-} from "./StepConfig.js";
-import {
-	stockFactorySteps,
-	withoutAssessmentReads,
-} from "./stockFactorySteps.js";
-import {
-	StepSchema,
 	validateWorkflows,
 	type Workflow,
 	WorkflowSchema,
@@ -59,10 +47,36 @@ const provenance = z.object({
 	dependencies: z.record(z.string(), z.string()),
 	kind: z.enum(["fork", "migration"]),
 });
+const retainedWorkflowSchema = z
+	.unknown()
+	.transform((value, context): Workflow => {
+		if (
+			value &&
+			typeof value === "object" &&
+			(value as Workflow).engineVersion !== "nodes-v1"
+		) {
+			const historical = z
+				.object({
+					id: z.string().min(1),
+					name: z.string().min(1),
+					steps: z.array(z.unknown()),
+					labels: z.array(z.string()).default([]),
+					description: z.string().default(""),
+				})
+				.passthrough()
+				.parse(value);
+			return historical as unknown as Workflow;
+		}
+		const parsed = WorkflowSchema.safeParse(value);
+		if (parsed.success) return parsed.data;
+		for (const issue of parsed.error.issues)
+			context.addIssue({ ...issue, code: "custom", message: issue.message });
+		return z.NEVER;
+	});
 const envelopeSchema = z
 	.object({
 		format: z.literal("workflow-catalog-v1"),
-		locals: z.array(WorkflowSchema),
+		locals: z.array(retainedWorkflowSchema),
 		preferences: z.record(z.string(), preference),
 		launch: z.record(
 			z.string(),
@@ -153,14 +167,6 @@ function behavior(workflow: Workflow): Workflow {
 	const result = structuredClone(workflow);
 	result.labels = [];
 	result.allowedTriggers = [];
-	const passive = (steps: WorkflowStep[]) => {
-		for (const step of steps) {
-			if (step.tool === "handoff") delete step.computeIntensive;
-			for (const group of step.groups ?? []) passive(group);
-			if (step.body) passive(step.body);
-		}
-	};
-	passive(result.steps);
 	for (const { step } of workflowRoles(result.steps))
 		for (const key of settingsKeys) delete step[key];
 	return result;
@@ -184,19 +190,6 @@ function normalizeLegacy(workflow: Workflow): Workflow {
 		if (stock.launchFields === undefined) delete result.launchFields;
 		else result.launchFields = stock.launchFields;
 	}
-	const visit = (steps: WorkflowStep[]) => {
-		for (const step of steps) {
-			if (
-				step.type === "tool" &&
-				step.tool === "handoff" &&
-				step.computeIntensive === true
-			)
-				step.computeIntensive = false;
-			for (const group of step.groups ?? []) visit(group);
-			if (step.body) visit(step.body);
-		}
-	};
-	visit(result.steps);
 	return result;
 }
 export function workflowBehaviorDigest(workflow: Workflow): string {
@@ -206,7 +199,6 @@ export function stepBehaviorDigest(step: WorkflowStep): string {
 	const result = structuredClone(step);
 	const visit = (steps: WorkflowStep[]) => {
 		for (const item of steps) {
-			if (item.tool === "handoff") delete item.computeIntensive;
 			if (item.type === "agent")
 				for (const key of settingsKeys) delete item[key];
 			for (const group of item.groups ?? []) visit(group);
@@ -217,27 +209,9 @@ export function stepBehaviorDigest(step: WorkflowStep): string {
 	return digest(canonical(result));
 }
 export function recognizedStock(workflow: Workflow): boolean {
-	const hashes: Record<string, Record<string, string>> = historicalDigests;
-	if (hashes[workflow.id]?.[workflowBehaviorDigest(workflow)]) return true;
-	workflow = normalizeLegacy(workflow);
 	const current = reserved.get(workflow.id);
 	if (!current) return false;
 	const templates = [current];
-	if (["factory", "factory-pipeline"].includes(workflow.id)) {
-		const pipeline = reserved.get("factory-pipeline")!;
-		templates.push({ ...current, steps: pipeline.steps });
-		// Bounded #141 flat stock recognition; local forks and accepted runs are never rewritten.
-		templates.push({
-			...current,
-			steps: Object.values(stockFactorySteps).map(withoutAssessmentReads),
-		});
-		const legacyTemplate = {
-			...current,
-			steps: legacyReviewSteps.map((step) => StepSchema.parse(step)),
-		};
-		delete legacyTemplate.stepConfigVersion;
-		templates.push(legacyTemplate);
-	}
 	// Stock definitions saved before durable progress budgets have no convergence policy.
 	for (const template of [...templates])
 		if (template.convergence) {
@@ -391,7 +365,7 @@ export class WorkflowCatalog {
 			.parse(source);
 		const sourceWorkflows = (
 			Array.isArray(document) ? document : document.workflows
-		).map((w) => WorkflowSchema.parse(w));
+		).map((w) => retainedWorkflowSchema.parse(w));
 		if (
 			new Set(sourceWorkflows.map((w) => w.id)).size !== sourceWorkflows.length
 		)
@@ -495,10 +469,7 @@ export class WorkflowCatalog {
 					labels: w.labels,
 					allowedTriggers: w.allowedTriggers,
 				};
-				const owner =
-					w.id === "factory" && !w.steps.some((s) => s.type === "workflow")
-						? "factory-pipeline"
-						: w.id;
+				const owner = w.id;
 				result.preferences[owner] = {
 					...(result.preferences[owner] ?? {}),
 					...extract(w),
@@ -509,7 +480,6 @@ export class WorkflowCatalog {
 				result.locals.push(copy);
 			}
 		}
-		this.relocateLegacyPreferences(result);
 		const savedDefault = Array.isArray(document)
 			? "simple"
 			: (document.defaultWorkflow ?? "simple");
@@ -528,52 +498,7 @@ export class WorkflowCatalog {
 		this.reconcile(result);
 		return result;
 	}
-	/** Bounded pre-composition stock settings adapter; never rewrites local/frozen graphs. */
-	private relocateLegacyPreferences(state: WorkflowConfiguration) {
-		const owners = new Map<string, string[]>();
-		for (const workflow of defaultWorkflows.filter(
-			(w) => w.inputs && w.outcomes,
-		)) {
-			for (const { role } of workflowRoles(workflow.steps)) {
-				const current = owners.get(role) ?? [];
-				if (!current.includes(workflow.id)) current.push(workflow.id);
-				owners.set(role, current);
-			}
-		}
-		for (const owner of ["factory", "factory-pipeline"]) {
-			const prefs = state.preferences[owner];
-			if (!prefs) continue;
-			for (const [role, settings] of Object.entries(prefs)) {
-				const targets =
-					role === "code-review"
-						? [...owners]
-								.filter(([r]) => r.startsWith("specialist-review/"))
-								.flatMap(([r, workflows]) =>
-									workflows.map((id) => [r, id] as const),
-								)
-						: (owners.get(role) ?? []).map((id) => [role, id] as const);
-				if (!targets.length) continue;
-				for (const [targetRole, targetOwner] of targets) {
-					state.preferences[targetOwner!] ??= {};
-					const target = state.preferences[targetOwner!]!;
-					if (
-						target[targetRole!] &&
-						!isDeepStrictEqual(target[targetRole!], settings)
-					)
-						state.inactive.push({
-							workflow: owner,
-							role,
-							settings: structuredClone(settings),
-							reason: `Current callable role ${targetOwner}/${targetRole} already has explicit settings`,
-						});
-					else target[targetRole!] = structuredClone(settings);
-				}
-				delete prefs[role];
-			}
-		}
-	}
 	private reconcile(state: WorkflowConfiguration) {
-		this.relocateLegacyPreferences(state);
 		for (const [owner, prefs] of Object.entries(state.preferences)) {
 			const roles = new Map(
 				workflowRoles(reserved.get(owner)?.steps ?? []).map((item) => [
@@ -596,7 +521,19 @@ export class WorkflowCatalog {
 					delete prefs[role];
 				}
 			}
+			if (!reserved.has(owner)) delete state.preferences[owner];
 		}
+		for (const key of Object.keys(state.launch))
+			if (!reserved.has(key) && !state.locals.some((w) => w.id === key))
+				delete state.launch[key];
+		for (const key of Object.keys(state.enabled))
+			if (!reserved.has(key) && !state.locals.some((w) => w.id === key))
+				delete state.enabled[key];
+		if (
+			!reserved.has(state.defaultWorkflow) &&
+			!state.locals.some((w) => w.id === state.defaultWorkflow)
+		)
+			state.defaultWorkflow = "factory";
 	}
 	private resolve(state: WorkflowConfiguration): Workflow[] {
 		const definitions = [
@@ -641,7 +578,12 @@ export class WorkflowCatalog {
 		}
 
 		// Structural validation deliberately does not reject disabled dependencies.
-		validateWorkflows(all);
+		validateWorkflows(
+			all.filter(
+				(workflow) =>
+					workflow.engineVersion === "nodes-v1" || !workflow.steps.length,
+			),
+		);
 		if (!all.some((w) => w.id === state.defaultWorkflow))
 			throw new Error(`Unknown default workflow: ${state.defaultWorkflow}`);
 		for (const [owner, prefs] of Object.entries(state.preferences)) {
@@ -780,38 +722,6 @@ export class WorkflowCatalog {
 		// New authored graphs are modern even when every optional setting is absent.
 		// Existing unversioned recipes retain their explicit legacy load boundary.
 		const incoming = z.array(WorkflowSchema).parse(value);
-		for (const workflow of incoming) {
-			const previous = this.state.locals.find((old) => old.id === workflow.id);
-			if (
-				!reserved.has(workflow.id) &&
-				!previous &&
-				!workflow.stepConfigVersion &&
-				!workflow.steps.some(function legacy(step): boolean {
-					return (
-						hasLegacyFlags(step) ||
-						(step.groups ?? []).some((group) => group.some(legacy)) ||
-						(step.body ?? []).some(legacy)
-					);
-				})
-			)
-				workflow.stepConfigVersion = STEP_CONFIG_VERSION;
-			if (
-				previous &&
-				!previous.stepConfigVersion &&
-				!workflow.stepConfigVersion
-			) {
-				const stampNew = (steps: WorkflowStep[], oldSteps: WorkflowStep[]) => {
-					for (const step of steps) {
-						const old = oldSteps.find((item) => item.id === step.id);
-						if (!old) step.configVersion = STEP_CONFIG_VERSION;
-						for (const [index, group] of (step.groups ?? []).entries())
-							stampNew(group, old?.groups?.[index] ?? []);
-						if (step.body) stampNew(step.body, old?.body ?? []);
-					}
-				};
-				stampNew(workflow.steps, previous.steps);
-			}
-		}
 		const proposed = validateWorkflows(incoming);
 		const next = structuredClone(this.state);
 		next.locals = [];

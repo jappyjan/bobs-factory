@@ -226,12 +226,6 @@ function fixture(options: Options = {}) {
 			);
 			return runEvidenceChecks(ctx, parsed);
 		},
-		tool: async () => {
-			throw new Error("Legacy tool must not run");
-		},
-		script: async () => {
-			throw new Error("Script must not run");
-		},
 	};
 	const workflow = defaultWorkflows.find((w) => w.id === v2ReviewRecipe.id)!;
 	const runtime = () => {

@@ -18,13 +18,12 @@ it("closes crashed native turns when restoring their graph attempt, retaining un
 			sessions.push(context.resumeAgent?.sessionId);
 			return {};
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	};
 	const original = new WorkflowRuntime(home, hooks);
 	let restored: WorkflowRuntime | undefined;
 	try {
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "crash",
 			name: "Crash recovery",
 			steps: [{ id: "work", name: "Work", type: "agent", prompt: "Work" }],
@@ -98,22 +97,9 @@ it("closes crashed native turns when restoring their graph attempt, retaining un
 
 it("preserves an older build receipt while a frozen run resumes on the current runtime and contract", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-provenance-upgrade-"));
-	const hooks = {
-		agent: async ({
-			step,
-			run,
-		}: import("../src/factory/WorkflowRuntime.js").ExecutionContext) =>
-			step.id === "pause"
-				? {
-						questions: run.answers.length
-							? []
-							: ["Continue the accepted task?"],
-					}
-				: {},
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { agent: async () => ({}) };
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "frozen",
 		name: "Frozen",
 		steps: [
@@ -127,9 +113,19 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 			{
 				id: "pause",
 				name: "Pause",
-				type: "agent",
-				prompt: "Ask",
-				askQuestions: true,
+				type: "display",
+				document: {
+					version: "view-v1",
+					components: [
+						{
+							id: "actions",
+							type: "actions",
+							data: {
+								literal: { actions: [{ id: "continue", label: "Continue" }] },
+							},
+						},
+					],
+				},
 				next: "last",
 			},
 			{
@@ -180,11 +176,13 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 		const saved = restored.get(run.id);
 		const recovery = restored.launch(saved);
 		await waitForRuntime(() => expect(saved.status).toBe("waiting"));
-		restored.answer(
-			saved.id,
-			"Continue with the accepted instructions",
-			"answer",
-		);
+		const snapshot = saved.viewRecords.at(-1).snapshot;
+		await restored.answerView(saved.id, {
+			batchId: snapshot.id,
+			digest: snapshot.digest,
+			accepted: true,
+			action: "continue",
+		});
 		await recovery;
 		expect(saved.status).toBe("completed");
 		expect(saved.workflow).toEqual(workflow);
@@ -193,8 +191,8 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 		expect(current.runtime).toEqual(factoryRuntimeIdentity);
 		expect(current.workflowHash).toBe(retained.workflowHash);
 		expect(current.contract).toMatchObject({
-			validator: "factory-results-v6",
-			version: 2,
+			validator: "nodes-v1",
+			version: 1,
 		});
 		expect(current.contract.hash).not.toBe(retained.contract.hash);
 	} finally {
@@ -206,11 +204,7 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 
 it("reports an honest unknown source identity for a development runtime separately from the UI build", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-provenance-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -247,10 +241,9 @@ it("distinguishes a repeated role after human direction from an ordinary workflo
 				runtime.recordChatMessage(context.run.id, "PRIVATE DIRECTION", "work");
 			return { again: calls === 1 };
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "reasons",
 		name: "Reasons",
 		steps: [
@@ -293,8 +286,6 @@ it("exports provenance without private task/output content and marks historical 
 	const home = mkdtempSync(join(tmpdir(), "factory-provenance-export-"));
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({ token: "PRIVATE RESULT" }),
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	const workflow = WorkflowSchema.parse({
 		id: "export",
@@ -388,13 +379,10 @@ it("exports provenance without private task/output content and marks historical 
 
 it("retains secret-safe per-step provenance across restart without inventing old attempts", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-attempt-provenance-"));
-	const hooks = {
-		agent: async () => ({ summary: "PRIVATE RESULT" }),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { agent: async () => ({ summary: "PRIVATE RESULT" }) };
 	const runtime = new WorkflowRuntime(home, hooks);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "provenance",
 		name: "Provenance",
 		steps: [
@@ -428,7 +416,7 @@ it("retains secret-safe per-step provenance across restart without inventing old
 			outcome: "completed",
 			reason: "initial",
 			runtime: { commit: null, packaged: false },
-			contract: { validator: "factory-results-v6" },
+			contract: { validator: "nodes-v1" },
 		});
 		expect(attempts[0].workflowHash).toMatch(/^[a-f0-9]{64}$/);
 		expect(attempts[0].instructionsHash).toMatch(/^[a-f0-9]{64}$/);

@@ -38,6 +38,7 @@ describe("For each authoring and simulation", () => {
 	});
 	it("keeps mapped call nodes visible with the input contract that actually executes", () => {
 		const target = {
+			engineVersion: "nodes-v1",
 			id: "worker",
 			name: "Worker",
 			steps: [newStep("agent", "research")],
@@ -49,7 +50,12 @@ describe("For each authoring and simulation", () => {
 			...newStep("workflow", "mapped-call", "worker"),
 			inputMapping: { topic: "/item/name" },
 		};
-		const owner = { ...target, id: "owner", steps: [call] };
+		const owner = {
+			engineVersion: "nodes-v1",
+			...target,
+			id: "owner",
+			steps: [call],
+		};
 		expect(recipeGraph(owner, [owner, target]).steps).toEqual([call]);
 	});
 
@@ -71,11 +77,46 @@ describe("For each authoring and simulation", () => {
 			mappingProblem({ topic: "/item/name", position: "/index" }),
 		).toBeUndefined();
 		expect(
-			bodyProblem([{ ...newStep("agent", "ask"), askQuestions: true }]),
+			bodyProblem([
+				{
+					...newStep("display", "ask"),
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "actions",
+								type: "actions",
+								data: {
+									literal: { actions: [{ id: "accept", label: "Accept" }] },
+								},
+							},
+						],
+					},
+				},
+			]),
 		).toBeDefined();
-		expect(bodyProblem([newStep("human", "approve")])).toBeDefined();
+		expect(
+			bodyProblem([
+				{
+					...newStep("display", "approve"),
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "actions",
+								type: "actions",
+								data: {
+									literal: { actions: [{ id: "accept", label: "Accept" }] },
+								},
+							},
+						],
+					},
+				},
+			]),
+		).toBeDefined();
 		const invalid = { ...iteration(), concurrency: 1.5, maxItems: 0 };
 		const recipe = {
+			engineVersion: "nodes-v1",
 			id: "local",
 			name: "Local",
 			steps: [invalid],
@@ -93,6 +134,7 @@ describe("For each authoring and simulation", () => {
 			body: [newStep("agent", "work")],
 		}));
 		const recipe = {
+			engineVersion: "nodes-v1",
 			id: "local",
 			name: "Local",
 			steps: [outer],

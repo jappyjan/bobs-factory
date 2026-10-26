@@ -15,12 +15,10 @@ import {
 	taskbotServer,
 	taskbotSource,
 } from "../src/factory/TicketTracking.js";
-import { validateWorkflows } from "../src/factory/Workflow.js";
 import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
-import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -63,11 +61,7 @@ function fixture() {
 	const adapter = taskbotAdapter(ref, call);
 	const home = mkdtempSync(join(tmpdir(), "factory-ticket-"));
 	homes.push(home);
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	const run = runtime.create({
 		repositoryId: "repo",
@@ -103,113 +97,7 @@ function fixture() {
 		home,
 	};
 }
-it.each([
-	"question",
-	"answer",
-	"reason",
-	"removed",
-	"unchanged",
-	"legacy",
-] as const)("delivers restored assistance once per question batch (%s)", async (changed) => {
-	const f = fixture();
-	const output = {
-		approved: false,
-		qaBlocked: true,
-		questions: ["Which fixture account is ready?"],
-		questionRecommendations: [
-			{ questionIndex: 0, answer: "Restore access", reason: "QA needs access" },
-		],
-	};
-	let trackedWaits = 0;
-	const hooks = {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => structuredClone(output),
-		track: async (
-			run: FactoryRun,
-			milestone: Parameters<TicketTracking["record"]>[1],
-		) => {
-			await f.service.record(run, milestone);
-			if (milestone.key.startsWith("questions:")) trackedWaits++;
-		},
-	};
-	let runtime = new WorkflowRuntime(f.home, hooks);
-	const definition = validateWorkflows([
-		...defaultWorkflows,
-		{
-			id: "qa-assistance",
-			name: "QA assistance",
-			steps: [
-				{ id: "capture", name: "Capture", type: "agent", prompt: "Mock" },
-				{ id: "visual-review", name: "Review", type: "agent", prompt: "Mock" },
-				{
-					id: "visual-gate",
-					name: "Gate",
-					type: "tool",
-					tool: "visual-gate",
-					qaContract: "qa-v1",
-					next: "end",
-				},
-			],
-		},
-	]).at(-1)!;
-	const run = runtime.create({
-		repositoryId: "repo",
-		workspace: f.home,
-		input: source,
-		workflow: definition,
-		triggerOrigin: {
-			type: "manual",
-			workflowId: definition.id,
-			at: new Date().toISOString(),
-		},
-	});
-	run.ticketReference = ref;
-	const comments = () =>
-		f.ticket.comments.filter((c) =>
-			c.body.startsWith("Factory needs assistance:"),
-		);
-	const wait = (count: number) =>
-		waitFor(() => {
-			expect(runtime.get(run.id).status).toBe("waiting");
-			expect(trackedWaits).toBe(count);
-			expect(
-				runtime.get(run.id).ticketSync?.receipts.every((r) => r.delivered),
-			).toBe(true);
-		});
-	try {
-		void runtime.launch(run);
-		await wait(1);
-		expect(comments()).toHaveLength(1);
-		const original = run.questionBatchId;
-		await runtime.shutdown();
-		if (changed === "legacy") {
-			run.ticketSync!.receipts.find((r) =>
-				r.key.startsWith("questions:"),
-			)!.key = `questions:${run.step}:${run.answers.length}`;
-			runtime.save(run);
-		} else if (changed === "question")
-			output.questions[0] = "Which replacement account is ready?";
-		else if (changed === "removed") output.questionRecommendations = [];
-		else if (changed !== "unchanged")
-			output.questionRecommendations[0]![changed] = "Updated guidance";
-		for (let restart = 0; restart < 2; restart++) {
-			runtime = new WorkflowRuntime(f.home, hooks);
-			runtime.resumeAll();
-			await wait(restart + 2);
-			const replaced = !["unchanged", "legacy"].includes(changed);
-			expect(comments()).toHaveLength(replaced ? 2 : 1);
-			if (replaced) {
-				expect(runtime.get(run.id).questionBatchId).not.toBe(original);
-				expect(comments().at(-1)!.body).not.toBe(comments()[0]!.body);
-			} else expect(runtime.get(run.id).questionBatchId).toBe(original);
-			expect(runtime.get(run.id).answers).toEqual([]);
-			await runtime.shutdown();
-		}
-	} finally {
-		await runtime.shutdown();
-	}
-});
+
 it("resolves only designated origins, preserves instance/project, and rejects ambiguity", () => {
 	expect(originatingTicket(source)).toBe(source);
 	expect(originatingTicket(`Task source: ${source}`)).toBe(source);
@@ -384,11 +272,9 @@ it("recovers ambiguous comments after restart without duplicate comments or stag
 	});
 	expect(f.run.ticketSync?.error).toMatch(/response lost/);
 	expect(f.ticket.comments).toHaveLength(1);
-	const restored = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	}).get(f.run.id);
+	const restored = new WorkflowRuntime(f.home, { agent: async () => ({}) }).get(
+		f.run.id,
+	);
 	await f.service.flush(restored);
 	expect(restored.ticketSync?.error).toBeUndefined();
 	expect(f.ticket.comments).toHaveLength(1);
@@ -482,11 +368,7 @@ it.each([
 	f.call.mockImplementation(original);
 	f.calls.splice(0);
 	await f.runtime.flush();
-	const runtime = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(f.home, { agent: async () => ({}) });
 	const run = runtime.get(f.run.id);
 	const service = new TicketTracking(
 		async () => f.adapter,
@@ -502,11 +384,9 @@ it.each([
 	expect(run.ticketSync?.receipts.every((r) => r.superseded)).toBe(true);
 	expect(run.ticketSync?.error).toBeUndefined();
 	const reads = f.calls.length;
-	const restored = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	}).get(run.id);
+	const restored = new WorkflowRuntime(f.home, { agent: async () => ({}) }).get(
+		run.id,
+	);
 	await service.flush(restored);
 	expect(f.calls).toHaveLength(reads);
 });
@@ -647,7 +527,7 @@ it("classifies historical merge, pending, partial, deferred and ambiguous outcom
 			associated: true,
 			runStatus: "completed",
 			pr: { state: "OPEN" },
-			step: "pipeline/merge",
+			nodeType: "merge",
 		}).stage,
 	).toBe("in_review");
 	expect(
@@ -655,7 +535,7 @@ it("classifies historical merge, pending, partial, deferred and ambiguous outcom
 			associated: true,
 			runStatus: "failed",
 			pr: { state: "OPEN" },
-			step: "pipeline/implement",
+			nodeType: "agent",
 		}).stage,
 	).toBe("in_progress");
 	expect(
@@ -744,11 +624,9 @@ it("retains an offline confirmed merge ahead of late work milestones across rest
 	expect(
 		f.run.ticketSync?.receipts.find((r) => r.key === "merged")?.superseded,
 	).not.toBe(true);
-	const restored = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	}).get(f.run.id);
+	const restored = new WorkflowRuntime(f.home, { agent: async () => ({}) }).get(
+		f.run.id,
+	);
 	f.call.mockImplementation(original);
 	await f.service.flush(restored);
 	expect(f.ticket.status).toBe("done");
@@ -1089,96 +967,6 @@ it("applies status and PR attachments even when documentation already exists", a
 	]);
 	expect(f.ticket.comments).toEqual([{ body: "Accepted decision" }]);
 	expect(f.run.ticketSync?.receipts[0]?.delivered).toBe(true);
-});
-
-it("persists publication before delayed tracking and lets another delivery advance, with idempotent restart", async () => {
-	const f = fixture();
-	let release!: () => void;
-	const held = new Promise<void>((resolve) => {
-		release = resolve;
-	});
-	const original = f.call.getMockImplementation()!;
-	f.call.mockImplementation(async (tool, args) => {
-		await held;
-		return original(tool, args);
-	});
-	const published: string[] = [];
-	await f.runtime.flush();
-	const runtime = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async ({ run }) => {
-			published.push(run.id);
-			return { url: "https://github.com/test/repo/pull/1", headSha: "head" };
-		},
-		track: (run, milestone) => f.service.record(run, milestone),
-	});
-	const definition = validateWorkflows([
-		...defaultWorkflows,
-		{
-			id: "published",
-			name: "Published",
-			steps: [
-				{
-					id: "draft-pr",
-					name: "Publish",
-					type: "tool",
-					tool: "draft-pr",
-					next: "end",
-				},
-			],
-		},
-	]).at(-1)!;
-	const first = runtime.get(f.run.id);
-	first.ticketReference = f.run.ticketReference;
-	first.workflow = definition;
-	first.outputs.repository = {
-		githubUrl: "https://github.com/test/repo",
-		baseBranch: "main",
-	};
-	await runtime.launch(first);
-	expect(first.status).toBe("completed");
-	expect(
-		first.ticketSync?.receipts.find((receipt) => receipt.pr)?.delivered,
-	).toBeUndefined();
-	expect(first.deliveryCoordination?.phase).toBe("released");
-	const second = runtime.create({
-		workflow: definition,
-		repositoryId: "repo",
-		workspace: f.home,
-		input: "Independent",
-		triggerOrigin: { type: "manual", workflowId: definition.id, at: "" },
-	});
-	second.outputs.repository = first.outputs.repository;
-	await runtime.launch(second);
-	expect(second.status).toBe("completed");
-	expect(published).toEqual([first.id, second.id]);
-	// The serialized receipt exists before any remote side effect can finish.
-	const restoredRuntime = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => {
-			throw new Error("Must not republish");
-		},
-	});
-	const restored = restoredRuntime.get(first.id);
-	expect(restored.ticketSync?.receipts.find((receipt) => receipt.pr)?.pr).toBe(
-		"https://github.com/test/repo/pull/1",
-	);
-	release();
-	await f.service.flush(first);
-	const calls = f.calls.filter((call) =>
-		["comment", "set_status", "add_attachment"].includes(call.tool),
-	);
-	await f.service.flush(restored);
-	expect(
-		f.calls.filter((call) =>
-			["comment", "set_status", "add_attachment"].includes(call.tool),
-		),
-	).toEqual(calls);
-	expect(f.ticket.attachments).toHaveLength(1);
-	await runtime.shutdown();
-	await restoredRuntime.shutdown();
 });
 
 it("retains failed documentation and links when newer status milestones supersede old status intent", async () => {

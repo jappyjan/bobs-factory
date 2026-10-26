@@ -31,7 +31,7 @@ eligibility, FIFO precedes priority. Original run age and timestamps from previo
 admissions never confer resource priority. This is opportunity at the next safe
 boundary, without interrupting an active mutation or waiving readiness. Admission
 still reconciles all affected targets atomically; context-only repositories remain
-outside the publication claim. Existing revision, accepted-context, impact,
+outside the publication claim. Existing revision, accepted-context,
 QA/findings, exact human approval/continuation and native provider checks remain
 mandatory inside delivery actions. Passive CI and asynchronous ticket tracking
 retain their own bounded supervision/outbox ownership.

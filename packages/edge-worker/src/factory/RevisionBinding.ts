@@ -4,7 +4,7 @@ import { createReadStream } from "node:fs";
 import { lstat, readlink, realpath } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import { runRepositories } from "./RepositoryScope.js";
 import { snapshotForRead } from "./RepositorySnapshot.js";
 import { stepBindings } from "./StepBindings.js";

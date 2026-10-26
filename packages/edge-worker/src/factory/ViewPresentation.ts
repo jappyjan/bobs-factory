@@ -1,4 +1,4 @@
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import type { ViewRecord, ViewSnapshot, ViewThread } from "./HumanStep.js";
 
 export const askFailureText =

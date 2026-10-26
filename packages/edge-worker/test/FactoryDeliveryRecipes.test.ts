@@ -8,7 +8,7 @@ import type { GitProvider } from "../src/factory/GitProvider.js";
 import type {
 	MergeBlocker,
 	ProviderCheck,
-} from "../src/factory/MergeReadiness.js";
+} from "../src/factory/ProviderReadiness.js";
 import { fileTicketIO } from "../src/factory/RepositoryTicketIO.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -33,7 +33,7 @@ vi.mock("../src/factory/GitProvider.js", async (original) => ({
 	...(await original<object>()),
 	resolveGitProvider: mocks.provider,
 }));
-vi.mock("../src/factory/FactoryTools.js", async (original) => ({
+vi.mock("../src/factory/nodes/execute/command.js", async (original) => ({
 	...(await original<object>()),
 	executeCommand: mocks.command,
 }));

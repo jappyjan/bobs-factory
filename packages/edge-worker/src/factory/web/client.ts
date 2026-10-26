@@ -8,7 +8,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { installNodeMetadata } from "../nodes/metadata.js";
+import { installNodeMetadata, nodeKind } from "../nodes/metadata.js";
 import {
 	active,
 	attention,
@@ -668,20 +668,7 @@ export function phase(step: any) {
 	return step?.presentation?.phase ?? "red";
 }
 export function stepIcon(step: any) {
-	return (
-		step?.presentation?.icon ??
-		(step?.type === "agent"
-			? "✦"
-			: step?.type === "foreach"
-				? "↻"
-				: step?.type === "decide"
-					? "☷"
-					: step?.type === "approve"
-						? "✓"
-						: step?.type === "show"
-							? "▤"
-							: "⚙️")
-	);
+	return step?.presentation?.icon ?? nodeKind(step?.type).icon;
 }
 export function stepFixing(step: any): boolean {
 	return step?.presentation?.fixing === true;
@@ -747,32 +734,7 @@ export function workflowOf(run: any, config: any) {
 				name: "Simple / Bob’s Factory",
 			});
 }
-export const friendly: Record<string, string> = {
-	ticket: "Ticket",
-	source: "Source pull request",
-	repository: "Repository",
-	"existing-work": "Existing work",
-	"assess-existing": "Assessment",
-	clarify: "Clarification",
-	decisions: "Decision record",
-	plan: "Implementation plan",
-	"plan-review": "Plan review",
-	implement: "Implementation report",
-	"draft-pr": "Draft PR",
-	"code-review": "Code review",
-	"review-gate": "Review gate",
-	ci: "CI checks",
-	"merge-readiness": "Merge readiness",
-	"ci-fix": "CI fix report",
-	"visual-scope": "QA stories and screenshots",
-	capture: "QA and screenshots",
-	"visual-review": "QA and screenshot review",
-	"visual-gate": "QA gate",
-	guide: "Review guide",
-	handoff: "Hand-off",
-	"human-review": "Human review",
-	merge: "Merge",
-};
+export const friendly: Record<string, string> = {};
 export function artifactsOf(
 	run: any,
 ): { name: string; value: any; title: string }[] {
@@ -787,21 +749,7 @@ export function artifactsOf(
 		.map(([name, value]) => ({
 			name,
 			value,
-			title:
-				(value as any)?.stamp?.reviewer ??
-				(!(value as any)?.qaContract &&
-				["capture", "visual-scope", "visual-review", "visual-gate"].includes(
-					name,
-				)
-					? (
-							{
-								capture: "Screenshots",
-								"visual-scope": "Visual scope",
-								"visual-review": "Visual review",
-								"visual-gate": "Visual gate",
-							} as Record<string, string>
-						)[name]!
-					: (friendly[name] ?? name)),
+			title: name,
 		}));
 }
 export function screenshotUrl(run: any, index: number, artifact = "capture") {

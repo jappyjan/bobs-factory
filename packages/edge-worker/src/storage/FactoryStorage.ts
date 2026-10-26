@@ -8,13 +8,9 @@ import {
 	StorageRetentionStore,
 	storageDigest,
 } from "bobs-factory-core";
-import {
-	consumesImpact,
-	hasCheck,
-	readStep,
-	resolveStepConfig,
-} from "../factory/StepConfig.js";
-import type { WorkflowStep } from "../factory/Workflow.js";
+import { digest } from "../factory/EvidenceDigest.js";
+import { stepForRun } from "../factory/ToolBindings.js";
+
 import type {
 	FactoryRun,
 	GraphCheckpoint,
@@ -56,7 +52,6 @@ function hasNative(checkpoint?: GraphCheckpoint): boolean {
 			(agent) => !!agent.sessionId,
 		) ||
 			!!checkpoint.active?.agent?.sessionId ||
-			!!checkpoint.active?.questionExplanation?.agent?.sessionId ||
 			!!checkpoint.active?.children?.some((child) => hasNative(child)))
 	);
 }
@@ -69,172 +64,6 @@ class ProtectionReasons extends Array<string> {
 		return this.length;
 	}
 }
-interface ReferencePolicy {
-	// Exemptions are scoped to the record currently being traversed.
-	snapshots: WeakMap<
-		object,
-		NonNullable<FactoryRun["impactDecisions"]>[number]["snapshot"]
-	>;
-	receipts: WeakSet<object>;
-	prefix: string;
-	step(key: string): WorkflowStep | undefined;
-	inFrame(prefix: string): ReferencePolicy;
-	enroll(value: unknown, key?: string): ReferencePolicy;
-}
-function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
-	const decisions = run.impactDecisions ?? [];
-
-	const steps = new Map<string, WorkflowStep>();
-	const collect = function* (
-		items: WorkflowStep[],
-		prefix = "",
-		ancestors: string[] = [],
-	): Generator<void> {
-		for (const step of items) {
-			yield;
-			const key = `${prefix}${step.id}`;
-			steps.set(key, step);
-			for (const [index, group] of (step.groups ?? []).entries())
-				yield* collect(group, `${key}/${index}/`, ancestors);
-			if (
-				step.type === "workflow" &&
-				step.workflow &&
-				!ancestors.includes(step.workflow)
-			) {
-				const child = run.workflowDefinitions?.find(
-					(w) => w.id === step.workflow,
-				);
-				if (child)
-					yield* collect(child.steps, `${key}/`, [...ancestors, child.id]);
-			}
-		}
-	};
-	if (decisions.length)
-		yield* collect(run.workflow.steps, "", [run.workflow.id]);
-	const prefixOf = (key: string) => key.slice(0, key.lastIndexOf("/") + 1);
-	// A Call frame names imported values by input port; follow the caller's bindings.
-	const boundProducer = (prefix: string, name: string): string | undefined => {
-		for (let scope = prefix; scope; ) {
-			const callKey = scope.slice(0, -1);
-			const call = steps.get(callKey);
-			const binding =
-				call?.type === "workflow" ? call.bindings?.[name] : undefined;
-			if (!binding) return undefined;
-			scope = prefixOf(callKey);
-			if (!binding.startsWith("@bindings/")) return `${scope}${binding}`;
-			name = binding.slice("@bindings/".length);
-		}
-		return undefined;
-	};
-	const makePolicy = (prefix = ""): ReferencePolicy => {
-		const enroll = (value: unknown, key?: string): ReferencePolicy => {
-			const policy: ReferencePolicy = {
-				snapshots: new WeakMap(),
-				receipts: new WeakSet(),
-				prefix,
-				step: (key) => steps.get(key),
-				inFrame: makePolicy,
-				enroll,
-			};
-			if (!value || typeof value !== "object") return policy;
-			const record = value as Record<string, unknown>;
-			const associated = (decision: (typeof decisions)[number]) => {
-				if (key === undefined || prefix === "@unbound/") return undefined;
-				const qualified = key.includes("/") ? key : `${prefix}${key}`;
-				const exact = steps.get(qualified);
-				if (exact) return { step: exact, key: qualified };
-				const bound = key.includes("/")
-					? undefined
-					: boundProducer(prefix, key);
-				if (bound && steps.get(bound))
-					return { step: steps.get(bound)!, key: bound };
-				// Old calls shared a global leaf output map. Only a normalized old
-				// producer may recover that alias, and never over an authored root step.
-				if (prefix || key.includes("/") || steps.has(key)) return undefined;
-				const legacyKey = `${prefixOf(decision.snapshot.key)}${key}`;
-				const legacy = steps.get(legacyKey);
-				return legacy && !resolveStepConfig(legacy).explicit
-					? { step: legacy, key: legacyKey }
-					: undefined;
-			};
-			const assesses = (
-				producer: ReturnType<typeof associated>,
-				decision: (typeof decisions)[number],
-			) =>
-				!!producer &&
-				hasCheck(producer.step, "impact-reuse") &&
-				!!readStep(producer.step, "fanout") &&
-				`${prefixOf(producer.key)}${readStep(producer.step, "fanout")}` ===
-					decision.snapshot.key;
-			if (record.snapshot) {
-				const decision = decisions.find(
-					(d) =>
-						(key === undefined || assesses(associated(d), d)) &&
-						storageDigest(record.snapshot) === storageDigest(d.snapshot) &&
-						record.at === d.at,
-				);
-				if (decision) {
-					policy.snapshots.set(value, decision.snapshot);
-					if (Array.isArray(record.checkResults))
-						for (const receipt of record.checkResults)
-							if (
-								receipt &&
-								typeof receipt === "object" &&
-								decision.checkResults.some(
-									(r) => storageDigest(r) === storageDigest(receipt),
-								)
-							)
-								policy.receipts.add(receipt);
-				}
-			}
-			if (Array.isArray(record.checks))
-				for (const receipt of record.checks)
-					if (
-						receipt &&
-						typeof receipt === "object" &&
-						decisions.some((d) => {
-							const producer = associated(d);
-							const source = producer && readStep(producer.step, "impact");
-							const sourceKey =
-								producer && source
-									? `${prefixOf(producer.key)}${source}`
-									: undefined;
-							const assessor = sourceKey && steps.get(sourceKey);
-							return (
-								!!producer &&
-								producer.step.type === "tool" &&
-								producer.step.tool === "impact-checks" &&
-								consumesImpact(producer.step) &&
-								!!assessor &&
-								!!sourceKey &&
-								assesses({ step: assessor, key: sourceKey }, d) &&
-								d.checkResults.some(
-									(r) => storageDigest(r) === storageDigest(receipt),
-								)
-							);
-						})
-					)
-						policy.receipts.add(receipt);
-			return policy;
-		};
-		return enroll(undefined);
-	};
-	return makePolicy();
-}
-type ReferenceLocation =
-	| "content"
-	| "context"
-	| "snapshot"
-	| "repositories"
-	| "repository"
-	| "outputs"
-	| "history"
-	| "historyEntry"
-	| "decisions"
-	| "checkpoint"
-	| "active"
-	| "children"
-	| "calls";
 /** Stream every retained value and evidence link. Identity metadata is handled by
  * the owning record, while actual content paths remain live dependencies. */
 async function* retainedReferences(
@@ -242,9 +71,6 @@ async function* retainedReferences(
 	workspace: string,
 	protection: string[],
 	signal?: AbortSignal,
-	policy?: ReferencePolicy,
-	location: ReferenceLocation = "content",
-	identity?: unknown,
 ): AsyncGenerator<void> {
 	signal?.throwIfAborted();
 	if (value === undefined || value === null) return;
@@ -270,110 +96,9 @@ async function* retainedReferences(
 		}
 	} else if (value && typeof value === "object") {
 		const record = value as Record<string, unknown>;
-		const canonical = policy?.snapshots.get(record);
 		for (const key in record) {
-			if (!Object.hasOwn(record, key)) continue;
-			const item = record[key];
-			// Only runtime locations and exact enrolled identities have identity semantics.
-			// Arbitrary agent output never acquires them from sibling property names.
-			if (
-				key === "workspace" &&
-				item ===
-					(location === "context"
-						? (identity as { workspace?: string })?.workspace
-						: identity) &&
-				(location === "context" || location === "repository")
-			)
-				continue;
-			if (key === "evidence" && policy?.receipts.has(record)) continue; // Exact enrolled command receipt at a runtime-owned location.
-
-			let next: ReferenceLocation = "content";
-			let nextIdentity: unknown;
-			let nextPolicy = policy;
-			// Classify at the trusted location while holding this exact loaded record.
-			// Paged transcripts may recreate objects after cache eviction.
-			if (location === "outputs") nextPolicy = policy?.enroll(item, key);
-			if (location === "decisions") nextPolicy = policy?.enroll(item);
-			if (location === "history") next = "historyEntry";
-			if (
-				location === "historyEntry" &&
-				key === "output" &&
-				typeof record.step === "string"
-			)
-				nextPolicy = policy?.inFrame("").enroll(item, record.step);
-			if (location === "context" || location === "checkpoint") {
-				if (key === "outputs") next = "outputs";
-				if (location === "context" && key === "history") next = "history";
-				if (location === "checkpoint" && key === "active") {
-					next = "active";
-					nextPolicy = policy?.inFrame(`${policy.prefix}${record.current}`);
-				}
-			}
-			if (location === "checkpoint" && key === "calls") next = "calls";
-			// A completed Call keeps its lexical frame, keyed by the Call step.
-			if (location === "calls") {
-				next = "checkpoint";
-				nextPolicy = policy?.inFrame(`${policy.prefix}${key}/`);
-			}
-			if (location === "active" && key === "children") next = "children";
-			if (location === "children") {
-				next = "checkpoint";
-				const parent = policy?.step(policy.prefix);
-				nextPolicy = policy?.inFrame(
-					parent?.type === "workflow" && key === "0"
-						? `${policy.prefix}/`
-						: parent?.groups?.[Number(key)]
-							? `${policy.prefix}/${key}/`
-							: "@unbound/",
-				);
-			}
-			if (canonical && key === "snapshot") {
-				next = "snapshot";
-				nextIdentity = canonical;
-			}
-			if (location === "snapshot" && key === "repositories") {
-				next = "repositories";
-				nextIdentity = identity;
-			}
-			if (location === "context" && key === "repositories") {
-				next = "repositories";
-				nextIdentity = identity;
-			}
-			if (location === "repositories") {
-				const repo = item as Record<string, unknown> | null;
-				const candidates =
-					typeof identity === "object" && identity && "repositories" in identity
-						? (
-								identity as {
-									repositories: {
-										repositoryId?: string;
-										id?: string;
-										workspace: string;
-									}[];
-								}
-							).repositories
-						: [];
-				const match = candidates.find(
-					(candidate) =>
-						repo &&
-						(candidate.repositoryId ?? candidate.id) ===
-							(repo.repositoryId ?? repo.id) &&
-						candidate.workspace === repo.workspace,
-				);
-				if (match) {
-					next = "repository";
-					nextIdentity = match.workspace;
-				}
-			}
-			yield* retainedReferences(
-				item,
-				workspace,
-				protection,
-				signal,
-				nextPolicy,
-				next,
-				nextIdentity,
-			);
+			if (Object.hasOwn(record, key))
+				yield* retainedReferences(record[key], workspace, protection, signal);
 		}
 	}
 }
@@ -447,7 +172,6 @@ export function factoryStorage(
 			]),
 		);
 		for (const run of runtime.runs.values()) {
-			const policy = yield* referencePolicy(run);
 			signal?.throwIfAborted();
 			yield;
 			const owns =
@@ -465,54 +189,33 @@ export function factoryStorage(
 					run.launchInputs,
 					run.launchAttachments,
 					run.repositoryOutputs,
-					run.answers,
-					run.questionRequests,
-					run.questions,
+					(run as unknown as Record<string, unknown>).answers,
+					(run as unknown as Record<string, unknown>).questionRequests,
+					(run as unknown as Record<string, unknown>).questions,
 					run.simplePrompt,
 					run.simpleExecution,
-					run.architectureProposals,
-					run.architectureDecisions,
-					run.humanDecisions,
+					(run as unknown as Record<string, unknown>).architectureProposals,
+					(run as unknown as Record<string, unknown>).architectureDecisions,
+					(run as unknown as Record<string, unknown>).humanDecisions,
+					(run as unknown as Record<string, unknown>).reviewRounds,
+					(run as unknown as Record<string, unknown>).impactDecisions,
+					(run as unknown as Record<string, unknown>).delivery,
+					run.viewRecords,
 					run.events,
-					run.reviewGate,
+					(run as unknown as Record<string, unknown>).reviewGate,
 					run.sessionSnapshot,
 				],
 				workspace,
 				protection,
 				signal,
-				policy,
 			);
-			for (const [value, location] of [
-				[run.outputs, "outputs"],
-				[run.history, "history"],
-				[run.impactDecisions, "decisions"],
-				[run.checkpoint, "checkpoint"],
+			for (const value of [
+				run.outputs,
+				run.history,
+
+				run.checkpoint,
 			] as const)
-				yield* retainedReferences(
-					value,
-					workspace,
-					protection,
-					signal,
-					policy,
-					location,
-				);
-			for (const round of run.reviewRounds ?? []) {
-				const context = round.context as Record<string, unknown> | undefined;
-				if (context)
-					yield* retainedReferences(
-						context,
-						workspace,
-						protection,
-						signal,
-						policy.inFrame(
-							policy.step(round.key)
-								? round.key.slice(0, round.key.lastIndexOf("/") + 1)
-								: "@unbound/",
-						),
-						"context",
-						run,
-					);
-			}
+				yield* retainedReferences(value, workspace, protection, signal);
 			if (!owns) continue;
 			owners.push(run);
 			await runtime.flush(run.id);
@@ -520,7 +223,7 @@ export function factoryStorage(
 				protection.push(`Run ${run.id} needs this workspace (${run.status})`);
 			if (run.capacityLeaves && Object.keys(run.capacityLeaves).length)
 				protection.push(`Run ${run.id} retains capacity or descendant work`);
-			if (run.reviewGate?.status === "pending")
+			if (run.viewDecision && !run.viewDecision.answer)
 				protection.push(`Run ${run.id} is awaiting human review`);
 			if (
 				hasNative(run.checkpoint) ||
@@ -587,16 +290,31 @@ export function factoryStorage(
 			let mergedHead: string | undefined;
 			for (const run of owners) {
 				yield;
-				const approval = run.humanDecisions?.at(-1);
-				const approved =
-					approval?.decision === "approve"
-						? (approval.repositories?.find(
-								(item) => item.repositoryId === repo.id,
-							) ??
-							(run.repositoryId === repo.id && approval.url
-								? { url: approval.url, headSha: approval.headSha }
-								: undefined))
-						: undefined;
+				// Only a completed merge node with a stamped provider head is delivery evidence.
+				const approved = [...run.history].reverse().flatMap((receipt) => {
+					if (
+						!receipt.guarantee ||
+						receipt.guarantee.outputDigest !== digest(receipt.output)
+					)
+						return [];
+					const step = stepForRun(run, receipt.step);
+					const headSha = receipt.guarantee?.revisions[repo.id]?.headSha;
+					const output = receipt.output as
+						| {
+								repositories?: {
+									repositoryId: string;
+									merged: boolean;
+									url: string;
+								}[];
+						  }
+						| undefined;
+					const result = output?.repositories?.find(
+						(item) => item.repositoryId === repo.id && item.merged,
+					);
+					return step?.type === "merge" && result && headSha
+						? [{ url: result.url, headSha }]
+						: [];
+				})[0];
 				if (!approved || !hooks.verifyDelivery) {
 					reasons.push(
 						`Run ${run.id}: exact delivered revision is unavailable`,

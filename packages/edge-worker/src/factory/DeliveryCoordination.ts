@@ -2,23 +2,13 @@ import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { repositoryReference } from "./GitProviderReference.js";
-import { decisionFor } from "./Impact.js";
-import { delay } from "./MergeReadiness.js";
-import {
-	groupedOutput,
-	repositoryRun,
-	runRepositories,
-} from "./RepositoryScope.js";
+
+import { delay } from "./ProviderReadiness.js";
+import { repositoryRun, runRepositories } from "./RepositoryScope.js";
 import { deliveryTargetLabel } from "./RunAttention.js";
 import { takeoverSource } from "./RunContextSources.js";
-import {
-	accessMode,
-	consumesImpact,
-	hasCheck,
-	readOutput,
-	resolveStepConfig,
-} from "./StepConfig.js";
-import { outputForTool } from "./ToolBindings.js";
+import { accessMode } from "./StepConfig.js";
+
 import type { WorkflowStep } from "./Workflow.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
@@ -97,24 +87,6 @@ export function deliveryScopes(run: FactoryRun): string[] {
 			runRepositories(run)
 				.filter((repository) => {
 					const projected = repositoryRun(run, repository);
-					if (
-						[
-							takeoverSource(projected),
-							outputForTool(projected, "draft-pr"),
-							outputForTool(projected, "merge"),
-						].some(
-							(value) =>
-								typeof (value as { url?: unknown } | undefined)?.url ===
-								"string",
-						)
-					)
-						return true;
-					if (
-						groupedOutput(outputForTool(run, "draft-pr"))?.deliveries.some(
-							(d) => d.repositoryId === repository.id,
-						)
-					)
-						return true;
 					const git = (...args: string[]) =>
 						execFileSync("git", args, {
 							cwd: repository.workspace,
@@ -166,39 +138,9 @@ export function deliveryScopes(run: FactoryRun): string[] {
 }
 
 /** Concrete mutations, including renamed correction branches in frozen definitions. */
-export function deliveryStep(run: FactoryRun, step: WorkflowStep): boolean {
+export function deliveryStep(_run: FactoryRun, step: WorkflowStep): boolean {
 	if (accessMode(step) === "push") return true;
-	if (step.tool === "draft-pr") return true;
-	// Merge owns short inspect/mutation reservations internally, releasing between provider polls.
-	if (step.tool === "merge") return false;
-	if (["fanout", "workflow", "foreach"].includes(step.type)) return false;
-	// New recipes opt into the mutation lease through access; graph inference is legacy-only.
-	if (resolveStepConfig(step).explicit) return false;
-	const definitions = [run.workflow, ...(run.workflowDefinitions ?? [])];
-	const correction = (steps: WorkflowStep[]): boolean =>
-		steps.some(
-			(item) =>
-				([
-					"ci",
-					"merge",
-					"handoff",
-					"review-gate",
-					"visual-gate",
-					"human-review",
-				].includes(item.tool ?? "") &&
-					item.branches.some(
-						(branch) =>
-							branch.next === step.id &&
-							((branch.when.path === "fix" && branch.when.equals === true) ||
-								(branch.when.path === "approved" &&
-									branch.when.equals === false) ||
-								(branch.when.path === "decision" &&
-									branch.when.equals === "reject")),
-					)) ||
-				(item.groups ?? []).some(correction) ||
-				(item.body ? correction(item.body) : false),
-		);
-	return definitions.some((definition) => correction(definition.steps));
+	return false;
 }
 
 /** Shared QA is distinct from repository integration; legacy plans remain conservative. */
@@ -207,74 +149,7 @@ export function resourceScopes(context: ExecutionContext): string[] {
 		return context.step.resources
 			.map((resource) => JSON.stringify(["resource", resource]))
 			.sort();
-	if (context.step.tool === "impact-checks" && consumesImpact(context.step)) {
-		const decision = context.impactKey
-			? decisionFor(context.run, context.impactKey)
-			: undefined;
-		if (!decision)
-			throw new Error(
-				"Selected checks require persisted impact/resource decisions",
-			);
-		const scopes = new Set<string>();
-		for (const check of decision.checks.filter((c) =>
-			decision.pending.checks.includes(c.id),
-		)) {
-			if (check.environment?.isolation === "worktree") continue;
-			if (check.environment?.isolation === "shared") {
-				for (const resource of check.environment.resources)
-					scopes.add(JSON.stringify(["resource", resource]));
-			} else {
-				const repository = runRepositories(context.run).find(
-					(r) => r.id === check.repositoryId,
-				)!;
-				const url =
-					repository.providerSnapshot?.repositoryUrl ??
-					repository.githubUrl ??
-					repository.gitlabUrl;
-				scopes.add(
-					JSON.stringify([
-						"qa",
-						url
-							? repositoryReference(url).url
-							: localRepository(repository.repositoryPath),
-					]),
-				);
-			}
-		}
-		return [...scopes].sort();
-	}
-	if (!hasCheck(context.step, "qa-environment")) return [];
-	const environment = (
-		readOutput(context.step, "scope", context.outputs ?? context.run.outputs) as
-			| {
-					environment?: { isolation: string; resources?: string[] };
-			  }
-			| undefined
-	)?.environment;
-	if (environment?.isolation === "worktree") return [];
-	if (environment?.isolation === "shared") {
-		if (!environment.resources?.length)
-			throw new Error(
-				"Shared QA requires explicit resource identities before execution",
-			);
-		return environment.resources
-			.map((resource) => JSON.stringify(["resource", resource]))
-			.sort();
-	}
-	return runRepositories(context.run)
-		.map((repository) => {
-			const url =
-				repository.providerSnapshot?.repositoryUrl ??
-				repository.githubUrl ??
-				repository.gitlabUrl;
-			return JSON.stringify([
-				"qa",
-				url
-					? repositoryReference(url).url
-					: localRepository(repository.repositoryPath),
-			]);
-		})
-		.sort();
+	return [];
 }
 
 function claims(run: FactoryRun): [string, DeliveryCoordination][] {

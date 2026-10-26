@@ -4,37 +4,35 @@ import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
-import {
-	deliveryScopes,
-	releaseDelivery,
-} from "../src/factory/DeliveryCoordination.js";
+
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
+
 import { OperatorGrants } from "../src/factory/OperatorGrants.js";
 import { OperatorServer } from "../src/factory/OperatorServer.js";
 import { OperatorService } from "../src/factory/OperatorService.js";
-import { aggregateDeliveries } from "../src/factory/RepositoryScope.js";
+
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
-import { MachineCapacity } from "../src/MachineCapacity.js";
+
 import { UpdateDrain } from "../src/updates/UpdateDrain.js";
 import { UpdateManager } from "../src/updates/UpdateManager.js";
 import { UpdatePausedError } from "../src/updates/UpdatePausedError.js";
-import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
 	for (const cleanup of cleanups.splice(0)) await cleanup();
 });
-function setup(tool: RuntimeHooks["tool"] = async () => ({})) {
+function setup(_tool: RuntimeHooks["tool"] = async () => ({})) {
 	const home = mkdtempSync(join(tmpdir(), "update-maintenance-regression-"));
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool,
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async () => ({}))(context);
+		},
 	});
 	const run = runtime.create({
 		id: "waiting",
@@ -48,6 +46,7 @@ function setup(tool: RuntimeHooks["tool"] = async () => ({})) {
 			at: new Date().toISOString(),
 		},
 		workflow: WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "fixture",
 			name: "Fixture",
 			allowedTriggers: ["manual"],
@@ -57,15 +56,18 @@ function setup(tool: RuntimeHooks["tool"] = async () => ({})) {
 					name: "Pause",
 					type: "agent",
 					prompt: "fixture",
-					askQuestions: true,
 					next: "end",
 				},
 			],
 		}),
 	});
 	run.status = "waiting";
-	run.questions = ["Preserved question"];
-	run.questionBatchId = "preserved-batch";
+	run.viewDecision = {
+		id: "preserved-batch",
+		kind: "display",
+		digest: "preserved",
+		view: { version: "view-v1", components: [] },
+	} as any;
 	runtime.save(run);
 	const manager = new UpdateManager(home);
 	manager.configure({}, 0);
@@ -126,163 +128,6 @@ function setup(tool: RuntimeHooks["tool"] = async () => ({})) {
 	return { home, runtime, run, drain, capacity, resume, finish };
 }
 
-it.each([
-	{ tool: "ci", grouped: false },
-	{ tool: "merge", grouped: false },
-	{ tool: "handoff", grouped: false },
-	{ tool: "ci", grouped: true },
-])("drains a passive $tool poll (grouped=$grouped) at its saved checkpoint and rechecks on resume", async ({
-	tool,
-	grouped,
-}) => {
-	let entered = false;
-	let finishRead!: () => void;
-	const reading = new Promise<void>((resolve) => {
-		finishRead = resolve;
-	});
-	let pending = true;
-	const tools = new FactoryTools({
-		postComment: vi.fn(),
-		command: async (context, exe, args) => {
-			if (exe === "git") return args[0] === "rev-parse" ? "head" : "";
-			if (githubRequest(args).path === "graphql") {
-				entered = true;
-				await reading;
-			}
-			return JSON.stringify(
-				githubApiReceipt(args, {
-					url: (context.run.outputs["draft-pr"] as { url: string }).url,
-					isDraft: false,
-					mergeable: pending ? "UNKNOWN" : "CONFLICTING",
-					reviewDecision: "APPROVED",
-				}),
-			);
-		},
-	});
-	const f = setup((context) => tools.tool(context));
-	const run = f.runtime.create({
-		id: `poll-${tool}`,
-		repositoryId: "fixture",
-		workspace: f.home,
-		input: "fixture",
-		triggerOrigin: { type: "manual", workflowId: "poll", at: "" },
-		workflow: WorkflowSchema.parse({
-			id: "poll",
-			name: "Poll",
-			allowedTriggers: ["manual"],
-			steps: [
-				{
-					id: "poll",
-					name: "Poll",
-					type: "tool",
-					tool,
-					next: "end",
-					branches: [{ when: { path: "fix", equals: true }, next: "end" }],
-				},
-			],
-		}),
-	});
-	run.outputs = {
-		"draft-pr": { url: "https://github.com/test/repo/pull/1" },
-		ci: { headSha: "head" },
-	};
-	run.humanDecisions = [
-		{ decision: "approve", headSha: "head", reviewId: "retained", at: "" },
-	];
-	if (grouped) {
-		run.repositories = ["fixture", "second"].map((id) => ({
-			id,
-			name: id,
-			repositoryPath: f.home,
-			workspace: f.home,
-			baseBranch: "main",
-			githubUrl: `https://github.com/test/${id}`,
-		}));
-		run.outputs["draft-pr"] = aggregateDeliveries(
-			run.repositories.map((r) => ({
-				repositoryId: r.id,
-				name: r.name,
-				output: {
-					url: `https://github.com/test/${r.id}/pull/1`,
-					headSha: "head",
-				},
-			})),
-		);
-	}
-	const execution = f.runtime.launch(run);
-	try {
-		await vi.waitFor(() => expect(entered).toBe(true));
-		await f.drain.begin("exact-transaction");
-		expect((await f.drain.inspect()).idle).toBe(false);
-		finishRead();
-		await vi.waitFor(() => expect(f.runtime.hasExecutingWork()).toBe(false));
-		await execution;
-		expect((await f.drain.inspect()).idle).toBe(true);
-		expect(run.error).toBeUndefined();
-		expect(run.status).toBe("running");
-		expect(run.checkpoint?.current).toBe("poll");
-		expect(run.history).toEqual([]);
-		expect(run.humanDecisions[0]?.reviewId).toBe("retained");
-		expect(run.capacityLeaves).toEqual({});
-		pending = false;
-		f.finish();
-		await f.drain.end("exact-transaction");
-		await f.runtime.launch(run);
-		expect(run.status).toBe("completed");
-		expect(run.outputs.poll).toMatchObject({ fix: true });
-	} finally {
-		finishRead();
-	}
-});
-
-it("parks a queued repository operation without starting it during update maintenance", async () => {
-	const tool = vi.fn(async () => ({}));
-	const f = setup(tool);
-	f.run.outputs.repository = { githubUrl: "https://github.com/test/repo" };
-	f.run.deliveryReservations = {
-		active: { phase: "active", queuedAt: "", scopes: deliveryScopes(f.run) },
-	};
-	const run = f.runtime.create({
-		repositoryId: "fixture",
-		workspace: f.home,
-		input: "fixture",
-		triggerOrigin: { type: "manual", workflowId: "fixture", at: "" },
-		workflow: WorkflowSchema.parse({
-			id: "fixture",
-			name: "Fixture",
-			allowedTriggers: ["manual"],
-			steps: [
-				{
-					id: "publish",
-					name: "Publish",
-					type: "tool",
-					tool: "fixture",
-					delivery: "exclusive",
-					next: "end",
-				},
-			],
-		}),
-	});
-	run.outputs.repository = f.run.outputs.repository;
-	const executing = f.runtime.launch(run);
-	await vi.waitFor(() =>
-		expect(run.deliveryCoordination?.phase).toBe("queued"),
-	);
-	await f.drain.begin("exact-transaction");
-	await vi.waitFor(() => expect(f.runtime.hasExecutingWork()).toBe(false));
-	await executing;
-	expect((await f.drain.inspect()).idle).toBe(true);
-	expect(tool).not.toHaveBeenCalled();
-	expect(run.status).toBe("running");
-	expect(run.checkpoint?.current).toBe("publish");
-	expect(run.deliveryCoordination?.phase).toBe("released");
-	releaseDelivery(f.run, "Fixture operation settled");
-	f.finish();
-	await f.drain.end("exact-transaction");
-	await f.runtime.launch(run);
-	expect(tool).toHaveBeenCalledTimes(1);
-	expect(run.status).toBe("completed");
-});
 function operator(
 	fixture: ReturnType<typeof setup>,
 	update = vi.fn(async () => ({ applied: true })),
@@ -341,7 +186,7 @@ it("preserves the update receipt across bundled workflow changes and a runtime r
 	await f.runtime.shutdown();
 	const before = f.drain.receipt();
 	const bundled = defaultWorkflows.find(
-		(workflow) => workflow.id === "factory-pipeline",
+		(workflow) => workflow.id === "factory",
 	)!;
 	const original = bundled.description;
 	let restored: WorkflowRuntime | undefined;
@@ -350,12 +195,6 @@ it("preserves the update receipt across bundled workflow changes and a runtime r
 		restored = new WorkflowRuntime(f.home, {
 			agent: async () => {
 				throw new Error("No agent permitted");
-			},
-			script: async () => {
-				throw new Error("No script permitted");
-			},
-			tool: async () => {
-				throw new Error("No tool permitted");
 			},
 		});
 		expect(restored.listWorkflows()).not.toEqual(f.runtime.listWorkflows());
@@ -489,8 +328,6 @@ it("rejects all new operator mutations during maintenance while authenticated in
 		receipt = f.drain.receipt();
 	for (const name of [
 		"stop_run",
-		"answer_run",
-		"recheck_run",
 		"resume_run",
 		"retry_run",
 		"steer_run",
@@ -697,150 +534,4 @@ it("includes accepted ticket preflight and its final persistence in the drain ba
 	await accepted;
 	expect(edge.routeAcceptedTicketLaunch).toHaveBeenCalledTimes(1);
 	expect((await f.drain.inspect()).idle).toBe(true);
-});
-
-it("drains active fanout work without cancelling siblings, parks queued slots, and resumes saved steps", async () => {
-	const home = mkdtempSync(join(tmpdir(), "update-capacity-drain-"));
-	const capacity = new MachineCapacity(1, join(home, "machine-capacity"));
-	await capacity.ready();
-	let finishActive!: () => void;
-	const held = new Promise<void>((resolve) => {
-		finishActive = resolve;
-	});
-	const executed: string[] = [];
-	const runtime = new WorkflowRuntime(home, {
-		capacity,
-		agent: async () => ({}),
-		script: async (context) => {
-			executed.push(context.step.id);
-			if (context.step.id === "active") await held;
-			expect(context.signal.aborted).toBe(false);
-			return { completed: context.step.id };
-		},
-		tool: async (context) => {
-			executed.push(context.step.id);
-			return {};
-		},
-	});
-	const manager = new UpdateManager(home);
-	manager.configure({}, 0);
-	const state = JSON.parse(readFileSync(manager.file, "utf8"));
-	const candidate = {
-		version: "1.1.0",
-		channel: "stable",
-		commit: "b".repeat(40),
-		manifestSha256: "c".repeat(64),
-		target: "darwin-arm64",
-		publishedAt: new Date().toISOString(),
-	};
-	state.transaction = {
-		id: "fanout-update",
-		candidate,
-		staged: {
-			candidate,
-			executable: "/fixture/new",
-			previousExecutable: "/fixture/old",
-		},
-		previous: {
-			version: "1.0.0",
-			commit: "a".repeat(40),
-			target: "darwin-arm64",
-		},
-		revision: 0,
-		phase: "draining",
-		switchStarted: false,
-		startedAt: new Date().toISOString(),
-	};
-	writeFileSync(manager.file, JSON.stringify(state));
-	const drain = new UpdateDrain(
-		home,
-		runtime,
-		capacity,
-		() => runtime.hasExecutingWork(),
-		() => runtime.resumeAll(),
-	);
-	const run = runtime.create({
-		id: "fanout",
-		title: "Drain fanout",
-		repositoryId: "fixture",
-		workspace: home,
-		input: "fixture",
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "drain",
-			at: new Date().toISOString(),
-		},
-		workflow: WorkflowSchema.parse({
-			id: "drain",
-			name: "Drain",
-			allowedTriggers: ["manual"],
-			steps: [
-				{
-					id: "parallel",
-					name: "Parallel",
-					type: "fanout",
-					next: "end",
-					groups: [
-						[
-							{
-								id: "active",
-								name: "Active",
-								type: "script",
-								script: "mock",
-								next: "after",
-							},
-							{
-								id: "after",
-								name: "After",
-								type: "tool",
-								tool: "mock",
-								next: "end",
-							},
-						],
-						[
-							{
-								id: "queued",
-								name: "Queued",
-								type: "script",
-								script: "mock",
-								next: "end",
-							},
-						],
-					],
-				},
-			],
-		}),
-	});
-	cleanups.push(async () => {
-		finishActive();
-		await runtime.shutdown();
-		await capacity.shutdown();
-		rmSync(home, { recursive: true, force: true });
-	});
-	const running = runtime.launch(run);
-	await vi.waitFor(async () =>
-		expect(await capacity.snapshot()).toMatchObject({ active: 1, queued: 1 }),
-	);
-	const original = (await capacity.snapshot()).requests.find(
-		(r) => r.phase === "queued",
-	)!;
-	await drain.begin("fanout-update");
-	expect((await drain.inspect()).idle).toBe(false);
-	finishActive();
-	await running;
-	expect(executed).toEqual(["active"]);
-	expect(run.error).toBeUndefined();
-	expect(run.status).toBe("running");
-	expect(run.checkpoint!.active!.children![0]!.current).toBe("after");
-	expect(run.checkpoint!.active!.children![1]!.current).toBe("queued");
-	expect((await drain.inspect()).idle).toBe(true);
-	expect((await capacity.snapshot()).requests).toMatchObject([
-		{ sequence: original.sequence, parked: true, phase: "queued" },
-	]);
-	state.transaction.phase = "succeeded";
-	writeFileSync(manager.file, JSON.stringify(state));
-	await drain.end("fanout-update");
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
-	expect(executed.sort()).toEqual(["active", "after", "queued"]);
-	expect((await capacity.snapshot()).requests).toEqual([]);
 });

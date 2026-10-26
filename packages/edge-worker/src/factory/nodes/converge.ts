@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { digest } from "../Delivery.js";
+import { digest } from "../EvidenceDigest.js";
 import { latestNodeReceipt } from "../NodeGuarantees.js";
 import { evaluateNamedRulesAsync } from "../Rules.js";
 import type { NodeDefinition } from "./NodeDefinition.js";

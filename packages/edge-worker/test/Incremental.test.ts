@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
-import { captureEvidence } from "../src/factory/FactoryTools.js";
+
 import {
 	completedAgentResult,
 	dependencyCovers,
@@ -62,7 +62,11 @@ function context() {
 		step: { id: "capture", type: "agent" },
 		evidenceDir,
 	} as unknown as ExecutionContext;
-	registerWorkflowConfig({ id: "factory", steps: [context.step] });
+	registerWorkflowConfig({
+		engineVersion: "nodes-v1",
+		id: "factory",
+		steps: [context.step],
+	});
 	return { context, workspace, git };
 }
 it("keeps per-role results and exposes only new history and exact revision changes", async () => {
@@ -228,113 +232,6 @@ it("recovers completed output only on its saved clean revision", async () => {
 	git("commit", "-m", "fix: changed revision");
 	expect(await completedAgentResult(ctx)).toBeUndefined();
 });
-it("requires the original impact snapshot before recovering a completed same-head assessor result", async () => {
-	const { context: ctx } = context();
-	ctx.log = vi.fn();
-	ctx.step = {
-		...ctx.step,
-		configVersion: "step-config-v1",
-		checks: [{ check: "impact-reuse", reuseVersion: "composed-v1" }],
-	};
-	const revision = (await roleProgress(ctx)).currentRevision!;
-	ctx.resumeAgent = {
-		runner: "codex",
-		sessionId: "original-conversation",
-		result: {
-			output: { classification: "none" },
-			revision,
-			impactSnapshotDigest: "original-inputs",
-		},
-	};
-	ctx.input = {
-		impactSnapshot: { reuseVersion: "composed-v1", digest: "original-inputs" },
-	};
-	expect(await completedAgentResult(ctx)).toEqual({
-		output: { classification: "none" },
-	});
-	ctx.input = {
-		impactSnapshot: {
-			reuseVersion: "composed-v1",
-			digest: "changed-target-or-inputs",
-		},
-	};
-	expect(await completedAgentResult(ctx)).toBeUndefined();
-	expect(ctx.resumeAgent.sessionId).toBe("original-conversation");
-	delete ctx.resumeAgent.result!.impactSnapshotDigest;
-	expect(await completedAgentResult(ctx)).toBeUndefined();
-});
-it("reuses unchanged verified evidence, rejecting affected, unexplained, dirty or unapproved evidence", async () => {
-	const { context: ctx, workspace, git } = context();
-	const path = join(ctx.evidenceDir, "old.png");
-	writeFileSync(path, Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]));
-	ctx.progress = await roleProgress(ctx);
-	const first = captureEvidence(ctx, {
-		screenshots: [{ path, caption: "A", area: "A", state: "desktop" }],
-	});
-	ctx.run.roleRevisions = { "pipeline/capture": ctx.progress.currentRevision! };
-	ctx.run.history = [{ step: "pipeline/capture", output: first, at: "" }];
-	ctx.progress = await roleProgress(ctx);
-	expect(captureEvidence(ctx, first)).toMatchObject({
-		screenshots: [{ reused: true }],
-	});
-	ctx.run.outputs["visual-gate"] = { approved: false };
-	ctx.run.outputs["visual-review"] = {
-		acceptedScreenshots: [
-			{
-				area: "A",
-				state: "desktop",
-				imageSha256: (first as any).screenshots[0].imageSha256,
-			},
-		],
-	};
-	expect(captureEvidence(ctx, first)).toMatchObject({
-		screenshots: [{ reused: true }],
-	});
-	ctx.run.outputs["visual-review"] = { acceptedScreenshots: [] };
-	expect(() => captureEvidence(ctx, first)).toThrow("reuse is not verified");
-	ctx.run.outputs["visual-gate"] = { approved: true };
-	writeFileSync(join(workspace, "b.txt"), "Changed");
-	git("add", ".");
-	git("commit", "-m", "fix: nonvisual");
-	ctx.progress = await roleProgress(ctx);
-	expect(() => captureEvidence(ctx, first)).toThrow("not verified");
-	(ctx.run.outputs["visual-scope"] as any).nonVisualFiles = ["b.txt"];
-	expect(captureEvidence(ctx, first)).toMatchObject({
-		screenshots: [{ reused: true }],
-	});
-	writeFileSync(join(workspace, "a.txt"), "Different");
-	git("add", ".");
-	git("commit", "-m", "fix: visual");
-	ctx.progress = await roleProgress(ctx);
-	expect(() => captureEvidence(ctx, first)).toThrow("not verified");
-	ctx.run.outputs["visual-gate"] = { approved: false };
-	ctx.progress.unchangedCode = true;
-	expect(() => captureEvidence(ctx, first)).toThrow("not verified");
-});
-
-it("gives the guide the entire PR file inventory separately from the last role delta", async () => {
-	const { context: ctx, workspace, git } = context();
-	const baseSha = git("rev-parse", "HEAD");
-	writeFileSync(join(workspace, "a.txt"), "Feature A");
-	git("add", ".");
-	git("commit", "-m", "feat: a");
-	ctx.step.id = "guide";
-	ctx.run.step = "pipeline/guide";
-	ctx.run.outputs.ci = { baseSha };
-	ctx.run.roleRevisions = {
-		"pipeline/guide": (await roleProgress(ctx)).currentRevision!,
-	};
-	writeFileSync(join(workspace, "b.txt"), "Small correction");
-	git("add", ".");
-	git("commit", "-m", "fix: b");
-	const progress = await roleProgress(ctx);
-	expect(progress.changedFiles).toEqual(["b.txt"]);
-	expect(progress.reviewScope).toMatchObject({
-		baseSha,
-		source: "whole-pr",
-		files: ["a.txt", "b.txt"],
-	});
-});
 
 it("excludes ignored build churn while retaining tracked ignored source, additions and tracked deletions", () => {
 	const { workspace, git } = context();
@@ -360,37 +257,4 @@ it("excludes ignored build churn while retaining tracked ignored source, additio
 	expect(dependencyHashes(workspace, ["app/**"])["app/build/required.ts"]).toBe(
 		"missing",
 	);
-});
-
-it("invalidates explicit ignored runtime assets at the same clean SHA and migrates compatible legacy maps conservatively", async () => {
-	const { context: ctx, workspace, git } = context();
-	writeFileSync(join(workspace, ".gitignore"), "runtime.asset\n");
-	git("add", ".");
-	git("commit", "-m", "chore: runtime input");
-	writeFileSync(join(workspace, "runtime.asset"), "One");
-	(ctx.run.outputs["visual-scope"] as any).areas[0].dependencies.push(
-		"runtime.asset",
-	);
-	const path = join(ctx.evidenceDir, "runtime.png");
-	writeFileSync(path, Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1]));
-	ctx.progress = await roleProgress(ctx);
-	const first = captureEvidence(ctx, {
-		screenshots: [{ path, caption: "A", area: "A", state: "desktop" }],
-	}) as any;
-	ctx.run.roleRevisions = { "pipeline/capture": ctx.progress.currentRevision! };
-	const legacy = structuredClone(first);
-	const shot = legacy.screenshots[0];
-	shot.dependencyHashes = legacy.dependencyManifests[shot.dependencyManifest];
-	delete shot.dependencyManifest;
-	delete shot.fingerprintVersion;
-	delete legacy.dependencyManifests;
-	ctx.run.history = [{ step: "pipeline/capture", output: legacy, at: "" }];
-	ctx.progress = await roleProgress(ctx);
-	expect(captureEvidence(ctx, legacy)).toMatchObject({
-		screenshots: [{ fingerprintVersion: 2, reused: true }],
-	});
-	writeFileSync(join(workspace, "runtime.asset"), "Two");
-	ctx.progress = await roleProgress(ctx);
-	expect(ctx.progress.unchangedCode).toBe(true);
-	expect(() => captureEvidence(ctx, legacy)).toThrow("not verified");
 });

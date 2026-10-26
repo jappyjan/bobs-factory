@@ -16,8 +16,7 @@ import {
 	IdentityProfileSchema,
 	ToolProfileSchema,
 } from "../src/factory/ExecutionProfiles.js";
-import { executeCommand } from "../src/factory/FactoryTools.js";
-import { WorkflowSchema } from "../src/factory/Workflow.js";
+
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 
@@ -116,78 +115,6 @@ it("validates remote bindings in every grouped repository before materializing a
 			[home, secondary],
 		),
 	).rejects.toThrow("unbound remote destination");
-});
-
-it("freezes profile definitions across deletion and restart, passing only a private environment to commands", async () => {
-	const { home, store, resolver } = fixture();
-	const workflow = WorkflowSchema.parse({
-		id: "probe",
-		name: "Probe",
-		allowedTriggers: ["manual"],
-		steps: [{ id: "probe", name: "Probe", type: "script", script: "unused" }],
-	});
-	const { MachineCapacity } = await import("../src/MachineCapacity.js");
-	const capacity = new MachineCapacity(1, join(home, "capacity"));
-	const hooks = {
-		capacity,
-		agent: async () => ({}),
-		tool: async () => ({}),
-		execution: (run: any) =>
-			resolver.resolve(run.executionSnapshot, run.id, home, "claude"),
-		script: async (context: any) => ({
-			leased: (await capacity.snapshot()).active === 1,
-			stdout: await executeCommand(context, process.execPath, [
-				"-e",
-				"process.stdout.write(process.env.ANTHROPIC_API_KEY.slice(0,8));setTimeout(()=>process.stdout.write(process.env.ANTHROPIC_API_KEY.slice(8)+'|'+process.env.GIT_AUTHOR_NAME+'|'+String(process.env.GH_TOKEN)),20)",
-			]),
-		}),
-	};
-	const runtime = new WorkflowRuntime(home, hooks);
-	const run = runtime.create({
-		id: "accepted",
-		repositoryId: "repo",
-		workflow,
-		workspace: home,
-		input: "probe",
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "probe",
-			at: new Date().toISOString(),
-		},
-	});
-	store.save(
-		{
-			schemaVersion: 1,
-			revision: 1,
-			identities: [],
-			tools: [],
-			defaults: {},
-			repositories: {},
-		},
-		1,
-	);
-	await runtime.launch(run);
-	expect(run.status).toBe("completed");
-	expect((await capacity.snapshot()).active).toBe(0);
-	expect(run.outputs.probe).toEqual({
-		leased: true,
-		stdout: "[REDACTED]|Bob author|undefined",
-	});
-	expect(
-		readFileSync(join(home, "factory", "runs", "accepted.json"), "utf8"),
-	).not.toContain("private-canary-secret");
-	const restored = new WorkflowRuntime(home, hooks).get("accepted");
-	expect(restored.executionSnapshot?.identity?.id).toBe("bob");
-	expect(
-		(
-			await resolver.resolve(
-				restored.executionSnapshot!,
-				restored.id,
-				home,
-				"claude",
-			)
-		).environment.GIT_COMMITTER_NAME,
-	).toBe("Bob committer");
 });
 
 it.each([
@@ -309,11 +236,7 @@ it("keeps ordinary setting overlays separate and reuses a private source snapsho
 
 it("serves reference-only definitions and rejects stale API saves and literal secrets without discarding edits", async () => {
 	const { home, store } = fixture();
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(runtime, {
 		repositories: () => [{ id: "repo", name: "Repo" }],
 		sessions: () => [],

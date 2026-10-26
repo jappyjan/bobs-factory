@@ -4,7 +4,7 @@ import type {
 	MergeBlocker,
 	MergeReadiness,
 	ProviderCommand,
-} from "./MergeReadiness.js";
+} from "./ProviderReadiness.js";
 
 function targetRevision(pr: any): string {
 	const target = pr.baseRef?.target?.oid;
@@ -27,7 +27,7 @@ export async function inspectGithubReadiness(
 	command: ProviderCommand,
 	url: string,
 	checkReceipts?: NonNullable<
-		import("./CISupervision.js").CISupervision["checkReceipts"]
+		import("./ProviderCheckReceipts.js").ProviderCheckState["checkReceipts"]
 	>,
 ): Promise<MergeReadiness> {
 	const reference = pullRequestReference(url);

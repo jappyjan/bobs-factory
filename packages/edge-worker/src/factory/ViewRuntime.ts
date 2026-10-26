@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { immutableJson, UnsentDispatchError } from "bobs-factory-core";
-import { digest } from "./Delivery.js";
 import { releaseDelivery } from "./DeliveryCoordination.js";
 import { displayAnswerOutput } from "./DisplayAnswers.js";
 import {
@@ -10,21 +9,19 @@ import {
 	displayItems,
 	resolveDisplayDocument,
 } from "./DisplayDocument.js";
+import { digest } from "./EvidenceDigest.js";
 import { foreachPointer, sanitizeJsonConfiguration } from "./Foreach.js";
 import {
-	DecideConfigurationSchema,
-	decisionItems,
 	ViewAnswerSchema,
 	ViewAskSchema,
 	ViewNotificationsSchema,
 	type ViewRecord,
 	type ViewSnapshot,
-	viewAnswerOutput,
 } from "./HumanStep.js";
 import { launchBatchProjection } from "./LaunchRuns.js";
 import { recordProgressInput } from "./ProgressBudget.js";
 import { resolveStepConfig } from "./StepConfig.js";
-import { availableViewPaths, resolveView, viewText } from "./View.js";
+import { availableViewPaths, viewText } from "./View.js";
 import { prepareViewAssetCheck, verifyViewAssets } from "./ViewAssets.js";
 import {
 	publicViewDecision,
@@ -82,8 +79,7 @@ export function viewScope(
 	>,
 ) {
 	const inputs: Record<string, unknown> = {};
-	const source =
-		context.step.type === "display" ? context.step.document : context.step.view;
+	const source = context.step.document;
 	const localReads =
 		source && "components" in source ? source.reads : undefined;
 	const reads: Record<string, { from: string; when?: unknown }> = localReads
@@ -132,11 +128,9 @@ function configuration(step: WorkflowStep) {
 	return sanitizeJsonConfiguration({
 		type: step.type,
 		name: step.name,
-		view: step.view,
-		...(step.type === "display"
-			? { document: step.document, from: step.from, bind: step.bind }
-			: {}),
-		decide: step.decide,
+
+		...{ document: step.document, from: step.from, bind: step.bind },
+
 		notifications: step.notifications,
 		reads: step.reads ?? {},
 	});
@@ -146,35 +140,20 @@ function content(context: ExecutionContext) {
 	context = { ...context, step: StepSchema.parse(context.step) };
 	const config = configuration(context.step),
 		scope = viewScope(context),
-		view =
-			context.step.type === "display"
-				? resolveDisplayDocument(
-						context.step.document ?? { from: context.step.from! },
-						scope,
-					)
-				: resolveView(context.step.view!, scope);
-	const decide =
-		context.step.type === "decide"
-			? DecideConfigurationSchema.parse(context.step.decide)
-			: undefined;
-	const items =
-		context.step.type === "display"
-			? displayItems(view)
-			: decide
-				? decisionItems(decide, scope)
-				: undefined;
+		view = resolveDisplayDocument(
+			context.step.document ?? { from: context.step.from! },
+			scope,
+		);
+	const items = displayItems(view);
 	return {
 		config,
 		scope,
 		view,
 		items,
-		actions: decide?.actions,
-		askAvailable:
-			context.step.type === "display"
-				? displayComponents(view).some(
-						(c) => c.type === "itemCards" && !!c.data.ask,
-					)
-				: !!decide?.ask,
+		actions: undefined,
+		askAvailable: displayComponents(view).some(
+			(c) => c.type === "itemCards" && !!c.data.ask,
+		),
 	};
 }
 interface Located {
@@ -207,12 +186,7 @@ function locate(run: FactoryRun, id: string): Located | undefined {
 		}
 		return undefined;
 	};
-	return visit(
-		run.checkpoint,
-		(run.recoveryWorkflow ?? run.workflow).steps,
-		"",
-		run.outputs,
-	);
+	return visit(run.checkpoint, run.workflow.steps, "", run.outputs);
 }
 
 /** Separate ownership from legacy assistance/review protocols. No authored output grants authority. */
@@ -333,7 +307,7 @@ export class HumanViews {
 		const found = locate(run, record.snapshot.id);
 		if (
 			!found ||
-			!["decide", "approve", "display"].includes(found.step.type) ||
+			found.step.type !== "display" ||
 			found.key !== record.snapshot.stepKey
 		)
 			throw new Error("The decision frame changed. Refresh this run.");
@@ -508,20 +482,18 @@ export class HumanViews {
 					items: source.items,
 				}),
 				view: immutableJson(source.view),
-				...(step.type === "display"
-					? {
-							documentDigest: digest(source.view),
-							bound: step.bind ?? [],
-							interactive: displayInteractive(source.view),
-						}
-					: {}),
+				...{
+					documentDigest: digest(source.view),
+					bound: step.bind ?? [],
+					interactive: displayInteractive(source.view),
+				},
 				...(step.notifications
 					? { notifications: immutableJson(step.notifications) }
 					: {}),
 				...(source.items
 					? {
 							items: source.items.map(({ value: _value, ...item }) => item),
-							...(source.actions ? { actions: source.actions } : {}),
+
 							askAvailable: source.askAvailable,
 							threads: {},
 						}
@@ -552,10 +524,7 @@ export class HumanViews {
 			run.viewRecords.push(record);
 			await this.runtime.save(run);
 		}
-		if (
-			step.type === "show" ||
-			(step.type === "display" && !record.snapshot.interactive)
-		) {
+		if (step.type === "display" && !record.snapshot.interactive) {
 			run.viewDisplays ??= [];
 			if (!run.viewDisplays.some((s) => s.id === record.snapshot.id))
 				run.viewDisplays.push(publicViewRecord(run.id, record));
@@ -577,9 +546,7 @@ export class HumanViews {
 				this.publications.add(publication);
 				void publication.finally(() => this.publications.delete(publication));
 			}
-			return step.type === "display"
-				? displayAnswerOutput(record)
-				: { shown: true, viewId: record.snapshot.id };
+			return displayAnswerOutput(record);
 		}
 		if (record.answer) return record.answer.output;
 		this.updateDigest(run, record);
@@ -636,11 +603,7 @@ export class HumanViews {
 		const records = run.viewRecords ?? [];
 		const current = records.find((r) => r.snapshot.id === run.viewDecision?.id);
 		const history = records
-			.filter(
-				(r) =>
-					r.snapshot.kind === "show" ||
-					(r.snapshot.kind === "display" && !r.snapshot.interactive),
-			)
+			.filter((r) => r.snapshot.kind === "display" && !r.snapshot.interactive)
 			.reverse();
 		const historyNotice =
 			"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
@@ -746,10 +709,7 @@ export class HumanViews {
 				throw new Error(
 					"Wait for the pending Ask reply before submitting decisions",
 				);
-			const output =
-				record.snapshot.kind === "display"
-					? displayAnswerOutput(record, request)
-					: viewAnswerOutput(record, request);
+			const output = displayAnswerOutput(record, request);
 			recordProgressInput(
 				run,
 				JSON.stringify({
@@ -816,9 +776,7 @@ export class HumanViews {
 			this.updateDigest(run, record);
 			run.viewDecision = publicViewRecord(run.id, record);
 			if (
-				!(context.step.type === "display"
-					? displayAsk(record.snapshot.view, request.itemId)
-					: context.step.decide?.ask) ||
+				!displayAsk(record.snapshot.view, request.itemId) ||
 				request.digest !== record.snapshot.digest ||
 				digest({ view: source.view, items: source.items }) !==
 					record.sourceDigest ||
@@ -888,10 +846,7 @@ export class HumanViews {
 		const work = (async () => {
 			let result: { answer: string } | { error: string };
 			try {
-				const settings =
-					context.step.type === "display"
-						? displayAsk(record.snapshot.view, itemId)!.data.ask!
-						: context.step.decide!.ask!;
+				const settings = displayAsk(record.snapshot.view, itemId)!.data.ask!;
 				const output = await this.hooks.agent({
 					...context,
 					contextAssistance: true,
@@ -910,7 +865,7 @@ export class HumanViews {
 						branches: [],
 						maxVisits: 1,
 						json: false,
-						askQuestions: false,
+
 						...settings,
 						access: {
 							mode: "workspace",
@@ -989,9 +944,8 @@ export class HumanViews {
 		workflowId: string;
 		stepId: string;
 		view: unknown;
-		type?: "decide" | "approve" | "show" | "display";
+		type?: "display";
 		name?: string;
-		decide?: unknown;
 		reads?: unknown;
 		notifications?: unknown;
 		runId?: string;
@@ -1000,9 +954,9 @@ export class HumanViews {
 		sampleScope?: unknown;
 	}) {
 		const config = {
-			type: input.decide ? "decide" : "show",
+			type: "display",
 			view: input.view,
-			decide: input.decide,
+
 			reads: input.reads ?? {},
 			notifications:
 				input.notifications === undefined
@@ -1048,20 +1002,16 @@ export class HumanViews {
 						sanitizeJsonConfiguration({
 							type: input.type ?? record.snapshot.kind,
 							name: input.name ?? record.snapshot.title,
-							...(input.type === "display"
-								? {
-										document:
-											"from" in (config.view as object)
-												? undefined
-												: config.view,
-										from:
-											"from" in (config.view as object)
-												? (config.view as { from: string }).from
-												: undefined,
-										bind: input.bind,
-									}
-								: { view: config.view }),
-							decide: config.decide,
+							...{
+								document:
+									"from" in (config.view as object) ? undefined : config.view,
+								from:
+									"from" in (config.view as object)
+										? (config.view as { from: string }).from
+										: undefined,
+								bind: input.bind,
+							},
+
 							reads: config.reads,
 							notifications: config.notifications,
 						}),
@@ -1077,10 +1027,7 @@ export class HumanViews {
 			scope: safe,
 			provenance,
 			paths: availableViewPaths(safe),
-			view:
-				input.type === "display"
-					? resolveDisplayDocument(input.view as never, safe)
-					: resolveView(input.view as never, safe),
+			view: resolveDisplayDocument(input.view as never, safe),
 		};
 	}
 }

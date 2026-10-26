@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { evaluateCheckAsync } from "../src/factory/Check.js";
-import { digest } from "../src/factory/Delivery.js";
 import { displayAnswerOutput } from "../src/factory/DisplayAnswers.js";
 import {
 	displayItems,
 	resolveDisplayDocument,
 } from "../src/factory/DisplayDocument.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import { foreachPointer } from "../src/factory/Foreach.js";
 import type { ViewRecord } from "../src/factory/HumanStep.js";
 import { transformOutput } from "../src/factory/nodes/transform.js";

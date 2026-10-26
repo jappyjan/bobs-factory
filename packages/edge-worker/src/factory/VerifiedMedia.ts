@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import { freshNodeOutput } from "./NodeGuarantees.js";
 import { stepForRun } from "./ToolBindings.js";
 import { evidenceFile, probeVideo, videoLimits } from "./Video.js";

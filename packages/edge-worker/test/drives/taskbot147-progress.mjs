@@ -52,6 +52,7 @@ const definitions = validateWorkflows([
 	...defaultWorkflows,
 	...["left", "right"].map((id) => ({
 		id: `${id}-child`,
+		engineVersion: "nodes-v1",
 		name: `${id} child`,
 		steps: [
 			{
@@ -59,6 +60,7 @@ const definitions = validateWorkflows([
 				name: "Repair",
 				type: "agent",
 				prompt: "Scripted unchanged attempt",
+				session: "resume",
 				next: "end",
 				maxVisits: 100,
 			},
@@ -66,6 +68,7 @@ const definitions = validateWorkflows([
 	})),
 	{
 		id: "progress-api",
+		engineVersion: "nodes-v1",
 		name: "Progress API",
 		convergence: policy,
 		steps: [

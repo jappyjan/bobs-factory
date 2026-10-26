@@ -83,7 +83,9 @@ describe("generic action authoring", () => {
 		expect(artifactSummary(result)).toBe(
 			"total: 1 · confirmed: 1 · uncertain: 0",
 		);
-		expect(artifactType({ summary: "Accepted review report" })).toBe("report");
+		expect(artifactType({ summary: "Accepted review report" })).toBe(
+			"structure",
+		);
 	});
 	it("offers independently configurable, valid actions inside any recipe and For each body", () => {
 		for (const type of ["snapshot", "file-issues", "launch-runs"] as const) {
@@ -91,6 +93,7 @@ describe("generic action authoring", () => {
 			expect(kinds[type].label).toBeTruthy();
 			expect(bodyProblem([step])).toBeUndefined();
 			const recipe: Recipe = {
+				engineVersion: "nodes-v1",
 				id: "custom",
 				name: "Custom",
 				description: "",
@@ -221,6 +224,7 @@ describe("recipe palette", () => {
 			ownership: Recipe["ownership"],
 			allowedTriggers: string[],
 		): Recipe => ({
+			engineVersion: "nodes-v1",
 			id,
 			name: `${id} recipe`,
 			description: "",

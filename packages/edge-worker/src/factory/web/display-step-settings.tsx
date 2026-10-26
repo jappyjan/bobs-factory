@@ -17,7 +17,7 @@ import {
 	HumanPreviewSession,
 	humanPreviewConfiguration,
 	ViewEditor,
-} from "./human-step-settings";
+} from "./display-editor";
 import type { NodeSettingsProps } from "./node-step-settings";
 
 export function DisplayStepSettings({
@@ -28,11 +28,7 @@ export function DisplayStepSettings({
 	onError,
 }: NodeSettingsProps) {
 	const value = step.document ?? { from: step.from ?? "/inputs/document" };
-	const configuration = humanPreviewConfiguration(
-		owner.id,
-		{ ...step, view: value },
-		owner,
-	);
+	const configuration = humanPreviewConfiguration(owner.id, step, owner);
 	const current = useRef(configuration);
 	current.current = configuration;
 	const [session] = useState(

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import { foreachPointer } from "./Foreach.js";
 import { nodeEffect } from "./nodes/metadata.js";
 import { runRepositories } from "./RepositoryScope.js";

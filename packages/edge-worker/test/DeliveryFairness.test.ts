@@ -22,6 +22,7 @@ const a = target("a"),
 const workflow = validateWorkflows([
 	...defaultWorkflows,
 	{
+		engineVersion: "nodes-v1",
 		id: "delivery-fairness",
 		name: "Delivery fairness",
 		steps: [
@@ -60,11 +61,7 @@ function barrier() {
 	return { promise, resolve };
 }
 function load(home: string) {
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	return runtime;
 }

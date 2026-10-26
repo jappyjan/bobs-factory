@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { evaluateCheckAsync } from "../src/factory/Check.js";
+import {
+	displayItems,
+	resolveDisplayDocument,
+} from "../src/factory/DisplayDocument.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { prepareFileIssues } from "../src/factory/FileIssues.js";
-import { decisionItems } from "../src/factory/HumanStep.js";
 import {
 	parseOutputFormat,
 	parseStepOutputAsync,
 } from "../src/factory/OutputFormats.js";
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
-import { resolveView } from "../src/factory/View.js";
 
 describe("reusable research formats", () => {
 	it("rejects overflowing/duplicate assignments and dangling or cyclic shortlist IDs", () => {
@@ -121,8 +123,8 @@ describe("reusable research formats", () => {
 const stock = defaultWorkflows.find(
 	(workflow) => workflow.id === "improve-codebase",
 )!;
-const decide = stock.steps.find((step) => step.type === "decide")!;
-const approve = stock.steps.find((step) => step.type === "approve")!;
+const decide = stock.steps.find((step) => step.id === "decide")!;
+const approve = stock.steps.find((step) => step.id === "approve")!;
 const producer = defaultWorkflows.find(
 	(workflow) => workflow.id === "consolidate-proposals",
 )!.steps[0]!;
@@ -223,15 +225,24 @@ describe("producer formats compose with the actual stock human views", () => {
 			],
 		};
 		const accepted = await parseStepOutputAsync(producer, raw);
-		const scope = { inputs: { proposals: accepted } };
-		const view = resolveView(decide.view!, scope);
+		const scope = {
+			inputs: {
+				proposals: accepted,
+				cards: raw.opportunities.map((item) => ({
+					id: item.id,
+					title: item.title,
+					value: item,
+				})),
+			},
+		};
+		const view = resolveDisplayDocument(decide.document!, scope);
 		expect(view.components[1]!.data).toEqual({
 			items: raw.limitations.map((detail, index) => ({
 				label: `Limitation ${index + 1}`,
 				detail,
 			})),
 		});
-		expect(decisionItems(decide.decide!, scope)).toHaveLength(5);
+		expect(displayItems(view)).toHaveLength(5);
 	});
 	it.each([
 		["summary", 16001],
@@ -286,7 +297,7 @@ describe("producer formats compose with the actual stock human views", () => {
 				feedback: [],
 			}),
 		}));
-		const view = resolveView(approve.view!, {
+		const view = resolveDisplayDocument(approve.document!, {
 			inputs: {
 				plans,
 				checks,

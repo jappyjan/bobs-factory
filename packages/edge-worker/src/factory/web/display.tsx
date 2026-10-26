@@ -6,6 +6,7 @@ import {
 import type { ViewSnapshot } from "../HumanStep";
 import { ResolvedViewSchema, type ViewComponent } from "../View";
 import { useAction } from "./client";
+import { DiffBody } from "./code-diff";
 import {
 	AskThread,
 	DeclarativeView,
@@ -14,7 +15,6 @@ import {
 	ViewMarkdown,
 } from "./declarative-view";
 import { useReadingPosition } from "./reading-position";
-import { DiffBody } from "./review-files";
 
 type Selection = { action: string; comment?: string };
 type Props = {

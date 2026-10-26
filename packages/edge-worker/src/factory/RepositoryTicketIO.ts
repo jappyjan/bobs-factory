@@ -39,7 +39,7 @@ export async function repositoryTicketIO(
 	}
 	if (!repo.githubUrl)
 		throw new Error("GitHub issues require a configured GitHub repository");
-	const { executeCommand } = await import("./FactoryTools.js");
+	const { executeCommand } = await import("./nodes/execute/command.js");
 	const api = new GithubApi(
 		(exe, args, timeout) => executeCommand(ctx, exe, args, timeout),
 		repo.githubUrl,

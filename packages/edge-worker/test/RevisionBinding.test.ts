@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import { digest } from "../src/factory/Delivery.js";
+
 import {
 	outputRevisionBinding,
 	pinReadOnlyAccess,
@@ -42,7 +42,7 @@ function fixture() {
 		name: "Inspect",
 		type: "agent" as const,
 		revision: "bound" as const,
-		reads: { request: "request/value", answers: "@answers" },
+		reads: { request: "request/value", answers: "@launchInputs/answers" },
 		branches: [],
 		maxVisits: 16,
 	};
@@ -101,7 +101,7 @@ it("resolves named output paths and contexts without depending on role names and
 	const { home, git, context } = fixture();
 	expect(stepBindings(context)).toEqual({
 		request: { accepted: true },
-		answers: [],
+		answers: undefined,
 	});
 	const pinned = await pinReadOnlyAccess(context);
 	writeFileSync(join(home, "record.txt"), "changed\n");
@@ -119,11 +119,10 @@ it("reruns a restored bound result when its revision changed, retaining the froz
 	homes.push(runtimeHome);
 	const runtime = new WorkflowRuntime(runtimeHome, {
 		agent: async () => ({ call: ++calls }),
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	try {
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "bound-recipe",
 			name: "Bound",
 			stepConfigVersion: "step-config-v1",
@@ -227,346 +226,6 @@ it("excludes self-result bindings and publication bookkeeping while retaining re
 	).toBe(false);
 });
 
-it("refreshes a stale producer before consuming its named binding", async () => {
-	const { home, git } = fixture();
-	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-consumer-"));
-	homes.push(runtimeHome);
-	let calls = 0,
-		mutations = 0;
-	const runtime = new WorkflowRuntime(runtimeHome, {
-		agent: async () => ({ receipt: ++calls }),
-		script: async () => ({}),
-		tool: async (context) => {
-			if (context.step.id === "mutate" && !mutations++) {
-				writeFileSync(join(home, "record.txt"), "later\n");
-				git("add", ".");
-				git("commit", "-m", "Later");
-			}
-			return context.step.id === "consume"
-				? {
-						received: (context.input as { source: { receipt: number } }).source
-							.receipt,
-					}
-				: {};
-		},
-	});
-	try {
-		const source = {
-			id: "inspection",
-			name: "Inspection",
-			type: "agent",
-			prompt: "Inspect",
-			revision: "bound",
-			next: "mutate",
-		};
-		const root = WorkflowSchema.parse({
-			id: "consumer",
-			name: "Consumer",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				source,
-				{
-					id: "mutate",
-					name: "Change revision once",
-					type: "tool",
-					tool: "fixture",
-					next: "consume",
-				},
-				{
-					id: "consume",
-					name: "Consume",
-					type: "tool",
-					tool: "fixture",
-					reads: { source: "inspection" },
-					next: "end",
-				},
-			],
-		});
-		const run = runtime.create({
-			repositoryId: "fixture",
-			workspace: home,
-			input: "Inspect",
-			workflow: root,
-			triggerOrigin: { type: "manual", workflowId: root.id },
-		});
-		await runtime.launch(run);
-		expect(run.status, run.error).toBe("completed");
-		expect(calls).toBe(2);
-		expect(mutations).toBe(1);
-		expect(run.outputs.consume).toEqual({ received: 2 });
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
-it.each([
-	"answers",
-	"prior-output",
-	"called-frame",
-])("binds effective optional-read inputs (%s), refreshing only the producer", async (change) => {
-	const { home } = fixture();
-	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-effective-"));
-	homes.push(runtimeHome);
-	let calls = 0,
-		mutations = 0;
-	const seen: unknown[] = [];
-	const runtime = new WorkflowRuntime(runtimeHome, {
-		agent: async (context) => {
-			calls++;
-			const input = context.input as {
-				answers: string[];
-				outputs: { seed: { value: number } };
-			};
-			return { answers: input.answers.length, seed: input.outputs.seed.value };
-		},
-		script: async () => ({}),
-		tool: async (context) => {
-			if (context.step.tool === "seed") return { value: 0 };
-			if (context.step.tool === "mutate") {
-				mutations++;
-				if (change === "prior-output") context.outputs!.seed = { value: 1 };
-				else context.run.answers.push("New answer");
-			}
-			if (context.step.tool === "consume")
-				seen.push((context.input as { source: unknown }).source);
-			return {};
-		},
-	});
-	try {
-		const child = WorkflowSchema.parse({
-			id: "effective-child",
-			name: "Effective child",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				{
-					id: "seed",
-					name: "Seed",
-					type: "tool",
-					tool: "seed",
-					next: "inspect",
-				},
-				{
-					id: "inspect",
-					name: "Inspect",
-					type: "agent",
-					prompt: "Inspect all supplied context",
-					revision: "bound",
-					next: "mutate",
-				},
-				{
-					id: "mutate",
-					name: "Mutate",
-					type: "tool",
-					tool: "mutate",
-					next: "consume",
-				},
-				{
-					id: "consume",
-					name: "Consume",
-					type: "tool",
-					tool: "consume",
-					reads: { source: "inspect" },
-					next: "end",
-				},
-			],
-		});
-		if (change === "called-frame")
-			runtime.updateWorkflows([...runtime.listWorkflows(), child]);
-		const workflow =
-			change === "called-frame"
-				? WorkflowSchema.parse({
-						id: "effective-parent",
-						name: "Parent",
-						stepConfigVersion: "step-config-v1",
-						steps: [
-							{
-								id: "nested",
-								name: "Nested",
-								type: "workflow",
-								workflow: child.id,
-								next: "end",
-							},
-						],
-					})
-				: child;
-		const run = runtime.create({
-			repositoryId: "fixture",
-			workspace: home,
-			input: "Inspect",
-			workflow,
-			triggerOrigin: { type: "manual", workflowId: workflow.id },
-		});
-		const definition = JSON.stringify(run.workflow);
-		await runtime.launch(run);
-		expect(run.status, run.error).toBe("completed");
-		expect(calls).toBe(2);
-		expect(mutations).toBe(1);
-		expect(seen).toEqual([
-			{
-				answers: change === "prior-output" ? 0 : 1,
-				seed: change === "prior-output" ? 1 : 0,
-			},
-		]);
-		expect(JSON.stringify(run.workflow)).toBe(definition);
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
-it("refreshes implicit answers after production persistence/restart without replaying completed work", async () => {
-	const { home } = fixture();
-	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-restart-"));
-	homes.push(runtimeHome);
-	let calls = 0,
-		consumers = 0;
-	const hooks = {
-		agent: async (context: ExecutionContext) => ({
-			answers: (context.input as { answers: string[] }).answers.length,
-			call: ++calls,
-		}),
-		script: async () => ({}),
-		tool: async (context: ExecutionContext) => {
-			if (!consumers++) {
-				context.run.answers.push("Persisted answer");
-				throw new Error("Simulated interrupted consumer");
-			}
-			return { received: (context.input as { source: unknown }).source };
-		},
-	};
-	let runtime = new WorkflowRuntime(runtimeHome, hooks);
-	try {
-		const workflow = WorkflowSchema.parse({
-			id: "effective-restart",
-			name: "Restart",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				{
-					id: "inspect",
-					name: "Inspect",
-					type: "agent",
-					prompt: "Inspect",
-					revision: "bound",
-					next: "consume",
-				},
-				{
-					id: "consume",
-					name: "Consume",
-					type: "tool",
-					tool: "consume",
-					reads: { source: "inspect" },
-					next: "end",
-				},
-			],
-		});
-		const run = runtime.create({
-			repositoryId: "fixture",
-			workspace: home,
-			input: "Inspect",
-			workflow,
-			triggerOrigin: { type: "manual", workflowId: workflow.id },
-		});
-		await runtime.launch(run);
-		expect(run.status).toBe("failed");
-		await runtime.shutdown();
-		runtime = new WorkflowRuntime(runtimeHome, hooks);
-		const restored = runtime.get(run.id);
-		expect(restored.answers).toEqual(["Persisted answer"]);
-		runtime.retry(run.id);
-		await expect
-			.poll(() => restored.status, { timeout: 15000 })
-			.toBe("completed");
-		expect(restored.status, restored.error).toBe("completed");
-		expect(restored.outputs.consume).toEqual({
-			received: { answers: 1, call: 2 },
-		});
-		expect(calls).toBe(2);
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
-it.each([
-	"answers",
-	"repository",
-])("rejects an in-flight inspection after concurrent %s drift and reruns against fresh context", async (change) => {
-	const { home, git } = fixture();
-	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-concurrent-"));
-	homes.push(runtimeHome);
-	let calls = 0;
-	const runtime = new WorkflowRuntime(runtimeHome, {
-		execution: async () => ({
-			environment: {},
-			mcp: {},
-			root: runtimeHome,
-			settings: {},
-			runner: "codex",
-			disabledMcp: [],
-			accounts: [],
-			redact: (value) => value,
-		}),
-		agent: async (context) => {
-			const answers = (context.input as { answers: string[] }).answers.length;
-			if (!calls++) {
-				if (change === "answers") context.run.answers.push("Concurrent answer");
-				else {
-					writeFileSync(join(home, "record.txt"), "concurrent\n");
-					git("add", ".");
-					git("commit", "-m", "Concurrent");
-				}
-			}
-			return { answers, call: calls };
-		},
-		script: async () => ({}),
-		tool: async (context) => ({
-			received: (context.input as { source: unknown }).source,
-		}),
-	});
-	try {
-		const workflow = WorkflowSchema.parse({
-			id: "effective-concurrent",
-			name: "Concurrent",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				{
-					id: "inspect",
-					name: "Inspect",
-					type: "agent",
-					prompt: "Inspect",
-					revision: "bound",
-					access: "read-only",
-					next: "consume",
-				},
-				{
-					id: "consume",
-					name: "Consume",
-					type: "tool",
-					tool: "consume",
-					reads: { source: "inspect" },
-					next: "end",
-				},
-			],
-		});
-		const run = runtime.create({
-			repositoryId: "fixture",
-			workspace: home,
-			input: "Inspect",
-			workflow,
-			triggerOrigin: { type: "manual", workflowId: workflow.id },
-		});
-		await runtime.launch(run);
-		expect(run.status, run.error).toBe("completed");
-		expect(calls).toBe(2);
-		expect(run.outputs.consume).toEqual({
-			received: { answers: change === "answers" ? 1 : 0, call: 2 },
-		});
-		expect(run.boundOutputs!.inspect!.repositories[0]!.headSha).toBe(
-			git("rev-parse", "HEAD"),
-		);
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
 it("bounds repeated stale native-session retries with the accepted visit budget", async () => {
 	const { home } = fixture();
 	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-visit-budget-"));
@@ -579,14 +238,13 @@ it("bounds repeated stale native-session retries with the accepted visit budget"
 				sessionId: "retained-session",
 				inspection: context.inspectionBinding,
 			});
-			context.run.answers.push(`Change ${++calls}`);
+			context.run.launchInputs = { direction: `Change ${++calls}` };
 			return { call: calls };
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	try {
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "effective-budget",
 			name: "Bound retries",
 			stepConfigVersion: "step-config-v1",
@@ -596,6 +254,8 @@ it("bounds repeated stale native-session retries with the accepted visit budget"
 					name: "Inspect",
 					type: "agent",
 					prompt: "Inspect",
+					reads: { direction: "@launchInputs/direction" },
+					session: "resume",
 					revision: "bound",
 					maxVisits: 2,
 					next: "end",
@@ -615,122 +275,6 @@ it("bounds repeated stale native-session retries with the accepted visit budget"
 		expect(calls).toBe(2);
 		expect(run.history).toHaveLength(0);
 		expect(run.outputs.inspect).toBeUndefined();
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
-it("validates a called delivery candidate in its producing frame without replaying the author", async () => {
-	const { home, git } = fixture();
-	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-delivery-frame-"));
-	homes.push(runtimeHome);
-	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(runtimeHome, {
-		agent: async (context) => {
-			const key = context.stepKey!;
-			visits.push(key);
-			if (key === "author") return { unrelated: true };
-			if (context.step.id === "reviewer") return { approved: true };
-			context.run.roleRevisions ??= {};
-			context.run.roleRevisions[key] = {
-				headSha: git("rev-parse", "HEAD"),
-				dirty: false,
-				historyLength: context.run.history.length,
-				at: new Date().toISOString(),
-			};
-			return {
-				deliveryContract: {
-					format: "delivery-v1",
-					version: 1,
-					mode: "repository",
-					authorization: {
-						status: "authorized",
-						reference: "Accepted request",
-					},
-					executionReference: digest({
-						runner: context.run.runner,
-						repositoryId: context.run.repositoryId,
-					}),
-					targets: [],
-				},
-			};
-		},
-		script: async () => ({}),
-		tool: async (context) => {
-			expect(
-				(context.input as { plan: { deliveryContract: { mode: string } } }).plan
-					.deliveryContract.mode,
-			).toBe("repository");
-			return {};
-		},
-	});
-	try {
-		const child = WorkflowSchema.parse({
-			id: "delivery-child",
-			name: "Delivery",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				{
-					id: "author",
-					name: "Author",
-					type: "agent",
-					prompt: "Plan",
-					next: "reviewer",
-				},
-				{
-					id: "reviewer",
-					name: "Reviewer",
-					type: "agent",
-					prompt: "Review",
-					next: "route",
-				},
-				{
-					id: "route",
-					name: "Route",
-					type: "tool",
-					tool: "delivery-route",
-					reads: { plan: "author", review: "reviewer" },
-					next: "end",
-				},
-			],
-		});
-		runtime.updateWorkflows([...runtime.listWorkflows(), child]);
-		const workflow = WorkflowSchema.parse({
-			id: "delivery-parent",
-			name: "Parent",
-			stepConfigVersion: "step-config-v1",
-			steps: [
-				{
-					id: "author",
-					name: "Unrelated root author",
-					type: "agent",
-					prompt: "Generic",
-					next: "pipeline",
-				},
-				{
-					id: "pipeline",
-					name: "Call delivery",
-					type: "workflow",
-					workflow: child.id,
-					next: "end",
-				},
-			],
-		});
-		const run = runtime.create({
-			repositoryId: "fixture",
-			workspace: home,
-			input: "Plan",
-			workflow,
-			triggerOrigin: { type: "manual", workflowId: workflow.id },
-		});
-		await runtime.launch(run);
-		expect(run.status, run.error).toBe("completed");
-		expect(visits).toEqual(["author", "pipeline/author", "pipeline/reviewer"]);
-		expect(run.outputs.author).toEqual({ unrelated: true });
-		expect(run.outputs["pipeline/author"]).toHaveProperty(
-			"deliveryContract.mode",
-			"repository",
-		);
 	} finally {
 		await runtime.shutdown();
 	}

@@ -30,6 +30,7 @@ function definition(
 		...defaultWorkflows,
 		...dependencies,
 		{
+			engineVersion: "nodes-v1",
 			id: "foreach-fixture",
 			name: "For each fixture",
 			stepConfigVersion: "step-config-v1",
@@ -321,6 +322,7 @@ describe("For each accepted collections", () => {
 			(step: unknown) => StepSchema.parse(step),
 			(step: unknown) =>
 				WorkflowSchema.parse({
+					engineVersion: "nodes-v1",
 					id: "raw-fixture",
 					name: "Raw fixture",
 					steps: [step],
@@ -561,10 +563,46 @@ describe("For each accepted collections", () => {
 
 describe("For each graph restrictions", () => {
 	it.each([
-		{ body: [{ ...leaf, askQuestions: true }] },
 		{
 			body: [
-				{ id: "approve", name: "Approve", type: "tool", tool: "human-review" },
+				{
+					id: "approval",
+					name: "Approval",
+					type: "display",
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "actions",
+								type: "actions",
+								data: {
+									literal: { actions: [{ id: "continue", label: "Continue" }] },
+								},
+							},
+						],
+					},
+				},
+			],
+		},
+		{
+			body: [
+				{
+					id: "approval",
+					name: "Approval",
+					type: "display",
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "actions",
+								type: "actions",
+								data: {
+									literal: { actions: [{ id: "continue", label: "Continue" }] },
+								},
+							},
+						],
+					},
+				},
 			],
 		},
 		{
@@ -574,7 +612,27 @@ describe("For each graph restrictions", () => {
 					name: "Nested",
 					type: "foreach",
 					items: { values: [] },
-					body: [{ ...leaf, askQuestions: true }],
+					body: [
+						{
+							id: "approval",
+							name: "Approval",
+							type: "display",
+							document: {
+								version: "view-v1",
+								components: [
+									{
+										id: "actions",
+										type: "actions",
+										data: {
+											literal: {
+												actions: [{ id: "continue", label: "Continue" }],
+											},
+										},
+									},
+								],
+							},
+						},
+					],
 				},
 			],
 		},
@@ -585,12 +643,34 @@ describe("For each graph restrictions", () => {
 	it("rejects human checkpoints transitively through called recipes", () => {
 		const dependencies = [
 			{
+				engineVersion: "nodes-v1",
 				id: "human-child",
 				name: "Child",
-				steps: [{ ...leaf, askQuestions: true }],
+				steps: [
+					{
+						id: "approval",
+						name: "Approval",
+						type: "display",
+						document: {
+							version: "view-v1",
+							components: [
+								{
+									id: "actions",
+									type: "actions",
+									data: {
+										literal: {
+											actions: [{ id: "continue", label: "Continue" }],
+										},
+									},
+								},
+							],
+						},
+					},
+				],
 				allowedTriggers: ["workflow"],
 			},
 			{
+				engineVersion: "nodes-v1",
 				id: "intermediate",
 				name: "Intermediate",
 				steps: [

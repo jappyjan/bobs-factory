@@ -15,7 +15,7 @@ import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const mocks = vi.hoisted(() => ({ command: vi.fn(), provider: vi.fn() }));
-vi.mock("../src/factory/FactoryTools.js", async (original) => ({
+vi.mock("../src/factory/nodes/execute/command.js", async (original) => ({
 	...(await original<object>()),
 	executeCommand: mocks.command,
 }));
@@ -168,16 +168,8 @@ afterEach(async () => {
 	for (const r of runtimes.splice(0)) await r.shutdown();
 	for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
 });
-function runtime(home: string, title = "Example") {
-	const r = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({
-			message: "feat: example",
-			title,
-			body: "Body",
-		}),
-		script: async () => ({}),
-	});
+function runtime(home: string, _title = "Example") {
+	const r = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(r);
 	return r;
 }
@@ -553,7 +545,7 @@ it.each([
 		};
 		return JSON.stringify(path.includes("/merge_requests?") ? [mr] : mr);
 	});
-	expect(run.ciSupervision).toBeUndefined();
+	expect(run.providerChecks).toBeUndefined();
 	await instance.launch(run);
 	expect(run.status, instance.get(run.id).error).toBe("completed");
 	for (const step of ["first", "second"])
@@ -566,7 +558,7 @@ it.each([
 		});
 	expect(mocks.provider).toHaveBeenCalledTimes(2);
 	expect(evidence).toHaveBeenCalledTimes(1);
-	expect(Object.keys(run.ciSupervision!.checkReceipts!)).toHaveLength(1);
+	expect(Object.keys(run.providerChecks!.checkReceipts!)).toHaveLength(1);
 });
 it("reports stale-head CI as incomplete and leaves ready requests untouched on ensure", async () => {
 	const { instance, run } = fixture([{ id: "op", type: "ci", op: "status" }]);
@@ -645,6 +637,7 @@ it("publishes operation effect metadata and JSON-panel defaults without executab
 	expect(
 		nodeRegistry.effectFor(
 			WorkflowSchema.parse({
+				engineVersion: "nodes-v1",
 				id: "effects",
 				name: "Effects",
 				steps: [{ id: "ci", name: "CI", type: "ci", op: "status" }],
@@ -654,6 +647,7 @@ it("publishes operation effect metadata and JSON-panel defaults without executab
 	expect(
 		nodeRegistry.effectFor(
 			WorkflowSchema.parse({
+				engineVersion: "nodes-v1",
 				id: "effects",
 				name: "Effects",
 				steps: [{ id: "ci", name: "CI", type: "ci", op: "rerun" }],

@@ -4,7 +4,7 @@ import { ActionStepSettings } from "./action-step-settings.js";
 import { CheckJsonField, CheckStepSettings } from "./check-step-settings.js";
 import { DisplayStepSettings } from "./display-step-settings.js";
 import { ForeachStepSettings } from "./foreach-step-settings.js";
-import { HumanStepSettings } from "./human-step-settings.js";
+
 import {
 	TransformStepSettings,
 	WaitStepSettings,
@@ -38,13 +38,7 @@ registerNodeSettings("wait", WaitStepSettings);
 registerNodeSettings("inline", () => null);
 registerNodeSettings("check", (props) => <CheckStepSettings {...props} />);
 registerNodeSettings("foreach", (props) => <ForeachStepSettings {...props} />);
-registerNodeSettings("human", (props) => (
-	<HumanStepSettings
-		{...props}
-		workflowId={props.owner.id}
-		previewDefinition={props.owner}
-	/>
-));
+
 registerNodeSettings("action", (props) => (
 	<ActionStepSettings {...props} ownerId={props.owner.id} />
 ));

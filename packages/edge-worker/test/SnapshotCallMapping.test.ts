@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it } from "vitest";
 import { registerResearchTools } from "../../mcp-tools/src/factoryResearch.js";
-import { digest } from "../src/factory/Delivery.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import { snapshotForRead } from "../src/factory/RepositorySnapshot.js";
 import { pinReadOnlyAccess } from "../src/factory/RevisionBinding.js";
 import { stepBindings } from "../src/factory/StepBindings.js";
@@ -26,6 +26,7 @@ afterEach(async () => {
 });
 function recipe(id: string, steps: unknown[]) {
 	return WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id,
 		name: id,
 		stepConfigVersion: "step-config-v1",

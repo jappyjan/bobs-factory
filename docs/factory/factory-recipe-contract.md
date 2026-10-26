@@ -1,9 +1,7 @@
 # Factory and Takeover on nodes: sub-recipe contract
 
 Epic #156 rebuilds Factory and Takeover as `engineVersion: "nodes-v1"` compositions of
-sub-recipes built only from generic nodes (see `nodes.md` and `display.md`). The C tickets
-build the sub-recipes in parallel; D1a composes them and gates old execution; D1b deletes the legacy engine. This
-file is the contract between them. Change it in the same PR as any recipe that needs a
+sub-recipes built only from generic nodes (see `nodes.md` and `display.md`). This file maintains their input and output contracts. Change it in the same PR as any recipe that needs a
 different shape.
 
 ## Transition rules
@@ -15,15 +13,12 @@ different shape.
   graphs are disabled with "Fork again from current bundled recipe". No frozen
   definition, fork, receipt or native conversation is migrated. Simple retains its
   direct native conversation path under a nodes-v1 definition; Improve stays nodes-v1.
-- A C ticket deletes legacy code only when nothing still references it. D1 removes the
-  rest.
 - Every sub-recipe declares `inputs` (only the ports it reads) and `outcomes`, can be
   launched standalone (`allowedTriggers: ["workflow", "manual"]`), and has a mocked
   end-to-end test of its own.
 - No engine, node or web code may be added for a particular recipe. Missing generic
   capability goes into the node (with docs), never into a step-name branch.
-- Prompts keep the substance of today's stock prompts (`stockFactorySteps.ts`,
-  `InstructionLibrary.ts`). Byte-identical prompts are not required.
+- Prompts live alongside their recipes and in `InstructionLibrary.ts`. Byte-identical prompts are not required.
 
 ## Shared launch context
 
@@ -33,8 +28,7 @@ originating ticket, when there is one). Nothing else is implicit.
 In `nodes-v1`, `@source` is `{ prompt, fields, source? }`: the original run input,
 accepted launch fields, optional launch source label, and optional `request` containing
 the host-resolved existing PR/MR reference. Callers can use this verified request
-without interpreting raw launch text or inheriting a parent's launch-field schema. Unmarked legacy recipes
-retain their original Takeover-specific `@source` meaning.
+without interpreting raw launch text or inheriting a parent's launch-field schema. Old unmarked graphs remain read-only.
 
 ### C1 output locations
 
@@ -179,10 +173,7 @@ with `kind: "skip"`, `requirementRefs` containing that requirement, a nonblank
 `answer`, and a nonblank source reference (`source`). These are optional extra
 fields on the shared decisions port; ordinary decisions do not authorize skips.
 
-Legacy `review-loop`, `SpecialistReview.ts`, `Impact.ts`, `ReviewRecovery.ts`,
-`specialistSteps.ts`, stock review prompts/check adapters and `run.reviewGate`
-remain referenced by the legacy Factory and saved definitions. D1 owns their
-removal after replacing the composition. C2 removes none of that active code.
+The legacy review engine and its runtime state have been deleted.
 
 ## Takeover intake (C5)
 
@@ -283,10 +274,7 @@ at merge: local `fresh()` does not detect remote-only pushes. Never use the old
 `carriedFrom` head as the expected merge head. A refused carry-forward regenerates
 the guide with a short cumulative delta and the human's requests first.
 
-D1 still owns deletion of the legacy QA/approval graphs and stock roles, `Qa`,
-`QaReuse`, video-contract adapters, `ReviewBrief`, `Guide*`, `NativeViews` and
-specialized web `review-*` presentation paths where no other legacy/custom recipe
-needs them. C3 deletes none: the legacy Factory/Takeover compositions still use them.
+The legacy QA/approval engine and preset web presentation paths have been deleted.
 
 ## C4 delivery sub-recipes
 
@@ -365,11 +353,7 @@ confirmed merge affect external targets only. Deferred and external-only branche
 skip repository execution. The optional completion control is plan-independent
 recipe data produced by D1's routing branch, not another delivery-mode router.
 
-C4 deletes no legacy code: legacy Factory/Takeover still reference `ci-watch-fix`,
-`merge-work`, `delivery-routing`, `external-delivery`, the corresponding stock
-roles, FactoryTools' CI/inspection/merge/external adapters, CISupervision,
-MergeRecovery, MergeReadiness and TicketDeliveryAdapters. D1 must remove those
-only after replacing their compositions and checking frozen/custom consumers.
+The legacy delivery adapters have been deleted; IO nodes own provider effects.
 
 ## D1a execution and composition
 

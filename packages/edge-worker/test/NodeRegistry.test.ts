@@ -5,8 +5,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { digest } from "../src/factory/Delivery.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import { nodeRegistry, stepFields } from "../src/factory/nodes/index.js";
 import {
 	installNodeMetadata,
@@ -39,9 +39,7 @@ afterEach(async () => {
 		rmSync(home, { recursive: true, force: true });
 });
 const hooks = {
-	agent: async () => ({}),
-	tool: async () => ({ value: 42 }),
-	script: async () => "scalar",
+	agent: async (ctx) => (ctx.step.id === "seed" ? { value: 42 } : "scalar"),
 };
 function runtime(home = mkdtempSync(join(tmpdir(), "node-registry-"))) {
 	if (!homes.includes(home)) homes.push(home);
@@ -52,7 +50,13 @@ function runtime(home = mkdtempSync(join(tmpdir(), "node-registry-"))) {
 function recipe(steps: unknown[]) {
 	return validateWorkflows([
 		...defaultWorkflows,
-		{ id: "nodes", name: "Nodes", stepConfigVersion: "step-config-v1", steps },
+		{
+			engineVersion: "nodes-v1",
+			id: "nodes",
+			name: "Nodes",
+			stepConfigVersion: "step-config-v1",
+			steps,
+		},
 	]).at(-1)!;
 }
 function start(instance: WorkflowRuntime, home: string, steps: unknown[]) {
@@ -72,7 +76,12 @@ function start(instance: WorkflowRuntime, home: string, steps: unknown[]) {
 }
 
 it("adds a schema, executable and builder entry by registering one definition after schemas have been used", async () => {
-	WorkflowSchema.parse({ id: "empty", name: "Empty", steps: [] });
+	WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
+		id: "empty",
+		name: "Empty",
+		steps: [],
+	});
 	const schema = z.object({
 		...stepFields,
 		type: z.literal("fixture-echo"),
@@ -110,7 +119,12 @@ it("adds a schema, executable and builder entry by registering one definition af
 	expect(kindOf(step).icon).toBe("◇");
 	expect(StepSchema.safeParse({ ...step, suffix: 1 }).success).toBe(false);
 	const workflow = recipe([
-		{ id: "seed", name: "Seed", type: "tool", tool: "fixture" },
+		{
+			id: "seed",
+			name: "Seed",
+			type: "agent",
+			prompt: "fixture",
+		},
 		step,
 	]);
 	const settings = renderToStaticMarkup(
@@ -167,6 +181,7 @@ it("retains data-only safety for dynamically registered nodes nested inside flow
 	);
 	expect(() =>
 		WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "nested",
 			name: "Nested",
 			steps: [{ id: "flow", name: "Flow", type: "fanout", groups: [[unsafe]] }],
@@ -194,7 +209,12 @@ it("stamps scalar and array output receipts without changing their result shape"
 	});
 	const { instance, home } = runtime();
 	const run = start(instance, home, [
-		{ id: "scalar", name: "Scalar", type: "script", script: "fixture" },
+		{
+			id: "scalar",
+			name: "Scalar",
+			type: "agent",
+			prompt: "fixture",
+		},
 		{
 			id: "array",
 			name: "Array",
@@ -476,7 +496,6 @@ it("passes graph chat through flow nodes despite local step overrides", async ()
 	const home = mkdtempSync(join(tmpdir(), "node-chat-"));
 	homes.push(home);
 	const instance = new WorkflowRuntime(home, {
-		...hooks,
 		agent: async (ctx) => {
 			observed.push(ctx.chat!);
 			return {};
@@ -493,6 +512,7 @@ it("passes graph chat through flow nodes despite local step overrides", async ()
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "chat-root",
 			name: "Root",
 			chat: true,
@@ -516,6 +536,7 @@ it("passes graph chat through flow nodes despite local step overrides", async ()
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "chat-child",
 			name: "Child",
 			internal: true,
@@ -548,7 +569,6 @@ it("stamps the exact history reads consumed by a refreshed agent", async () => {
 	const home = mkdtempSync(join(tmpdir(), "node-history-"));
 	homes.push(home);
 	const instance = new WorkflowRuntime(home, {
-		...hooks,
 		agent: async (ctx) => {
 			observed.push(ctx.input);
 			return { refreshed: true };

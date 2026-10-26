@@ -1,15 +1,10 @@
-import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants, lstatSync, realpathSync } from "node:fs";
 import { open } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
-import { promisify } from "node:util";
-import { CaptureSchema } from "./FactoryTools.js";
-import { runRepositories, scopeRevision } from "./RepositoryScope.js";
-import { presentationOutputKeys } from "./RunOutputRoles.js";
-import { outputForCheck } from "./ToolBindings.js";
+import { join } from "node:path";
+
 import { acceptedMedia, mediaCurrent, verifiedVideo } from "./VerifiedMedia.js";
-import { evidenceFile, type VideoCapture, videoLimits } from "./Video.js";
+import { evidenceFile, videoLimits } from "./Video.js";
 import {
 	type ResolvedView,
 	ResolvedViewSchema,
@@ -17,7 +12,6 @@ import {
 } from "./View.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
-const exec = promisify(execFile);
 async function verifyBytes(
 	path: string,
 	expected: string,
@@ -132,39 +126,9 @@ export async function readViewScreenshot(
 		});
 		return (await verifyBytes(path, expected, 10 * 1024 * 1024, true, stamps))!;
 	}
-	const key = presentationOutputKeys(run).capture;
-	const shot = CaptureSchema.parse(key ? run.outputs[key] : undefined)
-		.screenshots[index];
-	if (!shot || shot.imageSha256 !== expected)
-		throw new Error(
-			"Screenshot reference is not in this run's accepted capture inventory",
-		);
-	const evidence = join(directory, "evidence", run.id);
-	let candidate = resolve(evidence, shot.path);
-	const name = relative(resolve(evidence), candidate);
-	if (
-		!name ||
-		name === ".." ||
-		name.startsWith(`..${sep}`) ||
-		isAbsolute(name)
-	) {
-		const marker = `${sep}${join("factory", "evidence", run.id)}${sep}`;
-		const offset = candidate.lastIndexOf(marker);
-		if (!isAbsolute(shot.path) || offset < 0)
-			throw new Error(
-				"Screenshot must be inside this run's evidence directory",
-			);
-		candidate = resolve(evidence, candidate.slice(offset + marker.length));
-	}
-	const path = evidenceFile(candidate, evidence, 10 * 1024 * 1024);
-	stamps?.push(() => {
-		try {
-			return evidenceFile(candidate, evidence, 10 * 1024 * 1024) === path;
-		} catch {
-			return false;
-		}
-	});
-	return (await verifyBytes(path, expected, 10 * 1024 * 1024, true, stamps))!;
+	throw new Error(
+		"Screenshot reference is not in this run’s accepted media inventory",
+	);
 }
 /** The display cannot invent filesystem paths or borrow assets from another run. */
 export async function prepareViewAssetCheck(
@@ -234,57 +198,9 @@ export async function prepareViewAssetCheck(
 						);
 				continue;
 			}
-			const ref = component.data,
-				video = (
-					outputForCheck(run, "capture-evidence") as VideoCapture | undefined
-				)?.videos?.find((video) => video.taskId === ref.taskId),
-				validation = video?.validation;
-			if (
-				!video ||
-				!validation ||
-				validation.dirty ||
-				validation.sha256 !== ref.sha256
-			)
-				throw new Error(
-					"Video reference is not in this run's verified capture inventory",
-				);
-			const revisions = await Promise.all(
-				runRepositories(run).map(async (repository) => {
-					const options = { cwd: repository.workspace, timeout: 10000 };
-					return {
-						repositoryId: repository.id,
-						headSha: (
-							await exec("git", ["rev-parse", "HEAD"], options)
-						).stdout.trim(),
-						dirty: (
-							await exec("git", ["status", "--porcelain"], options)
-						).stdout.trim(),
-					};
-				}),
+			throw new Error(
+				"Video reference is not in this run’s accepted media inventory",
 			);
-			if (
-				revisions.some((r) => r.dirty) ||
-				scopeRevision(revisions) !== validation.validatedRevision
-			)
-				throw new Error(
-					"Displayed video belongs to an earlier or dirty revision",
-				);
-			await verifyBytes(
-				protectedFile(video.path, videoLimits.bytes),
-				validation.sha256,
-				videoLimits.bytes,
-				false,
-				stamps,
-			);
-			for (const asset of [validation.poster, validation.captions])
-				if (asset)
-					await verifyBytes(
-						protectedFile(asset.path, 10 * 1024 * 1024),
-						asset.sha256,
-						10 * 1024 * 1024,
-						false,
-						stamps,
-					);
 		}
 	}
 	return () => stamps.every((unchanged) => unchanged());

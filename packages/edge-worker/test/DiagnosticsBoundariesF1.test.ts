@@ -10,10 +10,6 @@ import {
 	releaseDelivery,
 } from "../src/factory/DeliveryCoordination.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import {
-	beginStepAttempt,
-	finishStepAttempt,
-} from "../src/factory/Provenance.js";
 import { timingOperation } from "../src/factory/RunDiagnostics.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
 import {
@@ -25,7 +21,6 @@ import type {
 	CapacityRequest,
 	ExecutionCapacity,
 } from "../src/MachineCapacity.js";
-import { capRunnerStarts } from "../src/RunnerConcurrency.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 // Narrow mocked F1 seams: real runtime reconstruction, question continuation,
@@ -86,17 +81,13 @@ function fixture(hooks: Partial<RuntimeHooks> = {}, home?: string) {
 		mono = 0;
 	const runtime = new WorkflowRuntime(
 		home,
-		{
-			agent: async () => ({}),
-			script: async () => ({}),
-			tool: async () => ({}),
-			...hooks,
-		},
+		{ agent: async () => ({}), ...hooks },
 		{ wall: () => wall, mono: () => mono },
 	);
 	runtimes.push(runtime);
 	const create = (
 		workflow: Workflow = {
+			engineVersion: "nodes-v1",
 			id: "timed",
 			name: "Timed",
 			steps: [
@@ -182,111 +173,6 @@ it("P148-R1-S1: reconstructed executing and parked scheduling records stay unkno
 	}
 	preparing.release();
 	await Promise.all(completed);
-});
-
-it("P148-R1-S2: one actual question-explanation turn under the inherited parent admission callback counts once", async () => {
-	const hold = gate();
-	let explanationStarted = false;
-	const calls: string[] = [];
-	const f = fixture({
-		agentExecutionBoundary: true,
-		agent: async (context) => {
-			calls.push(context.stepKey!);
-			const parentAttemptId = context.attemptId;
-			beginStepAttempt(context, { kind: "agent-turn", parentAttemptId });
-			const runner = capRunnerStarts(
-				{
-					start: async () => {
-						await context.checkpointAgent?.({
-							runner: "codex",
-							sessionId: `synthetic-${context.stepKey}`,
-						});
-						if (calls.length === 2) {
-							explanationStarted = true;
-							await hold.promise;
-						}
-					},
-					stop() {},
-				} as IAgentRunner,
-				capacity,
-				context.signal,
-				context.capacity,
-				undefined,
-				async () => {
-					timingOperation(context.run, context.stepKey!, {
-						kind: "execution",
-						role: true,
-						roleIdentity: context.attemptId,
-					});
-					await context.save?.();
-				},
-			);
-			try {
-				await runner.start("mock");
-			} finally {
-				timingOperation(context.run, context.stepKey!);
-				finishStepAttempt(context, "completed");
-				context.attemptId = parentAttemptId;
-				await context.save?.();
-			}
-			return {
-				questions: context.run.answers.length
-					? []
-					: [
-							calls.length === 2
-								? "Clearer original decision?"
-								: "Original decision?",
-						],
-			};
-		},
-	});
-	const run = f.create({
-		id: "questions",
-		name: "Questions",
-		steps: [
-			{
-				id: "renamed",
-				name: "Decision role",
-				type: "agent",
-				prompt: "Mock",
-				askQuestions: true,
-				access: { mode: "read-only" },
-				next: "end",
-			},
-		],
-	});
-	const done = f.runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
-	const originalOutput = structuredClone(run.outputs),
-		originalNative = structuredClone(run.checkpoint!.active!.agent);
-	f.runtime.answer(run.id, "Explain without authorizing work", "explanation");
-	await waitFor(() => expect(explanationStarted).toBe(true));
-	await f.tick(run, 2000);
-	expect(run.diagnostics).toMatchObject({
-		executionMs: 2000,
-		roleWallMs: 2000,
-	});
-	expect(run.capacityLeaves?.renamed?.phase).toBe("executing");
-	expect(
-		Object.values(run.diagnostics!.active).filter((s) => s.role),
-	).toHaveLength(1);
-	hold.release();
-	await waitFor(() => {
-		expect(run.status).toBe("waiting");
-		expect(run.questions).toEqual(["Clearer original decision?"]);
-	});
-	expect(calls).toEqual(["renamed", "renamed/question-explanation"]);
-	expect(run.answers).toEqual([]);
-	expect(run.outputs).toEqual(originalOutput);
-	expect(run.checkpoint!.active!.agent).toEqual(originalNative);
-	expect(run.questionRequests).toHaveLength(1);
-	f.runtime.answer(run.id, "Proceed");
-	await done;
-	expect(run.answers).toHaveLength(1);
-	expect(run.answers[0]).toMatchObject({
-		questions: ["Clearer original decision?"],
-		answer: "Proceed",
-	});
 });
 
 it("R148-R1-01: a generic lease with zero agent turns keeps execution but no agent-role sum", async () => {
@@ -401,6 +287,7 @@ it.each([
 	const qaOwner = f.create(),
 		repoOwner = f.create();
 	const run = f.create({
+		engineVersion: "nodes-v1",
 		id: "combined",
 		name: "Combined",
 		steps: [

@@ -60,7 +60,6 @@ export function displayComponents(view: ResolvedView): ViewComponent[] {
 	return result;
 }
 function validateResolved(view: ResolvedView) {
-	if (view.preset) throw new Error("Display documents do not use presets");
 	const list = displayComponents(view);
 	const unique = (ids: string[], label: string) => {
 		if (ids.length > 100)
@@ -93,7 +92,6 @@ function validateResolved(view: ResolvedView) {
 	return view;
 }
 function validateDefinition(view: z.infer<typeof ViewSchema>) {
-	if (view.preset) throw new Error("Display documents do not use presets");
 	let count = 0;
 	const ids = new Set<string>();
 	function visit(list: typeof view.components, depth: number) {
@@ -211,4 +209,34 @@ export function displayAsk(view: ResolvedView, itemId: string) {
 			c.data.items.some((i) => i.id === itemId) &&
 			c.data.ask,
 	) as Extract<ViewComponent, { type: "itemCards" }> | undefined;
+}
+
+/** Conservative authoring check; runtime resolves dynamic documents before display. */
+export function displayMayInteract(step: {
+	document?: DisplayDocument;
+	from?: string;
+}): boolean {
+	if (!step.document) return true;
+	const visit = (list: DisplayDocument["components"]): boolean =>
+		list.some((c) => {
+			if (c.type === "form" || c.type === "actions") return true;
+			if (c.type === "itemCards" || c.type === "codeTour") {
+				const data =
+					"literal" in c.data
+						? c.data.literal
+						: "bindings" in c.data
+							? c.data.bindings
+							: undefined;
+				if (!data) return true;
+				return ["actions", "comment", "ask"].some((key) =>
+					Object.hasOwn(data, key),
+				);
+			}
+			if (c.type === "section") {
+				if (!("literal" in c.data)) return true;
+				return visit(z.array(components).parse(c.data.literal.components));
+			}
+			return false;
+		});
+	return visit(step.document.components);
 }

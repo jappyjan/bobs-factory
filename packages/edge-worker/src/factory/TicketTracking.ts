@@ -7,14 +7,14 @@ import {
 	type ViewDeliveryControl,
 } from "bobs-factory-core";
 import { z } from "zod";
-import { externalCompletionProven } from "./Delivery.js";
+
 import { isPullRequestSource } from "./GitProviderReference.js";
 import { issueSnapshot } from "./issueSnapshot.js";
 import {
 	type TicketReference,
 	TicketReferenceSchema,
 } from "./TicketReference.js";
-import { outputForTool } from "./ToolBindings.js";
+
 import { publicViewRecord } from "./ViewPresentation.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
@@ -581,22 +581,7 @@ export function recordTicketMilestone(
 ): void {
 	if (!run.ticketReference || run.workflow.id === "simple") return;
 	if (milestone.stage === "done") {
-		if (
-			run.delivery?.contract.mode === "external" ||
-			run.delivery?.contract.mode === "mixed"
-		) {
-			if (
-				!externalCompletionProven(run) ||
-				!milestone.completion ||
-				milestone.completion.digest !== run.delivery.verification?.digest ||
-				(run.delivery.contract.mode === "mixed" &&
-					(outputForTool(run, "merge") as { merged?: boolean } | undefined)
-						?.merged !== true)
-			)
-				throw new Error(
-					"Done requires the accepted external completion proof and all mixed repository merges",
-				);
-		} else if (!milestone.merged)
+		if (!milestone.merged)
 			throw new Error("Done requires a confirmed merge receipt");
 	}
 	run.ticketSync ??= { receipts: [] };
@@ -632,11 +617,9 @@ export class TicketTracking {
 			// their existing behavior. Never relabel its original body/digest.
 			const legacy = run.viewRecords?.find(
 				(record) =>
-					record.snapshot.kind !== "show" &&
 					!(
 						record.snapshot.kind === "display" && !record.snapshot.interactive
-					) &&
-					receipt.key === `view:${record.snapshot.id}`,
+					) && receipt.key === `view:${record.snapshot.id}`,
 			);
 			if (!legacy) return "current";
 			const prefix = `${legacy.snapshot.kind}\nDecision batch: ${legacy.snapshot.id}\nDisplayed digest: `;
@@ -706,7 +689,7 @@ export class TicketTracking {
 		private adapter: (run: FactoryRun) => Promise<TicketAdapter>,
 		private save: (run: FactoryRun) => void | Promise<void>,
 		private log: (run: FactoryRun, message: string) => void,
-		private checkExternal?: (run: FactoryRun) => Promise<boolean>,
+		_checkExternal?: (run: FactoryRun) => Promise<boolean>,
 		private checkView?: (
 			run: FactoryRun,
 			version: NonNullable<TicketMilestone["viewDecision"]>,
@@ -750,12 +733,10 @@ export class TicketTracking {
 						(receipt.viewDecision ||
 							run.viewRecords?.some(
 								(record) =>
-									record.snapshot.kind !== "show" &&
 									!(
 										record.snapshot.kind === "display" &&
 										!record.snapshot.interactive
-									) &&
-									receipt.key === `view:${record.snapshot.id}`,
+									) && receipt.key === `view:${record.snapshot.id}`,
 							)) &&
 						receipt.deliveryId &&
 						ref.provider === "taskbot" &&
@@ -843,18 +824,6 @@ export class TicketTracking {
 						continue;
 					}
 					try {
-						if (receipt.stage === "done" && receipt.completion) {
-							if (
-								!externalCompletionProven(run) ||
-								receipt.completion.digest !==
-									run.delivery?.verification?.digest ||
-								!this.checkExternal ||
-								!(await this.checkExternal(run))
-							)
-								throw new StatusConflict(
-									"Accepted external state changed or could not be verified. Renew independent verification and human acceptance before closing the ticket.",
-								);
-						}
 						const adapter = await this.adapter(run);
 						let snapshot = await adapter.read("tracking");
 						if (this.viewState(run, receipt) !== "current") continue;
@@ -1056,7 +1025,7 @@ export function classifyTicketRepair(input: {
 	associated: boolean;
 	deferred?: boolean;
 	runStatus?: FactoryRun["status"];
-	step?: string;
+	nodeType?: string;
 	pr?: { state: string; mergedAt?: string | null };
 }): { stage?: TicketStage; reason: string } {
 	if (!input.associated)
@@ -1080,7 +1049,7 @@ export function classifyTicketRepair(input: {
 		};
 	if (
 		input.pr?.state === "OPEN" &&
-		/(?:human-review|merge)$/.test(input.step ?? "")
+		["display", "merge"].includes(input.nodeType ?? "")
 	)
 		return {
 			stage: "in_review",

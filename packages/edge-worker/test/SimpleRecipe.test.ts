@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { stockWorkflowMetadata } from "../src/factory/stockFactorySteps.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { stockWorkflowMetadata } from "../src/factory/workflowMetadata.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 it("keeps Simple on its original direct conversation path", async () => {
@@ -60,12 +60,7 @@ it.each([
 	const home = mkdtempSync(join(tmpdir(), "simple-reload-"));
 	const workflow = defaultWorkflows.find((w) => w.id === "simple")!;
 	const simple = vi.fn(async () => {});
-	const hooks = {
-		simple,
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { simple, agent: async () => ({}) };
 	let runtime = new WorkflowRuntime(home, hooks);
 	try {
 		const run = runtime.create({
@@ -105,12 +100,7 @@ it.each([
 it("rejects unavailable Simple continuation before changing or persisting run state", async () => {
 	const home = mkdtempSync(join(tmpdir(), "simple-unavailable-"));
 	const simple = vi.fn(async () => {});
-	let runtime = new WorkflowRuntime(home, {
-		simple,
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	let runtime = new WorkflowRuntime(home, { simple, agent: async () => ({}) });
 	try {
 		const run = runtime.create({
 			repositoryId: "fixture",
@@ -133,12 +123,7 @@ it("rejects unavailable Simple continuation before changing or persisting run st
 		expect(runtime.viewState(run.id).keptOpen).toBeUndefined();
 		expect(() => runtime.launch(run)).toThrow("unavailable");
 		await runtime.shutdown();
-		runtime = new WorkflowRuntime(home, {
-			simple,
-			agent: async () => ({}),
-			script: async () => ({}),
-			tool: async () => ({}),
-		});
+		runtime = new WorkflowRuntime(home, { simple, agent: async () => ({}) });
 		expect(runtime.get(run.id).status).toBe("completed");
 		expect(simple).toHaveBeenCalledOnce();
 	} finally {

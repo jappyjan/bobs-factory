@@ -21,23 +21,24 @@ it("refreshes a bound history reader without making its own prior receipt invali
 	let inspections = 0,
 		mutations = 0;
 	const runtime = new WorkflowRuntime(home, {
-		agent: async (context) => ({
-			inspection: ++inspections,
-			observed: (context.input as { events: { step: string }[] }).events.map(
-				(entry) => entry.step,
-			),
-		}),
-		script: async () => ({}),
-		tool: async (context) => {
-			if (context.step.tool === "mutate") {
+		agent: async (context) => {
+			if (context.step.id === "mutate") {
 				mutations++;
 				return { updated: true };
 			}
-			return { received: (context.input as { source: unknown }).source };
+			if (context.step.id === "consume")
+				return { received: (context.input as { source: unknown }).source };
+			return {
+				inspection: ++inspections,
+				observed: (context.input as { events: { step: string }[] }).events.map(
+					(e) => e.step,
+				),
+			};
 		},
 	});
 	try {
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "history-reader",
 			name: "History reader",
 			stepConfigVersion: "step-config-v1",
@@ -56,15 +57,15 @@ it("refreshes a bound history reader without making its own prior receipt invali
 				{
 					id: "mutate",
 					name: "Mutate",
-					type: "tool",
-					tool: "mutate",
+					type: "agent",
+					prompt: "mutate",
 					next: "consume",
 				},
 				{
 					id: "consume",
 					name: "Consume",
-					type: "tool",
-					tool: "consume",
+					type: "agent",
+					prompt: "consume",
 					reads: { source: "inspect" },
 					next: "end",
 				},

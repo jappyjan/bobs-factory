@@ -44,6 +44,7 @@ it("enforces the production Ask profile without Snapshot, exposes only displayed
 		"Fixture [skip ci]",
 	);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "context-fixture",
 		name: "Context fixture",
 		stepConfigVersion: "step-config-v1",
@@ -58,11 +59,7 @@ it("enforces the production Ask profile without Snapshot, exposes only displayed
 			},
 		],
 	});
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	const run = runtime.create({
 		repositoryId: "repo",

@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { registerResearchTools } from "../../mcp-tools/src/factoryResearch.js";
-import { digest } from "../src/factory/Delivery.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import {
 	captureRepositorySnapshot,
 	snapshotForRead,
@@ -69,6 +69,7 @@ function fixture() {
 			baseBranch: "main",
 		})),
 		workflow: {
+			engineVersion: "nodes-v1",
 			id: "research",
 			steps: [
 				{ id: "baseline", type: "snapshot" },
@@ -184,7 +185,7 @@ it("collects only dated complete-scope run metadata, redacts errors, and freezes
 	prior.id = "prior";
 	prior.status = "failed";
 	prior.error = "timeout token=PRIVATE_TOKEN person@example.invalid";
-	prior.questions = ["PRIVATE_QUESTION"];
+	prior.capacityLeaves = { wait: { phase: "waiting-human" } };
 	prior.events = [
 		{ at: new Date().toISOString(), step: "agent", message: "PRIVATE_LOG" },
 	];
@@ -206,7 +207,12 @@ it("collects only dated complete-scope run metadata, redacts errors, and freezes
 		total: 1,
 		sampled: false,
 		records: [
-			{ id: "prior", status: "failed", wait: "questions", error: "timeout" },
+			{
+				id: "prior",
+				status: "failed",
+				wait: ["waiting-human"],
+				error: "timeout",
+			},
 		],
 	});
 	prior.error = "Updated raw failure";

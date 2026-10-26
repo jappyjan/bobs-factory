@@ -177,13 +177,7 @@ async function revision(
 	});
 	return result.stdout.trim();
 }
-/**
- * Generic checks with explicit path arguments execute during output correction.
- * Stock contract adapters (media receipts, QA, guides, architecture, impact reuse)
- * are selected by the same IDs at their existing runtime stages. In particular,
- * impact-reuse owns live snapshots, prior receipts and convergence; pure rules
- * never replace its independent evidence comparisons or alter its hard failures.
- */
+/** Verify explicitly selected file, media, source-reference and identifier evidence. */
 export async function runEvidenceChecks(
 	context: ExecutionContext,
 	output: unknown,
@@ -221,29 +215,13 @@ export async function runEvidenceChecks(
 	};
 	for (const { check, args } of resolveStepConfig(context.step).checks) {
 		context.signal.throwIfAborted();
-		// Checks without explicit selector arguments are stock adapters. Their
-		// existing authoring/finalization/gate implementations own that stage.
+		// Generic selectors validate authored output before acceptance.
 		if (phase !== "correction") continue;
-		if (typeof args.path !== "string") {
-			if (
-				[
-					"files-exist",
-					"media-valid",
-					"code-refs-valid",
-					"ids-resolve",
-				].includes(check) &&
-				!["capture", "guide", "qa-scope", "qa-gate"].includes(
-					String(args.adapter),
-				)
-			)
-				throw outputValidationError(
-					output,
-					new Error(
-						`${check} requires a path selector or an explicit stock adapter`,
-					),
-				);
-			continue;
-		}
+		if (typeof args.path !== "string")
+			throw outputValidationError(
+				output,
+				new Error(`${check} requires a path selector`),
+			);
 		try {
 			switch (check as CheckId) {
 				case "files-exist": {

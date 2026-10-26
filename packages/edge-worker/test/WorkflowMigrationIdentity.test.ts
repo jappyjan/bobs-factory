@@ -46,11 +46,7 @@ it.each([
 ])("retains original bytes across restart when a generated %s identity is occupied", (kind) => {
 	const home = mkdtempSync(join(tmpdir(), "migration-identity-"));
 	homes.push(home);
-	const hooks = {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	};
+	const hooks = { agent: async () => ({}) };
 	new WorkflowRuntime(home, hooks);
 	const definitions = structuredClone(defaultWorkflows);
 	const factory = definitions.find((w) => w.id === "factory")!;
@@ -64,6 +60,7 @@ it.each([
 		target += `-${createHash("sha256").update("factory-pipeline").digest("hex").slice(0, 8)}`;
 	definitions.push(
 		WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: target,
 			name: "Existing local definition",
 			steps: [

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { immutableJson } from "bobs-factory-core";
 import { actionItems } from "../../ActionSteps.js";
-import { digest } from "../../Delivery.js";
+import { digest } from "../../EvidenceDigest.js";
 import { fileIssueBatch, prepareFileIssues } from "../../FileIssues.js";
 import { stepBindings } from "../../StepBindings.js";
 import type { NodeContext } from "../NodeDefinition.js";

@@ -14,11 +14,7 @@ afterEach(() => {
 function fixture() {
 	const home = mkdtempSync(join(tmpdir(), "native-recovery-"));
 	homes.push(home);
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const session: any = {
 		id: "native",
 		workspace: { path: join(home, "workspace"), isGitWorktree: true },

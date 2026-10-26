@@ -1,6 +1,5 @@
 import { expect, it } from "vitest";
 import { activityMarkers, activityPage } from "../src/factory/ActivityPage.js";
-import { VisualScopeSchema } from "../src/factory/FactoryResults.js";
 import { formatActivities } from "../src/factory/web/activity.js";
 import { mergePage } from "../src/factory/web/transcript.js";
 
@@ -280,32 +279,6 @@ it("bounds traversal of oversized payloads instead of serializing their unused t
 		activityTruncated: true,
 	});
 	expect(JSON.stringify(page).length).toBeLessThan(16000);
-});
-it("limits representative screenshot plans and requires justified exceptions", () => {
-	const area = {
-		name: "Drawer",
-		url: "/example",
-		instructions: "Open drawer",
-		states: Array.from({ length: 25 }, (_, i) => `Concrete state ${i}`),
-	};
-	expect(() =>
-		VisualScopeSchema.parse({ changed: true, areas: [area] }),
-	).toThrow("representative");
-	expect(() =>
-		VisualScopeSchema.parse({
-			changed: true,
-			areas: [area],
-			captureBudget: 30,
-		}),
-	).toThrow("budgetReason");
-	expect(
-		VisualScopeSchema.parse({
-			changed: true,
-			areas: [area],
-			captureBudget: 30,
-			budgetReason: "25 materially distinct changed layouts",
-		}).captureBudget,
-	).toBe(30);
 });
 
 it("orders mixed numeric entry timestamps and ISO workflow events chronologically", () => {

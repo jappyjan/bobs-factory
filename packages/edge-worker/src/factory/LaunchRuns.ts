@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
-import { isDeepStrictEqual } from "node:util";
 import {
 	actionItems,
 	type LaunchRunsConfiguration,
 	LaunchRunsConfigurationSchema,
 } from "./ActionSteps.js";
-import { repositoryCompletionProven } from "./Delivery.js";
+import { digest as evidenceDigest } from "./EvidenceDigest.js";
 import { type ForeachScope, foreachPointer } from "./Foreach.js";
 import { type RunRepository, runRepositories } from "./RepositoryScope.js";
-import { historyForTool, outputForTool } from "./ToolBindings.js";
+import { stepForRun } from "./ToolBindings.js";
+
 import {
 	requireTrigger,
 	type Workflow,
@@ -285,20 +285,49 @@ function serialized(
 	return pending;
 }
 
-/** Generic effects never inherit legacy semantic-name publication authority. */
+/** Only a complete node-owned provider confirmation can unlock dependent work. */
 export function launchRepositoryCompletionProven(child: FactoryRun): boolean {
-	const publication = historyForTool(child, "draft-pr").at(-1);
-	const merge = historyForTool(child, "merge").at(-1);
-	if (!publication || !merge) return false;
-	// The selected proof must be the immutable original output of these exact
-	// executed tool producers, including their qualified Call/For each frame.
+	const receipt = [...child.history]
+		.reverse()
+		.find((entry) => stepForRun(child, entry.step)?.type === "merge");
 	if (
-		!isDeepStrictEqual(outputForTool(child, "draft-pr"), publication.output) ||
-		!isDeepStrictEqual(outputForTool(child, "merge"), merge.output)
+		!receipt?.guarantee ||
+		receipt.guarantee.outputDigest !== evidenceDigest(receipt.output)
 	)
 		return false;
-	return repositoryCompletionProven(child);
+	const output = receipt.output as
+		| {
+				headChanged?: boolean;
+				authorizationStale?: boolean;
+				repositories?: {
+					repositoryId: string;
+					merged: boolean;
+					sha: string;
+					url: string;
+				}[];
+		  }
+		| undefined;
+	if (
+		output?.headChanged ||
+		output?.authorizationStale ||
+		!output?.repositories?.length
+	)
+		return false;
+	const ids = new Set<string>();
+	return output.repositories.every((repository) => {
+		const revision = receipt.guarantee!.revisions[repository.repositoryId];
+		if (ids.has(repository.repositoryId)) return false;
+		ids.add(repository.repositoryId);
+		return (
+			repository.merged === true &&
+			!!repository.sha &&
+			!!repository.url &&
+			!!revision?.headSha &&
+			!revision.unobservable
+		);
+	});
 }
+
 function childStatus(child: FactoryRun): LaunchItemStatus {
 	if (child.status === "completed")
 		return launchRepositoryCompletionProven(child) ? "merged" : "completed";

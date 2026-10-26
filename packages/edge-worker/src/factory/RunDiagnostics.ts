@@ -234,13 +234,7 @@ function operations(
 	}
 	if (run.status === "waiting" && !Object.keys(active).length)
 		active.run = {
-			kind:
-				run.questions.length ||
-				run.viewDecision ||
-				run.reviewGate ||
-				run.architectureGate
-					? "human"
-					: "children",
+			kind: run.viewDecision ? "human" : "children",
 		};
 	return active;
 }

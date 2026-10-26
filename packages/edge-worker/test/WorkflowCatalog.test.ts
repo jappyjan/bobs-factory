@@ -9,12 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import {
-	defaultWorkflows,
-	legacyReviewSteps,
-} from "../src/factory/defaultWorkflows.js";
-import { getLaunchFields } from "../src/factory/LaunchFields.js";
-import { checkArgs, formatOf } from "../src/factory/StepConfig.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { StepSchema, WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	WorkflowCatalog,
@@ -40,26 +35,13 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 	roots.push(home);
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
 		...hooks,
 	});
 	runtimes.push(runtime);
 	return { runtime, home, path: join(home, "factory", "workflows.json") };
 }
-const legacy = () =>
-	structuredClone(preCompositionWorkflows).map((w) =>
-		w.id === "factory-pipeline"
-			? (() => {
-					const legacy = {
-						...w,
-						steps: legacyReviewSteps.map((s) => StepSchema.parse(s)),
-					};
-					delete legacy.stepConfigVersion;
-					return legacy;
-				})()
-			: w,
-	);
+const legacy = () => structuredClone(preCompositionWorkflows);
+
 function local(
 	runtime: WorkflowRuntime,
 	id = "custom",
@@ -92,63 +74,7 @@ function create(
 		input: "Fixture",
 	});
 }
-it.each([
-	false,
-	true,
-])("adopts installed stock behavior and maps legacy review preferences atomically (object=%s)", (object) => {
-	const { home, runtime, path } = fixture();
-	const definitions = legacy();
-	definitions.find((w) => w.id === "simple")!.launchFields = getLaunchFields(
-		definitions.find((w) => w.id === "simple")!,
-	);
-	const reviewer = definitions
-		.find((w) => w.id === "factory-pipeline")!
-		.steps.find((s) => s.id === "code-review")!;
-	Object.assign(reviewer, {
-		runner: "codex",
-		model: "gpt-6.1-sol",
-		reasoningEffort: "high",
-		serviceTier: "fast",
-	});
-	definitions.find((w) => w.id === "factory")!.labels = ["my-factory"];
-	const bytes = JSON.stringify(
-		object
-			? { workflows: definitions, defaultWorkflow: "factory" }
-			: definitions,
-	);
-	writeFileSync(path, bytes);
-	const migrated = new WorkflowRuntime(home, (runtime as any).hooks);
-	const configuration = migrated.catalog.read();
-	expect(configuration.locals).toEqual([]);
-	expect(configuration.defaultWorkflow).toBe(object ? "factory" : "simple");
-	expect(readFileSync(configuration.migration!.backup, "utf8")).toBe(bytes);
-	const pipeline = migrated
-		.listWorkflows()
-		.find((w) => w.id === "review-loop")!;
-	const reviewers = workflowRoles(pipeline.steps).filter((r) =>
-		r.role.startsWith("specialist-review/"),
-	);
-	expect(reviewers).toHaveLength(6);
-	for (const { step } of reviewers)
-		expect(step).toMatchObject({
-			runner: "codex",
-			model: "gpt-6.1-sol",
-			reasoningEffort: "high",
-			serviceTier: "fast",
-		});
-	expect(pipeline.steps.some((s) => formatOf(s) === "inventory-v1")).toBe(true);
-	const guide = migrated
-		.listWorkflows()
-		.find((w) => w.id === "review-approval")!
-		.steps.find((s) => s.id === "guide")!;
-	expect(formatOf(guide)).toBe("review-brief-v3");
-	expect(checkArgs(guide, "media-valid")).toMatchObject({ video: true });
-	expect(migrated.selectWorkflow(["my-factory"], "manual").id).toBe("factory");
-	const saved = readFileSync(path, "utf8");
-	new WorkflowRuntime(home, (runtime as any).hooks);
-	expect(readFileSync(path, "utf8")).toBe(saved);
-	expect(JSON.parse(saved).workflows).toBeUndefined();
-});
+
 it("preserves genuine custom graph behavior, private dependencies and default intent", () => {
 	const { home, runtime, path } = fixture();
 	const definitions = legacy();
@@ -161,7 +87,7 @@ it("preserves genuine custom graph behavior, private dependencies and default in
 	const migrated = new WorkflowRuntime(home, (runtime as any).hooks),
 		mapping = migrated.catalog.read().migration!.mappings;
 	expect(migrated.getDefaultWorkflow()).toBe(mapping.factory);
-	expect(mapping["factory-pipeline"]).toBeDefined();
+	expect(mapping["factory-pipeline"]).toBeUndefined();
 	expect(() => migrated.selectWorkflow([], "manual", mapping.factory)).toThrow(
 		"Fork again from current bundled recipe",
 	);
@@ -174,7 +100,7 @@ it("preserves genuine custom graph behavior, private dependencies and default in
 	expect(
 		migrated.listWorkflows().find((w) => w.id === "factory-pipeline")!.steps[0]!
 			.prompt,
-	).not.toBe(child.steps[0]!.prompt);
+	).toBe(child.steps[0]!.prompt);
 	const count = migrated.listWorkflows().length;
 	expect(new WorkflowCatalog(join(home, "factory")).list()).toHaveLength(count);
 });
@@ -207,12 +133,13 @@ it("rejects stock behavior edits, internal identity collisions and native Simple
 	const { runtime, path } = fixture();
 	const bytes = readFileSync(path, "utf8");
 	const modified = runtime.listWorkflows();
-	modified.find((w) => w.id === "clarify-plan")!.steps[0]!.prompt = "Injected";
+	modified.find((w) => w.id === "v2-clarify-plan")!.steps[0]!.prompt =
+		"Injected";
 	expect(() => runtime.updateWorkflows(modified)).toThrow("read-only");
 	expect(readFileSync(path, "utf8")).toBe(bytes);
 	expect(() => runtime.forkWorkflow("simple")).toThrow("cannot be forked");
 	const imported = runtime.catalog.read();
-	imported.locals.push({ ...defaultWorkflows[1]!, id: "factory-pipeline" });
+	imported.locals.push({ ...defaultWorkflows[1]!, id: "v2-ci" });
 	expect(() => runtime.catalog.import(imported)).toThrow("reserved");
 	const native = runtime.catalog.read();
 	native.locals.push({ ...defaultWorkflows[0]!, id: "native-alias" });
@@ -239,8 +166,8 @@ it("creates independent private fork graphs and keeps standards authoritative at
 			StepSchema.parse({
 				id: "inject",
 				name: "Injection",
-				type: "script",
-				script: "touch /tmp/unauthorized",
+				type: "agent",
+				prompt: "Unauthorized",
 			}),
 		],
 	};
@@ -248,46 +175,7 @@ it("creates independent private fork graphs and keeps standards authoritative at
 		runtime.listWorkflows().find((w) => w.id === "factory"),
 	);
 });
-it("preserves unmatched preferences visibly across upgrades and validates compatible edits", () => {
-	const { home, runtime, path } = fixture();
-	const state = runtime.catalog.read();
-	state.preferences["factory-pipeline"] = {
-		"removed-role": { runner: "codex", model: "old" },
-		clarify: { runner: "opencode", modelVariant: "careful" },
-	};
-	writeFileSync(path, JSON.stringify(state));
-	const migrated = new WorkflowRuntime(home, (runtime as any).hooks);
-	expect(migrated.catalog.read().inactive).toEqual([
-		{
-			workflow: "factory-pipeline",
-			role: "removed-role",
-			settings: { runner: "codex", model: "old" },
-			reason: "Role is absent from the installed standard",
-		},
-	]);
-	expect(
-		migrated.listWorkflows().find((w) => w.id === "clarify-plan")!.steps[0],
-	).toMatchObject({ runner: "opencode", modelVariant: "careful" });
-	expect(() =>
-		migrated.updatePreferences("clarify-plan", {
-			clarify: { runner: "gemini", reasoningEffort: "high" },
-		}),
-	).toThrow("not supported");
-	expect(() =>
-		migrated.catalog.updateInactive(0, {
-			workflow: "__proto__",
-			role: "polluted",
-		}),
-	).toThrow("current bundled");
-	expect(Object.hasOwn(Object.prototype, "polluted")).toBe(false);
-	migrated.catalog.updateInactive(0, {
-		workflow: "implement-work",
-		role: "implement",
-	});
-	expect(
-		migrated.catalog.read().preferences["implement-work"]!.implement,
-	).toMatchObject({ runner: "codex", model: "old" });
-});
+
 it("leaves malformed legacy input recoverable and recovers interrupted atomic staging", () => {
 	const { home, runtime, path } = fixture();
 	writeFileSync(path, "{bad");
@@ -298,7 +186,7 @@ it("leaves malformed legacy input recoverable and recovers interrupted atomic st
 	writeFileSync(`${path}.tmp`, "invalid staged data");
 	const migrated = new WorkflowRuntime(home, (runtime as any).hooks);
 	expect(existsSync(migrated.catalog.read().migration!.backup)).toBe(true);
-	expect(migrated.catalog.read().locals).toEqual([]);
+	expect(migrated.catalog.read().locals.length).toBeGreaterThan(0);
 });
 it("blocks exact accepted dependencies, keeps private forks eligible, and preserves individual Resume across restart", async () => {
 	const calls: string[] = [];
@@ -510,7 +398,9 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 	});
 	try {
 		const config = (await server.app.inject({ url: "/api/config" })).json();
-		const pipeline = config.workflows.find((w: any) => w.id === "review-loop");
+		const pipeline = config.workflows.find(
+			(w: any) => w.id === "v2-review-loop",
+		);
 		const role = workflowRoles(pipeline.steps).find(
 			(r) => r.role === "specialist-review/security-review",
 		)!;
@@ -526,7 +416,7 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 		});
 		expect(saved.statusCode, saved.body).toBe(200);
 		expect(
-			runtime.catalog.read().preferences["review-loop"]![role.role]!.model,
+			runtime.catalog.read().preferences["v2-review-loop"]![role.role]!.model,
 		).toBe("gpt-6-sol");
 		config.workflows.find((w: any) => w.id === "simple").launchFields[0].label =
 			"Changed bundled field";
@@ -547,58 +437,6 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 		await runtime.shutdown();
 		await server.stop();
 	}
-});
-
-it("retains accepted admission preferences through setup and later upgrades", async () => {
-	const { home, runtime } = fixture();
-	runtime.updatePreferences("simple", {
-		native: { runner: "codex", model: "accepted-model" },
-	});
-	const launch = runtime.selectLaunch([], "manual", "simple");
-	runtime.updatePreferences("simple", {
-		native: { runner: "claude", model: "later-model" },
-	});
-	const run = runtime.create(
-		{
-			workflow: launch.workflow,
-			workflowDefinitions: launch.workflowDefinitions,
-			triggerOrigin: {
-				type: "manual",
-				workflowId: "simple",
-				at: new Date().toISOString(),
-			},
-			repositoryId: "repo",
-			workspace: "/tmp",
-			input: "Accepted",
-		},
-		launch,
-	);
-	expect(run.runner).toBe("codex");
-	expect(run.model).toBe("accepted-model");
-	delete run.workflow.chat;
-	await runtime.save(run);
-	const restored = new WorkflowRuntime(home, (runtime as any).hooks);
-	expect(restored.get(run.id).workflow.chat).toBeUndefined();
-	expect(restored.get(run.id).model).toBe("accepted-model");
-	const factoryLaunch = runtime.selectLaunch([], "manual", "factory");
-	runtime.updatePreferences("clarify-plan", {
-		clarify: { runner: "codex", model: "later" },
-	});
-	const frozen = runtime.create(
-		{
-			workflow: factoryLaunch.workflow,
-			triggerOrigin: {
-				type: "manual",
-				workflowId: "factory",
-				at: new Date().toISOString(),
-			},
-			repositoryId: "repo",
-			workspace: "/tmp",
-			input: "Frozen",
-		},
-		factoryLaunch,
-	);
-	expect(frozen.workflowDefinitions).toEqual(factoryLaunch.workflowDefinitions);
 });
 
 it("removes disabled fork graphs with their metadata and preserves export/import", () => {
@@ -638,7 +476,7 @@ it.each([
 	expect(readFileSync(recovered.catalog.read().migration!.backup, "utf8")).toBe(
 		bytes,
 	);
-	expect(recovered.catalog.read().locals).toEqual([]);
+	expect(recovered.catalog.read().locals.length).toBeGreaterThan(0);
 	expect(
 		new WorkflowRuntime(home, (runtime as any).hooks).catalog.read(),
 	).toEqual(recovered.catalog.read());

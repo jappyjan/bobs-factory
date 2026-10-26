@@ -37,11 +37,7 @@ afterEach(async () => {
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
-const baseHooks = {
-	agent: async () => ({}),
-	tool: async () => ({}),
-	script: async () => ({}),
-};
+const baseHooks = { agent: async () => ({}) };
 function setup(
 	steps: unknown[],
 	hooks: Partial<RuntimeHooks> = {},

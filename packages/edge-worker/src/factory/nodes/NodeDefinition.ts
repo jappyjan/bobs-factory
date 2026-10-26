@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { ReviewBaseline } from "../SpecialistReview.js";
+
 import type { HumanViews } from "../ViewRuntime.js";
 import type { WorkflowStep } from "../Workflow.js";
 import type {
@@ -23,7 +23,6 @@ export interface NodeEngine {
 		workflowId: string,
 		chat?: boolean,
 		parallel?: boolean,
-		baseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>>;
 	newCheckpoint(steps: WorkflowStep[]): GraphCheckpoint;
 	frameResults(
@@ -97,8 +96,6 @@ export interface NodeContext<S extends WorkflowStep = WorkflowStep>
 	frame: GraphCheckpoint;
 	workflowId: string;
 	parallel: boolean;
-	/** Existing configured evidence supplied by the engine's legacy boundary. */
-	preparedEvidence?: unknown;
 	sourceInput?: unknown;
 }
 export interface NodeDefinition<
@@ -109,6 +106,6 @@ export interface NodeDefinition<
 	usesPreviousReceipt?: true;
 	execute(ctx: NodeContext<z.output<Schema>>): Promise<unknown> | unknown;
 	summary?: (output: unknown) => string | undefined;
-	/** Temporary bridge for agent/script/tool until their execution is extracted. */
+	/** Agent execution uses the runtime’s native turn admission boundary. */
 	inline?: true;
 }

@@ -3,11 +3,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { executeCommand } from "../src/factory/FactoryTools.js";
 import {
 	GitSettings,
 	gitAgentEnvironment,
 } from "../src/factory/GitSettings.js";
+import { executeCommand } from "../src/factory/nodes/execute/command.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
@@ -34,11 +34,7 @@ function fixture() {
 it("tests and persists a UI-selected socket without changing the worker environment, rejects stale/invalid saves and restores inheritance", async () => {
 	const { home, socket } = fixture();
 	vi.stubEnv("SSH_AUTH_SOCK", join(home, "wrong-agent"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],

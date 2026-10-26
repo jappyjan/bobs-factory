@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { runEvidenceChecks } from "../src/factory/EvidenceChecks.js";
 import { resolveView, ViewSourceSchema } from "../src/factory/View.js";
 import {
 	readViewScreenshot,
@@ -65,30 +66,28 @@ async function fixture(
 	let image = "";
 	const instance = new WorkflowRuntime(directory, {
 		agent: async (context) =>
-			context.step.id === "scope"
-				? { areas: [] }
-				: {
-						screenshots: [
-							{
-								path: options.path ?? image,
-								caption: "Retained capture",
-								area: "Review",
-								imageSha256: options.sha256 ?? originalHash,
-							},
-						],
-						unavailable: [],
-					},
-		tool: async () => {
-			throw new Error("Unexpected action");
-		},
-		script: async () => {
-			throw new Error("Unexpected script");
-		},
+			runEvidenceChecks(
+				context,
+				context.step.id === "scope"
+					? { areas: [] }
+					: {
+							screenshots: [
+								{
+									path: options.path ?? image,
+									caption: "Retained capture",
+									area: "Review",
+									imageSha256: options.sha256 ?? originalHash,
+								},
+							],
+							unavailable: [],
+						},
+			),
 	});
 	runtimes.push(instance);
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "asset-fixture",
 			name: "Asset fixture",
 			stepConfigVersion: "step-config-v1",
@@ -98,8 +97,8 @@ async function fixture(
 							{
 								id: "display",
 								name: "Empty screenshots",
-								type: "show",
-								view: {
+								type: "display",
+								document: {
 									version: "view-v1",
 									components: [
 										{
@@ -124,8 +123,13 @@ async function fixture(
 								type: "agent",
 								prompt: "Fixture capture",
 								reads: { scope: "scope" },
-								output: { format: "capture-v1" },
-								checks: ["capture-evidence"],
+								verify: [
+									{
+										check: "media-valid",
+										path: "/screenshots/0/path",
+										kind: "image",
+									},
+								],
 							},
 						],
 		},
@@ -231,7 +235,11 @@ describe("bounded current-run view asset verification", () => {
 
 	it("cannot borrow same-hash accepted metadata from another run's evidence directory", async () => {
 		const other = await fixture();
-		const { instance, run } = await fixture({ path: other.image });
+		await expect(fixture({ path: other.image })).rejects.toThrow(
+			/inside.*evidence/,
+		);
+		const { instance, run } = await fixture();
+		run.verifiedMedia![0]!.path = other.image;
 		io.fullReads.length = 0;
 		await expect(
 			verifyViewAssets(instance.directory, run, screenshotView()),

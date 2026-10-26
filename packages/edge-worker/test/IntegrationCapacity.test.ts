@@ -87,7 +87,7 @@ it("settling an integration launch cancels setup queued in the production custom
 			title: "Test",
 		}),
 		selectTicketLaunch: async () => ({
-			workflow: { id: "simple", steps: [] },
+			workflow: { engineVersion: "nodes-v1", id: "simple", steps: [] },
 			workflowDefinitions: [],
 		}),
 		fetchIssueLabels: async () => [],

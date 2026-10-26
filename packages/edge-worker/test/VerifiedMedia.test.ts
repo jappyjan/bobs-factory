@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { digest } from "../src/factory/Delivery.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import {
 	acceptedMedia,
 	type MediaCandidate,

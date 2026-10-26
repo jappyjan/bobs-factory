@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { immutableJson } from "bobs-factory-core";
-import { digest } from "../Delivery.js";
+import { digest } from "../EvidenceDigest.js";
 import { EffectReconciliationError } from "../ExecutionErrors.js";
 import {
 	freshNodeOutput,

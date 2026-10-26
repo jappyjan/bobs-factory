@@ -80,6 +80,7 @@ function fixture(
 		active = 0,
 		peak = 0;
 	const child = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "factory",
 		name: "Controlled Factory delivery",
 		stepConfigVersion: "step-config-v1",
@@ -88,21 +89,81 @@ function fixture(
 			{
 				id: "publish",
 				name: "Publish controlled PR",
-				type: "tool",
-				tool: "draft-pr",
+				type: "agent",
+				prompt: "fixture-publication",
 				next: "finish",
 			},
 			{
 				id: "finish",
 				name: "Confirm controlled merge",
-				type: "tool",
-				tool: "merge",
+				type: "merge",
+				reads: { requests: "publish" },
 				next: "end",
 			},
 		],
 	});
+	const confirmed = new Set<string>();
 	const hooks = {
+		ioGitProvider: async (context: ExecutionContext) =>
+			({
+				view: async (url: string) => {
+					if (!confirmed.has(context.run.id))
+						await new Promise<void>((resolve, reject) => {
+							deliveries.set(context.run.id, () => {
+								confirmed.add(context.run.id);
+								resolve();
+							});
+							context.signal.addEventListener(
+								"abort",
+								() => reject(context.signal.reason),
+								{ once: true },
+							);
+						});
+					return {
+						url,
+						state: "MERGED",
+						headRefOid: revision,
+						mergeCommitSha: revision,
+					};
+				},
+			}) as any,
+		issueDestinations: async () => ({
+			options: [
+				{
+					name: "Controlled tracker",
+					destination: {
+						provider: "taskbot" as const,
+						instance: "https://tracker.test",
+						server: "fixture",
+						project: "fixture",
+					},
+				},
+			],
+			limitations: [],
+		}),
+		fileIssue: async (_r: FactoryRun, issue: { itemId: string }) => {
+			filed.push(issue.itemId);
+			return { id: "71", url: "https://tracker.test/p/fixture/t/71" };
+		},
+		prepare: async (r: FactoryRun) => {
+			if (r.recipeParent) {
+				r.workspace = home;
+				r.repositories!.forEach((repo) => {
+					repo.workspace = home;
+				});
+			}
+		},
 		agent: async (context: ExecutionContext) => {
+			if (context.step.prompt === "fixture-publication")
+				return {
+					repositories: [
+						{
+							repositoryId: "fixture",
+							url: `https://forge.test/pull/${context.run.recipeParent!.itemId}`,
+							headSha: revision,
+						},
+					],
+				};
 			const input = stepBindings(context) as Record<string, any>;
 			const key = context.stepKey!;
 			const access = await pinReadOnlyAccess(context);
@@ -246,51 +307,6 @@ function fixture(
 			}
 			return parseStepOutputAsync(context.step, value);
 		},
-		tool: async (c: ExecutionContext) => {
-			const proof = {
-				url: `https://forge.test/pull/${c.run.recipeParent!.itemId}`,
-				headSha: revision,
-			};
-			if (c.step.tool === "draft-pr") return proof;
-			if (c.step.tool !== "merge")
-				throw new Error(`Unexpected tool ${c.step.tool}`);
-			await new Promise<void>((resolve, reject) => {
-				deliveries.set(c.run.id, resolve);
-				c.signal.addEventListener("abort", () => reject(c.signal.reason), {
-					once: true,
-				});
-			});
-			return { ...proof, merged: true };
-		},
-		script: async () => {
-			throw new Error("Unexpected script");
-		},
-		issueDestinations: async () => ({
-			options: [
-				{
-					name: "Controlled tracker",
-					destination: {
-						provider: "taskbot" as const,
-						instance: "https://tracker.test",
-						server: "fixture",
-						project: "fixture",
-					},
-				},
-			],
-			limitations: [],
-		}),
-		fileIssue: async (_r: FactoryRun, issue: { itemId: string }) => {
-			filed.push(issue.itemId);
-			return { id: "71", url: "https://tracker.test/p/fixture/t/71" };
-		},
-		prepare: async (r: FactoryRun) => {
-			if (r.recipeParent) {
-				r.workspace = home;
-				r.repositories!.forEach((repo) => {
-					repo.workspace = home;
-				});
-			}
-		},
 	};
 	const runtime = new WorkflowRuntime(join(home, "state"), hooks);
 	instances.push(runtime);
@@ -339,14 +355,7 @@ function fixture(
 		peak: () => peak,
 		confirm: async (id: string, owner = runtime) => {
 			const child = owner.get(id);
-			child.humanDecisions = [
-				{
-					reviewId: "controlled-explicit-human",
-					decision: "approve",
-					headSha: revision,
-					at: new Date().toISOString(),
-				},
-			];
+
 			deliveries.get(id)!();
 			await waitForRuntime(() => expect(child.status).toBe("completed"));
 		},

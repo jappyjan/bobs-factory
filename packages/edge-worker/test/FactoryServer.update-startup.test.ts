@@ -22,11 +22,7 @@ const identity = {
 };
 function fixture() {
 	const home = mkdtempSync(join(tmpdir(), "factory-startup-observation-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const updates = new UpdateManager(home, undefined, undefined, {
 		...identity,
 		version: "1.0.0",
