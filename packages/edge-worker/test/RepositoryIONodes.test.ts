@@ -11,6 +11,7 @@ import {
 	type ExecutionContext,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const mocks = vi.hoisted(() => ({ command: vi.fn(), provider: vi.fn() }));
@@ -428,6 +429,109 @@ it("ci status is a single read and rerun targets infrastructure failures only, o
 	expect(other.run.status).toBe("completed");
 	for (const id of ["hub", "lab"])
 		expect(forges.get(id)!.provider.retryCheck).toHaveBeenCalledTimes(1);
+});
+it.each([
+	"github",
+	"gitlab",
+] as const)("consecutive ci status nodes on a fresh run reuse %s failure evidence", async (type) => {
+	const { instance, run } = fixture([
+		{ id: "first", type: "ci", op: "status" },
+		{ id: "second", type: "ci", op: "status" },
+	]);
+	const repositoryUrl = `https://${type}.com/test/repo`;
+	const url = `${repositoryUrl}/${type === "github" ? "pull/1" : "-/merge_requests/1"}`;
+	run.repositories![0]!.providerSnapshot = { type, repositoryUrl };
+	const actual = await vi.importActual<
+		typeof import("../src/factory/GitProvider.js")
+	>("../src/factory/GitProvider.js");
+	mocks.provider.mockImplementation(actual.resolveGitProvider);
+	const git = mocks.command.getMockImplementation()!;
+	const evidence = vi.fn(() => "Runner unavailable");
+	mocks.command.mockImplementation(async (ctx, exe, args) => {
+		if (exe === "git") return git(ctx, exe, args);
+		if (type === "github") {
+			const request = githubRequest(args);
+			if (request.path.endsWith("/check-runs/5"))
+				return JSON.stringify({
+					head_sha: head,
+					output: { summary: evidence() },
+				});
+			if (request.path.split("?")[0]!.endsWith("/pulls"))
+				return JSON.stringify([{ html_url: url, draft: true }]);
+			return JSON.stringify(
+				githubApiReceipt(args, {
+					url,
+					headRefOid: head,
+					baseRefOid: base,
+					statusCheckRollup: {
+						contexts: {
+							nodes: [
+								{
+									databaseId: 5,
+									name: "build",
+									status: "COMPLETED",
+									conclusion: "FAILURE",
+									isRequired: true,
+								},
+							],
+							pageInfo: { hasNextPage: false },
+						},
+					},
+				}),
+			);
+		}
+		const path = args[1]!;
+		if (path.endsWith("/jobs/5/trace")) return evidence();
+		if (path.includes("/approvals"))
+			return JSON.stringify({ approvals_left: 0 });
+		if (path.includes("/discussions") || path.includes("/notes")) return "[]";
+		if (path.includes("/repository/branches/"))
+			return JSON.stringify({ commit: { id: base } });
+		if (path.includes("/pipelines/22/jobs"))
+			return JSON.stringify([
+				{
+					id: 5,
+					name: "build",
+					status: "failed",
+					allow_failure: false,
+					failure_reason: "runner_system_failure",
+				},
+			]);
+		if (path === "projects/test%2Frepo")
+			return JSON.stringify({
+				id: 8,
+				only_allow_merge_if_pipeline_succeeds: true,
+			});
+		const mr = {
+			web_url: url,
+			iid: 1,
+			title: "Change",
+			description: "Body",
+			source_branch: "feature",
+			target_branch: "main",
+			sha: head,
+			state: "opened",
+			draft: true,
+			source_project_id: 8,
+			target_project_id: 8,
+			head_pipeline: { id: 22, sha: head, status: "failed" },
+		};
+		return JSON.stringify(path.includes("/merge_requests?") ? [mr] : mr);
+	});
+	expect(run.ciSupervision).toBeUndefined();
+	await instance.launch(run);
+	expect(run.status, instance.get(run.id).error).toBe("completed");
+	for (const step of ["first", "second"])
+		expect((run.outputs[step] as any).repositories[0]).toMatchObject({
+			headMatches: true,
+			checks: expect.arrayContaining([
+				expect.objectContaining({ failureLogExcerpt: "Runner unavailable" }),
+			]),
+			summary: { complete: true },
+		});
+	expect(mocks.provider).toHaveBeenCalledTimes(2);
+	expect(evidence).toHaveBeenCalledTimes(1);
+	expect(Object.keys(run.ciSupervision!.checkReceipts!)).toHaveLength(1);
 });
 it("reports stale-head CI as incomplete and leaves ready requests untouched on ensure", async () => {
 	const { instance, run } = fixture([{ id: "op", type: "ci", op: "status" }]);

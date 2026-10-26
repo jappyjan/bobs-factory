@@ -373,7 +373,8 @@ export interface StepConfigFields {
 	output?: StepOutput;
 	rules?: Rule[];
 	checks?: CheckReference[];
-	verify?: VerifyReference[];
+	/** Agent evidence selectors, or the Git node’s commit-hook toggle. */
+	verify?: VerifyReference[] | boolean;
 	session?: "fresh" | "resume";
 	revision?: "bound";
 	access?: StepAccess;
@@ -1020,9 +1021,10 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 		...(step.inputs ? { inputs: [...step.inputs] } : {}),
 		...(step.output ? { output: step.output } : {}),
 		rules: step.rules ?? [],
-		checks: [...(step.checks ?? []), ...(step.verify ?? [])].map(
-			normalizeCheck,
-		),
+		checks: [
+			...(step.checks ?? []),
+			...(Array.isArray(step.verify) ? step.verify : []),
+		].map(normalizeCheck),
 		...(step.revision ? { revision: step.revision } : {}),
 		access,
 		instructions: step.instructions ?? [],
@@ -1422,9 +1424,10 @@ export function stepConfigIssues(
 			}
 		}
 	}
-	for (const check of [...(step.checks ?? []), ...(step.verify ?? [])].map(
-		normalizeCheck,
-	)) {
+	for (const check of [
+		...(step.checks ?? []),
+		...(Array.isArray(step.verify) ? step.verify : []),
+	].map(normalizeCheck)) {
 		if (
 			![
 				"files-exist",

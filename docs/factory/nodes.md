@@ -729,7 +729,9 @@ implement the corresponding operations; their existing operations remain intact.
   bounded excerpts by immutable job ID across polls.
   `infraFailure` reuses the existing provider classifier, never check-name guesses.
   `headMatches: false` reports provider head lag and sets `summary.complete: false`,
-  so recipes can poll through it or route on both revisions. This is one read pass: it does not poll, sleep, rerun checks or apply routing rules.
+  while checks still describe the old revision; recipes must check
+  `summary.complete`/`headMatches` before acting on `failed`. This is one read pass:
+  it does not poll, sleep, rerun checks or apply routing rules.
 - `rerun`: same configuration with `op: "rerun"` → the status shape plus
   `reruns: [{ check, retry, requested, skipped? }]` per repository. Missing retry
   identities, in-progress runs, unsupported retries and mismatched revisions are

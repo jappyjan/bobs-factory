@@ -87,3 +87,31 @@ The existing cold-restart PR recovery, activity and revision assertions still
 passed. Provider transport and agents remain scripted, with no hosted writes or
 paid inference. Focused restart tests cover failed pushes to existing branches and
 failed draft updates; provider tests cover skipped retries and cached GitLab logs.
+
+
+## Main integration follow-up
+
+Re-ran the same scripted fixture after rebasing onto `9a8bf551` (#200, #203 and
+#205 merged) and fixing recipe-only CI cache ownership and the Git/agent `verify`
+field interaction. The drive passed with run
+`manual-e6d146a9-9aa4-46e9-b67c-ca036f8eab6f`, fixture head
+`3fb18c46a25abac5ffe88492738027754c5fbd81` and base
+`d8673231b38e91b6917d3380dc4b9eead41c533b`. The transport and agents remain
+scripted. Separate engine regression tests exercise two consecutive CI status
+nodes on fresh runs using each real provider adapter with mocked transport:
+GitLab traces and GitHub check-run details are fetched once. Both tests fail
+with two downloads when the run-level cache initialization is removed.
+
+After #204 merged, rebased again onto `640c504d` and repeated the build, worker
+typecheck and scripted drive. The drive passed on candidate `e1e32d2c` with run
+`manual-63cb29ba-5b4b-4170-9e35-3b97eaaf4eab`, fixture head
+`d65e77ffd35c639c04b154c0b383f9342299d4a0` and base
+`c76eba59b3ef3709eb0efa93789b1955aa638be2`. Both sets of IO node registrations,
+provider merge receipts, fast-forward merge coverage, docs and changelogs remain.
+
+Final integration validation: **293 tests passed across 12 files**: the requested
+RepositoryIONodes, GitProvider, GithubApi, CISupervision, MergeReadiness,
+DiagnosticsReadiness, FactoryLogicFlow, NodeRegistry, AgentNode and DisplayNode,
+plus StepConfig and #204's FactoryIONodes. The explicit edge-worker build and
+typecheck passed. The enabled pre-commit hook passed staged-file Biome checks,
+the full workspace build and full workspace typecheck.

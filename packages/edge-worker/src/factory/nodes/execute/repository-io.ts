@@ -22,6 +22,8 @@ export async function repositories<T>(
 	ctx: NodeContext,
 	execute: (io: RepositoryIO) => Promise<T>,
 ) {
+	// Repository runs are shallow copies; keep provider evidence on their shared owner.
+	ctx.run.ciSupervision ??= { retries: [] };
 	const result = [];
 	for (const repository of runRepositories(ctx.run)) {
 		ctx.signal.throwIfAborted();
