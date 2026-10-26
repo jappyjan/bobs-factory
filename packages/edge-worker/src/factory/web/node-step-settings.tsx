@@ -151,6 +151,37 @@ export function NodeStepSettings(props: NodeSettingsProps) {
 					The handler can bind a read to @error to receive message and kind.
 				</small>
 			</section>
+			{panels.has(type) && (
+				<section className="recipe-section">
+					<h3>Engine guarantees</h3>
+					<p>
+						Set <code>reuse</code> to <code>unchanged-inputs</code> and{" "}
+						<code>bind</code> to an array of step references.
+					</p>
+					<CheckJsonField
+						label="Reuse and bindings"
+						object
+						value={{
+							reuse: props.step.reuse,
+							bind: props.step.bind,
+							revisionScope: props.step.revisionScope,
+						}}
+						readOnly={props.readOnly}
+						onError={props.onError}
+						onChange={(value) => {
+							const fields = value as Pick<
+								Step,
+								"reuse" | "bind" | "revisionScope"
+							>;
+							props.onChange({
+								reuse: fields.reuse,
+								bind: fields.bind,
+								revisionScope: fields.revisionScope,
+							});
+						}}
+					/>
+				</section>
+			)}
 		</>
 	);
 }

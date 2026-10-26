@@ -10323,6 +10323,7 @@ ${taskSection}`;
 				output,
 				undefined,
 				context.signal,
+				context.fresh,
 			);
 			if (hasCheck(step, "impact-reuse")) {
 				output = validateImpact(

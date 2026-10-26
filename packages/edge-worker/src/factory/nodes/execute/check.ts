@@ -1,6 +1,7 @@
 import { evaluateCheckAsync } from "../../Check.js";
 import { runEvidenceChecks } from "../../EvidenceChecks.js";
 import { executeCommand, FactoryTools } from "../../FactoryTools.js";
+import { nodeFreshnessRules } from "../../NodeGuarantees.js";
 import { conforms } from "../../OutputFormats.js";
 import {
 	progressEvidence,
@@ -63,6 +64,7 @@ async function executeCheckBody(
 			{},
 			conforms,
 			signal,
+			await nodeFreshnessRules(step.check, context.fresh),
 		);
 	}
 	if (config.revision === "bound") {
@@ -125,6 +127,7 @@ async function executeCheckBody(
 		ruleEvidence,
 		conforms,
 		signal,
+		await nodeFreshnessRules(step.check, context.fresh),
 	);
 	if (
 		hasCheck(step, "review-assistance") &&

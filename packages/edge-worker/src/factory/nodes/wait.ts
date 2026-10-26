@@ -103,7 +103,7 @@ export const definition = {
 					Math.max(1, state.deadline - Date.now()),
 				);
 				const signal = AbortSignal.any([ctx.signal, deadline]);
-				const bodyContext = nodeContext(
+				const bodyContext = await nodeContext(
 					{
 						...ctx,
 						step: body,

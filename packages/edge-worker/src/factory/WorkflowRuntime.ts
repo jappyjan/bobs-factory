@@ -134,6 +134,7 @@ import {
 	recordMergeConfirmation,
 } from "./MergeRecovery.js";
 import { nativeViewText } from "./NativeViews.js";
+import { reusableNodeOutput, scopedNodeRevisions } from "./NodeGuarantees.js";
 import { nodeContext } from "./nodes/context.js";
 import { NODE_REROUTE } from "./nodes/control.js";
 import { nodeRegistry } from "./nodes/index.js";
@@ -200,6 +201,7 @@ import {
 	stepBindings,
 } from "./StepBindings.js";
 import {
+	accessMode,
 	architectureRevisionDecision,
 	checkArgs,
 	consumesImpact,
@@ -390,6 +392,10 @@ export interface GraphCheckpoint {
 			errors?: number;
 			output?: unknown;
 			matched?: boolean;
+		};
+		nodeStamp?: {
+			inputDigest: string;
+			guarantee: import("./NodeGuarantees.js").NodeGuarantee;
 		};
 		viewId?: string;
 		actionId?: string;
@@ -626,6 +632,7 @@ export interface FactoryRun {
 		step: string;
 		output: unknown;
 		inputDigest?: string;
+		guarantee?: import("./NodeGuarantees.js").NodeGuarantee;
 		/** Immutable runtime evidence, separate from pure Check results. */
 		evidence?: Record<string, unknown>;
 		at: string;
@@ -657,6 +664,8 @@ export interface ChatMessage {
 }
 export interface ExecutionContext {
 	error?: { message: string; kind: string };
+	/** Resolve freshness in this node’s lexical frame. */
+	fresh?: (reference: string) => Promise<boolean>;
 	/** Stable accepted definition identity, independent of Call/frame/attempt IDs. */
 	progressOperation?: string;
 	progressObservation?: string;
@@ -3012,7 +3021,7 @@ export class WorkflowRuntime {
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
 				if (state.retryAt !== undefined) {
-					const retryContext = nodeContext(
+					const retryContext = await nodeContext(
 						context,
 						checkpoint,
 						workflowId,
@@ -3032,8 +3041,7 @@ export class WorkflowRuntime {
 				await this.save(run);
 				signal.throwIfAborted();
 				try {
-					if (step.type === "check") await context.beginProgressAttempt?.();
-					const nodeCtx = nodeContext(
+					const nodeCtx = await nodeContext(
 						context,
 						checkpoint,
 						workflowId,
@@ -3043,7 +3051,21 @@ export class WorkflowRuntime {
 						step.type === "agent" ? consumedReads : undefined,
 					);
 					nodeCtx.sourceInput = input;
-					if (
+
+					const reused = reusableNodeOutput(
+						nodeCtx,
+						nodeCtx.inputDigest,
+						nodeCtx.guarantee,
+					);
+					const reuseHit = !!reused && (await nodeCtx.fresh(step.id));
+					if (!reuseHit && step.type === "check")
+						await context.beginProgressAttempt?.();
+
+					if (reuseHit) {
+						nodeCtx.guarantee.state = structuredClone(reused!.guarantee?.state);
+						output = structuredClone(reused!.output);
+						completionMessage = "reused (inputs unchanged)";
+					} else if (
 						(step.tool === "review-gate" ||
 							(step.type === "check" && hasCheck(step, "review-evidence"))) &&
 						reviewConfig
@@ -3471,6 +3493,12 @@ export class WorkflowRuntime {
 							proposalDigest: proposal.digest,
 						};
 					}
+					if (
+						step.type === "agent" &&
+						!reuseHit &&
+						accessMode(step) !== "read-only"
+					)
+						nodeCtx.recordRevisions(await scopedNodeRevisions(context));
 					const acceptedBinding = await assertBoundInspectionFresh(context);
 					outputs[step.id] = output;
 					if (step.type === "agent" && isNodeEngineStep(step)) {

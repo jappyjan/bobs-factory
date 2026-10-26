@@ -2,12 +2,18 @@ import { randomUUID } from "node:crypto";
 import { immutableJson } from "bobs-factory-core";
 import { digest } from "../Delivery.js";
 import { EffectReconciliationError } from "../ExecutionErrors.js";
+import {
+	freshNodeOutput,
+	type NodeRevisions,
+	nodeRevisionObserver,
+	prepareNodeGuarantee,
+} from "../NodeGuarantees.js";
 import { timingOperation } from "../RunDiagnostics.js";
 import { stepBindings } from "../StepBindings.js";
 import type { ExecutionContext, GraphCheckpoint } from "../WorkflowRuntime.js";
 import type { NodeContext, NodeEngine } from "./NodeDefinition.js";
 
-export function nodeContext(
+export async function nodeContext(
 	context: ExecutionContext,
 	frame: GraphCheckpoint,
 	workflowId: string,
@@ -15,11 +21,21 @@ export function nodeContext(
 	engine: NodeEngine,
 	graphChat = false,
 	consumedReads?: Record<string, unknown>,
-): NodeContext {
+): Promise<NodeContext> {
 	const reads =
 		consumedReads ??
 		stepBindings(context, context.run.history, { checkJson: true });
 	const inputDigest = digest(reads);
+	const active = frame.active;
+	if (!active) throw new Error("Node context requires an active visit");
+	const observe = nodeRevisionObserver(context);
+	const guarantee = active.nodeStamp
+		? structuredClone(active.nodeStamp.guarantee)
+		: await prepareNodeGuarantee(context, observe);
+	if (!active.nodeStamp) {
+		active.nodeStamp = { inputDigest, guarantee: structuredClone(guarantee) };
+		await engine.save(context.run);
+	}
 	const checkpoint = () => engine.save(context.run);
 	let identityCheckpoint: Promise<void> | undefined;
 	let phaseActive = false;
@@ -35,10 +51,35 @@ export function nodeContext(
 		await identityCheckpoint;
 		return digest([context.run.id, active.actionId, name]);
 	};
-	return Object.assign(context, {
+	const services = Object.assign(context, {
 		reads,
 		inputDigest,
-		stamp: <T>(output: T) => ({ output, inputDigest }),
+		guarantee,
+		fresh: (reference: string) => freshNodeOutput(context, reference, observe),
+		recordRevisions: (revisions: NodeRevisions) => {
+			if (context.step.revisionScope === "none") return;
+			if (typeof context.step.revisionScope === "object") {
+				// A provider HEAD alone cannot replace this node's scoped observation.
+				revisions = Object.fromEntries(
+					Object.entries(revisions).filter(
+						([, value]) =>
+							value.scopedDigest !== undefined || value.unobservable,
+					),
+				);
+			}
+			Object.assign(services.guarantee.revisions, structuredClone(revisions));
+			services.guarantee.observedRepositories = [
+				...new Set([
+					...(services.guarantee.observedRepositories ?? []),
+					...Object.keys(revisions),
+				]),
+			];
+		},
+		stamp: <T>(output: T) => ({
+			output,
+			inputDigest: frame.active?.nodeStamp?.inputDigest ?? inputDigest,
+			guarantee: { ...services.guarantee, outputDigest: digest(output) },
+		}),
 		checkpoint,
 		effectKey,
 		engine,
@@ -149,4 +190,5 @@ export function nodeContext(
 			}
 		},
 	});
+	return services;
 }

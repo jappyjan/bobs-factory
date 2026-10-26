@@ -778,3 +778,155 @@ repositories, and tests uncertain sends across cold runtime restarts.
 F1 fixture `apps/f1/test-drives/assets/repository-io-nodes.ts` uses real Git,
 mocked agents and a simulated GitLab API, including a lost creation response and
 worker restart.
+## Generic engine guarantees
+
+Every completed node's history receipt keeps `inputDigest` beside its output JSON
+and a versioned `guarantee` containing repository revisions, bound receipt digests
+and its lexical read scope. Scalars and arrays retain their original shape.
+Receipts and an in-flight visit's accepted stamp survive process restart. Old
+unstamped receipts remain readable but cannot establish freshness or reuse.
+
+### Revisions reported by nodes
+
+Agents observe repository HEAD and working changes automatically; agents with
+workspace/push access record the resulting revision after execution. Read-only
+agents retain their input observation (or their declared Snapshot's committed
+revision). Snapshot records its actual captured commit for every repository.
+Non-repository runs carry no local revisions.
+
+IO nodes use this service after obtaining a verified provider/local observation:
+
+```ts
+ctx.recordRevisions({
+  [repositoryId]: { headSha: verifiedHeadSha },
+});
+```
+
+`recordRevisions` attaches metadata to the engine receipt, without wrapping or
+changing the node's output. Call it for every repository the result covers. The
+optional `workspaceDigest` additionally binds working changes; use
+`observeNodeRevisions(ctx)` from `factory/NodeGuarantees.ts` to capture local
+HEAD and workspace digests with the shared Git implementation. Read dependencies
+and explicit bindings propagate revisions to their consumers. Never report an
+agent's claim of a revision as provider-verified evidence. Revisions are compared
+against the retained run repositories, so unknown/unavailable repositories fail
+freshness conservatively. Git observation errors (including unborn HEAD,
+command timeout or oversized output) stamp an `unobservable` sentinel: the node
+can complete, but its receipt cannot establish freshness or reuse. The helper does not grant provider or repository access.
+
+### Reuse
+
+Steps whose execution is safe to skip can opt in with
+`"reuse": "unchanged-inputs"`. Converge and other registered nodes declaring
+`usesPreviousReceipt: true` cannot reuse, because their output depends on their
+own previous receipt. Explicit self-reads, history reads and self-bindings also
+reject reuse at validation. Before dispatch, the
+engine checks for a stamped output in that exact step frame with the same resolved
+named-read digest, repository revisions and bound receipt digests. The previous
+output must still be fresh. A hit skips node execution, adds a completed history
+receipt and logs `reused (inputs unchanged)`. Parallel branches and foreach item
+IDs have separate keys; changing an item's contents invalidates its cached output.
+The previous receipt stays immutable. Reuse does not replenish visit/progress
+budgets or acquire execution capacity. Use it only when skipping execution is
+appropriate for that node's declared inputs; polling external state ordinarily
+needs execution even if its local inputs are unchanged.
+
+### Revision scope
+
+`revisionScope` controls the same revision comparison for reuse and `fresh()`:
+
+- `"repository"` (default): retain HEAD and working changes, plus inherited
+  revisions from reads and bindings. Display, Approve and Decide take their own
+  whole-repository observation before waiting for a human; scoped or inputs-only
+  producers cannot narrow that approval. The frozen observation survives restart,
+  and inherited checks remain separate so stale reviews cannot be renewed.
+- `{ "paths": ["src/payments/**", "shared/types.ts"] }`: compare committed tree
+  entries and workspace changes only under these Git pathspecs, per repository.
+  Commits outside the selected paths do not invalidate the receipt. Tracked file
+  modes, additions/deletions, dirty tracked files and untracked content are covered.
+- `{ "paths": { "from": "/inputs/reviewer/paths" } }`: resolve a list of pathspecs
+  from declared reads, using an own-property JSON Pointer under `/inputs`.
+  For example, `reads: { reviewer: "impact/reviewers/payments" }` lets an impact
+  node choose a specialist's scope. Missing or invalid lists fail closed.
+- `"none"`: compare inputs only, with no repository stamps. The recipe must
+  ensure its declared reads carry the relevant state.
+
+Explicit path/none scopes replace inherited repository revisions; they do not
+remove input digests or explicit bound-receipt checks. A changed read still
+invalidates reuse. An empty path list selects no repository content. Path lists
+are limited to 1,000 entries of 400 characters each, and the same pathspecs apply
+inside each retained repository. Choose a scope that covers all code and shared
+configuration the node relies on. The original `headSha` remains in scoped
+receipts for provenance, but scoped comparisons use content digests instead of
+HEAD equality. Read-only agents with a Snapshot compare its scoped committed
+content against the local checkout; agents with workspace access stamp their
+resulting scope after execution. Repository observations are shared within each
+step attempt/evaluation and scope; a mutating agent gets a new observation after
+execution.
+
+### Bound responses and `fresh()`
+
+Declare `"bind": ["sample"]` on any step to freeze the referenced receipts before
+execution, including before a human wait. Their output/input/revision digests are
+saved in the visit checkpoint and completed receipt. Resuming that visit does not
+silently bind a response to changed evidence.
+
+In rules-v1, `fresh("sample")` is JSON data:
+
+```json
+{
+  "type": "check",
+  "id": "current",
+  "name": "Current",
+  "check": { "results": { "current": { "fresh": "response" } } }
+}
+```
+
+The operator works in Check results/passed rules and agent output rules, including
+under `all`, `any` and `not`. It re-resolves the producer's named reads in its own
+persisted scope and compares its output, input digest and repository revisions.
+Bound receipts must still match and themselves remain fresh, recursively. Missing,
+legacy, cyclic or unreadable evidence yields false. Standalone rule simulation
+without a runtime resolver also yields false. Nodes may call
+`await ctx.fresh("sample")` directly. References are lexical step IDs/paths;
+Call bindings resolve to their original producer, and a leading `/` selects a
+run-absolute step key (for example `/items/a/sample`).
+
+`fresh()` compares against the **local checkout only**; it does not fetch or
+observe remote provider state. A merge node must pass the approved head SHA from
+the approval receipt's `guarantee.revisions[repositoryId].headSha` to the provider
+as the expected head. The provider's expected-head check catches remote pushes
+after approval, including when local freshness still passes.
+
+### Converge
+
+Converge is a registered pure logic node, with a palette entry and JSON settings:
+
+```json
+{
+  "id": "observe",
+  "name": "Observe",
+  "type": "converge",
+  "reads": { "value": "sample/value" },
+  "watch": ["/inputs/value"],
+  "maxCycles": 3
+}
+```
+
+`watch` contains JSON Pointers into the same `{inputs, evidence}` document as
+Check; `inputs` are the node's named reads and evidence is empty. The node compares
+a canonical digest with its previous visit in the same frame and returns only
+`{stalled, cycles, changed}`. The first observation starts at one cycle with
+`changed: true`; equal observations increment `cycles`, and a changed observation
+resets it to one. `stalled` becomes true at `maxCycles` consecutive equal visits.
+State is keyed by the full step key across the run. Repeated Call invocations of
+the same child step continue counting, while Parallel branches and foreach item
+keys stay independent. Use a distinct step ID (or a separate Call step ID for an
+independent invocation) to start independent state; changed watched values reset
+the existing counter to one. There is no additional scope/reset option.
+Watched state is committed with the output receipt, so restart cannot double-count
+an interrupted visit. Recipes own routing when stalled; the node does no IO and
+does not change visit budgets, progress budgets or capacity.
+
+All existing step panels expose reuse/bind/revisionScope through the **Engine guarantees** JSON
+field; new nodes' full **Node configuration** JSON panel covers them directly.

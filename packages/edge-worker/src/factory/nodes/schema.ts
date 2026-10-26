@@ -20,6 +20,28 @@ const impactSources = z.object({
 });
 export const stepFields = {
 	id: nodeId,
+	reuse: z.literal("unchanged-inputs").optional(),
+	revisionScope: z
+		.union([
+			z.enum(["repository", "none"]),
+			z
+				.object({
+					paths: z.union([
+						z.array(z.string().min(1).max(400)).max(1000),
+						z
+							.object({
+								from: z
+									.string()
+									.max(400)
+									.regex(/^\/inputs(?:\/[^/]+)*$/),
+							})
+							.strict(),
+					]),
+				})
+				.strict(),
+		])
+		.optional(),
+	bind: z.array(z.string().min(1).max(400)).max(50).optional(),
 	view: ViewSourceSchema.optional(),
 	...stepConfigFields,
 	delivery: z.literal("exclusive").optional(),
