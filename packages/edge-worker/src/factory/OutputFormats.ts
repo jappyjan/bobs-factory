@@ -6,6 +6,7 @@ import {
 } from "./Architecture.js";
 import { DeliveryContractSchema, TicketTargetSchema } from "./Delivery.js";
 import { DependencyGraphSchema } from "./DependencyGraph.js";
+import { DisplayDocumentSchema } from "./DisplayDocument.js";
 import {
 	CiFixResultSchema,
 	ClarifyResultSchema,
@@ -153,6 +154,7 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 		);
 	},
 	"follow-up-v1": (value) => FollowUpSchema.parse(value),
+	display: (value) => DisplayDocumentSchema.parse(value),
 	"view-v1": (value) => ViewSchema.parse(value),
 	"generated-guide-v1": (value) => GeneratedGuideSchema.parse(value),
 	"generated-review-brief-v1": (value) =>

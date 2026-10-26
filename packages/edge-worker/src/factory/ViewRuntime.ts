@@ -2,6 +2,14 @@ import { randomUUID } from "node:crypto";
 import { immutableJson, UnsentDispatchError } from "bobs-factory-core";
 import { digest } from "./Delivery.js";
 import { releaseDelivery } from "./DeliveryCoordination.js";
+import { displayAnswerOutput } from "./DisplayAnswers.js";
+import {
+	displayAsk,
+	displayComponents,
+	displayInteractive,
+	displayItems,
+	resolveDisplayDocument,
+} from "./DisplayDocument.js";
 import { foreachPointer, sanitizeJsonConfiguration } from "./Foreach.js";
 import {
 	DecideConfigurationSchema,
@@ -74,7 +82,8 @@ export function viewScope(
 	>,
 ) {
 	const inputs: Record<string, unknown> = {};
-	const source = context.step.view;
+	const source =
+		context.step.type === "display" ? context.step.document : context.step.view;
 	const localReads =
 		source && "components" in source ? source.reads : undefined;
 	const reads: Record<string, { from: string; when?: unknown }> = localReads
@@ -124,6 +133,9 @@ function configuration(step: WorkflowStep) {
 		type: step.type,
 		name: step.name,
 		view: step.view,
+		...(step.type === "display"
+			? { document: step.document, from: step.from, bind: step.bind }
+			: {}),
 		decide: step.decide,
 		notifications: step.notifications,
 		reads: step.reads ?? {},
@@ -134,19 +146,35 @@ function content(context: ExecutionContext) {
 	context = { ...context, step: StepSchema.parse(context.step) };
 	const config = configuration(context.step),
 		scope = viewScope(context),
-		view = resolveView(context.step.view!, scope);
+		view =
+			context.step.type === "display"
+				? resolveDisplayDocument(
+						context.step.document ?? { from: context.step.from! },
+						scope,
+					)
+				: resolveView(context.step.view!, scope);
 	const decide =
 		context.step.type === "decide"
 			? DecideConfigurationSchema.parse(context.step.decide)
 			: undefined;
-	const items = decide ? decisionItems(decide, scope) : undefined;
+	const items =
+		context.step.type === "display"
+			? displayItems(view)
+			: decide
+				? decisionItems(decide, scope)
+				: undefined;
 	return {
 		config,
 		scope,
 		view,
 		items,
 		actions: decide?.actions,
-		askAvailable: !!decide?.ask,
+		askAvailable:
+			context.step.type === "display"
+				? displayComponents(view).some(
+						(c) => c.type === "itemCards" && !!c.data.ask,
+					)
+				: !!decide?.ask,
 	};
 }
 interface Located {
@@ -305,7 +333,7 @@ export class HumanViews {
 		const found = locate(run, record.snapshot.id);
 		if (
 			!found ||
-			!["decide", "approve"].includes(found.step.type) ||
+			!["decide", "approve", "display"].includes(found.step.type) ||
 			found.key !== record.snapshot.stepKey
 		)
 			throw new Error("The decision frame changed. Refresh this run.");
@@ -455,6 +483,14 @@ export class HumanViews {
 		if (!record) {
 			const source = content(context);
 			await verifyViewAssets(this.runtime.directory, run, source.view);
+			if (
+				step.type === "display" &&
+				displayInteractive(source.view) &&
+				(context as { parallel?: boolean }).parallel
+			)
+				throw new Error(
+					"Interactive displays belong outside concurrent bodies",
+				);
 			const id = randomUUID();
 			const snapshot: ViewSnapshot = {
 				id,
@@ -472,13 +508,20 @@ export class HumanViews {
 					items: source.items,
 				}),
 				view: immutableJson(source.view),
+				...(step.type === "display"
+					? {
+							documentDigest: digest(source.view),
+							bound: step.bind ?? [],
+							interactive: displayInteractive(source.view),
+						}
+					: {}),
 				...(step.notifications
 					? { notifications: immutableJson(step.notifications) }
 					: {}),
 				...(source.items
 					? {
 							items: source.items.map(({ value: _value, ...item }) => item),
-							actions: source.actions,
+							...(source.actions ? { actions: source.actions } : {}),
 							askAvailable: source.askAvailable,
 							threads: {},
 						}
@@ -495,13 +538,24 @@ export class HumanViews {
 			};
 			state.viewId = id;
 			run.viewRecords ??= [];
-			if (run.viewRecords.length >= 100)
+			// Content-only displays retain their history without consuming the
+			// decision snapshot budget (for example, progress inside foreach).
+			const countsTowardLimit = (snapshot: ViewSnapshot) =>
+				snapshot.kind !== "display" || snapshot.interactive !== false;
+			if (
+				countsTowardLimit(snapshot) &&
+				run.viewRecords.filter((r) => countsTowardLimit(r.snapshot)).length >=
+					100
+			)
 				throw new Error("A run supports at most 100 displayed view snapshots");
 			this.updateDigest(run, record);
 			run.viewRecords.push(record);
 			await this.runtime.save(run);
 		}
-		if (step.type === "show") {
+		if (
+			step.type === "show" ||
+			(step.type === "display" && !record.snapshot.interactive)
+		) {
 			run.viewDisplays ??= [];
 			if (!run.viewDisplays.some((s) => s.id === record.snapshot.id))
 				run.viewDisplays.push(publicViewRecord(run.id, record));
@@ -523,7 +577,9 @@ export class HumanViews {
 				this.publications.add(publication);
 				void publication.finally(() => this.publications.delete(publication));
 			}
-			return { shown: true, viewId: record.snapshot.id };
+			return step.type === "display"
+				? displayAnswerOutput(record)
+				: { shown: true, viewId: record.snapshot.id };
 		}
 		if (record.answer) return record.answer.output;
 		this.updateDigest(run, record);
@@ -579,7 +635,13 @@ export class HumanViews {
 	) {
 		const records = run.viewRecords ?? [];
 		const current = records.find((r) => r.snapshot.id === run.viewDecision?.id);
-		const history = records.filter((r) => r.snapshot.kind === "show").reverse();
+		const history = records
+			.filter(
+				(r) =>
+					r.snapshot.kind === "show" ||
+					(r.snapshot.kind === "display" && !r.snapshot.interactive),
+			)
+			.reverse();
 		const historyNotice =
 			"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
 		const limit = history.length ? 100000 - historyNotice.length - 2 : 100000;
@@ -684,7 +746,10 @@ export class HumanViews {
 				throw new Error(
 					"Wait for the pending Ask reply before submitting decisions",
 				);
-			const output = viewAnswerOutput(record, request);
+			const output =
+				record.snapshot.kind === "display"
+					? displayAnswerOutput(record, request)
+					: viewAnswerOutput(record, request);
 			recordProgressInput(
 				run,
 				JSON.stringify({
@@ -693,6 +758,8 @@ export class HumanViews {
 					approved: output.approved,
 					feedback: output.feedback,
 					fields: output.fields,
+					values: output.values,
+					action: output.action,
 					choices: request.choices
 						?.slice()
 						.sort((a, b) => a.itemId.localeCompare(b.itemId)),
@@ -749,7 +816,9 @@ export class HumanViews {
 			this.updateDigest(run, record);
 			run.viewDecision = publicViewRecord(run.id, record);
 			if (
-				!context.step.decide?.ask ||
+				!(context.step.type === "display"
+					? displayAsk(record.snapshot.view, request.itemId)
+					: context.step.decide?.ask) ||
 				request.digest !== record.snapshot.digest ||
 				digest({ view: source.view, items: source.items }) !==
 					record.sourceDigest ||
@@ -819,7 +888,10 @@ export class HumanViews {
 		const work = (async () => {
 			let result: { answer: string } | { error: string };
 			try {
-				const settings = context.step.decide!.ask!;
+				const settings =
+					context.step.type === "display"
+						? displayAsk(record.snapshot.view, itemId)!.data.ask!
+						: context.step.decide!.ask!;
 				const output = await this.hooks.agent({
 					...context,
 					contextAssistance: true,
@@ -917,13 +989,14 @@ export class HumanViews {
 		workflowId: string;
 		stepId: string;
 		view: unknown;
-		type?: "decide" | "approve" | "show";
+		type?: "decide" | "approve" | "show" | "display";
 		name?: string;
 		decide?: unknown;
 		reads?: unknown;
 		notifications?: unknown;
 		runId?: string;
 		lastRun?: boolean;
+		bind?: string[];
 		sampleScope?: unknown;
 	}) {
 		const config = {
@@ -975,7 +1048,19 @@ export class HumanViews {
 						sanitizeJsonConfiguration({
 							type: input.type ?? record.snapshot.kind,
 							name: input.name ?? record.snapshot.title,
-							view: config.view,
+							...(input.type === "display"
+								? {
+										document:
+											"from" in (config.view as object)
+												? undefined
+												: config.view,
+										from:
+											"from" in (config.view as object)
+												? (config.view as { from: string }).from
+												: undefined,
+										bind: input.bind,
+									}
+								: { view: config.view }),
 							decide: config.decide,
 							reads: config.reads,
 							notifications: config.notifications,
@@ -992,7 +1077,10 @@ export class HumanViews {
 			scope: safe,
 			provenance,
 			paths: availableViewPaths(safe),
-			view: resolveView(input.view as never, safe),
+			view:
+				input.type === "display"
+					? resolveDisplayDocument(input.view as never, safe)
+					: resolveView(input.view as never, safe),
 		};
 	}
 }

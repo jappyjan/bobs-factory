@@ -23,6 +23,7 @@ import {
 } from "./client";
 import { activitiesOf } from "./conversation";
 import { DeclarativeView, HumanStepPanel } from "./declarative-view";
+import { DisplayDocumentView, DisplayPanel } from "./display";
 import { ExternalRecovery } from "./external-recovery";
 import { useCurrentForm, useFormState } from "./form-state";
 import { revisionOf } from "./restoration";
@@ -64,6 +65,15 @@ export const labels: Record<string, string> = {
 export function GenericHumanDecision({ run }: { run: any }) {
 	const snapshot = run.viewDecision as ViewSnapshot | undefined;
 	if (!snapshot) return null;
+	if (snapshot.kind === "display")
+		return (
+			<DisplayPanel
+				key={`${run.id}/${snapshot.id}`}
+				runId={run.id}
+				snapshot={snapshot}
+				disabled={run.status !== "waiting" || !!snapshot.answer}
+			/>
+		);
 	return (
 		<HumanStepPanel
 			key={`${run.id}/${snapshot.id}`}
@@ -82,7 +92,16 @@ export function RunViewDisplays({ run }: { run: any }) {
 			{displays.map((snapshot) => (
 				<section key={snapshot.id} className="review-surface">
 					<h2>{snapshot.title}</h2>
-					<DeclarativeView view={snapshot.view} runId={run.id} disabled />
+					{snapshot.kind === "display" ? (
+						<DisplayDocumentView
+							snapshot={snapshot}
+							runId={run.id}
+							disabled
+							onSubmit={async () => {}}
+						/>
+					) : (
+						<DeclarativeView view={snapshot.view} runId={run.id} disabled />
+					)}
 				</section>
 			))}
 		</section>
@@ -778,9 +797,11 @@ export function FocusCard({
 		canResume = run.status === "stopped" && run.resumeAvailable === true,
 		label =
 			run.status === "waiting" && run.viewDecision && !run.viewDecision.answer
-				? run.viewDecision.kind === "approve"
-					? "✓ Approval needed"
-					: "☷ Decide per item"
+				? run.viewDecision.kind === "display"
+					? "Your response is needed"
+					: run.viewDecision.kind === "approve"
+						? "✓ Approval needed"
+						: "☷ Decide per item"
 				: labels[kind],
 		toast = useToast(),
 		action = useAction();

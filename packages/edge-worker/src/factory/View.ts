@@ -136,7 +136,7 @@ const option = z.object({ id, label: text(200) }).strict();
 const uniqueIds = (items: { id: string }[]) =>
 	new Set(items.map((item) => item.id)).size === items.length;
 const fieldBase = { id, label: text(200), required: z.boolean().optional() };
-const formField = z.discriminatedUnion("type", [
+export const formField = z.discriminatedUnion("type", [
 	z
 		.object({
 			...fieldBase,
@@ -193,8 +193,113 @@ export const ViewRunStatusSchema = z.enum([
 	"uncertain",
 ]);
 
+export const displayActionSchema = z
+	.object({
+		id,
+		label: text(200),
+		comment: z.boolean().optional(),
+		followUp: z.boolean().optional(),
+	})
+	.strict();
+export const displayActionsSchema = z
+	.array(displayActionSchema)
+	.min(1)
+	.max(12)
+	.refine(uniqueIds, "Action IDs must be unique");
+const choiceField = z
+	.object({
+		...fieldBase,
+		type: z.literal("choice"),
+		options: z
+			.array(option.extend({ reason: text(2000).optional() }))
+			.min(1)
+			.max(30)
+			.refine(uniqueIds, "Option IDs must be unique"),
+		value: z.string().max(4000).optional(),
+		custom: z.boolean().optional(),
+		recommendation: z
+			.object({ answer: text(4000), reason: text(2000) })
+			.strict()
+			.optional(),
+	})
+	.strict();
+export const displayFormSchema = z
+	.object({
+		fields: z
+			.array(z.union([formField, choiceField]))
+			.min(1)
+			.max(100)
+			.refine(uniqueIds, "Field IDs must be unique"),
+	})
+	.strict();
+const displayCardsSchema = z
+	.object({
+		items: z
+			.array(
+				z
+					.object({
+						id,
+						title: text(300),
+						body: text(8000).optional(),
+						details: details.optional(),
+						value: z.unknown().optional(),
+					})
+					.strict(),
+			)
+			.max(100)
+			.refine(uniqueIds, "Item IDs must be unique"),
+		actions: displayActionsSchema.optional(),
+		required: z.boolean().optional(),
+		comment: z.boolean().optional(),
+		ask: z
+			.object({ prompt: text(12000) })
+			.strict()
+			.optional(),
+	})
+	.strict();
+export const codeTourSchema = z
+	.object({
+		files: z
+			.array(
+				z
+					.object({
+						id,
+						path: fileSchema,
+						hunks: z.array(z.string().max(16000)).max(30),
+						notes: z
+							.array(
+								z
+									.object({
+										id,
+										line,
+										side: z.enum(["old", "new"]).optional(),
+										text: text(8000),
+									})
+									.strict(),
+							)
+							.max(100),
+					})
+					.strict(),
+			)
+			.max(100)
+			.refine(uniqueIds, "File IDs must be unique"),
+		comment: z.boolean().optional(),
+	})
+	.strict();
+
 /** No filesystem paths or remote media URLs. The owner verifies refs in its run inventory. */
 export const viewDataSchemas = {
+	form: displayFormSchema,
+	actions: z
+		.object({ summary: text(2000).optional(), actions: displayActionsSchema })
+		.strict(),
+	section: z
+		.object({
+			collapsed: z.boolean().optional(),
+			components: z.array(z.unknown()).min(1).max(40),
+		})
+		.strict(),
+	codeTour: codeTourSchema,
 	questions: z
 		.object({
 			questions: z.array(text(16000)).min(1).max(100),
@@ -364,23 +469,7 @@ export const viewDataSchemas = {
 				.max(VIEW_LIMITS.items),
 		})
 		.strict(),
-	itemCards: z
-		.object({
-			items: z
-				.array(
-					z
-						.object({
-							id,
-							title: text(300),
-							body: text(8000).optional(),
-							details: details.optional(),
-						})
-						.strict(),
-				)
-				.max(VIEW_LIMITS.items)
-				.refine(uniqueIds, "Item card IDs must be unique"),
-		})
-		.strict(),
+	itemCards: displayCardsSchema,
 	choices: z
 		.object({
 			fields: z
@@ -440,7 +529,7 @@ export const viewDataSchemas = {
 		.strict(),
 };
 
-function component<T extends string, D extends z.ZodObject>(
+export function component<T extends string, D extends z.ZodObject>(
 	type: T,
 	dataSchema: D,
 ) {
@@ -473,7 +562,11 @@ function resolvedComponent<T extends string, D extends z.ZodObject>(
 ) {
 	return component(type, dataSchema).extend({ data: dataSchema });
 }
-const components = z.discriminatedUnion("type", [
+export const components = z.discriminatedUnion("type", [
+	component("form", viewDataSchemas.form),
+	component("actions", viewDataSchemas.actions),
+	component("section", viewDataSchemas.section),
+	component("codeTour", viewDataSchemas.codeTour),
 	component("questions", viewDataSchemas.questions),
 	component("checkin-section", viewDataSchemas["checkin-section"]),
 	component("review-guide", viewDataSchemas["review-guide"]),
@@ -493,6 +586,10 @@ const components = z.discriminatedUnion("type", [
 	component("decisionBar", viewDataSchemas.decisionBar),
 ]);
 const resolvedComponents = z.discriminatedUnion("type", [
+	resolvedComponent("form", viewDataSchemas.form),
+	resolvedComponent("actions", viewDataSchemas.actions),
+	resolvedComponent("section", viewDataSchemas.section),
+	resolvedComponent("codeTour", viewDataSchemas.codeTour),
 	resolvedComponent("questions", viewDataSchemas.questions),
 	resolvedComponent("checkin-section", viewDataSchemas["checkin-section"]),
 	resolvedComponent("review-guide", viewDataSchemas["review-guide"]),
@@ -526,7 +623,7 @@ export const ViewReadsSchema = z.record(
 			"Views may read public human data, call inputs or declared ordinary outputs",
 		),
 );
-const definitionSchema = z
+export const definitionSchema = z
 	.object({
 		version: z.literal(VIEW_VERSION),
 		preset: z.enum(["ask", "approve", "review", "external-review"]).optional(),
@@ -672,23 +769,38 @@ export function resolveView(
 		"from" in parsed
 			? ViewSchema.parse(foreachPointer(accepted, parsed.from))
 			: parsed;
+	const resolved = definition.components.map((component) => {
+		const data =
+			"literal" in component.data || "path" in component.data
+				? boundValue(component.data, accepted)
+				: Object.fromEntries(
+						Object.entries(component.data.bindings).map(([field, binding]) => [
+							field,
+							componentFieldValue(binding!, accepted),
+						]),
+					);
+		if (component.type === "section") {
+			const section = viewDataSchemas.section.parse(data);
+			return {
+				...component,
+				data: {
+					...section,
+					components: resolveView(
+						{
+							version: VIEW_VERSION,
+							components: section.components,
+						} as ViewSource,
+						scope,
+					).components,
+				},
+			};
+		}
+		return { ...component, data };
+	});
 	return ResolvedViewSchema.parse({
 		version: VIEW_VERSION,
 		...(definition.preset ? { preset: definition.preset } : {}),
-		components: definition.components.map((component) => ({
-			...component,
-			data:
-				"literal" in component.data || "path" in component.data
-					? boundValue(component.data, accepted)
-					: Object.fromEntries(
-							Object.entries(component.data.bindings).map(
-								([field, binding]) => [
-									field,
-									componentFieldValue(binding!, accepted),
-								],
-							),
-						),
-		})),
+		components: resolved,
 	});
 }
 
@@ -734,6 +846,49 @@ export function viewText(view: ResolvedView): string {
 	for (const component of accepted.components) {
 		const lines = [component.title ? s(component.title) : `${component.type}:`];
 		switch (component.type) {
+			case "section":
+				lines.push(
+					viewText(
+						ResolvedViewSchema.parse({
+							version: VIEW_VERSION,
+							components: component.data.components,
+						}),
+					),
+				);
+				break;
+			case "form":
+				for (const field of component.data.fields) {
+					lines.push(
+						`${s(field.id)}: ${s(field.label)} (${field.type}${field.required ? ", required" : ""})`,
+					);
+					if ("options" in field)
+						for (const option of field.options)
+							lines.push(`- ${s(option.id)}: ${s(option.label)}`);
+					if (field.value !== undefined)
+						lines.push(
+							`Default (requires submission): ${s(String(field.value))}`,
+						);
+					if ("recommendation" in field && field.recommendation)
+						lines.push(
+							`Recommendation: ${s(field.recommendation.answer)} — ${s(field.recommendation.reason)}`,
+						);
+				}
+				break;
+			case "actions":
+				if (component.data.summary) lines.push(s(component.data.summary));
+				lines.push(
+					`Actions: ${component.data.actions.map((a) => `${s(a.id)} (${s(a.label)})`).join(", ")}`,
+				);
+				break;
+			case "codeTour":
+				for (const file of component.data.files) {
+					lines.push(s(file.path), ...file.hunks.map(s));
+					for (const note of file.notes)
+						lines.push(
+							`${s(note.id)} at ${note.side ?? "new"} line ${note.line}: ${s(note.text)}`,
+						);
+				}
+				break;
 			case "questions":
 				component.data.questions.forEach((question, index) => {
 					lines.push(`${index + 1}. ${s(question)}`);
@@ -846,6 +1001,15 @@ export function viewText(view: ResolvedView): string {
 						lines.push(`  ${s(detail.label)}: ${s(detail.value)}`);
 				}
 				if (!component.data.items.length) lines.push("No items to decide.");
+				if (component.data.actions)
+					lines.push(
+						`Item actions: ${component.data.actions.map((a) => `${s(a.id)} (${s(a.label)})`).join(", ")}`,
+					);
+				if (component.data.comment) lines.push("Item comments are available.");
+				if (component.data.ask)
+					lines.push(
+						"Ask about an item using /view-ask with batchId, digest, itemId, question and requestId.",
+					);
 				break;
 			case "choices":
 				for (const field of component.data.fields) {

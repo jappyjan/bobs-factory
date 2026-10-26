@@ -9,7 +9,11 @@ import { runRepositories, scopeRevision } from "./RepositoryScope.js";
 import { presentationOutputKeys } from "./RunOutputRoles.js";
 import { outputForCheck } from "./ToolBindings.js";
 import { evidenceFile, type VideoCapture, videoLimits } from "./Video.js";
-import type { ResolvedView } from "./View.js";
+import {
+	type ResolvedView,
+	ResolvedViewSchema,
+	type ViewComponent,
+} from "./View.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 const exec = promisify(execFile);
@@ -151,7 +155,21 @@ export async function prepareViewAssetCheck(
 		});
 		return path;
 	};
-	for (const component of view.components) {
+	const all = (list: ViewComponent[]): ViewComponent[] =>
+		list.flatMap((c) =>
+			c.type === "section"
+				? [
+						c,
+						...all(
+							ResolvedViewSchema.parse({
+								version: "view-v1",
+								components: c.data.components,
+							}).components,
+						),
+					]
+				: [c],
+		);
+	for (const component of all(view.components)) {
 		if (component.type === "screenshots") {
 			for (const ref of component.data.items) {
 				await readViewScreenshot(directory, run, ref.index, ref.sha256, stamps);

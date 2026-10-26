@@ -10,16 +10,21 @@ export function humanViewText(
 	snapshot = publicViewSnapshot(snapshot);
 	const limit = Math.max(1000, Math.min(100000, options.maxLength ?? 100000));
 	const header: string[] = [snapshot.kind];
-	if (snapshot.kind !== "show") {
+	if (
+		snapshot.kind !== "show" &&
+		!(snapshot.kind === "display" && !snapshot.interactive)
+	) {
 		header.push(
 			`Decision batch: ${snapshot.id}`,
 			`Displayed digest: ${snapshot.digest}`,
 		);
 		if (options.includeProtocol !== false)
 			header.push(
-				snapshot.kind === "approve"
-					? `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"approved":true} or approved:false with feedback.`
-					: `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.`,
+				snapshot.kind === "display"
+					? `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","documentDigest":"${snapshot.documentDigest}","accepted":true,"action":"…","values":{},"choices":[]} using only displayed action, field and item IDs. Omit action when no document actions are shown.`
+					: snapshot.kind === "approve"
+						? `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"approved":true} or approved:false with feedback.`
+						: `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.`,
 			);
 		header.push(
 			"Review the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.",

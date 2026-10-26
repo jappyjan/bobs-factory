@@ -38,6 +38,7 @@ export const FORMAT_IDS = [
 	"plan-check-v1",
 	"follow-up-v1",
 	"view-v1",
+	"display",
 	"clarify-v1",
 	"plan-v1",
 	"plan-review-v1",

@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { nodeMetadata } from "../nodes/metadata.js";
 import { ActionStepSettings } from "./action-step-settings.js";
 import { CheckJsonField, CheckStepSettings } from "./check-step-settings.js";
+import { DisplayStepSettings } from "./display-step-settings.js";
 import { ForeachStepSettings } from "./foreach-step-settings.js";
 import { HumanStepSettings } from "./human-step-settings.js";
 import type { Recipe, Step } from "./recipe-graph.js";
@@ -26,6 +27,7 @@ export function registerNodeSettings(
 		throw new Error(`Node settings already registered: ${type}`);
 	panels.set(type, panel);
 }
+registerNodeSettings("display", DisplayStepSettings);
 registerNodeSettings("inline", () => null);
 registerNodeSettings("check", (props) => <CheckStepSettings {...props} />);
 registerNodeSettings("foreach", (props) => <ForeachStepSettings {...props} />);

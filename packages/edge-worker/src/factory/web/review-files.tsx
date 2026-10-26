@@ -201,7 +201,28 @@ function Tree({
 		</ul>
 	);
 }
-function DiffBody({ patch, split }: { patch: string; split: boolean }) {
+export function DiffBody({
+	patch,
+	split,
+	notes = [],
+	renderNote,
+}: {
+	patch: string;
+	split: boolean;
+	notes?: { id: string; line: number; side?: "old" | "new"; text: string }[];
+	renderNote?: (id: string) => React.ReactNode;
+}) {
+	const noteBody = (note: (typeof notes)[number]) => (
+		<aside className="display-code-note" key={note.id}>
+			<strong>Line {note.line}</strong>
+			<p>{note.text}</p>
+			{renderNote?.(note.id)}
+		</aside>
+	);
+	const pinned = (old: number | undefined, next: number | undefined) =>
+		notes
+			.filter((note) => note.line === (note.side === "old" ? old : next))
+			.map(noteBody);
 	const [limit, setLimit] = useState(500);
 	const lines = parsePatch(patch),
 		paired = splitPatch(lines),
@@ -243,6 +264,10 @@ function DiffBody({ patch, split }: { patch: string; split: boolean }) {
 												</span>
 												<code>
 													{line?.text ?? ""}
+													{pinned(
+														j === 0 ? line?.old : undefined,
+														j === 1 ? line?.next : undefined,
+													)}
 													{line?.note && (
 														<>
 															<br />
@@ -271,10 +296,20 @@ function DiffBody({ patch, split }: { patch: string; split: boolean }) {
 										</>
 									)}
 									<code>{line.text}</code>
+									{pinned(line.old, line.next)}
 								</div>
 							))}
 				</div>
 			</section>
+			{notes
+				.filter(
+					(note) =>
+						!lines.some(
+							(line) =>
+								note.line === (note.side === "old" ? line.old : line.next),
+						),
+				)
+				.map(noteBody)}
 			{rows.length > limit && (
 				<Button variant="secondary" onClick={() => setLimit(rows.length)}>
 					Show remaining {rows.length - limit} lines

@@ -27,6 +27,7 @@ import {
 	workflowDisplay,
 	workflowSummary,
 } from "./ConfigProjection.js";
+import { DISPLAY_JSON_SCHEMA } from "./DisplayDocument.js";
 import { ExecutionSelectionSchema } from "./ExecutionProfiles.js";
 import {
 	type FactoryAccess,
@@ -1235,6 +1236,7 @@ export class FactoryServer {
 			access: ACCESS_MODES,
 			contextSources: CONTEXT_SOURCES,
 		}));
+		this.app.get("/api/recipes/display-schema", () => DISPLAY_JSON_SCHEMA);
 		this.app.get("/api/recipes/view-schema", () => VIEW_JSON_SCHEMA);
 		this.app.post(
 			"/api/recipes/view-preview",
@@ -1245,13 +1247,14 @@ export class FactoryServer {
 						workflowId: z.string().min(1).max(80),
 						stepId: z.string().min(1).max(400),
 						view: ViewSourceSchema,
-						type: z.enum(["decide", "approve", "show"]).optional(),
+						type: z.enum(["decide", "approve", "show", "display"]).optional(),
 						name: z.string().min(1).optional(),
 						decide: DecideConfigurationSchema.optional(),
 						reads: z.unknown().optional(),
 						notifications: ViewNotificationsSchema.optional(),
 						runId: z.string().min(1).max(200).optional(),
 						lastRun: z.boolean().optional(),
+						bind: z.array(z.string().min(1).max(500)).max(100).optional(),
 						sampleScope: z.unknown().optional(),
 					})
 					.strict()
