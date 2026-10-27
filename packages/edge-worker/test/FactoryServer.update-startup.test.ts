@@ -1,10 +1,20 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { FactoryServer } from "../src/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { UpdateSettings } from "../src/factory/web/updates.js";
 import { UpdateManager } from "../src/updates/UpdateManager.js";
+
+// Rendering under Node has no browser connectivity store.
+vi.mock("../src/factory/web/pwa.js", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../src/factory/web/pwa.js")>()),
+	usePwa: () => ({ status: "ready", updating: false }),
+}));
 
 vi.mock("bobs-factory-core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("bobs-factory-core")>()),
@@ -118,6 +128,47 @@ it("keeps genuine updater schema errors visible to startup", async () => {
 	try {
 		await expect(server.app.ready()).rejects.toThrow();
 	} finally {
+		await cleanup();
+	}
+});
+
+it.each([
+	false,
+	true,
+])("exposes the ownership blocker in API and dashboard (desktop=%s)", async (desktop) => {
+	const { updates, server, cleanup } = fixture();
+	updates.reportWorkerOwnership(
+		"Worker ownership record is missing; the worker may still be running.",
+	);
+	vi.stubGlobal(
+		"window",
+		desktop ? { factoryDesktop: { openAppUpdates: async () => {} } } : {},
+	);
+	const cache = new QueryClient();
+	try {
+		const response = await server.app.inject({
+			url: "/api/updates",
+			headers: { host: "localhost:3457" },
+		});
+		expect(response.statusCode).toBe(200);
+		const status = response.json();
+		expect(status.blocked.code).toBe("worker-ownership");
+		expect(status.blocked.remedy).toContain("Stop local Factory");
+		cache.setQueryData(["updates"], status);
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: cache },
+				createElement(UpdateSettings),
+			),
+		);
+		expect(html).toContain('role="alert"');
+		expect(html).toContain("Update blocked:");
+		expect(html).toContain(status.blocked.reason);
+		expect(html).toContain("Stop local Factory");
+	} finally {
+		cache.clear();
+		vi.unstubAllGlobals();
 		await cleanup();
 	}
 });

@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import {
 	existsSync,
 	realpathSync,
@@ -11,6 +10,7 @@ import {
 	acquireInstanceLock,
 	acquireRuntimeOperation,
 	ownerAlive,
+	workerIdentityMatches,
 	workerOwner,
 } from "./InstanceLock.js";
 
@@ -59,14 +59,8 @@ export async function stopDesktop(
 			throw new Error(
 				"Worker identity changed or independently owned; refusing shutdown",
 			);
-		const command =
-			process.platform === "linux"
-				? `/proc/${owner.pid}/exe`
-				: execFileSync("/bin/ps", ["-p", String(owner.pid), "-o", "comm="], {
-						encoding: "utf8",
-					}).trim();
 		if (
-			realpathSync(command) !== owner.executable ||
+			!workerIdentityMatches(owner, home, executable, owner.dashboardPort) ||
 			workerOwner(home)?.nonce !== nonce ||
 			!ownerAlive(owner)
 		)
