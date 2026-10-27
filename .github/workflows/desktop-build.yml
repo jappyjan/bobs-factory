@@ -115,7 +115,7 @@ jobs:
         working-directory: source
       - uses: actions/download-artifact@v6
         with:
-          name: bobs-factory-${{ matrix.target }}-${{ fromJSON(needs.freeze.outputs.candidate_json).digest }}-${{ github.run_attempt }}
+          name: bobs-factory-${{ matrix.target }}-${{ fromJSON(needs.freeze.outputs.candidate_json).digest }}
           path: ${{ runner.temp }}/runtime
       - name: Build desktop installers from the validated runtime bytes
         env:
@@ -156,6 +156,8 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
+          # A rerun of this job replaces the partial upload of the attempt that failed.
+          overwrite: true
           name: desktop-${{ matrix.target }}-${{ fromJSON(needs.freeze.outputs.candidate_json).digest }}
           path: |
             ${{ runner.temp }}/desktop/*.bobsapp.gz

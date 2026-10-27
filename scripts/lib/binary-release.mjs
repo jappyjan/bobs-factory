@@ -432,7 +432,7 @@ export function validateBuildProvenance(run, jobs, artifacts, identity) {
 			(artifact) =>
 				artifact.name ===
 				(identity.candidateDigest
-					? `bobs-factory-${target}-${identity.candidateDigest}-${run.run_attempt ?? 1}`
+					? `bobs-factory-${target}-${identity.candidateDigest}`
 					: `bobs-factory-${target}-${commit}`),
 		);
 		requireValue(

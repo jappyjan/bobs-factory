@@ -39,13 +39,19 @@ jobs:
           node-version: '24.18.0'
           package-manager-cache: false
       - name: Restore candidate on retry
+        id: restore
         if: github.run_attempt != '1'
+        # A full rerun cannot see the earlier attempt's artifacts (a partial rerun does
+        # not rerun this job at all). Without a retained copy the candidate is derived
+        # again from the same run id, creation date and workflow SHA, or fails closed.
+        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
           name: bobs-factory-frozen-candidate-${{ github.run_id }}
           path: ${{ runner.temp }}/candidate
       - name: Freeze eligibility and promotion source
         env:
+          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
           GH_TOKEN: ${{ github.token }}
           CHANNEL: ${{ inputs.channel || 'nightly' }}
           VERSION: ${{ inputs.version }}
@@ -53,6 +59,9 @@ jobs:
           SKIP_COOLDOWN: ${{ inputs.skip_cooldown || false }}
         run: |
           mkdir -p "$RUNNER_TEMP/candidate"
+          if [ "$RESTORE_OUTCOME" = failure ]; then
+            echo '::warning::The retained frozen candidate was unavailable; deriving the same candidate again from this run identity.'
+          fi
           created=$(node --input-type=module -e 'import {githubClient} from "./scripts/lib/github-release.mjs"; console.log((await githubClient().api("actions/runs/"+process.env.GITHUB_RUN_ID)).created_at)')
           promotion_args=()
           if [ "$CHANNEL" = stable ]; then promotion_args=(--nightly-tag "$NIGHTLY_TAG"); fi
@@ -65,8 +74,10 @@ jobs:
           fi
           node scripts/prepare-release-candidate.mjs --channel "$CHANNEL" --version "$VERSION" "${promotion_args[@]}" --sequence "$GITHUB_RUN_ID" --date "$created" --workflow-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/candidate/candidate.json"
       - uses: actions/upload-artifact@v6
-        if: github.run_attempt == '1'
         with:
+          # Later attempts replace the copy only with the candidate they validated
+          # as identical to the retained one, or froze from the same run identity.
+          overwrite: true
           name: bobs-factory-frozen-candidate-${{ github.run_id }}
           path: ${{ runner.temp }}/candidate/
           if-no-files-found: ignore
@@ -77,9 +88,38 @@ jobs:
             node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const c=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/candidate/candidate.json")); appendFileSync(process.env.GITHUB_OUTPUT,"candidate_json="+JSON.stringify(c)+"\n")'
             echo 'Nightly and beta CI derive evidence from the pinned accepted baseline and fresh checks; beta and stable publication require exact prepared-asset approval.' >> "$GITHUB_STEP_SUMMARY"
           fi
+  ci-gate:
+    name: Require green CI for the frozen commit
+    needs: prepare
+    if: needs.prepare.outputs.candidate_json != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      ci_json: ${{ steps.gate.outputs.ci_json }}
+    env:
+      CANDIDATE_JSON: ${{ needs.prepare.outputs.candidate_json }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.18.0'
+          package-manager-cache: false
+      - id: gate
+        name: Wait for or start CI / Validate for the exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$CANDIDATE_JSON" > "$RUNNER_TEMP/candidate.json"
+          node scripts/release-ci-gate.mjs --candidate "$RUNNER_TEMP/candidate.json" --output "$RUNNER_TEMP/ci.json"
+          echo "ci_json=$(cat "$RUNNER_TEMP/ci.json")" >> "$GITHUB_OUTPUT"
   binary:
     name: Build CLI binaries
-    needs: prepare
+    needs: [prepare, ci-gate]
     if: needs.prepare.outputs.candidate_json != ''
     uses: ./.github/workflows/binary-build.yml
     with:
@@ -87,7 +127,7 @@ jobs:
 
   desktop:
     name: Build desktop installers
-    needs: [prepare, binary]
+    needs: [prepare, ci-gate, binary]
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     uses: ./.github/workflows/desktop-build.yml
     with:
@@ -95,59 +135,9 @@ jobs:
       reuse_native: true
   checks:
     name: Validate candidate workflows
-    needs: prepare
+    needs: [prepare, ci-gate]
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
-    runs-on: ubuntu-24.04
-    # Stopgap: a slow Ubuntu apt mirror can take ~25 min to install ffmpeg in
-    # setup-tests. #175 caches the tools and restores a tighter bound.
-    timeout-minutes: 90
-    env:
-      F1_AGENT_MODE: mock
-      F1_TESTED_COMMIT: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
-      CANDIDATE_JSON: ${{ needs.prepare.outputs.candidate_json }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
-          persist-credentials: false
-      - uses: ./.github/actions/setup-tests
-      - name: Prepare candidate check logs
-        run: |
-          mkdir -p "$RUNNER_TEMP/nightly-checks"
-          echo "F1_EVIDENCE_DIR=$RUNNER_TEMP/nightly-checks" >> "$GITHUB_ENV"
-      - run: pnpm build
-      - name: Run actual tests and owned mocked delivery workflows
-        run: |
-          pnpm -r test:run > "$RUNNER_TEMP/nightly-checks/tests.log" 2>&1
-          node --test --test-concurrency=1 scripts/tests/*.test.mjs > "$RUNNER_TEMP/nightly-checks/release-tests.log" 2>&1
-          pnpm --filter bobs-factory-edge-worker exec vitest run test/UpdateManager.test.ts test/UpdateMaintenance.test.ts test/FactoryServer.update-startup.test.ts > "$RUNNER_TEMP/nightly-checks/update-lifecycle.log" 2>&1
-          node apps/f1/test-drives/assets/update-maintenance.mjs > "$RUNNER_TEMP/nightly-checks/update-maintenance.log" 2>&1
-          bun run apps/f1/test-drives/assets/desktop-service-lifecycle.mjs > "$RUNNER_TEMP/nightly-checks/desktop-service-lifecycle.log" 2>&1
-          node apps/f1/test-drives/assets/desktop-shell-update.mjs > "$RUNNER_TEMP/nightly-checks/desktop-shell-update.log" 2>&1
-      - name: Validate localhost access and remote API-key lifecycle
-        timeout-minutes: 2
-        run: bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
-      - name: Validate mocked node delivery, architecture and impact recovery
-        timeout-minutes: 30
-        run: |
-          pnpm --filter bobs-factory-edge-worker exec vitest run test/TicketTracking.test.ts test/LinearActivitySink.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
-          pnpm --filter bobs-factory-edge-worker exec vitest run test/V2PlanningRecipes.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
-          pnpm --filter bobs-factory-edge-worker exec vitest run test/FactoryV2Composition.test.ts test/FactoryDeliveryRecipes.test.ts test/TakeoverIntakeRecipe.test.ts test/ImproveRecipe.test.ts test/ImproveBoundaryComposition.test.ts test/SimpleRecipe.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/architecture-continuation.log" 2>&1
-          pnpm --filter bobs-factory-edge-worker exec vitest run test/V2QaApproval.test.ts test/V2ReviewRecipe.test.ts test/NodeGuaranteesF1.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
-          bun run apps/f1/test-drives/assets/api-responsiveness.ts > "$RUNNER_TEMP/nightly-checks/api-responsiveness.log" 2>&1
-      - name: Record only completed current checks
-        run: |
-          node --input-type=module <<'JS'
-          import {writeFileSync} from 'node:fs';
-          import {fileRecord,jsonBytes} from './scripts/lib/binary-release.mjs';
-          import {validateCandidate} from './scripts/lib/release-candidate.mjs';
-          const c=validateCandidate(JSON.parse(process.env.CANDIDATE_JSON)),dir=process.env.RUNNER_TEMP+'/nightly-checks';
-          const logs=['tests.log','release-tests.log','update-lifecycle.log','update-maintenance.log','desktop-service-lifecycle.log','desktop-shell-update.log','localhost-noauth.log','linear-delivery.log','architecture.log','architecture-continuation.log','impact-feedback-recovery.log','api-responsiveness.log'].map(f=>fileRecord(dir+'/'+f,f));
-          writeFileSync(dir+'/nightly-checks.json',jsonBytes({schemaVersion:1,status:'passed',mode:'mock/scripted',candidateDigest:c.digest,commit:c.candidate.commit,workflowSha:c.candidate.workflowSha,runId:Number(process.env.GITHUB_RUN_ID),logs}));
-          JS
-      - uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: bobs-factory-nightly-checks-${{ fromJSON(needs.prepare.outputs.candidate_json).digest }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/nightly-checks/
-          if-no-files-found: error
+    uses: ./.github/workflows/release-checks.yml
+    with:
+      candidate_json: ${{ needs.prepare.outputs.candidate_json }}
+      ci_json: ${{ needs.ci-gate.outputs.ci_json }}

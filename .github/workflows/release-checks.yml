@@ -1,0 +1,96 @@
+name: Release / Candidate checks
+# Release-specific checks only. The full package suite, release script tests and
+# mocked delivery suites already ran in "CI / Validate" for this exact commit,
+# and the release gate refuses to start without that run.
+on:
+  workflow_call:
+    inputs:
+      candidate_json:
+        required: true
+        type: string
+      ci_json:
+        description: The passed CI run recorded by the release gate
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      candidate_json:
+        description: Frozen candidate.json bytes (checks only, never signing/publication)
+        required: true
+        type: string
+      ci_json:
+        description: Passed CI run record from the release gate
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  checks:
+    name: Validate candidate workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      F1_AGENT_MODE: mock
+      F1_TESTED_COMMIT: ${{ fromJSON(inputs.candidate_json).candidate.commit }}
+      CANDIDATE_JSON: ${{ inputs.candidate_json }}
+      CI_JSON: ${{ inputs.ci_json }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(inputs.candidate_json).candidate.commit }}
+          persist-credentials: false
+      - name: Set up tests
+        uses: ./.github/actions/setup-tests
+        timeout-minutes: 8
+      - name: Prepare candidate check logs
+        run: |
+          mkdir -p "$RUNNER_TEMP/nightly-checks"
+          echo "F1_EVIDENCE_DIR=$RUNNER_TEMP/nightly-checks" >> "$GITHUB_ENV"
+      - run: pnpm build
+        timeout-minutes: 8
+      # The shell update drive imports the bundled desktop update services.
+      - name: Bundle desktop update services
+        run: pnpm --filter bobs-factory-desktop exec bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs
+      - name: Update lifecycle suites
+        timeout-minutes: 15
+        run: node scripts/ci/run-shard.mjs --name "update lifecycle suites" --log "$RUNNER_TEMP/nightly-checks/update-lifecycle.log" -- pnpm --filter bobs-factory-edge-worker exec vitest run test/UpdateManager.test.ts test/UpdateMaintenance.test.ts test/FactoryServer.update-startup.test.ts
+      - name: Update maintenance drive
+        timeout-minutes: 10
+        run: node scripts/ci/run-shard.mjs --name "update maintenance drive" --log "$RUNNER_TEMP/nightly-checks/update-maintenance.log" -- node apps/f1/test-drives/assets/update-maintenance.mjs
+      - name: Desktop service lifecycle drive
+        timeout-minutes: 10
+        run: node scripts/ci/run-shard.mjs --name "desktop service lifecycle drive" --log "$RUNNER_TEMP/nightly-checks/desktop-service-lifecycle.log" -- bun run apps/f1/test-drives/assets/desktop-service-lifecycle.mjs
+      - name: Desktop shell update drive
+        timeout-minutes: 10
+        run: node scripts/ci/run-shard.mjs --name "desktop shell update drive" --log "$RUNNER_TEMP/nightly-checks/desktop-shell-update.log" -- node apps/f1/test-drives/assets/desktop-shell-update.mjs
+      - name: Validate localhost access and remote API-key lifecycle
+        timeout-minutes: 2
+        run: node scripts/ci/run-shard.mjs --name "localhost access and API-key lifecycle" --log "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" -- bun run apps/f1/test-drives/assets/localhost-noauth.ts
+      - name: Validate API responsiveness
+        timeout-minutes: 10
+        run: node scripts/ci/run-shard.mjs --name "API responsiveness" --log "$RUNNER_TEMP/nightly-checks/api-responsiveness.log" -- bun run apps/f1/test-drives/assets/api-responsiveness.ts
+      - name: Record only completed current checks
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {fileRecord,jsonBytes} from './scripts/lib/binary-release.mjs';
+          import {validateCandidate} from './scripts/lib/release-candidate.mjs';
+          const c=validateCandidate(JSON.parse(process.env.CANDIDATE_JSON)),dir=process.env.RUNNER_TEMP+'/nightly-checks';
+          const ci=JSON.parse(process.env.CI_JSON);
+          if(ci.headSha!==c.candidate.commit||ci.conclusion!=='success')throw Error('CI evidence does not belong to the frozen commit');
+          const logs=['update-lifecycle.log','update-maintenance.log','desktop-service-lifecycle.log','desktop-shell-update.log','localhost-noauth.log','api-responsiveness.log'].map(f=>fileRecord(dir+'/'+f,f));
+          writeFileSync(dir+'/nightly-checks.json',jsonBytes({schemaVersion:1,status:'passed',mode:'mock/scripted',candidateDigest:c.digest,commit:c.candidate.commit,workflowSha:c.candidate.workflowSha,runId:Number(process.env.GITHUB_RUN_ID),ci,logs}));
+          JS
+      - uses: actions/upload-artifact@v6
+        if: success()
+        with:
+          name: bobs-factory-nightly-checks-${{ fromJSON(inputs.candidate_json).digest }}
+          path: ${{ runner.temp }}/nightly-checks/
+          if-no-files-found: error
+      - name: Keep the logs of a failed attempt
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bobs-factory-nightly-checks-failed-${{ fromJSON(inputs.candidate_json).digest }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nightly-checks/
+          if-no-files-found: ignore
