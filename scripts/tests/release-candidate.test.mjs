@@ -241,7 +241,7 @@ test("native build provenance binds separate workflow SHA and candidate artifact
 		conclusion: "success",
 	}));
 	const artifacts = TARGETS.map((t) => ({
-		name: `bobs-factory-${t}-${c.digest}-1`,
+		name: `bobs-factory-${t}-${c.digest}`,
 		expired: false,
 		digest: `sha256:${"d".repeat(64)}`,
 		workflow_run: { id: 123, head_sha: workflowSha },
@@ -249,6 +249,28 @@ test("native build provenance binds separate workflow SHA and candidate artifact
 	assert.equal(
 		Object.keys(validateBuildProvenance(run, jobs, artifacts, identity)).length,
 		4,
+	);
+	// Retried runs keep the artifact names of the attempt that built them.
+	assert.equal(
+		Object.keys(
+			validateBuildProvenance(
+				{ ...run, run_attempt: 3 },
+				jobs,
+				artifacts,
+				identity,
+			),
+		).length,
+		4,
+	);
+	assert.throws(
+		() =>
+			validateBuildProvenance(
+				run,
+				jobs,
+				artifacts.map((a) => ({ ...a, name: `${a.name}-1` })),
+				identity,
+			),
+		/candidate artifact/,
 	);
 	assert.throws(
 		() =>

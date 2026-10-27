@@ -437,7 +437,7 @@ export function preparedFixture(
 				id: i + 1,
 				name: legacy
 					? `bobs-factory-${t}-${identity.commit}`
-					: `bobs-factory-${t}-${candidate.digest}-1`,
+					: `bobs-factory-${t}-${candidate.digest}`,
 				expired: false,
 				digest: `sha256:${"d".repeat(64)}`,
 				workflow_run: {

@@ -33,6 +33,7 @@ import {
 	validatePublicInstaller,
 } from "./lib/binary-release.mjs";
 import { inspectArchive } from "./lib/bounded-archive.mjs";
+import { CI_EVENTS } from "./lib/ci-gate.mjs";
 import { githubClient } from "./lib/github-release.mjs";
 import {
 	archiveNativeNotices,
@@ -124,7 +125,7 @@ try {
 	const selected = validateBuildProvenance(run, jobs, artifacts, identity);
 	const green = (
 		await client.pages(
-			`actions/workflows/ci.yml/runs?head_sha=${identity.commit}&event=push`,
+			`actions/workflows/ci.yml/runs?head_sha=${identity.commit}`,
 			"workflow_runs",
 		)
 	).filter(
@@ -134,7 +135,7 @@ try {
 			r.repository?.full_name === "jappyjan/bobs-factory" &&
 			r.head_repository?.full_name === "jappyjan/bobs-factory" &&
 			r.path === ".github/workflows/ci.yml" &&
-			r.event === "push" &&
+			CI_EVENTS.includes(r.event) &&
 			r.status === "completed" &&
 			r.conclusion === "success",
 	);
@@ -143,7 +144,7 @@ try {
 		"Exact main CI is not green; no nightly evidence generated",
 	);
 	const checksDirectory = await restore(
-		`bobs-factory-nightly-checks-${candidate.digest}-${run.run_attempt}`,
+		`bobs-factory-nightly-checks-${candidate.digest}`,
 	);
 	const checks = JSON.parse(
 		readFileSync(join(checksDirectory, "nightly-checks.json")),
@@ -157,25 +158,26 @@ try {
 			checks.mode === "mock/scripted",
 		"Missing exact actual nightly checks",
 	);
+	// The release gate recorded the CI run that validated this exact commit.
+	requireValue(
+		checks.ci?.headSha === identity.commit &&
+			checks.ci.conclusion === "success" &&
+			green.some((r) => r.id === checks.ci.runId),
+		"Nightly checks do not name a green CI run for the exact commit",
+	);
 	requireValue(
 		canonical(checks.logs.map((r) => r.file).sort()) ===
 			canonical(
 				[
-					"tests.log",
-					"release-tests.log",
 					"update-lifecycle.log",
 					"update-maintenance.log",
 					"desktop-service-lifecycle.log",
 					"desktop-shell-update.log",
 					"localhost-noauth.log",
-					"linear-delivery.log",
-					"architecture.log",
-					"architecture-continuation.log",
-					"impact-feedback-recovery.log",
 					"api-responsiveness.log",
 				].sort(),
 			),
-		"Incomplete current full-payload CI/mock workflow coverage",
+		"Incomplete current release-specific check coverage",
 	);
 	for (const record of checks.logs) {
 		const actual = fileRecord(join(checksDirectory, record.file), record.file);
