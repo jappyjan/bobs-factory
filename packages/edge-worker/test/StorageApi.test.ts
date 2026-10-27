@@ -8,11 +8,7 @@ import { FactoryServer } from "./fixtures/authenticated-factory.js";
 
 it("guards storage mutations, rejects stale previews and persists instance policy", async () => {
 	const home = await realpath(await mkdtemp(join(tmpdir(), "storage-api-")));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const storage = new StorageRetention(home, {});
 	await storage.store.configure({ enabled: false }, 0);
 	const server = new FactoryServer(runtime, {

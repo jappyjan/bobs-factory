@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { GitProviderConfig, RepositoryConfig } from "bobs-factory-core";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { takeoverSource } from "./RunContextSources.js";
-import { legacyToolOutput, resolveStepConfig } from "./StepConfig.js";
+
 import { snapshotHistory } from "./WorkflowInput.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
@@ -47,19 +47,13 @@ export interface ApprovedRepository {
 /** Repository authority is runtime-owned; ordinary outputs cannot configure a provider. */
 export function repositoryMetadata(
 	run: FactoryRun,
-	step?: object,
+	_step?: object,
 ): Partial<RunRepository> | undefined {
 	const selected = run.repositories?.find(
 		(repository) => repository.id === run.repositoryId,
 	);
 	if (selected) return selected;
-	// Historical definitions stored host-authored repository metadata in outputs.
-	// Only their deterministic compatibility path may continue reading that slot.
-	return step && resolveStepConfig(step).explicit
-		? undefined
-		: (legacyToolOutput(run, "repository-context") as
-				| Partial<RunRepository>
-				| undefined);
+	return undefined;
 }
 
 /** Equal, nonempty routing-label sets define a scope without another config format. */
@@ -278,9 +272,7 @@ export function repositoryRun(
 			repository.takeoverSource ??
 			(repository.id === run.repositoryId ? takeoverSource(run) : undefined),
 		outputs,
-		mergeReadiness: run.mergeReadiness
-			? (project(run.mergeReadiness) as FactoryRun["mergeReadiness"])
-			: undefined,
+
 		history: snapshotHistory(run.history, 0, run.history.length, (item) => ({
 			...item,
 			output: project(item.output),
@@ -301,27 +293,10 @@ export function repositoryRun(
 				project(value),
 			]),
 		) as FactoryRun["roleRevisions"],
-		reviewRounds: run.reviewRounds
-			? snapshotHistory(
-					run.reviewRounds,
-					0,
-					run.reviewRounds.length,
-					(round) =>
-						project(round) as NonNullable<FactoryRun["reviewRounds"]>[number],
-				)
-			: undefined,
-		humanDecisions: run.humanDecisions?.map((decision) => {
-			const approved = decision.repositories?.find(
-				(item) => item.repositoryId === repository.id,
-			);
-			return { ...decision, headSha: approved?.headSha ?? decision.headSha };
-		}),
 	};
 }
 
 export function repositoryScopeInstructions(run: FactoryRun): string {
-	if (run.delivery?.contract.mode === "external")
-		return `Repository scope retained as context: ${JSON.stringify(runRepositories(run))}. The accepted task delivers external ticket changes. Do not make artificial repository changes, commit, push, publish a PR or merge. External completion requires independent verification, human acceptance of the current digest and a final state check.`;
 	return `Repository scope (retained for every workflow step): ${JSON.stringify(runRepositories(run))}. Work inside each listed workspace. A grouped workspace is a parent directory, not a Git repository. Review and validate changes in every affected repository. Runtime publication creates one PR or merge request in each changed repository, using its own base branch, provider and exact revision. Unchanged repositories remain context. For repository delivery, human approval binds all delivered revisions and completion requires confirmed merge of every repository delivery. External delivery is selected only by a reviewed delivery contract. Mixed delivery additionally requires verified external state, explicit acceptance and a final check.`;
 }
 

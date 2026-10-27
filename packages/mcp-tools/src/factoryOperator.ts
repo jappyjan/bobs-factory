@@ -15,13 +15,6 @@ const page = {
 };
 const run = { runId: id };
 const mutation = { ...run, expectedRevision: id };
-const context = z
-	.object({
-		step: z.string().optional(),
-		questionBatchId: z.string().optional(),
-		questions: z.array(z.string()),
-	})
-	.strict();
 export const operatorConnectionSchema = z
 	.object({
 		type: z.enum(["http", "sse"]),
@@ -60,7 +53,7 @@ export const operatorTools = [
 		name: "inspect_run",
 		scope: "inspect",
 		description:
-			"Inspect failure, pending questions, retained execution and eligible recovery actions. Returns a revision required for mutations.",
+			"Inspect failure, pending Display decisions, retained execution and eligible recovery actions. Returns a revision required for mutations.",
 		schema: z.object(run).strict(),
 		readOnly: true,
 	},
@@ -103,38 +96,6 @@ export const operatorTools = [
 		scope: "operate",
 		description: "Stop a running or waiting workflow run, retaining its work.",
 		schema: z.object(mutation).strict(),
-	},
-	{
-		name: "recheck_run",
-		scope: "operate",
-		description:
-			"Ask the waiting role to reassess its current questions after conditions change, retaining its conversation. Does not submit answers, grant iterations or approve work. Requires fresh inspection and the exact question context.",
-		schema: z
-			.object({
-				...mutation,
-				context: z
-					.object({
-						step: id,
-						questionBatchId: id,
-						questions: z.array(z.string()).min(1),
-					})
-					.strict(),
-			})
-			.strict(),
-	},
-	{
-		name: "answer_run",
-		scope: "operate",
-		description:
-			"Answer current workflow questions, or explicitly request an explanation. Operator grants cannot approve human reviews.",
-		schema: z
-			.object({
-				...mutation,
-				answer: z.string().trim().min(1).max(100000),
-				kind: z.enum(["answer", "explanation"]).optional(),
-				context,
-			})
-			.strict(),
 	},
 	{
 		name: "steer_run",

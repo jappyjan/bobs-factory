@@ -4,7 +4,7 @@ import { isAbsolute, join } from "node:path";
 import { type AgentRunnerConfig, GitHubTokenStore } from "bobs-factory-core";
 import { z } from "zod";
 import { repositoryReference } from "./GitProviderReference.js";
-import type { ProviderCommand } from "./MergeReadiness.js";
+import type { ProviderCommand } from "./ProviderReadiness.js";
 import { repositoryMetadata } from "./RepositoryScope.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 

@@ -21,7 +21,7 @@ import { waitForRuntime } from "./fixtures/runtime-wait.js";
 import { plan, requirements } from "./fixtures/v2-planning.js";
 
 const mocks = vi.hoisted(() => ({ command: vi.fn(), provider: vi.fn() }));
-vi.mock("../src/factory/FactoryTools.js", async (original) => ({
+vi.mock("../src/factory/nodes/execute/command.js", async (original) => ({
 	...(await original<object>()),
 	executeCommand: mocks.command,
 }));

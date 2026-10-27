@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { digest } from "../../Delivery.js";
+import { digest } from "../../EvidenceDigest.js";
 import {
 	captureRepositorySnapshot,
 	snapshotOutput,

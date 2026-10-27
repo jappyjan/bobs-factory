@@ -1,22 +1,14 @@
-import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { join } from "node:path";
-import { promisify } from "node:util";
+
 import type { FastifyInstance } from "fastify";
-import { runRepositories, scopeRevision } from "./RepositoryScope.js";
-import { outputForCheck } from "./ToolBindings.js";
+
 import { mediaCurrent, verifiedVideo } from "./VerifiedMedia.js";
-import {
-	byteRange,
-	evidenceFile,
-	type VideoCapture,
-	videoLimits,
-} from "./Video.js";
+import { byteRange, evidenceFile, videoLimits } from "./Video.js";
 import type { WorkflowRuntime } from "./WorkflowRuntime.js";
 
-const exec = promisify(execFile);
 /** Media routes live only on FactoryServer's validated loopback listener. */
 export function registerVideoRoutes(
 	app: FastifyInstance,
@@ -36,11 +28,7 @@ export function registerVideoRoutes(
 				.header("X-Content-Type-Options", "nosniff");
 			const run = runtime.get(request.params.id),
 				generic = verifiedVideo(run, request.params.task),
-				video =
-					generic ??
-					(
-						outputForCheck(run, "capture-evidence") as VideoCapture | undefined
-					)?.videos?.find((v) => v.taskId === request.params.task),
+				video = generic,
 				validation = video?.validation;
 			if (!video || !validation)
 				return reply.code(404).send({ error: "Video evidence is unavailable" });
@@ -67,26 +55,6 @@ export function registerVideoRoutes(
 						return reply
 							.code(409)
 							.send({ error: "Video belongs to an earlier revision" });
-				} else {
-					const revisions = await Promise.all(
-						runRepositories(run).map(async (repository) => {
-							const options = { cwd: repository.workspace, timeout: 10000 };
-							const headSha = (
-								await exec("git", ["rev-parse", "HEAD"], options)
-							).stdout.trim();
-							const dirty = (
-								await exec("git", ["status", "--porcelain"], options)
-							).stdout.trim();
-							return { repositoryId: repository.id, headSha, dirty };
-						}),
-					);
-					if (
-						scopeRevision(revisions) !== validation.validatedRevision ||
-						revisions.some((r) => r.dirty)
-					)
-						return reply
-							.code(409)
-							.send({ error: "Video belongs to an earlier or dirty revision" });
 				}
 			} catch {
 				return reply.code(409).send({

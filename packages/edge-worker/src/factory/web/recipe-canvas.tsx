@@ -124,10 +124,7 @@ function StepNode({ data }: NodeProps<Node<StepData>>) {
 				</span>
 				<span className="recipe-node-text">
 					<b>{step.name}</b>
-					<small>
-						{data.summary ?? kind.label}
-						{step.askQuestions && " · may ask you"}
-					</small>
+					<small>{data.summary ?? kind.label}</small>
 				</span>
 			</div>
 			{step.type === "fanout" && (

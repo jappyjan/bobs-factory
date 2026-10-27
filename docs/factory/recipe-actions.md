@@ -130,14 +130,3 @@ uncertain creation identities after restart. It permanently cancels that batch;
 resuming the parent does not relaunch it. Completed children/receipts remain.
 The run page exposes waves and queued/launched/running/waiting/merged/completed/
 blocked/cancelled/uncertain states.
-
-## Delivery plan binding compatibility
-
-Runtime-supplied `deliveryCandidateDigest` resolves the accepted declared plan
-read selected by `scope-inputs.sources.plan`, including stock and frozen presets
-whose read is named `scopePlan`. Existing declared `reads.plan` partners remain
-supported. This never falls back to a step named `plan` or activates delivery
-from an output format or ordinary data. The reviewer echoes the supplied digest;
-the acceptance action still requires the exact current contract digest. Wrong
-or stale reviews reject. Accepted definitions, original receipts and native
-conversation identities are retained without rewriting.

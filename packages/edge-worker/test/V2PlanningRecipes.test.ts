@@ -22,7 +22,7 @@ import {
 } from "./fixtures/v2-planning.js";
 
 const mocks = vi.hoisted(() => ({ command: vi.fn(), provider: vi.fn() }));
-vi.mock("../src/factory/FactoryTools.js", async (original) => ({
+vi.mock("../src/factory/nodes/execute/command.js", async (original) => ({
 	...(await original<object>()),
 	executeCommand: mocks.command,
 }));
@@ -58,12 +58,6 @@ function runtime(
 				ctx.signal,
 				ctx.fresh,
 			),
-		tool: async () => {
-			throw new Error("Unexpected legacy tool");
-		},
-		script: async () => {
-			throw new Error("Unexpected script");
-		},
 		...extra,
 	});
 	owned.push({ home, runtime: r });

@@ -1,24 +1,22 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { decisionItems } from "../src/factory/HumanStep.js";
 import { resolveView } from "../src/factory/View.js";
 import { StepSchema } from "../src/factory/Workflow.js";
-import { HumanStepDecision } from "../src/factory/web/declarative-view.js";
+import { DisplayDocumentView } from "../src/factory/web/display.js";
 import {
 	HumanPreviewSession,
-	HumanStepSettings,
 	humanPreviewConfiguration,
 	type LastRunPreview,
-} from "../src/factory/web/human-step-settings.js";
+} from "../src/factory/web/display-editor.js";
 
 const makeStep = () =>
 	StepSchema.parse({
-		id: "decide",
+		id: "display",
 		name: "Choose findings",
-		type: "decide",
+		type: "display",
 		reads: { research: "source" },
-		view: {
+		document: {
 			version: "view-v1",
 			components: [
 				{
@@ -27,13 +25,6 @@ const makeStep = () =>
 					data: { path: "/inputs/research/summary" },
 				},
 			],
-		},
-		decide: {
-			items: { path: "/inputs/research/items" },
-			itemId: "/id",
-			title: "/title",
-			actions: [{ id: "fix", label: "Fix", followUp: true }],
-			ask: { prompt: "Answer this question only." },
 		},
 	});
 
@@ -58,7 +49,7 @@ const result = (
 			definitionMatch: true,
 		},
 		paths: ["/inputs/research/summary"],
-		view: resolveView(makeStep().view, scope),
+		view: resolveView(makeStep().document!, scope),
 	};
 };
 
@@ -86,7 +77,7 @@ describe("builder accepted-input preview ownership", () => {
 			{ ...original, name: "Changed title" },
 			{
 				...original,
-				view: {
+				document: {
 					version: "view-v1" as const,
 					components: [
 						{
@@ -97,31 +88,8 @@ describe("builder accepted-input preview ownership", () => {
 					],
 				},
 			},
-			{
-				...original,
-				decide: {
-					...original.decide!,
-					actions: [{ id: "fix", label: "Repair this", followUp: true }],
-				},
-			},
-			{
-				...original,
-				decide: {
-					...original.decide!,
-					actions: [{ id: "fix", label: "Fix", followUp: false }],
-				},
-			},
-			{
-				...original,
-				decide: {
-					...original.decide!,
-					ask: { prompt: "Use a changed dedicated follow-up prompt." },
-				},
-			},
-			{
-				...original,
-				notifications: { push: "view-text" as const },
-			},
+			{ ...original, bind: ["source"] },
+			{ ...original, notifications: { push: "view-text" as const } },
 		];
 		for (const edited of edits) {
 			configuration = humanPreviewConfiguration("recipe", edited);
@@ -138,7 +106,7 @@ describe("builder accepted-input preview ownership", () => {
 		);
 	});
 
-	it("renders the current actions and view against retained accepted inputs", async () => {
+	it("renders the current Display against retained accepted inputs", async () => {
 		const step = makeStep();
 		let configuration = humanPreviewConfiguration("recipe", step);
 		const session = new HumanPreviewSession(
@@ -146,32 +114,21 @@ describe("builder accepted-input preview ownership", () => {
 			async () => result(),
 		);
 		await session.lastRun();
-		const edited = {
-			...step,
-			decide: {
-				...step.decide!,
-				actions: [
-					{ id: "fix", label: "Repair accepted item", followUp: false },
-				],
-				ask: undefined,
-			},
-		};
+		const edited = { ...step, name: "Changed Display" };
 		configuration = humanPreviewConfiguration("recipe", edited);
-		const presentation = session.presentation();
-		const scope = presentation.lastRun!.scope;
+		const presentation = session.presentation(),
+			scope = presentation.lastRun!.scope;
 		const html = renderToStaticMarkup(
-			createElement(HumanStepDecision, {
-				runId: presentation.lastRun!.provenance.runId!,
+			createElement(DisplayDocumentView, {
+				runId: "accepted-run",
 				snapshot: {
 					id: "preview",
 					stepKey: edited.id,
-					kind: "decide",
+					kind: "display",
 					title: edited.name,
-					digest: "preview-only",
-					view: resolveView(edited.view, scope),
-					items: decisionItems(edited.decide, scope),
-					actions: edited.decide.actions,
-					askAvailable: false,
+					digest: "preview",
+					documentDigest: "preview",
+					view: resolveView(edited.document!, scope),
 					createdAt: "preview",
 				},
 				onSubmit: vi.fn(),
@@ -179,10 +136,6 @@ describe("builder accepted-input preview ownership", () => {
 		);
 		expect(presentation.definitionMatch).toBe(false);
 		expect(html).toContain("Accepted inputs from accepted-run");
-		expect(html).toContain("Keep accepted cache inputs");
-		expect(html).toContain("Repair accepted item");
-		expect(html).not.toContain(">Ask</button>");
-		expect(html).not.toContain("Follow-up</");
 	});
 
 	it.each([
@@ -323,34 +276,5 @@ describe("builder accepted-input preview ownership", () => {
 		);
 		await mismatched.load();
 		expect(mismatched.presentation().definitionMatch).toBe(false);
-	});
-
-	it.each([
-		undefined,
-		"private",
-		"view-text",
-	] as const)("shows explicit push text consent without silently opting in old/private recipes (%s)", (push) => {
-		const step = makeStep();
-		if (push) step.notifications = { push };
-		const html = renderToStaticMarkup(
-			createElement(HumanStepSettings, {
-				step,
-				readOnly: false,
-				onChange: vi.fn(),
-				onError: vi.fn(),
-				workflowId: "recipe",
-			}),
-		);
-		expect(html).toContain("Include bounded view text in push notifications");
-		expect(html).toContain("Private notices are the default.");
-		expect(html).toContain("lock screen");
-		const checkbox = html.match(/<input[^>]*type="checkbox"[^>]*>/)?.[0];
-		expect(checkbox).toBeDefined();
-		expect(checkbox?.includes('checked=""')).toBe(push === "view-text");
-		expect(
-			JSON.parse(humanPreviewConfiguration("recipe", step).body),
-		).toMatchObject(
-			push ? { notifications: { push } } : { workflowId: "recipe" },
-		);
 	});
 });

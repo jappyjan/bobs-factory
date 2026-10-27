@@ -8,14 +8,14 @@ import type {
 	MergeBlocker,
 	MergeReadiness,
 	ProviderCommand,
-} from "./MergeReadiness.js";
+} from "./ProviderReadiness.js";
 
 /** GitLab REST through the operator's glab credential store, including self-managed hosts. */
 export function gitlabProvider(
 	command: ProviderCommand,
 	repository: { host: string; project: string; url: string },
 	checkReceipts: NonNullable<
-		import("./CISupervision.js").CISupervision["checkReceipts"]
+		import("./ProviderCheckReceipts.js").ProviderCheckState["checkReceipts"]
 	> = {},
 ): GitProvider {
 	const root = `projects/${encodeURIComponent(repository.project)}`;

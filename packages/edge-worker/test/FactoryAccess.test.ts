@@ -17,11 +17,7 @@ afterEach(async () => {
 });
 function fixture(useEnvironment = false, localPort?: number) {
 	const home = mkdtempSync(join(tmpdir(), "factory-access-test-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const start = vi.fn(),
 		entries = vi.fn(() => []),
 		repositories = vi.fn(() => []);
@@ -734,11 +730,7 @@ it.each([
 
 it("opens the IP and localhost dashboard without enrollment", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-loopback-redirect-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(
 		runtime,
 		{

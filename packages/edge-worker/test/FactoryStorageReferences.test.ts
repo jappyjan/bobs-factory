@@ -3,25 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { publishStorageJson, storageDigest } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
-import {
-	conservativeWorkflows,
-	defaultWorkflows as currentWorkflows,
-} from "../src/factory/defaultWorkflows.js";
-import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
-import {
-	type FactoryRun,
-	WorkflowRuntime,
-} from "../src/factory/WorkflowRuntime.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
+import { WorkflowSchema } from "../src/factory/Workflow.js";
+import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import type { GitService } from "../src/GitService.js";
 import { factoryStorage } from "../src/storage/FactoryStorage.js";
-import type {
-	RetainedWorkspaceProof,
-	WorkspaceRetentionSource,
-} from "../src/storage/WorktreeArtifacts.js";
-import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
+import type { WorkspaceRetentionSource } from "../src/storage/WorktreeArtifacts.js";
 
-// Exercise the complete runtime reference inspection without filesystem/Git
-// deletion. The F1 storage routes separately verify the real worktree adapter.
 const captured = vi.hoisted(() => ({
 	source: undefined as WorkspaceRetentionSource | undefined,
 }));
@@ -32,127 +20,56 @@ vi.mock("../src/storage/WorktreeArtifacts.js", () => ({
 		}
 	},
 }));
-
-const homes: string[] = [];
-const runtimes: WorkflowRuntime[] = [];
-const sources: WorkspaceRetentionSource[] = [];
+const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
-	for (const source of sources.splice(0)) await source.close?.();
-	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
-	for (const home of homes.splice(0))
-		await rm(home, { recursive: true, force: true });
+	for (const cleanup of cleanups.splice(0)) await cleanup();
 });
-
-async function fixture(legacy = false) {
+async function fixture() {
 	const home = await realpath(
-		await mkdtemp(join(tmpdir(), "factory-storage-references-")),
-	);
-	homes.push(home);
-	const workspace = join(home, "workspace");
+			await mkdtemp(join(tmpdir(), "factory-retention-")),
+		),
+		workspace = join(home, "workspace");
 	await mkdir(workspace);
-	const stock = structuredClone(
-		defaultWorkflows.find((w) => w.id === "factory")!,
-	);
-	stock.id = "retention-fork";
-	stock.name = "Retention fork";
-	stock.steps.push(
-		{
-			id: "assess-impact",
-			name: "Generic root data",
-			type: "agent",
-			prompt: "Ordinary data",
-			output: { schema: { type: "object" } },
-			maxVisits: 8,
-			branches: [],
-			next: "end",
-		},
-		{
-			id: "sibling",
-			name: "Other pipeline",
-			type: "workflow",
-			workflow: "factory-pipeline",
-			maxVisits: 8,
-			branches: [],
-			next: "end",
-		},
-	);
-	const definitions = validateWorkflows([...defaultWorkflows, stock]);
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
+	const workflow = WorkflowSchema.parse({
+		id: "retention",
+		name: "Retention",
+		engineVersion: "nodes-v1",
+		steps: [{ id: "confirmed", name: "Merge", type: "merge" }],
 	});
-	runtimes.push(runtime);
 	const run = runtime.create({
-		id: "run",
+		id: "retained",
 		repositoryId: "repo",
 		workspace,
-		input: "Retained delivery",
-		workflow: definitions.at(-1)!,
-		workflowDefinitions: [...currentWorkflows, stock],
-		triggerOrigin: {
-			type: "manual",
-			workflowId: stock.id,
-			at: new Date().toISOString(),
-		},
+		input: "Completed work",
+		workflow,
+		triggerOrigin: { type: "manual", workflowId: workflow.id, at: "" },
 	});
-	// Retention inspects a genuine accepted #141 graph, rather than upgrading it at new admission.
-	run.workflow = structuredClone(stock);
-	run.workflowDefinitions = structuredClone(definitions);
-	if (legacy) {
-		// A persisted old stock definition is normalized in memory, never rewritten.
-		const oldDefinitions = structuredClone(conservativeWorkflows);
-		// Conservative stock predates impact. Frozen impact-v1 runs added these
-		// flag-shaped records before configurable presets replaced the flags.
-		const oldPipeline = oldDefinitions.find(
-			(w) => w.id === "factory-pipeline",
-		)!;
-		oldPipeline.steps.unshift(
-			{
-				id: "assess-impact",
-				name: "Assess changed work and retained evidence",
-				type: "agent",
-				prompt: "Assess impact",
-				impactContract: "impact-v1",
-				impact: {
-					inventory: "review-inventory",
-					fanout: "specialist-review",
-					maxUnchangedCycles: 3,
-				},
-				askQuestions: true,
-				next: "impact-checks",
-				branches: [],
-				maxVisits: 8,
-			},
-			{
-				id: "impact-checks",
-				name: "Run selected checks",
-				type: "tool",
-				tool: "impact-checks",
-				impactSource: "assess-impact",
-				next: "review-inventory",
-				branches: [],
-				maxVisits: 8,
-			},
-		);
-		run.workflow = WorkflowSchema.parse(
-			oldDefinitions.find((w) => w.id === "factory")!,
-		);
-		run.workflowDefinitions = oldDefinitions.map((w) =>
-			WorkflowSchema.parse(w),
-		);
-	}
 	run.status = "completed";
 	run.checkpoint = { current: "end", visits: {} };
-	run.humanDecisions = [
-		{
-			decision: "approve",
-			reviewId: "review",
-			headSha: "head",
-			url: "https://github.com/selected/project/pull/1",
-			at: new Date().toISOString(),
+	const output = {
+		repositories: [
+			{
+				repositoryId: "repo",
+				merged: true,
+				sha: "merge-sha",
+				url: "https://github.com/selected/project/pull/1",
+			},
+		],
+	};
+	run.history.push({
+		step: "confirmed",
+		output,
+		at: run.updatedAt,
+		inputDigest: digest({}),
+		guarantee: {
+			version: 1,
+			revisions: { repo: { headSha: "head" } },
+			boundDigests: {},
+			scope: { outputs: {}, historyLength: 0 },
+			outputDigest: digest(output),
 		},
-	];
+	});
 	await publishStorageJson(
 		join(
 			home,
@@ -180,173 +97,69 @@ async function fixture(legacy = false) {
 		verifyDelivery: verify,
 	});
 	const source = captured.source!;
-	sources.push(source);
-	const impact = {
-		at: new Date().toISOString(),
-		snapshot: {
-			schemaVersion: 1,
-			digest: "accepted",
-			key: "pipeline/specialist-review",
-			repositories: [{ repositoryId: "repo", workspace, headSha: "head" }],
-		},
-		checkResults: [
-			{ id: "build", exitCode: 0, evidence: `> build ${workspace}\npassed` },
-		],
-	};
-	run.impactDecisions = [
-		structuredClone(impact),
-	] as unknown as FactoryRun["impactDecisions"];
-	const checks = { checks: structuredClone(impact.checkResults) };
+	cleanups.push(async () => {
+		await source.close?.();
+		await runtime.shutdown();
+		await rm(home, { recursive: true, force: true });
+	});
 	const inspect = async () => {
 		for (let i = 0; i < 20; i++) {
-			const result = await source.inspect(workspace, undefined, {
-				maxEntries: 10_000,
+			const r = await source.inspect(workspace, undefined, {
+				maxEntries: 10000,
 				deadline: performance.now() + 5000,
 			});
-			if (Array.isArray(result)) return result;
-			if (result.complete) return result.proofs;
+			if (Array.isArray(r)) return r;
+			if (r.complete) return r.proofs;
 		}
-		throw new Error("Reference inspection did not complete");
+		throw Error("Inspection did not finish");
 	};
-	return { run, impact, checks, inspect, verify, workspace };
+	return { run, workspace, inspect, verify };
 }
-
-function expectReleased(proofs: RetainedWorkspaceProof[]) {
-	expect(proofs).toHaveLength(1);
+it("releases a completed workspace only after stamped merge evidence and provider revalidation", async () => {
+	const f = await fixture();
+	const proofs = await f.inspect();
 	expect(proofs[0]!.protection).toEqual([]);
 	expect(proofs[0]!.mergeConfirmed).toBe(true);
-}
-function expectRetained(proofs: RetainedWorkspaceProof[]) {
-	expect(proofs).toHaveLength(1);
-	expect(proofs[0]!.protection).toContain(
-		"Retained input, output or evidence references this workspace",
-	);
-	expect(proofs[0]!.mergeConfirmed).toBe(false);
-}
-
-it("releases only exact configured impact identities and enrolled command receipts", async () => {
-	const { run, impact, checks, inspect, verify } = await fixture();
-	run.outputs["pipeline/assess-impact"] = structuredClone(impact);
-	run.outputs["pipeline/impact-checks"] = structuredClone(checks);
-	run.history.push(
-		{
-			step: "pipeline/assess-impact",
-			output: structuredClone(impact),
-			at: impact.at,
-		},
-		{
-			step: "pipeline/impact-checks",
-			output: structuredClone(checks),
-			at: impact.at,
-		},
-	);
-	expectReleased(await inspect());
-	expect(verify).toHaveBeenCalledWith(
-		run,
+	expect(f.verify).toHaveBeenCalledWith(
+		f.run,
 		"repo",
 		{ url: "https://github.com/selected/project/pull/1", headSha: "head" },
 		expect.any(AbortSignal),
 	);
 });
-
-it("qualifies frozen review and active called-checkpoint output maps by their accepted frame", async () => {
-	const { run, impact, checks, inspect } = await fixture();
-	run.reviewRounds = [
-		{
-			key: "pipeline/specialist-review",
-			context: {
-				workspace: run.workspace,
-				outputs: {
-					"assess-impact": structuredClone(impact),
-					"impact-checks": structuredClone(checks),
-				},
-			},
-		},
-	] as FactoryRun["reviewRounds"];
-	run.checkpoint = {
-		current: "pipeline",
-		visits: {},
-		active: {
-			phase: "result",
-			children: [
-				{
-					current: "end",
-					visits: {},
-					outputs: {
-						"assess-impact": structuredClone(impact),
-						"impact-checks": structuredClone(checks),
-					},
-				},
-			],
-		},
-	};
-	expectReleased(await inspect());
-});
-
 it.each([
-	"assess-impact",
-	"sibling/assess-impact",
-	"sibling/impact-checks",
-])("retains copied impact paths in unrelated producer %s", async (key) => {
-	const { run, impact, checks, inspect } = await fixture();
-	run.outputs[key] = structuredClone(
-		key.endsWith("impact-checks") ? checks : impact,
+	"unstamped",
+	"altered",
+	"agent",
+])("retains a workspace with %s completion claims", async (kind) => {
+	const f = await fixture();
+	if (kind === "unstamped") delete f.run.history[0]!.guarantee;
+	else if (kind === "altered") f.run.history[0]!.output = { repositories: [] };
+	else
+		f.run.workflow.steps[0] = {
+			...f.run.workflow.steps[0],
+			type: "agent",
+			prompt: "Claim merge",
+		} as any;
+	const proofs = await f.inspect();
+	expect(proofs[0]!.mergeConfirmed).toBe(false);
+	expect(f.verify).not.toHaveBeenCalled();
+});
+it("retains actual content dependencies even after a confirmed merge", async () => {
+	const f = await fixture();
+	f.run.outputs.evidence = { path: join(f.workspace, "needed.txt") };
+	expect((await f.inspect())[0]!.protection).toContain(
+		"Retained input, output or evidence references this workspace",
 	);
-	expectRetained(await inspect());
 });
-
-it("does not promote an unqualified modern child alias to its configured producer", async () => {
-	const { run, checks, inspect } = await fixture();
-	run.outputs["impact-checks"] = structuredClone(checks);
-	expectRetained(await inspect());
-});
-
-it("retains copied evidence in an unaccepted historical context frame", async () => {
-	const { run, impact, inspect } = await fixture();
-	run.reviewRounds = [
-		{
-			key: "unknown/specialist-review",
-			context: {
-				outputs: { "pipeline/assess-impact": structuredClone(impact) },
-			},
-		},
-	] as FactoryRun["reviewRounds"];
-	expectRetained(await inspect());
-});
-
-it("keeps old stock shared-leaf records compatible through legacy normalization", async () => {
-	const { run, impact, checks, inspect } = await fixture(true);
-	run.outputs["assess-impact"] = structuredClone(impact);
-	run.outputs["impact-checks"] = structuredClone(checks);
-	expectReleased(await inspect());
-});
-
-it.each([
-	"assessor",
-	"checks",
-])("does not activate exemptions for a schema or reads without the %s evidence protocol", async (role) => {
-	const { run, impact, checks, inspect } = await fixture();
-	const pipeline = run.workflowDefinitions!.find(
-		(w) => w.id === "factory-pipeline",
-	)!;
-	const step = pipeline.steps.find(
-		(s) => s.id === (role === "assessor" ? "assess-impact" : "impact-checks"),
-	)!;
-	step.checks = [];
-	run.outputs[
-		role === "assessor" ? "pipeline/assess-impact" : "pipeline/impact-checks"
-	] = structuredClone(role === "assessor" ? impact : checks);
-	expectRetained(await inspect());
-});
-
-it("retains mismatching snapshots, receipt content and actual output dependencies", async () => {
-	const { run, impact, checks, inspect, workspace } = await fixture();
-	run.outputs["pipeline/assess-impact"] = {
-		...structuredClone(impact),
-		dependency: join(workspace, "still-needed"),
-	};
-	run.outputs["pipeline/impact-checks"] = {
-		checks: [{ ...checks.checks[0], evidence: `another command ${workspace}` }],
-	};
-	expectRetained(await inspect());
+it("retains old completion history without interpreting its human decision fields", async () => {
+	const f = await fixture();
+	f.run.history = [
+		{ step: "merge", output: { merged: true }, at: f.run.updatedAt },
+	];
+	Object.assign(f.run, {
+		humanDecisions: [{ decision: "approve", headSha: "head" }],
+	});
+	expect((await f.inspect())[0]!.mergeConfirmed).toBe(false);
+	expect(f.verify).not.toHaveBeenCalled();
 });

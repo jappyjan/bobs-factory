@@ -30,12 +30,6 @@ function runtime(directory: string, hooks: Partial<RuntimeHooks> = {}) {
 		agent: async () => {
 			throw new Error("Unexpected agent call");
 		},
-		tool: async () => {
-			throw new Error("Unexpected action call");
-		},
-		script: async () => {
-			throw new Error("Unexpected script call");
-		},
 		...hooks,
 	});
 	runtimes.push(instance);
@@ -68,6 +62,7 @@ function create(
 		...defaultWorkflows,
 		...dependencies,
 		{
+			engineVersion: "nodes-v1",
 			id: "foreach-fixture",
 			name: "For each fixture",
 			stepConfigVersion: "step-config-v1",
@@ -359,7 +354,7 @@ describe("durable For each execution", () => {
 	it("treats a terminal failed result as an item failure instead of false success", async () => {
 		const directory = home();
 		const instance = runtime(directory, {
-			tool: async () => ({
+			agent: async () => ({
 				status: "failed",
 				error: "Action could not finish",
 			}),
@@ -367,7 +362,7 @@ describe("durable For each execution", () => {
 		const run = create(instance, directory, [
 			each(
 				[{ id: "a" }],
-				[{ id: "act", name: "Act", type: "tool", tool: "fixture" }],
+				[{ id: "act", name: "Act", type: "agent", prompt: "fixture" }],
 				{ failure: "keep-successful" },
 			),
 		]);
@@ -394,9 +389,9 @@ describe("durable For each execution", () => {
 	}) => {
 		const directory = home();
 		const instance = runtime(directory, {
-			tool: async () => ({ status: "failed", error: "Nested action failed" }),
+			agent: async () => ({ status: "failed", error: "Nested action failed" }),
 		});
-		const act = { id: "act", name: "Act", type: "tool", tool: "fixture" };
+		const act = { id: "act", name: "Act", type: "agent", prompt: "fixture" };
 		const body =
 			wrapper === "call"
 				? [{ id: "call", name: "Call", type: "workflow", workflow: "worker" }]
@@ -414,6 +409,7 @@ describe("durable For each execution", () => {
 			[each([{ id: "a" }], body, { failure })],
 			[
 				{
+					engineVersion: "nodes-v1",
 					id: "worker",
 					name: "Worker",
 					allowedTriggers: ["workflow"],
@@ -528,6 +524,7 @@ describe("durable For each execution", () => {
 			},
 		});
 		const child = {
+			engineVersion: "nodes-v1",
 			id: "worker",
 			name: "Worker",
 			stepConfigVersion: "step-config-v1",
@@ -647,6 +644,7 @@ describe("durable For each execution", () => {
 			},
 		});
 		const child = {
+			engineVersion: "nodes-v1",
 			id: "worker",
 			name: "Worker",
 			stepConfigVersion: "step-config-v1",
@@ -715,14 +713,13 @@ describe("durable For each execution", () => {
 			active--;
 			return { complete: true };
 		});
-		const instance = runtime(directory, { capacity, script });
+		const instance = runtime(directory, { capacity, agent: script });
 		const child = {
+			engineVersion: "nodes-v1",
 			id: "worker",
 			name: "Worker",
 			allowedTriggers: ["workflow"],
-			steps: [
-				{ id: "heavy", name: "Heavy", type: "script", script: "fixture" },
-			],
+			steps: [{ id: "heavy", name: "Heavy", type: "agent", prompt: "fixture" }],
 		};
 		const run = create(
 			instance,

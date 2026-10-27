@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { digest } from "../src/factory/Delivery.js";
 import {
 	DisplayDocumentSchema,
 	displayComponents,
@@ -12,6 +11,7 @@ import {
 	resolveDisplayDocument,
 } from "../src/factory/DisplayDocument.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import { parseOutputFormat } from "../src/factory/OutputFormats.js";
 import { viewText } from "../src/factory/View.js";
 import { StepSchema, validateWorkflows } from "../src/factory/Workflow.js";
@@ -74,11 +74,15 @@ const formDocument = () =>
 	);
 function makeRuntime(home: string, overrides: Partial<RuntimeHooks> = {}) {
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => {
-			throw new Error("Unexpected agent call");
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-tool")
+				return (async () => ({}))(context);
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async () => {
+				throw new Error("Unexpected agent call");
+			})(context);
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 		...overrides,
 	});
 	resources.push({ home, runtime });
@@ -90,6 +94,7 @@ function fixture(steps: unknown[], overrides: Partial<RuntimeHooks> = {}) {
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "display-fixture",
 			name: "Display fixture",
 			stepConfigVersion: "step-config-v1",
@@ -166,7 +171,12 @@ describe("display node", () => {
 
 	it("registers one display node, accepts bind, and returns immediately for content", async () => {
 		const { runtime, run } = fixture([
-			{ id: "upstream", name: "Upstream", type: "script", script: "fixture" },
+			{
+				id: "upstream",
+				name: "Upstream",
+				type: "agent",
+				prompt: "fixture-script",
+			},
 			display(
 				document(component("text", "markdown", { text: "A retained update" })),
 				{ bind: ["upstream"] },
@@ -253,21 +263,21 @@ describe("display node", () => {
 				}),
 				{
 					id: "wrong",
-					type: "script",
+					type: "agent",
 					name: "Wrong",
-					script: "wrong",
+					prompt: "wrong",
 					next: "finish",
 				},
 				{
 					id: "changed",
-					type: "script",
+					type: "agent",
 					name: "Changed",
-					script: "changed",
+					prompt: "changed",
 					next: "finish",
 				},
-				{ id: "finish", type: "script", name: "End", script: "end" },
+				{ id: "finish", type: "agent", name: "End", prompt: "end" },
 			],
-			{ script: async (ctx) => ({ step: ctx.step.id }) },
+			{ agent: async (ctx) => ({ step: ctx.step.id }) },
 		);
 		await waiting(runtime, run);
 		await expect(
@@ -623,6 +633,7 @@ describe("display document components", () => {
 	it("registers the display editor with schema validation, path autocomplete and a live preview", () => {
 		const step = StepSchema.parse(display(formDocument()));
 		const owner = {
+			engineVersion: "nodes-v1",
 			id: "builder",
 			name: "Builder",
 			description: "",

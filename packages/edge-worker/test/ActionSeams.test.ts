@@ -30,6 +30,7 @@ it("settles a detached parent when its last child finishes during the parent's f
 		parentFinalSave = resolve;
 	});
 	const child = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "seam-child",
 		name: "Controlled child",
 		allowedTriggers: ["workflow"],
@@ -38,6 +39,7 @@ it("settles a detached parent when its last child finishes during the parent's f
 		],
 	});
 	const parentWorkflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "seam-parent",
 		name: "Detached parent",
 		allowedTriggers: ["manual"],
@@ -60,8 +62,6 @@ it("settles a detached parent when its last child finishes during the parent's f
 			await childBarrier;
 			return { completed: true };
 		},
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	let parent: FactoryRun | undefined;
 	let executing: Promise<void> | undefined;
@@ -143,6 +143,7 @@ it.each([
 		publicationReached = resolve;
 	});
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "seam-review",
 		name: "Controlled review",
 		allowedTriggers: ["manual"],
@@ -150,19 +151,25 @@ it.each([
 			{
 				id: "review",
 				name: "Human review",
-				type: "tool",
-				tool: "human-review",
+				type: "display",
+				document: {
+					version: "view-v1",
+					components: [
+						{
+							id: "submit",
+							type: "actions",
+							data: {
+								literal: { actions: [{ id: "approve", label: "Approve" }] },
+							},
+						},
+					],
+				},
 			},
 		],
 	});
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({
-			url: "https://forge.fixture.test/project/pull/1",
-			headSha: "a".repeat(40),
-		}),
-		script: async () => ({}),
 		track: async () => {},
+		agent: async () => ({}),
 	});
 	let executing: Promise<void> | undefined;
 	let stopping: Promise<void> | undefined;
@@ -192,7 +199,7 @@ it.each([
 		vi.spyOn(runtime, "track").mockImplementation(
 			async (current, milestone) => {
 				await track(current, milestone);
-				if (milestone.key.startsWith("review:")) {
+				if (milestone.key.startsWith("view:")) {
 					publicationReached();
 					await publicationBarrier;
 				}
@@ -200,7 +207,7 @@ it.each([
 		);
 		executing = runtime.launch(run);
 		await reachedPublication;
-		const originalGate = structuredClone(run.reviewGate);
+		const originalGate = structuredClone(run.viewDecision);
 		if (operation === "stop") runtime.stop(run.id);
 		else stopping = runtime.shutdown();
 		// A real event-loop turn exposes an unobserved rejection before publication resumes.
@@ -210,9 +217,9 @@ it.each([
 		await executing;
 		await stopping;
 		expect(run.status).toBe(operation === "stop" ? "stopped" : "waiting");
-		expect(run.reviewGate).toEqual(originalGate);
-		expect(run.reviewGate?.status).toBe("pending");
-		expect(run.humanDecisions ?? []).toEqual([]);
+		expect(run.viewDecision).toEqual(originalGate);
+		expect(run.viewDecision?.answer).toBeUndefined();
+		expect(run.viewRecords?.every((record) => !record.answer)).toBe(true);
 		expect(runtime.isExecuting(run.id)).toBe(false);
 	} finally {
 		releasePublication();
@@ -226,13 +233,10 @@ it.each([
 
 it("includes nested Launch runs targets in availability impact and pauses the parent before any child exists", async () => {
 	const home = mkdtempSync(join(tmpdir(), "action-seam-availability-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	try {
 		const target = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "seam-availability-target",
 			name: "Child",
 			allowedTriggers: ["workflow"],
@@ -241,6 +245,7 @@ it("includes nested Launch runs targets in availability impact and pauses the pa
 			],
 		});
 		const bridge = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "seam-availability-bridge",
 			name: "Bridge",
 			allowedTriggers: ["workflow"],
@@ -259,6 +264,7 @@ it("includes nested Launch runs targets in availability impact and pauses the pa
 			],
 		});
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "seam-availability-parent",
 			name: "Parent",
 			allowedTriggers: ["manual"],
@@ -302,13 +308,10 @@ it("includes nested Launch runs targets in availability impact and pauses the pa
 
 it("does not promote ordinary agent outputs through unversioned merge aliases into dependency delivery proof", async () => {
 	const home = mkdtempSync(join(tmpdir(), "action-seam-authority-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	try {
 		const target = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "seam-agent-alias-child",
 			name: "Unversioned child",
 			allowedTriggers: ["workflow"],
@@ -340,6 +343,7 @@ it("does not promote ordinary agent outputs through unversioned merge aliases in
 			wait: false,
 		});
 		const workflow = WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "seam-agent-alias-parent",
 			name: "Parent",
 			allowedTriggers: ["manual"],
@@ -414,12 +418,11 @@ it("does not promote ordinary agent outputs through unversioned merge aliases in
 function emptyBatchFixture(finished: (run: FactoryRun) => Promise<void>) {
 	const home = mkdtempSync(join(tmpdir(), "action-seam-publication-"));
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
 		finished,
+		agent: async () => ({}),
 	});
 	const target = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "seam-publication-child",
 		name: "Unused target",
 		allowedTriggers: ["workflow"],
@@ -428,6 +431,7 @@ function emptyBatchFixture(finished: (run: FactoryRun) => Promise<void>) {
 		],
 	});
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "seam-publication-parent",
 		name: "Empty accepted batch",
 		allowedTriggers: ["manual"],

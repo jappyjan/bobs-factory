@@ -151,6 +151,7 @@ const sourceFiles = [
 	"packages/edge-worker/dist/factory/WorkflowRuntime.js",
 	"apps/cli/dist/src/onboarding.js",
 	"apps/desktop/test/acceptance-fixture.mjs",
+	"apps/desktop/test/display-fixture.mjs",
 	"apps/desktop/test/native-acceptance.mjs",
 	"apps/desktop/test/run-native-acceptance.mjs",
 	"apps/desktop/test/acceptance-cleanup.mjs",

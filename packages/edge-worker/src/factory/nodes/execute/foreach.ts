@@ -1,6 +1,6 @@
 import { immutableJson } from "bobs-factory-core";
 import { isUpdatePaused } from "../../../updates/UpdatePausedError.js";
-import { digest } from "../../Delivery.js";
+import { digest } from "../../EvidenceDigest.js";
 import { aggregateForeach, prepareForeach } from "../../Foreach.js";
 import { acceptedProgressValue } from "../../ProgressBudget.js";
 import { stepBindings } from "../../StepBindings.js";
@@ -10,13 +10,7 @@ import { snapshotWorkflowInput } from "../../WorkflowInput.js";
 import type { NodeContext } from "../NodeDefinition.js";
 export async function execute(ctx: NodeContext): Promise<unknown> {
 	const context = ctx;
-	const {
-		engine,
-		frame: checkpoint,
-		workflowId,
-		graphChat: chat,
-		reviewBaseline,
-	} = ctx;
+	const { engine, frame: checkpoint, workflowId, graphChat: chat } = ctx;
 
 	const { run, step, signal } = context;
 	const key = context.stepKey!;
@@ -74,7 +68,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 					? digest(item.value)
 					: undefined,
 			snapshotInputs: checkpoint.snapshotInputs,
-			reviewKey: checkpoint.reviewKey,
 		}));
 	}
 	const loop = active.foreach;
@@ -188,7 +181,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 					workflowId,
 					chat,
 					true,
-					reviewBaseline,
 				);
 				controller.signal.throwIfAborted();
 				state.result = engine.frameResults(

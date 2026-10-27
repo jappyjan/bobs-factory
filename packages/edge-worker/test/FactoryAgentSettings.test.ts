@@ -3,8 +3,8 @@ import {
 	AgentSettingsSchema,
 	resolveAgentSettings,
 } from "../src/factory/AgentSettings.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
-import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 it("maps reasoning and variants to native runner settings with same-provider inheritance", () => {
 	expect(resolveAgentSettings("codex", { reasoningEffort: "ultra" })).toEqual({
@@ -110,32 +110,36 @@ it("keeps service tier independent from effort and provider boundaries", () => {
 
 it("retains per-step effort and custom variant in saved definitions", () => {
 	const workflows = structuredClone(defaultWorkflows);
-	workflows.find((item) => item.id === "factory-pipeline")!.steps[0]!.runner =
+	workflows.find((item) => item.id === "v2-clarify-plan")!.steps[0]!.runner =
 		"codex";
-	workflows.find((item) => item.id === "factory-pipeline")!
+	workflows.find((item) => item.id === "v2-clarify-plan")!
 		.steps[0]!.reasoningEffort = "high";
-	workflows.find((item) => item.id === "factory-pipeline")!
+	workflows.find((item) => item.id === "v2-clarify-plan")!
 		.steps[0]!.serviceTier = "standard";
-	workflows.find((item) => item.id === "factory-pipeline")!.steps[2]!.runner =
-		"opencode";
-	workflows.find((item) => item.id === "factory-pipeline")!
-		.steps[2]!.modelVariant = "custom-review";
+	workflows
+		.find((item) => item.id === "v2-clarify-plan")!
+		.steps.find((s) => s.id === "plan")!.runner = "opencode";
+	workflows
+		.find((item) => item.id === "v2-clarify-plan")!
+		.steps.find((s) => s.id === "plan")!.modelVariant = "custom-review";
 	const saved = validateWorkflows(workflows);
 	expect(
-		saved.find((item) => item.id === "factory-pipeline")!.steps[0]!,
+		saved.find((item) => item.id === "v2-clarify-plan")!.steps[0]!,
 	).toMatchObject({
 		runner: "codex",
 		reasoningEffort: "high",
 		serviceTier: "standard",
 	});
 	expect(
-		saved.find((item) => item.id === "factory-pipeline")!.steps[2]!,
+		saved
+			.find((item) => item.id === "v2-clarify-plan")!
+			.steps.find((s) => s.id === "plan")!,
 	).toMatchObject({ runner: "opencode", modelVariant: "custom-review" });
 });
 
 it("rejects a saved role variant belonging to another provider", () => {
 	const definitions = structuredClone(defaultWorkflows);
-	const role = definitions.find((item) => item.id === "factory-pipeline")!
+	const role = definitions.find((item) => item.id === "v2-clarify-plan")!
 		.steps[0]!;
 	role.runner = "codex";
 	role.modelVariant = "high";

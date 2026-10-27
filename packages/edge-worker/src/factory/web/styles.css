@@ -1689,23 +1689,6 @@ kbd {
 	padding-bottom: 12px;
 	color: var(--muted);
 }
-.lightbox {
-	text-align: center;
-}
-.lightbox > img {
-	width: 100%;
-	max-height: 62vh;
-	object-fit: contain;
-	border-radius: 12px;
-	background: var(--quiet);
-}
-.lightbox h3 {
-	margin-top: 12px;
-}
-.lightbox .actions {
-	justify-content: center;
-	margin-top: 14px;
-}
 .guide-hero {
 	background: linear-gradient(
 		110deg,
@@ -2341,9 +2324,6 @@ kbd {
 	}
 	.gallery strong {
 		font-size: 12px;
-	}
-	.lightbox .actions {
-		gap: 4px;
 	}
 	.assessment {
 		grid-template-columns: 1fr;

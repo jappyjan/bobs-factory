@@ -1,32 +1,10 @@
 import { z } from "zod";
-import {
-	ArchitectureReviewSchema,
-	ArchitectureSchema,
-	assertReviewBrief,
-} from "./Architecture.js";
-import { DeliveryContractSchema, TicketTargetSchema } from "./Delivery.js";
+
 import { DependencyGraphSchema } from "./DependencyGraph.js";
 import { DisplayDocumentSchema } from "./DisplayDocument.js";
-import {
-	CiFixResultSchema,
-	ClarifyResultSchema,
-	GeneratedGuideSchema,
-	GuideSchema,
-	ImplementResultSchema,
-	PlanResultSchema,
-	PlanReviewResultSchema,
-	QaScopeSchema,
-	ReviewFixResultSchema,
-	ReviewStatusSchema,
-	VisualScopeSchema,
-} from "./FactoryResults.js";
-import {
-	CaptureSchema,
-	filterReview,
-	QaCaptureSchema,
-} from "./FactoryTools.js";
+
 import { sanitizeJsonConfiguration } from "./Foreach.js";
-import { ImpactSchema } from "./Impact.js";
+
 import {
 	validateInlineSchema,
 	validateInlineSchemaSync,
@@ -37,11 +15,7 @@ import {
 	OutputValidationError,
 	outputValidationError,
 } from "./OutputValidation.js";
-import {
-	normalizeQuestionResult,
-	QuestionChoicesSchema,
-	QuestionFieldsSchema,
-} from "./Questions.js";
+
 import {
 	FollowUpSchema,
 	OpportunitySchema,
@@ -56,21 +30,12 @@ import {
 	ResearchPlanSchema,
 	ResearchResultSchema,
 } from "./ResearchFormats.js";
-import {
-	GeneratedBriefSchema,
-	isReviewBrief,
-	ReviewBriefSchema,
-} from "./ReviewBrief.js";
+
 import { evaluateRules, evaluateRulesAsync } from "./Rules.js";
-import {
-	CoverageSchema,
-	InventorySchema,
-	SpecialistSchema,
-} from "./SpecialistReview.js";
+
 import {
 	FORMAT_IDS,
 	type FormatId,
-	type ResolvedStepConfig,
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
@@ -157,49 +122,6 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"follow-up-v1": (value) => FollowUpSchema.parse(value),
 	display: (value) => DisplayDocumentSchema.parse(value),
 	"view-v1": (value) => ViewSchema.parse(value),
-	"generated-guide-v1": (value) => GeneratedGuideSchema.parse(value),
-	"generated-review-brief-v1": (value) =>
-		GeneratedBriefSchema.parse(brief(value, "brief-v1")),
-	"generated-review-brief-v2": (value) =>
-		GeneratedBriefSchema.parse(brief(value, "brief-v2")),
-	"generated-review-brief-v3": (value) =>
-		GeneratedBriefSchema.parse(brief(value, "brief-v3")),
-	"question-fields-v1": (value) => QuestionFieldsSchema.parse(value),
-	"question-choices-v1": (value) => QuestionChoicesSchema.parse(value),
-	"delivery-target-v1": (value) => TicketTargetSchema.parse(value),
-	"clarify-v1": (value) => ClarifyResultSchema.parse(value),
-	"plan-v1": (value) => PlanResultSchema.parse(value),
-	"plan-review-v1": (value) => PlanReviewResultSchema.parse(value),
-	"implement-v1": (value) => ImplementResultSchema.parse(value),
-	"review-v1": (value) => review(value, false),
-	"qa-review-v1": (value) => review(value, true),
-	"visual-scope-v1": (value) => VisualScopeSchema.parse(value),
-	"legacy-video-scope-v1": (value) => {
-		z.object({ videoContract: z.literal("video-v1") }).parse(value);
-		return VisualScopeSchema.parse(value);
-	},
-	"qa-scope-v1": (value) => QaScopeSchema.parse(value),
-	"capture-v1": (value) => CaptureSchema.parse(value),
-	"qa-capture-v1": (value) => QaCaptureSchema.parse(value),
-	// Historical guides can contain an accepted review brief even without the newer flag.
-	"guide-v1": (value) =>
-		isReviewBrief(value)
-			? ReviewBriefSchema.parse(value)
-			: GuideSchema.parse(value),
-	"review-brief-v1": (value) => brief(value, "brief-v1"),
-	"review-brief-v2": (value) => brief(value, "brief-v2"),
-	"review-brief-v3": (value) => brief(value, "brief-v3"),
-	"ci-fix-v1": (value) => CiFixResultSchema.parse(value),
-	"review-fix-v1": (value) => ReviewFixResultSchema.parse(value),
-	"architecture-v1": (value) => ArchitectureSchema.parse(value),
-	"architecture-brief-v1": (value) => architecture(value, "review-v1"),
-	"architecture-checkin-v1": (value) => architecture(value, "checkin-v1"),
-	"architecture-review-v1": (value) => ArchitectureReviewSchema.parse(value),
-	"impact-v1": (value) => ImpactSchema.parse(value),
-	"inventory-v1": (value) => InventorySchema.parse(value),
-	"specialist-v1": (value) => SpecialistSchema.parse(value),
-	"coverage-v1": (value) => CoverageSchema.parse(value),
-	"delivery-contract-v1": (value) => DeliveryContractSchema.parse(value),
 	"improvement-context-v1": (value) =>
 		z
 			.object({
@@ -222,27 +144,6 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"improvement-opportunity-v1": (value) => OpportunitySchema.parse(value),
 	"improvement-package-v1": (value) => PackageSchema.parse(value),
 };
-function review(value: unknown, qa: boolean) {
-	ReviewStatusSchema.parse(value);
-	const output = filterReview(value);
-	if (qa) {
-		z.object({ qaContract: z.literal("qa-v1") }).parse(value);
-		return { ...output, qaContract: "qa-v1" as const };
-	}
-	delete output.qaContract;
-	delete output.qaReviewStamp;
-	return output;
-}
-function brief(value: unknown, contract: string) {
-	return ReviewBriefSchema.parse(
-		value && typeof value === "object" ? { ...value, contract } : value,
-	);
-}
-function architecture(value: unknown, mode: "review-v1" | "checkin-v1") {
-	const output = ArchitectureSchema.parse(value);
-	assertReviewBrief(output, mode);
-	return output;
-}
 export function outputFormatCatalog() {
 	return FORMAT_IDS.map((id) => ({
 		id,
@@ -256,44 +157,6 @@ export function parseOutputFormat(format: string, value: unknown): unknown {
 	return parsers[format as FormatId](value);
 }
 
-/** These formats intentionally carry the human-question fields; arbitrary JSON does not. */
-const questionFormats = new Set<FormatId>([
-	"question-fields-v1",
-	"clarify-v1",
-	"implement-v1",
-	"ci-fix-v1",
-	"review-fix-v1",
-	"architecture-review-v1",
-	"inventory-v1",
-	"impact-v1",
-]);
-function questionResult(
-	step: object,
-	config: ResolvedStepConfig,
-	output: unknown,
-) {
-	const enabled =
-		(step as { askQuestions?: boolean }).askQuestions === true ||
-		config.checks.some(({ check }) =>
-			[
-				"optional-questions",
-				"architecture-candidate",
-				"inventory-evidence",
-				"impact-reuse",
-			].includes(check),
-		) ||
-		(config.output &&
-			"format" in config.output &&
-			questionFormats.has(config.output.format));
-	return enabled &&
-		output &&
-		typeof output === "object" &&
-		("questions" in output ||
-			"questionChoices" in output ||
-			"questionRecommendations" in output)
-		? normalizeQuestionResult(output)
-		: output;
-}
 export function conforms(format: string, value: unknown): boolean {
 	try {
 		parseOutputFormat(format, value);
@@ -326,7 +189,7 @@ export function parseStepOutput(
 		}
 		const issues = evaluateRules(config.rules, output, conforms);
 		if (issues.length) throw new OutputValidationError(value, issues);
-		return questionResult(step, config, output);
+		return output;
 	} catch (error) {
 		throw outputValidationError(value, error);
 	}
@@ -370,16 +233,9 @@ export async function parseStepOutputAsync(
 		);
 		signal?.throwIfAborted();
 		if (issues.length) throw new OutputValidationError(value, issues);
-		return questionResult(step, config, output);
+		return output;
 	} catch (error) {
 		if (signal?.aborted) throw error;
 		throw outputValidationError(value, error);
 	}
-}
-/** Compatibility adapter for callers that explicitly ask for historical ID interpretation. */
-export function validateLegacyResult(step: object, value: unknown): unknown {
-	return parseStepOutput(step, value, {
-		legacy: true,
-		workflowId: "factory-pipeline",
-	});
 }

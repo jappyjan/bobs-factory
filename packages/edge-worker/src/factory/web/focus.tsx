@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+
+import { Link } from "react-router-dom";
 import type { ViewSnapshot } from "../HumanStep.js";
-import { ArchitectureEntry } from "./architecture";
-import { AskView } from "./ask-view";
+
 import {
 	active,
 	ago,
@@ -11,7 +10,6 @@ import {
 	attention,
 	currentStepOf,
 	elapsed,
-	finished,
 	phase,
 	stepFixing,
 	stepIcon,
@@ -22,38 +20,11 @@ import {
 	workingLabel,
 } from "./client";
 import { activitiesOf } from "./conversation";
-import { DeclarativeView, HumanStepPanel } from "./declarative-view";
+
 import { DisplayDocumentView, DisplayPanel } from "./display";
-import { ExternalRecovery } from "./external-recovery";
-import { useCurrentForm, useFormState } from "./form-state";
-import { revisionOf } from "./restoration";
-import { GuidedReview } from "./review";
-import { useApproval } from "./review-approval";
-import {
-	type FeedbackController,
-	useFeedbackController,
-	useReviewFeedback,
-} from "./review-comments";
-import { reviewDiffUrl } from "./review-context";
-import {
-	emptyFeedback,
-	feedbackKey,
-	hasFeedback,
-	serializeFeedback,
-} from "./review-feedback";
-import {
-	ReviewGuideComponent,
-	type ReviewGuideViewComponent,
-	reviewGuideValue,
-} from "./review-guide-component";
-import {
-	guideMatchesGate,
-	reviewRevision,
-	signature,
-	ticketTrackingPending,
-} from "./review-state";
+
 import { TimingSummary } from "./run-diagnostics";
-import { mergeReadinessFor, roleOutput } from "./run-output";
+
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
 	question: "💬 Question",
@@ -65,21 +36,12 @@ export const labels: Record<string, string> = {
 export function GenericHumanDecision({ run }: { run: any }) {
 	const snapshot = run.viewDecision as ViewSnapshot | undefined;
 	if (!snapshot) return null;
-	if (snapshot.kind === "display")
-		return (
-			<DisplayPanel
-				key={`${run.id}/${snapshot.id}`}
-				runId={run.id}
-				snapshot={snapshot}
-				disabled={run.status !== "waiting" || !!snapshot.answer}
-			/>
-		);
 	return (
-		<HumanStepPanel
+		<DisplayPanel
 			key={`${run.id}/${snapshot.id}`}
 			runId={run.id}
 			snapshot={snapshot}
-			disabled={run.status !== "waiting" || Boolean(snapshot.answer)}
+			disabled={run.status !== "waiting" || !!snapshot.answer}
 		/>
 	);
 }
@@ -92,16 +54,12 @@ export function RunViewDisplays({ run }: { run: any }) {
 			{displays.map((snapshot) => (
 				<section key={snapshot.id} className="review-surface">
 					<h2>{snapshot.title}</h2>
-					{snapshot.kind === "display" ? (
-						<DisplayDocumentView
-							snapshot={snapshot}
-							runId={run.id}
-							disabled
-							onSubmit={async () => {}}
-						/>
-					) : (
-						<DeclarativeView view={snapshot.view} runId={run.id} disabled />
-					)}
+					<DisplayDocumentView
+						snapshot={snapshot}
+						runId={run.id}
+						disabled
+						onSubmit={async () => {}}
+					/>
 				</section>
 			))}
 		</section>
@@ -236,215 +194,6 @@ export function RunOrigin({ run }: { run: any }) {
 	);
 }
 /** Retained export for cached clients; the runtime supplies the stock Ask declaration. */
-export function QuestionForm({ run }: { run: any }) {
-	return <AskView run={run} />;
-}
-
-function reviewComponent(run: any, presentation = run.nativeView) {
-	return presentation?.view.components.find(
-		(component: { type: string }) => component.type === "review-guide",
-	) as ReviewGuideViewComponent | undefined;
-}
-function currentGuide(run: any) {
-	return roleOutput(run, "guide");
-}
-function reviewView(run: any) {
-	return ["review", "external-review"].includes(run.nativeView?.preset);
-}
-export function NativeHumanDecision({ run }: { run: any }) {
-	if (run.nativeViewError)
-		return (
-			<p role="alert" className="error">
-				{run.nativeViewError}
-			</p>
-		);
-	const snapshot = run.nativeView;
-	if (!snapshot) return null;
-	if (snapshot.preset === "approve" && snapshot.authority === "approve")
-		return <ArchitectureEntry run={run} />;
-	if (
-		reviewView(run) &&
-		["review", "external-review"].includes(snapshot.authority)
-	)
-		return <ReviewEntry run={run} />;
-	return (
-		<DeclarativeView
-			view={snapshot.view}
-			runId={run.id}
-			renderComponent={(component) =>
-				component.type === "questions" && snapshot.authority === "ask" ? (
-					<AskView run={run} data={component.data} />
-				) : undefined
-			}
-		/>
-	);
-}
-
-export function ReviewEntry({ run }: { run: any }) {
-	const guide = currentGuide(run),
-		gate = run.reviewGate,
-		url = gate?.url ?? roleOutput(run, "draft-pr")?.url;
-	return (
-		<div className="review-entry">
-			<p>
-				{String(
-					guide?.verdict?.headline ??
-						guide?.summary ??
-						guide?.goal ??
-						"Read the changes, evidence and final checks before deciding.",
-				).slice(0, 320)}
-			</p>
-			<p className="muted">
-				{gate?.status === "pending"
-					? "Awaiting your review"
-					: `Review guide · ${run.status}`}
-				{gate?.headSha && (
-					<>
-						{" "}
-						· revision <code>{gate.headSha.slice(0, 8)}</code>
-					</>
-				)}
-			</p>
-			<div className="actions">
-				<Link
-					className="button primary"
-					to={`/runs/${run.id}/review`}
-					state={{ focusRunId: run.id }}
-				>
-					Open review guide →
-				</Link>
-				<Link
-					className="button ghost"
-					to={`/runs/${run.id}`}
-					state={{ focusRunId: run.id }}
-				>
-					Open run
-				</Link>
-				{url && (
-					<External className="button secondary" href={url}>
-						Open PR ↗
-					</External>
-				)}
-			</div>
-		</div>
-	);
-}
-
-export function FullReview({
-	run,
-	onSettled,
-	settling,
-	presentation = run.nativeView,
-}: {
-	run: any;
-	onSettled: () => void;
-	settling?: boolean;
-	presentation?: any;
-}) {
-	const guide =
-			reviewGuideValue(run, reviewComponent(run, presentation), presentation) ??
-			currentGuide(run),
-		version = `${run.reviewGate?.id ?? "historical"}/${run.reviewGate?.headSha ?? ""}/${guide?.__artifactHash ?? signature(guide ?? null)}`,
-		previous = useRef(version),
-		[updated, setUpdated] = useState(false);
-	useEffect(() => {
-		if (previous.current !== version) setUpdated(true);
-		previous.current = version;
-	}, [version]);
-	return (
-		<>
-			{updated && (
-				<p className="notice" role="status">
-					This review has been updated. Review the current guide and revision
-					before deciding. Unsent feedback has been discarded.
-				</p>
-			)}
-			{presentation ? (
-				<DeclarativeView
-					view={presentation.view}
-					runId={run.id}
-					renderComponent={(component) =>
-						component.type === "review-guide" ? (
-							<ReviewGuideComponent
-								component={component}
-								run={run}
-								presentation={presentation}
-								documentPage
-								controls={(identity, decisionPage) => (
-									<DecisionActions
-										key={`${identity}/${run.reviewGate?.id ?? "finished"}`}
-										identity={identity}
-										decisionPage={decisionPage}
-										run={run}
-										onSettled={onSettled}
-										settling={settling}
-									/>
-								)}
-							/>
-						) : undefined
-					}
-				/>
-			) : (
-				<GuidedReview
-					value={guide}
-					run={run}
-					documentPage
-					controls={(identity, decisionPage) => (
-						<DecisionActions
-							key={`${identity}/${run.reviewGate?.id ?? "finished"}`}
-							identity={identity}
-							decisionPage={decisionPage}
-							run={run}
-							onSettled={onSettled}
-							settling={settling}
-						/>
-					)}
-				/>
-			)}
-			{presentation &&
-				["review", "external-review"].includes(presentation.authority) &&
-				!reviewComponent(run, presentation) && (
-					<DecisionActions
-						run={run}
-						decisionPage
-						onSettled={onSettled}
-						settling={settling}
-					/>
-				)}
-		</>
-	);
-}
-
-type DecisionProps = {
-	run: any;
-	identity?: string;
-	decisionPage?: boolean;
-	onSettled: () => void;
-	settling?: boolean;
-};
-function DecisionActions(props: DecisionProps) {
-	const controller = useReviewFeedback();
-	return controller ? (
-		<ReviewDecisions {...props} controller={controller} />
-	) : (
-		<LocalDecisions {...props} />
-	);
-}
-function LocalDecisions(props: DecisionProps) {
-	const controller = useFeedbackController(
-		feedbackKey(
-			props.identity ?? `factory-review/${props.run.id}/finished`,
-			props.run.reviewGate?.id,
-		),
-		revisionOf([
-			props.run.reviewGate,
-			props.run.nativeView?.digest,
-			props.run.status,
-			props.run.chat?.mode,
-		]),
-	);
-	return <ReviewDecisions {...props} controller={controller} />;
-}
 export function FinalMessage({ run }: { run: any }) {
 	const latest = activitiesOf(run)
 		.filter((item) => item.type === "response" || item.type === "thought")
@@ -474,300 +223,6 @@ export function FinalMessage({ run }: { run: any }) {
 		</div>
 	);
 }
-export function GuideRefreshAction({
-	run,
-	busy,
-	onRefresh,
-}: {
-	run: any;
-	busy: boolean;
-	onRefresh: () => void;
-}) {
-	if (run.status !== "waiting" || run.reviewCapabilities?.refreshGuide !== true)
-		return null;
-	return (
-		<Button variant="ghost" requiresConnection busy={busy} onClick={onRefresh}>
-			Refresh guide
-		</Button>
-	);
-}
-
-function ReviewDecisions({
-	run,
-	identity = `factory-review/${run.id}/finished`,
-	decisionPage = true,
-	onSettled,
-	settling,
-	controller,
-}: DecisionProps & { controller: FeedbackController }) {
-	const toast = useToast(),
-		navigate = useNavigate(),
-		{ action, approve } = useApproval(run, controller),
-		[validationError, setValidationError] = useFormState(
-			controller.context,
-			"",
-		);
-	const isCurrent = useCurrentForm(controller.context);
-	const { draft, update, busy } = controller;
-	const feedback = draft.feedback,
-		feedbackOpen = draft.open;
-	const setFeedback = (feedback: string) => update((d) => ({ ...d, feedback }));
-	const setFeedbackOpen = (open: boolean) => update((d) => ({ ...d, open }));
-	const guide = currentGuide(run),
-		gate = run.reviewGate,
-		waiting = gate?.status === "pending",
-		trackingPending = ticketTrackingPending(run),
-		matching = !waiting || (run.status === "waiting" && guideMatchesGate(run)),
-		url = roleOutput(run, "draft-pr")?.url ?? gate?.url;
-	const reject = async () => {
-		if (!hasFeedback(draft) || busy || action.isPending || !matching) return;
-		let feedback: string;
-		try {
-			feedback = serializeFeedback(
-				draft,
-				guide
-					? {
-							revision: reviewRevision(run) || "historical",
-							goal:
-								guide.verdict?.headline ??
-								guide.goal ??
-								guide.summary ??
-								"Review guide",
-							identity,
-						}
-					: undefined,
-			);
-			setValidationError("");
-		} catch (error) {
-			setValidationError((error as Error).message);
-			return;
-		}
-		if (!controller.lock()) return;
-		try {
-			if (waiting) {
-				await action.mutateAsync({
-					path: `/api/runs/${run.id}/review`,
-					body: {
-						reviewId: gate.id,
-						headSha: gate.headSha,
-						externalDigest: gate.externalDigest,
-						...(run.nativeView
-							? { display: { digest: run.nativeView.digest } }
-							: {}),
-						decision: "reject",
-						feedback,
-					},
-				});
-			} else if (run.chat?.available && run.chat.mode === "continue") {
-				await action.mutateAsync({
-					path: `/api/runs/${run.id}/messages`,
-					body: { text: feedback },
-				});
-				if (isCurrent()) navigate(`/runs/${run.id}`);
-			} else {
-				const next = await action.mutateAsync({
-					path: `/api/runs/${run.id}/followup`,
-					body: { feedback },
-				});
-				if (isCurrent()) navigate(`/runs/${next.id}`);
-			}
-			toast({ text: "Feedback sent — Bob is on it" });
-			controller.clear(draft);
-		} catch {
-			/* error stays visible; the submitted draft is retained. */
-		} finally {
-			controller.unlock();
-		}
-	};
-	return (
-		<>
-			{waiting && !matching && (
-				<p className="notice" role="status">
-					The pending revision changed. Decisions are unavailable until its
-					matching guide is loaded.
-				</p>
-			)}
-			{!guide && <FinalMessage run={run} />}
-			{(guide || feedbackOpen) && (
-				<form
-					className="feedback-form"
-					onSubmit={(e) => {
-						e.preventDefault();
-						void reject();
-					}}
-				>
-					{(!guide || decisionPage || feedbackOpen) && (
-						<label>
-							{guide ? "Additional feedback" : "What should Bob change?"}
-							<textarea
-								rows={guide ? 6 : 3}
-								disabled={busy}
-								placeholder="What else should Bob change?"
-								value={feedback}
-								onChange={(e) => setFeedback(e.target.value)}
-							/>
-						</label>
-					)}
-					<div className="actions">
-						<Button
-							type="submit"
-							busy={busy || action.isPending}
-							requiresConnection
-							disabled={!hasFeedback(draft) || !matching}
-						>
-							{gate?.mode === "external"
-								? "Request changes"
-								: "Submit feedback to Bob"}
-						</Button>
-						{!decisionPage && (
-							<Button
-								variant="ghost"
-								disabled={busy}
-								onClick={() => setFeedbackOpen(!feedbackOpen)}
-							>
-								{feedbackOpen
-									? "Hide additional feedback"
-									: "Add additional feedback"}
-							</Button>
-						)}
-						{!guide && (
-							<Button
-								variant="ghost"
-								disabled={busy}
-								onClick={() => {
-									update(emptyFeedback);
-									setValidationError("");
-								}}
-							>
-								Cancel
-							</Button>
-						)}
-					</div>
-					{validationError && (
-						<p className="error" role="alert">
-							{validationError}
-						</p>
-					)}
-				</form>
-			)}
-			{(guide || !feedbackOpen) && (
-				<div className="actions">
-					{(!guide || decisionPage) &&
-						(waiting || !trackingPending) &&
-						!["running", "interrupted"].includes(run.status) && (
-							<Button
-								variant={guide ? "rainbow" : "primary"}
-								requiresConnection
-								busy={busy || action.isPending || settling}
-								disabled={
-									busy || !matching || (!waiting && !finished(run.status))
-								}
-								onClick={() => {
-									if (waiting) return approve();
-									if (
-										trackingPending ||
-										!matching ||
-										action.isPending ||
-										!controller.lock()
-									)
-										return;
-									onSettled();
-									controller.unlock();
-								}}
-							>
-								{waiting
-									? gate.mode === "external"
-										? "Accept completed work"
-										: "Approve this PR"
-									: guide
-										? "Settle"
-										: "Got it — settle"}
-							</Button>
-						)}
-
-					{finished(run.status) &&
-						gate?.externalDigest &&
-						run.ticketSync?.error && (
-							<Button
-								variant="secondary"
-								requiresConnection
-								busy={busy || action.isPending}
-								onClick={() => {
-									if (!controller.lock()) return;
-									void action
-										.mutateAsync({
-											path: `/api/runs/${run.id}/external-reverify`,
-											body: {},
-										})
-										.catch(() => {})
-										.finally(() => controller.unlock());
-								}}
-							>
-								Reverify ticket changes
-							</Button>
-						)}
-					<GuideRefreshAction
-						run={run}
-						busy={busy || action.isPending}
-						onRefresh={() => {
-							if (!controller.lock()) return;
-							void action
-								.mutateAsync({
-									path: `/api/runs/${run.id}/guide/refresh`,
-									body: { reviewId: gate.id },
-								})
-								.then(() =>
-									toast({
-										text: "Refreshing the guide — existing reviews and images are retained",
-									}),
-								)
-								.catch(() => {})
-								.finally(() => controller.unlock());
-						}}
-					/>
-
-					{url && (
-						<External className="button secondary" href={reviewDiffUrl(url)}>
-							Open diff ↗
-						</External>
-					)}
-					{url && (
-						<External className="button secondary" href={url}>
-							Open PR #{url.split("/").at(-1)} ↗
-						</External>
-					)}
-					{!guide && (
-						<Button
-							variant="ghost"
-							disabled={busy}
-							onClick={() => setFeedbackOpen(true)}
-						>
-							Ask a follow-up
-						</Button>
-					)}
-					{!guide && (
-						<Link className="button ghost" to={`/runs/${run.id}`}>
-							Open run
-						</Link>
-					)}
-				</div>
-			)}
-
-			{waiting && (
-				<small className="muted">
-					{gate.mode === "external"
-						? "Acceptance applies to the verified ticket state. Completion requires a fresh matching state check."
-						: `Approval applies to ${gate.headSha.slice(0, 8)}. Settles after the Git provider confirms the merge.`}
-				</small>
-			)}
-			{action.error && (
-				<p className="error" role="alert">
-					{action.error.message}
-				</p>
-			)}
-		</>
-	);
-}
 export function FocusCard({
 	summary,
 	config,
@@ -781,7 +236,7 @@ export function FocusCard({
 	summary: any;
 	config: any;
 	full?: boolean;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 	onSettled: () => void;
 	settling?: boolean;
 	onSkip?: () => void;
@@ -797,11 +252,7 @@ export function FocusCard({
 		canResume = run.status === "stopped" && run.resumeAvailable === true,
 		label =
 			run.status === "waiting" && run.viewDecision && !run.viewDecision.answer
-				? run.viewDecision.kind === "display"
-					? "Your response is needed"
-					: run.viewDecision.kind === "approve"
-						? "✓ Approval needed"
-						: "☷ Decide per item"
+				? "Your response is needed"
 				: labels[kind],
 		toast = useToast(),
 		action = useAction();
@@ -832,11 +283,8 @@ export function FocusCard({
 				run.viewDecision &&
 				!run.viewDecision.answer ? (
 				<GenericHumanDecision run={run} />
-			) : kind !== "stuck" && (run.nativeView || run.nativeViewError) ? (
-				<NativeHumanDecision run={run} />
 			) : kind === "stuck" ? (
 				<>
-					<ExternalRecovery key={run.id} run={run} />
 					<div className="stuck-panel">
 						<Bob mood="oops" size={48} />
 						<div>
@@ -916,16 +364,15 @@ export function FocusCard({
 						</p>
 					)}
 				</>
-			) : reviewView(run) ? (
-				<ReviewEntry run={run} />
 			) : (
-				<DecisionActions
-					key={`${run.id}/${run.reviewGate?.id ?? "finished"}`}
-					run={run}
-					onSettled={onSettled}
-					settling={settling}
-				/>
+				<>
+					<FinalMessage run={run} />
+					<Button busy={settling} onClick={onSettled}>
+						Settle
+					</Button>
+				</>
 			)}
+
 			{onSkip && (
 				<Button variant="ghost" className="skip-action" onClick={onSkip}>
 					{kind === "review" ? "Later" : "Skip for now"} <kbd>s</kbd>
@@ -982,7 +429,6 @@ export function WorkingRow({
 		action = useAction(),
 		toast = useToast(),
 		step = currentStepOf(data, config),
-		readiness = mergeReadinessFor(data),
 		latest = expanded ? activitiesOf(data).at(-1) : undefined;
 	const visits =
 		(data.history ?? []).filter((h: any) => h.step === data.step).length + 1;
@@ -1015,13 +461,7 @@ export function WorkingRow({
 						{latest?.body ??
 							`${latest?.title ?? "Bob is working"} ${latest?.parameter ?? ""}`}
 					</Markdown>
-					{readiness?.blockers?.length > 0 && (
-						<ul>
-							{readiness.blockers.map((b: any, i: number) => (
-								<li key={i}>{b.message}</li>
-							))}
-						</ul>
-					)}
+
 					<div className="actions">
 						<Link className="button secondary" to={`/runs/${run.id}`}>
 							Open run

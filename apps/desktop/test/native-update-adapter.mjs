@@ -25,6 +25,7 @@ import {
 import { OwnedUpdateLifecycle } from "../../cli/dist/src/services/OwnedUpdateLifecycle.js";
 import { runUpdateSupervisor } from "../../cli/dist/src/services/UpdateSupervisor.js";
 import { desktopExecutable } from "../src/local-runtime.mjs";
+import { preservedCheckpoint, questionStep } from "./display-fixture.mjs";
 
 const [oldDirectory, newDirectory] = process.argv.slice(2);
 assert(oldDirectory && newDirectory);
@@ -135,13 +136,7 @@ for (const mode of crashChild
 				runner: "codex",
 				cwd: home,
 			});
-			return { questions: ["Choose a color"] };
-		},
-		script: async () => {
-			throw Error("Unexpected script");
-		},
-		tool: async () => {
-			throw Error("Unexpected tool");
+			return { prepared: true };
 		},
 	});
 	const workflow = validateWorkflows([
@@ -149,15 +144,15 @@ for (const mode of crashChild
 		{
 			id: "native-update-fixture",
 			name: "Native update fixture",
-			entry: "question",
+			engineVersion: "nodes-v1",
 			steps: [
 				{
-					id: "question",
-					name: "Mock question",
+					id: "prepare",
+					name: "Retained native checkpoint",
 					type: "agent",
 					prompt: "Mock only",
-					askQuestions: true,
 				},
+				questionStep("question", "Choose a color"),
 			],
 		},
 	]).at(-1);
@@ -178,6 +173,7 @@ for (const mode of crashChild
 		await new Promise((r) => setTimeout(r, 10));
 	assert.equal(runtime.get(run.id).status, "waiting");
 	assert.equal(mockCalls, 1);
+	assert(run.viewDecision, "Update fixture must wait at a Display node");
 	let preserved = JSON.parse(JSON.stringify(runtime.get(run.id)));
 
 	const lifecycle = new Lifecycle(home, port);
@@ -263,12 +259,6 @@ for (const mode of crashChild
 			agent: async () => {
 				throw Error("Real agent forbidden");
 			},
-			script: async () => {
-				throw Error("Unexpected script");
-			},
-			tool: async () => {
-				throw Error("Unexpected tool");
-			},
 		}).get(run.id);
 		for (const key of [
 			"status",
@@ -276,12 +266,19 @@ for (const mode of crashChild
 			"workflowDefinitions",
 			"checkpoint",
 			"outputs",
-			"questions",
-			"questionBatchId",
-			"answers",
-			"reviewGate",
+			"viewDecision",
+			"viewRecords",
+			"viewDisplays",
 		])
-			assert.deepEqual(restored[key], preserved[key], `Preserve ${key}`);
+			assert.deepEqual(
+				key === "checkpoint"
+					? preservedCheckpoint(restored[key])
+					: restored[key],
+				key === "checkpoint"
+					? preservedCheckpoint(preserved[key])
+					: preserved[key],
+				`Preserve ${key}`,
+			);
 
 		assert(workerOwner(home));
 		await new OwnedUpdateLifecycle(home, port).releaseMaintenance(

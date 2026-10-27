@@ -46,17 +46,7 @@ export {
 	OperatorGrants,
 	serveOperatorClient,
 } from "./factory/OperatorGrants.js";
-export {
-	type AnswerChoice,
-	type AnswerDraft,
-	answerChoice,
-	answerReplyKind,
-	type Recommendation,
-	resolveAnswers,
-	serializeAnswers,
-	toggleAnswerOption,
-} from "./factory/QuestionAnswers.js";
-export type { QuestionChoices } from "./factory/Questions.js";
+
 export {
 	type Attention,
 	active,

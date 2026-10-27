@@ -15,10 +15,7 @@ import { defaultWorkflows } from "../../edge-worker/src/factory/defaultWorkflows
 import { OperatorConfiguration } from "../../edge-worker/src/factory/OperatorConfiguration.js";
 import { OperatorGrants } from "../../edge-worker/src/factory/OperatorGrants.js";
 import { OperatorServer } from "../../edge-worker/src/factory/OperatorServer.js";
-import {
-	OperatorService,
-	operatorError,
-} from "../../edge-worker/src/factory/OperatorService.js";
+import { OperatorService } from "../../edge-worker/src/factory/OperatorService.js";
 import { operatorSanitize } from "../../edge-worker/src/factory/OperatorTransport.js";
 import { validateWorkflows } from "../../edge-worker/src/factory/Workflow.js";
 import { WorkflowRuntime } from "../../edge-worker/src/factory/WorkflowRuntime.js";
@@ -35,9 +32,6 @@ function fixture() {
 	const question = vi.fn(async () => {});
 	const runtime = new WorkflowRuntime(home, {
 		agent,
-		question,
-		script: async () => ({}),
-		tool: async () => ({}),
 		retryTracking: async (run) => {
 			run.ticketSync = {
 				receipts: [{ key: "mock-tracking", body: "synced", delivered: true }],
@@ -49,6 +43,7 @@ function fixture() {
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "custom",
 			name: "Custom",
 			steps: [
@@ -57,7 +52,6 @@ function fixture() {
 					name: "Work",
 					type: "agent",
 					prompt: "work",
-					askQuestions: true,
 					next: "end",
 				},
 			],
@@ -314,61 +308,7 @@ it("rejects stale and parallel actions while preserving checkpoint and publicati
 			.error.code,
 	).toBe("stale_state");
 });
-it("does not approve reviews, blocks disabled chat, pages activity and sanitizes credentials", async () => {
-	const f = fixture(),
-		c = await sdk(f);
-	f.run.status = "waiting";
-	f.run.questions = ["Choose a value"];
-	f.run.reviewGate = { status: "pending" } as any;
-	expect(
-		(
-			await c.call("answer_run", {
-				runId: f.run.id,
-				expectedRevision: f.service.revision(f.run),
-				answer: "approve",
-				context: { questions: f.run.questions },
-			})
-		).error.code,
-	).toBe("invalid_state");
-	delete f.run.reviewGate;
-	expect(
-		(
-			await c.call("steer_run", {
-				runId: f.run.id,
-				expectedRevision: f.service.revision(f.run),
-				text: "go",
-			})
-		).error.code,
-	).toBe("invalid_state");
-	f.run.error =
-		"fixture-secret-value https://user:pass@example.test/mcp?token=hidden";
-	f.run.events = Array.from({ length: 3 }, (_, i) => ({
-		at: new Date().toISOString(),
-		step: "work",
-		message: `event ${i}: fixture-secret-value`,
-		source: "workflow" as const,
-	}));
-	const result = await c.call("read_run_activity", {
-		runId: f.run.id,
-		limit: 2,
-	});
-	expect(result.result.nextOffset).toBe(2);
-	expect(JSON.stringify(result)).not.toContain("fixture-secret-value");
-	const inspection = JSON.stringify(
-		await c.call("inspect_run", { runId: f.run.id }),
-	);
-	expect(inspection).not.toContain("fixture-secret-value");
-	expect(inspection).not.toContain("user:pass");
-	expect(inspection).not.toContain("token=hidden");
-	expect(
-		operatorError(new Error("401 provider body with fixture-secret-value"))
-			.error,
-	).toEqual({
-		code: "missing_authentication",
-		message: expect.any(String),
-		nextStep: expect.stringContaining("authentication"),
-	});
-});
+
 it("commits connection and exact permissions together, preserves other settings and reports failed reload", async () => {
 	const f = fixture(),
 		path = join(f.home, "config.json");
@@ -467,110 +407,7 @@ it("compiled CLI connects over stdio without starting another worker", async () 
 	f.grants.revoke(meta.id);
 	await expect(client.listTools()).rejects.toThrow();
 }, 30_000); // Includes a real Node CLI startup under concurrent package-suite load.
-it("binds answers to the current batch and keeps explanation requests out of answers", async () => {
-	const f = fixture(),
-		c = await sdk(f);
-	f.agent
-		.mockResolvedValueOnce({
-			status: "blocked",
-			questions: ["Choose one"],
-		} as any)
-		.mockResolvedValueOnce({
-			status: "blocked",
-			questions: ["Explained choice"],
-		} as any)
-		.mockResolvedValue({ status: "completed", questions: [] });
-	const nextQuestion = () =>
-		new Promise<void>((resolve) => {
-			f.question.mockImplementationOnce(async () => resolve());
-		});
-	// Notification follows persistence and registration of the pending answer.
-	const waiting = nextQuestion();
-	f.runtime.retry(f.run.id);
-	await waiting;
-	expect(f.run.status).toBe("waiting");
-	const first = (await c.call("inspect_run", { runId: f.run.id })).result;
-	expect(
-		(
-			await c.call("answer_run", {
-				runId: f.run.id,
-				expectedRevision: first.revision,
-				answer: "x",
-				context: { ...first.questionContext, questionBatchId: "old" },
-			})
-		).error.code,
-	).toBe("stale_state");
-	const explained = nextQuestion();
-	expect(
-		(
-			await c.call("answer_run", {
-				runId: f.run.id,
-				expectedRevision: first.revision,
-				answer: "Explain the choice",
-				kind: "explanation",
-				context: first.questionContext,
-			})
-		).ok,
-	).toBe(true);
-	await explained;
-	expect(f.run.status).toBe("waiting");
-	expect(f.run.questions).toEqual(["Explained choice"]);
-	expect(f.run.answers).toHaveLength(0);
-	expect(f.run.questionRequests).toHaveLength(1);
-	const current = (await c.call("inspect_run", { runId: f.run.id })).result;
-	expect(
-		(
-			await c.call("answer_run", {
-				runId: f.run.id,
-				expectedRevision: current.revision,
-				answer: "Choice A",
-				kind: "answer",
-				context: current.questionContext,
-			})
-		).ok,
-	).toBe(true);
-	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
-	expect(f.run.answers).toHaveLength(1);
-});
-it("rechecks only the inspected question batch through operate grants without submitting an answer", async () => {
-	const f = fixture(),
-		c = await sdk(f);
-	f.agent
-		.mockResolvedValueOnce({
-			status: "blocked",
-			questions: ["Restore access"],
-		} as any)
-		.mockResolvedValue({ status: "completed", questions: [] });
-	const waiting = new Promise<void>((resolve) => {
-		f.question.mockImplementationOnce(async () => resolve());
-	});
-	f.runtime.retry(f.run.id);
-	await waiting;
-	const first = (await c.call("inspect_run", { runId: f.run.id })).result;
-	expect(first.actions.recheck_run.available).toBe(true);
-	const request = {
-		runId: f.run.id,
-		expectedRevision: first.revision,
-		context: first.questionContext,
-	};
-	expect(
-		(
-			await c.call("recheck_run", {
-				...request,
-				context: { ...request.context, questionBatchId: "old" },
-			})
-		).error.code,
-	).toBe("stale_state");
-	expect(f.agent).toHaveBeenCalledTimes(1);
-	expect((await c.call("recheck_run", request)).ok).toBe(true);
-	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
-	expect(f.agent).toHaveBeenCalledTimes(2);
-	expect(f.run.answers).toEqual([]);
-	expect(f.run.history.filter((entry) => entry.step === "work")).toHaveLength(
-		2,
-	);
-	expect((await c.call("recheck_run", request)).error.code).toBe("stale_state");
-});
+
 it.each([
 	"interrupted",
 	"stopped",

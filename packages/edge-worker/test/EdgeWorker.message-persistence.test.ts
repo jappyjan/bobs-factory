@@ -35,9 +35,12 @@ async function fixture() {
 	};
 	fixtures.push(cleanup);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "message-persistence",
 		name: "Message persistence",
-		steps: [{ id: "work", name: "Work", type: "tool", tool: "fixture" }],
+		steps: [
+			{ id: "work", name: "Work", type: "agent", prompt: "fixture-tool" },
+		],
 	});
 	const run = runtime.create({
 		id: "message-persistence",

@@ -29,14 +29,18 @@ afterEach(async () => {
 function setup(hooks: Partial<RuntimeHooks> = {}) {
 	const home = mkdtempSync(join(tmpdir(), "check-simulation-"));
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => {
-			throw new Error("Unexpected agent");
-		},
-		script: async () => {
-			throw new Error("Unexpected script");
-		},
-		tool: async () => {
-			throw new Error("Unexpected action");
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-tool")
+				return (async () => {
+					throw new Error("Unexpected action");
+				})(context);
+			if (context.step.prompt === "fixture-script")
+				return (async () => {
+					throw new Error("Unexpected script");
+				})(context);
+			return (async () => {
+				throw new Error("Unexpected agent");
+			})(context);
 		},
 		...hooks,
 	});
@@ -98,15 +102,16 @@ it.each([
 ])("simulates the same Check output and declared route as native execution (approved=%s)", async (approved) => {
 	const data = { items: [{ approved: true }, { approved }] };
 	const script = vi.fn(async () => data);
-	const { home, runtime, server } = setup({ script });
+	const { home, runtime, server } = setup({ agent: script });
 	const workflows = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "simulation-fixture",
 			name: "Simulation fixture",
 			stepConfigVersion: "step-config-v1",
 			steps: [
-				{ id: "data", name: "Data", type: "script", script: "fixture" },
+				{ id: "data", name: "Data", type: "agent", prompt: "fixture-script" },
 				collectionStep,
 				{
 					id: "correction",
@@ -161,55 +166,6 @@ it.each([
 		actual.next,
 	]);
 	expect(script).toHaveBeenCalledOnce();
-});
-
-it("accepts only explicitly declared evidence keys and never runs a provider or evidence action in simulation", async () => {
-	const evidence = vi.fn(async () => {
-		throw new Error("Simulation cannot fetch evidence");
-	});
-	const { server } = setup({ evidence });
-	const step = {
-		id: "evidence-check",
-		name: "Evidence check",
-		type: "check",
-		checks: ["delivery-evidence"],
-		check: {
-			results: { mode: { select: "/evidence/delivery-evidence/mode" } },
-			passed: { path: "/results/mode", equals: "external" },
-		},
-		branches: [
-			{ when: { path: "mode", equals: "external" }, next: "external" },
-		],
-	};
-	const accepted = await simulate(
-		server,
-		step,
-		{},
-		{ "delivery-evidence": { mode: "external" } },
-		"repository",
-	);
-	expect(accepted.statusCode).toBe(200);
-	expect(accepted.json()).toEqual({
-		output: { passed: true, mode: "external" },
-		next: "external",
-	});
-	const missing = await simulate(server, step, {}, {}, "repository");
-	expect(missing.statusCode).toBe(200);
-	expect(missing.json()).toEqual({
-		output: { passed: false, mode: null },
-		next: "repository",
-	});
-	const rejected = await simulate(
-		server,
-		step,
-		{},
-		{ "qa-gate-evidence": { approved: true } },
-	);
-	expect(rejected.statusCode).toBe(409);
-	expect(rejected.json()).toEqual({
-		error: "Simulation evidence qa-gate-evidence is not declared by this Check",
-	});
-	expect(evidence).not.toHaveBeenCalled();
 });
 
 it("reports invalid configuration and malformed collection paths clearly", async () => {
@@ -273,6 +229,7 @@ it("rejects invalid Check saves with actionable errors and preserves the saved r
 			payload: {
 				workflows: [
 					{
+						engineVersion: "nodes-v1",
 						id: "invalid-check",
 						name: "Invalid Check",
 						stepConfigVersion: "step-config-v1",

@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
-import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import type { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { resourceRuntime } from "./fixtures/resource-node.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const gate = () => {
@@ -27,14 +28,14 @@ it.each([
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		...["normal", "completion"].map((priority) => ({
+			engineVersion: "nodes-v1",
 			id: `offline-${priority}`,
 			name: `Offline ${priority}`,
 			steps: [
 				{
 					id: "work",
 					name: "Shared work",
-					type: "tool",
-					tool: "fixture-resource",
+					type: "fixture-resource",
 					resources: ["shared:offline-age"],
 					access: { mode: "workspace", priority },
 					next: "end",
@@ -48,7 +49,7 @@ it.each([
 	)!;
 	const entered = gate(),
 		release = gate();
-	const first = new WorkflowRuntime(original, {
+	const first = resourceRuntime(original, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async ({ run, signal }) => {
@@ -110,7 +111,7 @@ it.each([
 		await Promise.all(launches);
 		vi.setSystemTime(snapshotAt + 120_000);
 		const resumedOwner = gate();
-		second = new WorkflowRuntime(recovered, {
+		second = resourceRuntime(recovered, {
 			agent: async () => ({}),
 			script: async () => ({}),
 			tool: async ({ run }) => {

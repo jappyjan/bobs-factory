@@ -2,12 +2,10 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type CyrusAgentSessionEntry, immutableJson } from "bobs-factory-core";
+import type { CyrusAgentSessionEntry } from "bobs-factory-core";
 import {
 	createFactoryContextServerFromSnapshot,
 	prepareFactoryContextAsync,
-	runtimeTranscript,
-	runtimeTranscriptField,
 	transcriptAccessPath,
 	transcriptSource,
 } from "bobs-factory-mcp-tools";
@@ -17,20 +15,14 @@ import {
 	roleContextAccess,
 	roleTranscriptSource,
 } from "../src/factory/RoleContext.js";
-import {
-	captureReviewContext,
-	originalReviewContext,
-} from "../src/factory/SpecialistReview.js";
+
 import {
 	mappedStepBindings,
 	stepBindings,
 } from "../src/factory/StepBindings.js";
-import {
-	registerWorkflowConfig,
-	resolveStepConfig,
-} from "../src/factory/StepConfig.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
-import { detachedWorkflowRead } from "../src/factory/WorkflowInput.js";
+
 import {
 	type ExecutionContext,
 	WorkflowRuntime,
@@ -57,6 +49,7 @@ function context(diagnostic = false) {
 	const home = mkdtempSync(join(tmpdir(), "task149-owners-"));
 	homes.push(home);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "custom",
 		name: "Custom role",
 		steps: [
@@ -86,11 +79,7 @@ function context(diagnostic = false) {
 			},
 		],
 	});
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	const run = runtime.create({
 		id: "synthetic-owner",
@@ -119,11 +108,9 @@ it("keeps ordinary handoffs source-bound and reports missing records without loa
 	ctx.transcriptEntries = () => {
 		throw new Error("ordinary roles must never load native transcript buffers");
 	};
-	ctx.run.answers.push({
-		questions: ["Preserve old clients?"],
-		answer: "Yes, keep compatibility",
-		at: "2026-10-23T00:00:00Z",
-	});
+	ctx.step.reads = { ...ctx.step.reads, decision: "@launchInputs/decision" };
+	ctx.run.launchInputs = { decision: "Yes, keep compatibility" };
+	ctx.input = { decision: ctx.run.launchInputs.decision };
 	ctx.chatMessages = [
 		{
 			id: "human-message",
@@ -139,16 +126,20 @@ it("keeps ordinary handoffs source-bound and reports missing records without loa
 	});
 	const view = roleAgentContext(ctx) as {
 		handoff: {
-			answers: unknown[];
+			inputs: unknown[];
 			steering: unknown[];
 			gaps: { source: string; remedy: string }[];
 		};
 	};
-	expect(view.handoff.answers).toEqual([
+	expect(view.handoff.inputs).toEqual([
 		{
-			kind: "human-answer",
-			source: { runId: ctx.run.id, path: "/answers/0" },
-			value: ctx.run.answers[0],
+			name: "decision",
+			source: {
+				runId: ctx.run.id,
+				path: "/inputs/decision",
+				binding: "@launchInputs/decision",
+			},
+			value: "Yes, keep compatibility",
 		},
 	]);
 	expect(view.handoff.steering).toEqual([
@@ -183,12 +174,6 @@ it("keeps ordinary handoffs source-bound and reports missing records without loa
 	const handoffOf = () =>
 		(roleAgentContext(ctx) as { handoff: { reviewMemory?: unknown } }).handoff;
 	expect(handoffOf().reviewMemory).toBeUndefined();
-	ctx.run.reviewRounds = [
-		{ key: "review/specialist-review" },
-	] as unknown as typeof ctx.run.reviewRounds;
-	expect(handoffOf().reviewMemory).toMatchObject({
-		ledger: "/contextMemory/reviewLedger",
-	});
 	delete ctx.run.roleContext;
 	expect(roleAgentContext(ctx)).toBe(ctx.input);
 	expect(roleContextAccess(ctx)).toBeUndefined();
@@ -318,87 +303,10 @@ it("uses original role-tagged session entries, preserves scalar read provenance 
 	}
 });
 
-it("retains private transcript provenance through detached aliases and reconstructed inline baselines without rewriting originals", async () => {
-	const { ctx, home } = context();
-	const scope = { runId: ctx.run.id, role: "predecessor", start: 0, end: 1 };
-	const raw = runtimeTranscript(
-		{ messages: [{ content: "synthetic original raw conversation" }] },
-		scope,
-	);
-	const inline = immutableJson({
-		nested: { copied: raw },
-		baseline: {
-			retained: raw,
-			context: { historical: "unchanged existing nested baseline projection" },
-		},
-		scalar: "synthetic raw scalar",
-		accepted: { messages: ["legitimate application messages"] },
-	});
-	runtimeTranscript(inline.nested.copied, scope);
-	runtimeTranscript(inline.baseline.retained, scope);
-	runtimeTranscriptField(inline, "scalar", scope);
-	const firstCapture = captureReviewContext(inline, ctx.run, []);
-	const captured = immutableJson(captureReviewContext(inline, ctx.run, []));
-	expect(captured.contextTranscriptSources).toEqual(
-		firstCapture.contextTranscriptSources,
-	);
-	const disk = JSON.parse(JSON.stringify(captured));
-	const reconstructed = originalReviewContext(disk, ctx.run, []);
-	const copy = detachedWorkflowRead(reconstructed);
-	expect(copy).toEqual({
-		...inline,
-		baseline: { retained: inline.baseline.retained },
-	});
-	expect(copy).not.toBe(reconstructed);
-	const prepared = await prepareFactoryContextAsync(
-		{ legacy: { baseline: { context: copy } } },
-		undefined,
-		undefined,
-		{ cacheDirectory: join(home, "cache"), access: roleContextAccess(ctx) },
-	);
-	const server = createFactoryContextServerFromSnapshot(
-		prepared.config.args.at(-1)!,
-	);
-	const client = new Client({ name: "legacy-adapter", version: "1" });
-	const [a, b] = InMemoryTransport.createLinkedPair();
-	await server.connect(a);
-	await client.connect(b);
-	try {
-		for (const path of [
-			"/legacy/baseline/context/nested/copied/messages/0/content",
-			"/legacy/baseline/context/scalar",
-			"/legacy/baseline/context/baseline/retained/messages/0/content",
-			"",
-		])
-			expect(
-				(
-					await client.callTool({
-						name: "read_context",
-						arguments: { path, view: "full" },
-					})
-				).isError,
-			).toBe(true);
-		const allowed = await client.callTool({
-			name: "read_context",
-			arguments: { path: "/legacy/baseline/context/accepted", view: "full" },
-		});
-		expect(allowed.isError).not.toBe(true);
-		expect(raw.messages[0]!.content).toBe(
-			"synthetic original raw conversation",
-		);
-		expect(() =>
-			originalReviewContext(disk, { ...ctx.run, id: "foreign-run" }, []),
-		).toThrow("Foreign transcript source");
-	} finally {
-		await client.close();
-		await server.close();
-		prepared.cleanup();
-	}
-});
-
 it("inherits a nested recipe's accepted context configuration independently of role naming", () => {
 	const { ctx } = context();
 	const recipe = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "nested-recipe",
 		name: "Nested",
 		context: {
@@ -425,21 +333,6 @@ it("inherits a nested recipe's accepted context configuration independently of r
 	ctx.step = recipe!.steps[0]!;
 	expect(roleContextAccess(ctx)?.policy).toEqual(recipe!.context);
 	expect(ctx.run.roleContext?.adoption).toBe("new-run");
-});
-
-it("context adoption preserves legacy output, QA, permission and revision contracts", () => {
-	const legacy = {
-		id: "capture",
-		type: "agent",
-		qaContract: "qa-v1" as const,
-		json: true,
-	};
-	expect(
-		resolveStepConfig({
-			...legacy,
-			context: { mode: "outputs-first" as const },
-		}),
-	).toEqual(resolveStepConfig(legacy));
 });
 
 it("refuses an oversized original range before detaching it and records an actionable bounded-extension gap", () => {
@@ -481,6 +374,7 @@ it("reports a partner read as missing only after its producer has output", async
 	const home = mkdtempSync(join(tmpdir(), "first-pass-gaps-"));
 	homes.push(home);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "first-pass",
 		name: "First pass",
 		steps: [
@@ -494,11 +388,7 @@ it("reports a partner read as missing only after its producer has output", async
 			{ id: "plan", name: "Plan", type: "agent", prompt: "Plan the work" },
 		],
 	});
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	registerWorkflowConfig(workflow);
 	const run = runtime.create({

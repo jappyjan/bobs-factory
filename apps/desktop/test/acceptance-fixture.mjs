@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultWorkflows } from "../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { FactoryServer } from "../../../packages/edge-worker/dist/factory/FactoryServer.js";
-import { FactoryTools } from "../../../packages/edge-worker/dist/factory/FactoryTools.js";
 import { validateWorkflows } from "../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import {
@@ -14,6 +13,7 @@ import {
 	localRepository,
 } from "../../cli/dist/src/onboarding.js";
 import { acquireInstanceLock } from "../../cli/dist/src/services/InstanceLock.js";
+import { preservedCheckpoint, questionStep } from "./display-fixture.mjs";
 
 export const until = async (check, label, timeout = 20000) => {
 	const end = Date.now() + timeout;
@@ -78,13 +78,19 @@ export async function seed(home) {
 		{
 			id: "acceptance-active",
 			name: "Controlled native job",
+			engineVersion: "nodes-v1",
 			allowedTriggers: ["manual"],
 			steps: [
 				{
 					id: "job",
 					name: "Bounded shell job",
-					type: "script",
-					script: `echo $$ > ${quote(join(home, "job.pid"))}; /bin/sleep 120 & child=$!; echo "$child" > ${quote(join(home, "descendant.pid"))}; trap 'kill "$child" 2>/dev/null; exit 1' TERM INT; while ! test -e ${quote(join(home, "release-job"))}; do /bin/sleep 0.1; done; kill "$child" 2>/dev/null; wait "$child" 2>/dev/null; echo complete >> ${quote(join(home, "job-receipts"))}; printf '{"completed":true}'`,
+					type: "exec",
+					access: "workspace",
+					command: "/bin/sh",
+					args: [
+						"-c",
+						`echo $$ > ${quote(join(home, "job.pid"))}; /bin/sleep 120 & child=$!; echo "$child" > ${quote(join(home, "descendant.pid"))}; trap 'kill "$child" 2>/dev/null; exit 1' TERM INT; while ! test -e ${quote(join(home, "release-job"))}; do /bin/sleep 0.1; done; kill "$child" 2>/dev/null; wait "$child" 2>/dev/null; echo complete >> ${quote(join(home, "job-receipts"))}; printf '{"completed":true}'`,
+					],
 					next: "end",
 				},
 			],
@@ -92,6 +98,7 @@ export async function seed(home) {
 		{
 			id: "acceptance-question",
 			name: "Controlled waiting answer",
+			engineVersion: "nodes-v1",
 			allowedTriggers: ["manual"],
 			steps: [
 				{
@@ -100,30 +107,17 @@ export async function seed(home) {
 					type: "agent",
 					prompt: "Fixture only",
 					runner: "codex",
-					next: "ci-fix",
+					next: "question",
 				},
-				{
-					id: "ci-fix",
-					name: "Retained scripted assistance question",
-					type: "script",
-					script: `if test -e ${quote(join(home, "answer-fixture"))}; then printf '{"questions":[],"accepted":true}'; else printf '{"questions":["Which fixture color?"]}'; fi`,
-					next: "end",
-				},
+				questionStep("question", "Which fixture color?"),
 			],
 		},
 		{
 			id: "acceptance-review",
-			name: "Controlled review gate",
+			name: "Controlled review display",
+			engineVersion: "nodes-v1",
 			allowedTriggers: ["manual"],
-			steps: [
-				{
-					id: "review",
-					name: "Retained human review",
-					type: "tool",
-					tool: "human-review",
-					next: "end",
-				},
-			],
+			steps: [questionStep("review", "Review the retained fixture output")],
 		},
 	]);
 	const runtime = new WorkflowRuntime(home, {
@@ -138,11 +132,6 @@ export async function seed(home) {
 			});
 			return { prepared: true, scope: "mock checkpoint only" };
 		},
-		script: async () => ({ questions: ["Which fixture color?"] }),
-		tool: async () => ({
-			headSha: "d".repeat(40),
-			url: "https://example.invalid/review/fixture",
-		}),
 	});
 	for (const id of [
 		"acceptance-question",
@@ -152,7 +141,7 @@ export async function seed(home) {
 		const run = runtime.create({
 			id,
 			repositoryId: "local",
-			workspace: worktree,
+			workspace: id === "acceptance-active" ? home : worktree,
 			input: "Synthetic acceptance fixture",
 			workflow: workflows.find((w) => w.id === id),
 			workflowDefinitions: workflows,
@@ -206,13 +195,16 @@ export function preserved(run) {
 					"workflowDefinitions",
 					"outputs",
 					"history",
-					"questions",
-					"questionBatchId",
-					"reviewGate",
+					"viewDecision",
+					"viewRecords",
+					"viewDisplays",
 					"checkpoint",
-					"answers",
-					"humanDecisions",
-				].map((key) => [key, structuredClone(run[key])]),
+				].map((key) => [
+					key,
+					key === "checkpoint"
+						? preservedCheckpoint(run[key])
+						: structuredClone(run[key]),
+				]),
 			),
 		),
 	);
@@ -223,13 +215,10 @@ async function backend(home, port, origin) {
 	const release = await acquireInstanceLock(home, {
 		dashboardPort: Number(port),
 	});
-	const tools = new FactoryTools({});
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => {
 			throw Error("No inference permitted");
 		},
-		script: (ctx) => tools.script(ctx),
-		tool: (ctx) => tools.tool(ctx),
 	});
 	const calls = [];
 	// Exact, bounded synthetic GitHub transport; no network/provider authentication.

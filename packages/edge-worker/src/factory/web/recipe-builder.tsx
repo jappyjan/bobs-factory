@@ -1,9 +1,9 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { passiveTools } from "../CapacityPolicy";
+
 import { paletteNodes } from "../nodes/metadata.js";
-import { type NativeViewPreset, nativeViewPreset } from "../ViewPresets";
+
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
 import { AgentStepSettings } from "./agent-step-settings";
 import { CheckJsonField } from "./check-step-settings";
@@ -11,11 +11,10 @@ import { api, useAction, useConfig } from "./client";
 import { ForeachSimulation } from "./foreach-simulation";
 import { CallInputMapping } from "./foreach-step-settings";
 import { AgentSettings } from "./forms";
-import { ViewEditor } from "./human-step-settings";
+
 import { NodeStepSettings } from "./node-step-settings.js";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
-	authorableTools,
 	changeRouteTarget,
 	childrenOf,
 	connect,
@@ -813,7 +812,7 @@ function Inspector({
 	];
 	const topLevel = !parent;
 	const fallback = topLevel ? fallbackOf(owner.steps, step) : undefined;
-	const heavy = step.type === "script" || step.tool === "exec";
+
 	const comesFrom = routesOf(displayed).filter((r) => r.to === step.id);
 	const panel = useRef<HTMLElement>(null);
 	const unnamed = step.branches.filter((b) => !b.when.path).length;
@@ -919,28 +918,6 @@ function Inspector({
 							onChange={(e) => onChange({ prompt: e.target.value })}
 						/>
 					)}
-					{local && !owner.engineVersion && (
-						<>
-							<label className="recipe-check">
-								<input
-									type="checkbox"
-									checked={!!step.askQuestions}
-									onChange={(e) =>
-										onChange({ askQuestions: e.target.checked || undefined })
-									}
-								/>
-								May pause to ask you questions
-							</label>
-							<label className="recipe-check">
-								<input
-									type="checkbox"
-									checked={step.json !== false}
-									onChange={(e) => onChange({ json: e.target.checked })}
-								/>
-								Structured JSON output
-							</label>
-						</>
-					)}
 				</section>
 			)}
 			{step.type === "agent" && (
@@ -963,113 +940,6 @@ function Inspector({
 				onError={onConfigError}
 			/>
 
-			{["agent", "tool"].includes(step.type) &&
-				!(step.type === "agent" && owner.engineVersion) && (
-					<section className="recipe-section">
-						<h3>Human view</h3>
-						<p>
-							Choose what people read. Changing this view keeps the run’s
-							existing approval requirements.
-						</p>
-						{step.view ? (
-							<ViewEditor
-								value={step.view}
-								readOnly={!local}
-								paths={[
-									"/inputs/human",
-									...("components" in step.view
-										? Object.keys(step.view.reads ?? {}).map(
-												(name) => `/inputs/${name}`,
-											)
-										: []),
-								]}
-								onChange={(view) => onChange({ view })}
-								onError={onConfigError}
-							/>
-						) : (
-							<label>
-								Stock view preset
-								<select
-									value=""
-									disabled={!local}
-									onChange={(event) => {
-										if (event.target.value)
-											onChange({
-												view: nativeViewPreset(
-													event.target.value as NativeViewPreset,
-												),
-											});
-									}}
-								>
-									<option value="">Add a view…</option>
-									<option value="ask">Ask</option>
-									<option value="approve">Approve</option>
-									<option value="review">Review</option>
-									<option value="external-review">External review</option>
-								</select>
-							</label>
-						)}
-					</section>
-				)}
-			{(step.type === "tool" || step.type === "script") && local && (
-				<section className="recipe-section">
-					<h3>What runs</h3>
-					{step.type === "tool" ? (
-						<label>
-							Built-in action
-							<input
-								list="recipe-tools"
-								value={step.tool ?? ""}
-								onChange={(e) => onChange({ tool: e.target.value })}
-							/>
-							<datalist id="recipe-tools">
-								{authorableTools.map((tool) => (
-									<option key={tool} value={tool} />
-								))}
-							</datalist>
-						</label>
-					) : (
-						<label>
-							Script
-							<textarea
-								className="recipe-prompt"
-								rows={4}
-								value={step.script ?? ""}
-								onChange={(e) => onChange({ script: e.target.value })}
-							/>
-						</label>
-					)}
-					<label>
-						Capacity
-						<select
-							value={
-								step.computeIntensive === undefined
-									? "default"
-									: String(step.computeIntensive)
-							}
-							onChange={(e) =>
-								onChange({
-									computeIntensive:
-										e.target.value === "default"
-											? undefined
-											: e.target.value === "true",
-								})
-							}
-						>
-							<option value="default">
-								Default ({heavy ? "one slot" : "lightweight"})
-							</option>
-							<option
-								value="true"
-								disabled={passiveTools.includes(step.tool ?? "")}
-							>
-								Intensive (one slot)
-							</option>
-							<option value="false">Lightweight (no slot)</option>
-						</select>
-					</label>
-				</section>
-			)}
 			{step.type === "fanout" && (
 				<section className="recipe-section">
 					<h3>Runs in parallel</h3>
@@ -1151,21 +1021,6 @@ function Inspector({
 							)}
 						</datalist>
 					)}
-					{(step.type === "decide" || step.type === "approve") && (
-						<datalist id="human-route-fields">
-							{(step.type === "decide"
-								? [
-										"hasFollowUps",
-										...(step.decide?.actions ?? []).map(
-											(action) => `itemsByAction.${action.id}.length`,
-										),
-									]
-								: ["approved", "feedback"]
-							).map((field) => (
-								<option key={field} value={field} />
-							))}
-						</datalist>
-					)}
 					<ul className="recipe-routes">
 						{step.branches.map((branch, index) => (
 							<li key={`${index}-${branch.next}`} data-new={!branch.when.path}>
@@ -1176,11 +1031,7 @@ function Inspector({
 											aria-label="Output field"
 											placeholder="output field"
 											list={
-												step.type === "check"
-													? "check-route-fields"
-													: step.type === "decide" || step.type === "approve"
-														? "human-route-fields"
-														: undefined
+												step.type === "check" ? "check-route-fields" : undefined
 											}
 											value={branch.when.path}
 											onChange={(e) =>
@@ -1275,12 +1126,7 @@ function Inspector({
 										...step.branches,
 										{
 											when: {
-												path:
-													step.type === "check"
-														? "passed"
-														: step.type === "decide"
-															? "hasFollowUps"
-															: "approved",
+												path: step.type === "check" ? "passed" : "approved",
 												equals: false,
 											},
 											next: fallback!,

@@ -38,6 +38,7 @@ it("P148-R2-S1: actual heartbeat advances the Working caches and timing renderer
 	let wall = Date.now(),
 		mono = 0;
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "timing-update",
 		name: "Timing update",
 		steps: [
@@ -57,12 +58,6 @@ it("P148-R2-S1: actual heartbeat advances the Working caches and timing renderer
 		{
 			agent: async () => {
 				throw new Error("Blocked role must not run");
-			},
-			script: async () => {
-				throw new Error("No script");
-			},
-			tool: async () => {
-				throw new Error("No provider");
 			},
 		},
 		{ wall: () => wall, mono: () => mono },

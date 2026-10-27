@@ -217,15 +217,15 @@ it("keeps legacy text requests valid and validates explicitly declared file fiel
 	);
 });
 
-it("passes uploaded files through nested explicit inputs and snapshots them for architecture approval", async () => {
+it("passes original uploaded bytes through nested declared reads", async () => {
 	const { home, store, context, stage } = fixture();
 	const { WorkflowRuntime } = await import("../src/factory/WorkflowRuntime.js");
-	const { proposal } = await import("./fixtures/architecture.js");
 	const asset = stage("spec.bin", Buffer.from([0, 255, 1]));
 	const attachments = store.claim("nested", context, "workflow", {
 		files: [asset.id],
 	});
 	const child = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "child",
 		name: "Child",
 		internal: true,
@@ -236,11 +236,11 @@ it("passes uploaded files through nested explicit inputs and snapshots them for 
 				name: "Read",
 				type: "agent",
 				prompt: "Read files",
-				inputs: ["files"],
 			},
 		],
 	});
 	const parent = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "parent",
 		name: "Parent",
 		allowedTriggers: ["manual"],
@@ -251,7 +251,6 @@ it("passes uploaded files through nested explicit inputs and snapshots them for 
 				name: "Architecture",
 				type: "agent",
 				prompt: "Snapshot files",
-				architectureContract: "architecture-v1",
 			},
 		],
 	});
@@ -259,20 +258,8 @@ it("passes uploaded files through nested explicit inputs and snapshots them for 
 	const runtime = new WorkflowRuntime(home, {
 		agent: async (execution) => {
 			seen.push(execution.input);
-			if (execution.step.id === "architecture") {
-				const result = proposal("routine");
-				result.candidate.assets = [
-					{
-						path: attachments.files![0]!.path,
-						purpose: "Uploaded specification",
-					},
-				];
-				return result;
-			}
 			return { summary: "Read uploaded bytes" };
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	try {
 		const run = runtime.create({
@@ -293,13 +280,11 @@ it("passes uploaded files through nested explicit inputs and snapshots them for 
 		expect(run.status).toBe("completed");
 		expect(seen[0]).toMatchObject({
 			launchAttachments: attachments,
-			files: attachments.files,
 		});
 		expect(seen[1]).toMatchObject({ launchAttachments: attachments });
-		const frozen =
-			run.architectureProposals![0]!.content.candidate.assets[0]!.path;
-		expect(frozen).not.toBe(attachments.files![0]!.path);
-		expect(readFileSync(frozen)).toEqual(Buffer.from([0, 255, 1]));
+		expect(readFileSync(attachments.files![0]!.path)).toEqual(
+			Buffer.from([0, 255, 1]),
+		);
 	} finally {
 		await runtime.shutdown();
 	}
@@ -313,6 +298,7 @@ it("keeps step results intact when their names match attachment fields and ignor
 		files: [asset.id],
 	});
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "collision",
 		name: "Collision",
 		allowedTriggers: ["manual"],
@@ -328,7 +314,7 @@ it("keeps step results intact when their names match attachment fields and ignor
 				name: "Read",
 				type: "agent",
 				prompt: "Read results and files",
-				inputs: ["files", "constructor", "launchAttachments"],
+				reads: { files: "files" },
 			},
 		],
 	});
@@ -340,8 +326,6 @@ it("keeps step results intact when their names match attachment fields and ignor
 			seen = execution.input;
 			return { summary: "Read" };
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	try {
 		const run = runtime.create({
@@ -360,7 +344,7 @@ it("keeps step results intact when their names match attachment fields and ignor
 		await runtime.launch(run);
 		expect(run.status).toBe("completed");
 		expect(seen.files).toEqual({ computed: "preserve this result" });
-		expect(seen.constructor).toBeUndefined();
+		expect(Object.hasOwn(seen, "constructor")).toBe(false);
 		expect(seen.launchAttachments).toEqual(attachments);
 	} finally {
 		await runtime.shutdown();

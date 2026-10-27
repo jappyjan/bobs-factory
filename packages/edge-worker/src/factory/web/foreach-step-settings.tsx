@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { displayMayInteract } from "../DisplayDocument.js";
 import { foreachPointerSchema } from "../Foreach";
 import { nodeMetadata } from "../nodes/metadata.js";
 import { CheckJsonField } from "./check-step-settings";
@@ -57,17 +58,9 @@ export function bodyProblem(value: unknown): string | undefined {
 			!Array.isArray(step.branches)
 		)
 			return `Step “${step.id}” needs a name, supported type and branches array.`;
-		if (
-			["decide", "approve"].includes(step.type) ||
-			(step.type === "agent" && step.askQuestions) ||
-			(step.type === "tool" &&
-				[
-					"human-review",
-					"architecture-decision",
-					"external-human-review",
-				].includes(step.tool))
-		)
-			return "Human steps and agents that ask questions cannot run inside For each.";
+
+		if (step.type === "display" && displayMayInteract(step))
+			return "Human checkpoints belong outside concurrent bodies.";
 		if (step.type === "foreach") {
 			const issue = bodyProblem(step.body);
 			if (issue) return issue;

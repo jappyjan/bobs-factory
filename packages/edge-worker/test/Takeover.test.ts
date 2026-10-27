@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
+
 import { GITHUB_API_COMMAND } from "../src/factory/GithubApi.js";
 import {
 	inspectPullRequest,
@@ -77,7 +77,7 @@ it("captures all issue/review discussion pages and rejects another repository or
 	).toBe("TEAM-4");
 	expect(() => ticketIdentifier("https://example.com/TEAM-4")).toThrow();
 });
-function context(tool: string): ExecutionContext {
+function _context(tool: string): ExecutionContext {
 	return {
 		run: {
 			id: "run",
@@ -93,7 +93,7 @@ function context(tool: string): ExecutionContext {
 					githubUrl: "https://github.com/owner/repo",
 				},
 			],
-			workflow: defaultWorkflows[2]!,
+			workflow: defaultWorkflows.find((w) => w.id === "takeover")!,
 			status: "running",
 			workspace: "/tmp",
 			input: "Continue",
@@ -123,86 +123,3 @@ function context(tool: string): ExecutionContext {
 		evidenceDir: "/tmp/evidence",
 	};
 }
-it("takes over the same PR, converts it to draft and never creates a replacement PR", async () => {
-	const ctx = context("inspect-existing");
-	ctx.run.takeoverSource = pr;
-	ctx.run.outputs.source = pr;
-	ctx.run.repositories = [
-		{
-			id: "repo",
-			name: "Fixture",
-			repositoryPath: "/tmp",
-			workspace: "/tmp",
-			baseBranch: pr.headRefName,
-			githubUrl: "https://github.com/owner/repo",
-		},
-	];
-	const commands: string[][] = [];
-	const tools = new FactoryTools({
-		postComment: async () => {},
-		command: async (_context, exe, args) => {
-			commands.push([exe, ...args]);
-			if (args[0] === "branch") return "feature/existing";
-			if (args[0] === "rev-parse") return "sha";
-			if (args[0] === "rev-list") return "1";
-			if (args[0] === "diff" && args.includes("--name-only"))
-				return "feature.ts";
-			if (exe === GITHUB_API_COMMAND) {
-				const request = githubRequest(args);
-				if (request.path.includes("?state=open")) return "[]";
-				if (request.path === "graphql")
-					return JSON.stringify({
-						data: {
-							convertPullRequestToDraft: {
-								pullRequest: { id: "PR_node", isDraft: true },
-							},
-						},
-					});
-				return JSON.stringify({ ...apiPr, draft: true });
-			}
-			return "";
-		},
-	});
-	await tools.tool(ctx);
-	expect(ctx.run.repositories[0]!.baseBranch).toBe(pr.baseRefName);
-	expect(ctx.run.outputs.repository).toEqual({ baseBranch: pr.baseRefName });
-	expect(
-		commands
-			.filter(([exe]) => exe === GITHUB_API_COMMAND)
-			.map(([, arg]) => githubRequest([arg!])),
-	).toContainEqual(
-		expect.objectContaining({
-			path: "graphql",
-			body: expect.objectContaining({
-				query: expect.stringContaining("convertPullRequestToDraft"),
-			}),
-		}),
-	);
-	ctx.step = { ...ctx.step, tool: "draft-pr" };
-	expect(await tools.tool(ctx)).toMatchObject({
-		url: pr.url,
-		branch: "feature/existing",
-	});
-	expect(
-		commands.some(
-			(args) =>
-				args[0] === GITHUB_API_COMMAND &&
-				githubRequest(args.slice(1)).method === "POST" &&
-				githubRequest(args.slice(1)).path !== "graphql",
-		),
-	).toBe(false);
-});
-it("refuses a changed takeover branch before committing or pushing anything", async () => {
-	const commands: string[][] = [];
-	const tools = new FactoryTools({
-		postComment: async () => {},
-		command: async (_context, exe, args) => {
-			commands.push([exe, ...args]);
-			return "wrong-branch";
-		},
-	});
-	await expect(tools.tool(context("draft-pr"))).rejects.toThrow(
-		"original PR branch",
-	);
-	expect(commands).toEqual([["git", "branch", "--show-current"]]);
-});

@@ -96,6 +96,7 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "reader",
 			name: "Arbitrary callable recipe",
 			allowedTriggers: ["workflow"],
@@ -136,16 +137,42 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "long-lived",
 			name: "Long-lived nested custom work",
 			steps: [
 				{
 					id: "clarify",
 					name: "Explicit clarification",
-					type: "agent",
-					prompt:
-						"Consume the explicit role inputs and preserve required evidence",
-					askQuestions: true,
+					type: "display",
+					document: {
+						version: "view-v1",
+						components: [
+							{
+								id: "answer",
+								type: "form",
+								data: {
+									literal: {
+										fields: [
+											{
+												id: "answer",
+												type: "text",
+												label: "Keep existing clients compatible?",
+												required: true,
+											},
+										],
+									},
+								},
+							},
+							{
+								id: "submit",
+								type: "actions",
+								data: {
+									literal: { actions: [{ id: "continue", label: "Continue" }] },
+								},
+							},
+						],
+					},
 				},
 				{
 					id: "requirements",
@@ -220,21 +247,14 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 					throw new Error("ordinary role loaded a predecessor buffer");
 				},
 				agent: async (context) => {
-					if (context.step.id === "clarify")
-						return context.run.answers.length
-							? {
-									summary: "Compatibility accepted",
-									questions: [],
-									constraints: [context.run.answers[0]!.answer],
-								}
-							: { questions: ["Keep existing clients compatible?"] };
 					if (context.step.id === "requirements")
 						return {
+							decision: context.run.outputs.clarify,
 							requirements: [
 								{
 									id: "compatibility",
 									text: "Keep existing clients compatible",
-									source: "/answers/0",
+									source: "/outputs/clarify",
 								},
 							],
 							artifact: {
@@ -311,10 +331,8 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 								? data.text
 								: JSON.parse(data.text as string);
 						};
-						const answer = (await read("/handoff/answers/0/value")) as {
-							answer: string;
-						};
-						expect(answer.answer).toBe(
+						const answer = await read("/accepted/decision/values/answer");
+						expect(answer).toBe(
 							"Keep old clients compatible; original evidence is required",
 						);
 						const accepted = (await read("/accepted")) as {
@@ -356,12 +374,6 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 						reason: "Original independent final proof is still missing",
 					};
 				},
-				script: async () => {
-					throw new Error("No script is authorized in this drive");
-				},
-				tool: async () => {
-					throw new Error("No provider action is authorized in this drive");
-				},
 			};
 			let runtime = new WorkflowRuntime(state, hooks);
 			runtimes.push(runtime);
@@ -379,10 +391,17 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 			await waitForRuntime(() =>
 				expect(runtime.get(run.id).status).toBe("waiting"),
 			);
-			runtime.answer(
-				run.id,
-				"Keep old clients compatible; original evidence is required",
-			);
+			const decision = run.viewDecision!;
+			await runtime.answerView(run.id, {
+				batchId: decision.id,
+				digest: decision.digest,
+				documentDigest: decision.documentDigest,
+				accepted: true,
+				action: "continue",
+				values: {
+					answer: "Keep old clients compatible; original evidence is required",
+				},
+			});
 			if (mode === "reconstructed") {
 				await waitForRuntime(() => expect(paused.length).toBeGreaterThan(0), {
 					timeout: 15000,
@@ -438,7 +457,9 @@ it("drives fresh/reconstructed renamed Call/Parallel/For each roles from explici
 				mode,
 				roles,
 				historyEntries: saved.history.length,
-				answers: saved.answers,
+				answers: saved.viewRecords
+					?.filter((record) => record.answer)
+					.map((record) => record.answer),
 				context: counters,
 				nativeBufferLoads: nativeLoads,
 				completedSiblingRetained: completedSibling
@@ -472,6 +493,7 @@ it("uses the authenticated existing operator retry for a bounded exact-counter e
 		const workflows = validateWorkflows([
 			...defaultWorkflows,
 			{
+				engineVersion: "nodes-v1",
 				id: "diagnostic",
 				name: "Scoped diagnostic",
 				steps: [
@@ -533,8 +555,6 @@ it("uses the authenticated existing operator retry for a bounded exact-counter e
 					await c.close();
 				}
 			},
-			script: async () => ({}),
-			tool: async () => ({}),
 		};
 		runtime = new WorkflowRuntime(home, hooks);
 		const run = runtime.create({

@@ -4,10 +4,11 @@ import {
 	LaunchRunsConfigurationSchema,
 	SnapshotConfigurationSchema,
 } from "../ActionSteps.js";
+import { displayMayInteract } from "../DisplayDocument.js";
 import { ForeachSettingsSchema, prepareForeach } from "../Foreach.js";
-import { DecideConfigurationSchema } from "../HumanStep.js";
+
 import { createNodeStep, type Kind, nodeKind } from "../nodes/metadata.js";
-import { ViewSourceSchema } from "../View.js";
+
 import type { WorkflowStep } from "../Workflow.js";
 
 export type Step = WorkflowStep;
@@ -101,28 +102,7 @@ export const triggers = [
 	},
 ];
 
-const conditionText: Record<string, string> = {
-	"approved=false": "Changes requested",
-	"approved=true": "Approved",
-	"fix=true": "Needs a fix",
-	'decision="reject"': "Rejected",
-	'decision="revise"': "Revision requested",
-	"rework=true": "Rework needed",
-	"reviewRequired=false": "No re-review needed",
-	"impactRequired=true": "Impact changed",
-	"retainQa=true": "QA still valid",
-	"correctionRequired=true": "Correction needed",
-	"readinessOnly=true": "Only readiness changed",
-	"extractRequirements=true": "Requirements changed",
-	"externalPending=true": "External work pending",
-	'mode="external"': "External delivery",
-	'mode="mixed"': "Mixed delivery",
-	"deferred=true": "Deferred",
-	"repositoryComplete=true": "Repository done",
-	"drift=true": "External state drifted",
-	"hasFollowUps=true": "Has follow-ups",
-	"hasFollowUps=false": "No follow-ups",
-};
+const conditionText: Record<string, string> = {};
 export function describeCondition(when: { path: string; equals?: unknown }) {
 	if (!when.path) return "New condition";
 	return (
@@ -138,67 +118,10 @@ export const kinds = new Proxy(
 		get: (_target, type: string) => nodeKind(type),
 	},
 );
-export const humanTools = [
-	"human-review",
-	"architecture-decision",
-	"external-human-review",
-];
 export function kindOf(step: Step): Kind {
-	if (step.type === "tool" && humanTools.includes(step.tool ?? ""))
-		return kinds.human;
 	return nodeKind(step.type);
 }
-
-export const toolText: Record<string, string> = {
-	"record-decisions":
-		"Saves the clarified decisions so later steps can rely on them.",
-	"inspect-existing": "Reads the existing branch, PR and discussion.",
-	"draft-pr": "Pushes the branch and opens a draft pull request.",
-	"accept-delivery":
-		"Records the accepted, independently reviewed delivery contract.",
-	"review-gate":
-		"Collects reviewer findings, drops nitpicks and decides whether fixes are needed.",
-	ci: "Watches CI, mergeability and PR comments until the PR is ready.",
-	"ci-fix-readiness": "Refreshes provider readiness before a queued CI fix.",
-	"inspect-review-readiness":
-		"Inspects current revision, feedback and provider evidence for review rules.",
-	"review-after-fix":
-		"Decides whether a fix changed enough to need another review.",
-	"visual-gate": "Checks QA results and screenshots before hand-off.",
-	"impact-checks": "Runs the checks the impact assessment selected.",
-	handoff: "Verifies the reviewed revision and hands it over.",
-	"human-review": "Waits for you to approve or request changes.",
-	merge: "Merges the approved revision.",
-	"architecture-decision":
-		"Waits for you to accept the architecture when it matters.",
-	"delivery-route":
-		"Checks the accepted delivery contract and picks the route.",
-	"delivery-mode": "Routes based on repository, external or mixed delivery.",
-	"external-apply": "Applies authorized changes to external tickets.",
-	"external-verify":
-		"Independently re-reads ticket state to verify the changes.",
-	"external-guide": "Prepares the review of external work.",
-	"external-human-review": "Waits for you to accept the external work.",
-	"external-final": "Confirms accepted external state before finishing.",
-};
-/** Retained descriptions explain saved graphs; new recipes use Check instead. */
-export const legacyDecisionTools = new Set([
-	"review-gate",
-	"visual-gate",
-	"delivery-mode",
-	"delivery-route",
-	"review-after-fix",
-]);
-export const authorableTools = Object.keys(toolText).filter(
-	(tool) => !legacyDecisionTools.has(tool),
-);
 export function stepSummary(step: Step, recipes: Recipe[]): string {
-	if (step.type === "decide")
-		return `Choose an action for each item. Routes can use hasFollowUps or itemsByAction.${step.decide?.actions[0]?.id ?? "action"}.`;
-	if (step.type === "approve")
-		return "Waits for explicit acceptance of the exact displayed content. Routes on approved; requested changes include feedback.";
-	if (step.type === "show")
-		return "Displays the configured view without pausing the recipe.";
 	if (step.type === "snapshot")
 		return `Pins every repository in scope.${step.snapshot?.history ? " Includes dated, repository-matched run history." : ""}`;
 	if (step.type === "file-issues")
@@ -207,15 +130,13 @@ export function stepSummary(step: Step, recipes: Recipe[]): string {
 		return `Launches “${recipes.find((r) => r.id === (step.launchRuns?.workflow ?? "factory"))?.name ?? step.launchRuns?.workflow ?? "factory"}” in dependency waves. ${step.launchRuns?.wait === false ? "Returns child links; tracking continues." : "Waits for child outcomes."}`;
 	if (step.type === "check")
 		return `Evaluates ${Object.keys(step.check?.results ?? {}).length} named results. Routes on passed and those results.`;
-	if (step.type === "tool")
-		return toolText[step.tool ?? ""] ?? `Built-in action “${step.tool}”.`;
 	if (step.type === "workflow")
 		return `Runs “${recipes.find((r) => r.id === step.workflow)?.name ?? step.workflow}”, then continues.`;
 	if (step.type === "foreach")
 		return `${itemSourceSummary(step)} · up to ${step.concurrency ?? 4} at once · ${step.failure === "keep-successful" ? "keep successful items" : "all must succeed"}.`;
 	if (step.type === "fanout")
 		return `${step.groups?.length ?? 0} branches run at the same time.`;
-	if (step.type === "script") return step.script ?? "";
+
 	return (step.prompt ?? "").split(/(?<=\.)\s/)[0] ?? "";
 }
 export function itemSourceSummary(step: Step): string {
@@ -388,64 +309,10 @@ export function calledNodeId(callId: string, stepId: string): string {
 
 export type Phase = { id: string; label: string; color: string };
 export const phases: Phase[] = [
-	{ id: "understand", label: "Understand", color: "#4cc9f0" },
-	{ id: "plan", label: "Plan", color: "#7b61ff" },
-	{ id: "architecture", label: "Architecture", color: "#c77dff" },
-	{ id: "build", label: "Build", color: "#3ddc97" },
-	{ id: "review", label: "Review", color: "#ff9f43" },
-	{ id: "ready", label: "Merge readiness", color: "#ffd23f" },
-	{ id: "qa", label: "QA", color: "#4cc9f0" },
-	{ id: "handoff", label: "Hand-off", color: "#ff5d73" },
-	{ id: "fix", label: "Fix loops", color: "#a79fc6" },
-	{ id: "external", label: "External delivery", color: "#5ec4b6" },
 	{ id: "steps", label: "Steps", color: "#7b61ff" },
 ];
-const knownPhases: Record<string, string> = {
-	clarify: "understand",
-	decisions: "understand",
-	"existing-work": "understand",
-	"assess-existing": "understand",
-	plan: "plan",
-	"plan-review": "plan",
-	"delivery-route": "plan",
-	"delivery-deferred": "plan",
-	architecture: "architecture",
-	"architecture-review": "architecture",
-	"architecture-decision": "architecture",
-	implement: "build",
-	"draft-pr": "build",
-	"assess-impact": "review",
-	"extract-requirements": "review",
-	"impact-checks": "review",
-	"specialist-review": "review",
-	"review-gate": "review",
-	ci: "ready",
-	"visual-scope": "qa",
-	capture: "qa",
-	"visual-review": "qa",
-	"visual-gate": "qa",
-	guide: "handoff",
-	handoff: "handoff",
-	"human-review": "handoff",
-	merge: "handoff",
-	"code-fix": "fix",
-	"ci-fix": "fix",
-	"after-ci-fix": "fix",
-	"visual-fix": "fix",
-	"human-fix": "fix",
-	"delivery-feedback-route": "fix",
-};
-/** Stock steps have known phases; other steps join the phase run before them. */
 export function phasesOf(steps: Step[]): Record<string, Phase> {
-	const result: Record<string, Phase> = {};
-	let previous = "steps";
-	for (const id of runOrder(steps)) {
-		const known =
-			knownPhases[id] ?? (id.startsWith("external-") ? "external" : undefined);
-		previous = known ?? previous;
-		result[id] = phases.find((p) => p.id === previous)!;
-	}
-	return result;
+	return Object.fromEntries(steps.map((step) => [step.id, phases[0]!]));
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -610,7 +477,7 @@ export function draftProblems(
 	const problems: string[] = [];
 	const hasBlockingView = (steps: Step[], seen = new Set<string>()): boolean =>
 		steps.some((step) => {
-			if (step.type === "decide" || step.type === "approve") return true;
+			if (step.type === "display" && displayMayInteract(step)) return true;
 			if (hasBlockingView(childrenOf(step), seen)) return true;
 			if (step.type !== "workflow" || !step.workflow || seen.has(step.workflow))
 				return false;
@@ -630,22 +497,9 @@ export function draftProblems(
 				hasBlockingView(childrenOf(s))
 			)
 				problems.push(
-					`“${s.name}”: Decide and Approve belong outside For each and parallel branches, including called recipes.`,
+					`“${s.name}”: Interactive displays belong outside For each and parallel branches, including called recipes.`,
 				);
-			if (["decide", "approve", "show"].includes(s.type)) {
-				const view = ViewSourceSchema.safeParse(s.view);
-				if (!view.success)
-					problems.push(
-						`“${s.name}”: ${view.error.issues.map((issue) => `${issue.path.join("/")}: ${issue.message}`).join("; ")}`,
-					);
-				if (s.type === "decide") {
-					const decision = DecideConfigurationSchema.safeParse(s.decide);
-					if (!decision.success)
-						problems.push(
-							`“${s.name}”: ${decision.error.issues.map((issue) => `${issue.path.join("/")}: ${issue.message}`).join("; ")}`,
-						);
-				}
-			}
+
 			const actionSchema =
 				s.type === "snapshot"
 					? SnapshotConfigurationSchema

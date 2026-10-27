@@ -28,6 +28,7 @@ function acceptedStep(rules: Rule[], output = true) {
 	return validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "rule-budget",
 			name: "Rule budget",
 			stepConfigVersion: "step-config-v1",
@@ -40,7 +41,6 @@ function acceptedStep(rules: Rule[], output = true) {
 					prompt: "Return data",
 					...(output ? { output: { format: "json-v1" } } : {}),
 					rules,
-					checks: [],
 					instructions: [],
 					next: "end",
 				},
@@ -207,7 +207,7 @@ it("preserves useful rules, deterministic object equality and cold lazy context"
 
 it("shares total condition work across actual accepted read bindings", () => {
 	const binding = () => ({
-		from: "@answers",
+		from: "@launchInputs/answers",
 		when: {
 			count: "/items",
 			where: { path: "/label", equals: "xxxxxxxx" },
@@ -217,6 +217,7 @@ it("shares total condition work across actual accepted read bindings", () => {
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "binding-work",
 			name: "Binding work",
 			stepConfigVersion: "step-config-v1",
@@ -238,7 +239,7 @@ it("shares total condition work across actual accepted read bindings", () => {
 			outputs: {
 				items: Array.from({ length: 5000 }, () => ({ label: "xxxxxxxx" })),
 			},
-			answers: "safe",
+			launchInputs: { answers: "safe" },
 			history: [],
 		},
 		step,

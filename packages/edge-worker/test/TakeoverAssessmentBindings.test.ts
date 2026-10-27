@@ -5,17 +5,18 @@ import type { FactoryRun } from "../src/factory/WorkflowRuntime.js";
 
 const workflow = (id: string) => defaultWorkflows.find((w) => w.id === id)!;
 
-it.each([
-	["clarify-plan", "planning", "clarify"],
-	["clarify-plan", "planning", "plan"],
-	["clarify-plan", "planning", "plan-review"],
-])("binds the Takeover assessment into composed %s/%s", (recipe, call, id) => {
+it("binds the Takeover intake assessment to its lexical existing-work producer", () => {
 	const run = {
 		workflow: workflow("takeover"),
 		workflowDefinitions: defaultWorkflows,
 	} as unknown as FactoryRun;
-	const step = workflow(recipe).steps.find((s) => s.id === id)!;
-	const context = { run, step, stepKey: `${call}/${id}` };
-	expect(boundStepKey(context, "scopeExistingWork")).toBe("existing-work");
-	expect(boundStepKey(context, "scopeAssessment")).toBe("assess-existing");
+	const step = workflow("v2-takeover-intake").steps.find(
+		(s) => s.id === "assess-existing",
+	)!;
+	expect(
+		boundStepKey(
+			{ run, step, stepKey: "intake/assess-existing" },
+			"existingWork",
+		),
+	).toBe("intake/existing-work");
 });

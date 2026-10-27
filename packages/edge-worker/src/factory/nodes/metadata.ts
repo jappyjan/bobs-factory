@@ -5,8 +5,8 @@ export type NodeCategory = "agent" | "display" | "logic" | "flow" | "io";
 export type NodeEffect =
 	| "pure"
 	| "read-only"
-	| "agent"
 	| "human"
+	| "agent"
 	| "effect"
 	| "flow";
 export interface NodeBuilderMetadata {
@@ -31,24 +31,6 @@ export interface NodeMetadata {
 }
 export type Kind = { icon: string; label: string; tone: string; hint: string };
 const kinds: Record<string, Kind> = {
-	decide: {
-		icon: "☷",
-		label: "Decide per item",
-		tone: "red",
-		hint: "Choose a configured action for each item, then route the results",
-	},
-	approve: {
-		icon: "✓",
-		label: "Approve",
-		tone: "red",
-		hint: "Explicitly approve the displayed content or request changes",
-	},
-	show: {
-		icon: "▤",
-		label: "Show",
-		tone: "blue",
-		hint: "Displays a declarative view and immediately continues",
-	},
 	snapshot: {
 		icon: "◈",
 		label: "Snapshot repository",
@@ -79,18 +61,6 @@ const kinds: Record<string, Kind> = {
 		tone: "green",
 		hint: "Evaluates named rules; the recipe routes on their results",
 	},
-	tool: {
-		icon: "⚙",
-		label: "Built-in",
-		tone: "blue",
-		hint: "Bob runs a built-in action",
-	},
-	script: {
-		icon: "›_",
-		label: "Script",
-		tone: "green",
-		hint: "Runs a shell script in the worktree",
-	},
 	fanout: {
 		icon: "⫘",
 		label: "In parallel",
@@ -109,29 +79,18 @@ const kinds: Record<string, Kind> = {
 		tone: "yellow",
 		hint: "Runs another recipe, then continues",
 	},
-	human: {
-		icon: "🙋",
-		label: "You",
-		tone: "red",
-		hint: "Waits for a human decision",
-	},
 };
-function legacyNewStep(
+function builtinNewStep(
 	kind:
 		| "agent"
 		| "check"
-		| "decide"
-		| "approve"
-		| "show"
-		| "tool"
-		| "script"
 		| "fanout"
 		| "foreach"
 		| "snapshot"
 		| "file-issues"
 		| "launch-runs"
-		| "workflow"
-		| "human",
+		| "workflow",
+
 	id: string,
 	callable?: string,
 ): Step {
@@ -142,64 +101,6 @@ function legacyNewStep(
 		maxVisits: DEFAULT_STEP_MAX_VISITS,
 	};
 	switch (kind) {
-		case "decide":
-			return {
-				...base,
-				name: "Decide per item",
-				type: "decide",
-				view: {
-					version: "view-v1",
-					components: [
-						{
-							id: "intro",
-							type: "markdown",
-							data: {
-								literal: { text: "Choose what should happen to each item." },
-							},
-						},
-					],
-				},
-				decide: {
-					items: { literal: [{ id: "first", title: "First item" }] },
-					itemId: "/id",
-					title: "/title",
-					details: [],
-					actions: [
-						{ id: "fix", label: "Fix", comment: true },
-						{ id: "skip", label: "Skip", comment: true },
-						{
-							id: "followUp",
-							label: "Follow up",
-							comment: true,
-							followUp: true,
-						},
-					],
-				},
-			};
-		case "approve":
-		case "show":
-			return {
-				...base,
-				name: kind === "approve" ? "Approve artifact" : "Show summary",
-				type: kind,
-				view: {
-					version: "view-v1",
-					components: [
-						{
-							id: "intro",
-							type: "markdown",
-							data: {
-								literal: {
-									text:
-										kind === "approve"
-											? "Review this artifact before approving it."
-											: "The recipe continues after displaying this summary.",
-								},
-							},
-						},
-					],
-				},
-			};
 		case "snapshot":
 			return {
 				...base,
@@ -252,27 +153,6 @@ function legacyNewStep(
 				type: "agent",
 				prompt: "Describe what this agent should do and what it returns.",
 			};
-		case "human":
-			return {
-				...base,
-				name: "Your review",
-				type: "tool",
-				tool: "human-review",
-			};
-		case "tool":
-			return {
-				...base,
-				name: "New built-in step",
-				type: "tool",
-				tool: "draft-pr",
-			};
-		case "script":
-			return {
-				...base,
-				name: "New script",
-				type: "script",
-				script: "pnpm test",
-			};
 		case "fanout":
 			return {
 				...base,
@@ -323,10 +203,6 @@ function legacyNewStep(
 
 const groups: Record<string, NodeCategory> = {
 	agent: "agent",
-	decide: "display",
-	approve: "display",
-	show: "display",
-	human: "display",
 	check: "logic",
 	fanout: "flow",
 	foreach: "flow",
@@ -351,15 +227,13 @@ export const builtinMetadata: Record<string, NodeMetadata> = Object.fromEntries(
 			builder: {
 				...kind,
 				paletteGroup: groups[type] ?? "io",
-				settings: ["decide", "approve", "show"].includes(type)
-					? "human"
-					: ["snapshot", "file-issues", "launch-runs"].includes(type)
-						? "action"
-						: ["check", "foreach"].includes(type)
-							? type
-							: "inline",
-				defaults: legacyNewStep(
-					type as Parameters<typeof legacyNewStep>[0],
+				settings: ["snapshot", "file-issues", "launch-runs"].includes(type)
+					? "action"
+					: ["check", "foreach"].includes(type)
+						? type
+						: "inline",
+				defaults: builtinNewStep(
+					type as Parameters<typeof builtinNewStep>[0],
 					"$id",
 					"$callable",
 				),
@@ -370,12 +244,6 @@ export const builtinMetadata: Record<string, NodeMetadata> = Object.fromEntries(
 const builtinOrder = [
 	"agent",
 	"check",
-	"decide",
-	"approve",
-	"show",
-	"human",
-	"tool",
-	"script",
 	"fanout",
 	"foreach",
 	"snapshot",

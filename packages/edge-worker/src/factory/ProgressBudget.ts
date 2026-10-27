@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { passiveTools } from "./CapacityPolicy.js";
-import { digest } from "./Delivery.js";
+
+import { digest } from "./EvidenceDigest.js";
 import { NonConvergenceError } from "./ExecutionErrors.js";
 import { foreachPointer, foreachScope } from "./Foreach.js";
 import type { ProgressPolicy } from "./ProgressPolicy.js";
@@ -85,10 +85,9 @@ export function initializeProgressBudget(run: FactoryRun, legacy = false) {
 export function observesProgress(context: ExecutionContext) {
 	return (
 		!!context.run.progressBudget &&
-		!["workflow", "foreach", "fanout", "decide", "approve", "show"].includes(
+		!["workflow", "foreach", "fanout", "display", "wait"].includes(
 			context.step.type,
-		) &&
-		!passiveTools.includes(context.step.tool ?? "")
+		)
 	);
 }
 

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
+
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
 import {
 	beginProgressAttempt,
@@ -52,8 +52,6 @@ function barrier() {
 function load(home: string, hooks: Partial<RuntimeHooks> = {}) {
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
 		...hooks,
 	});
 	runtimes.push(runtime);
@@ -102,6 +100,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 			...defaultWorkflows,
 			...dependencies,
 			{
+				engineVersion: "nodes-v1",
 				id: "progress-fixture",
 				name: "Progress fixture",
 				steps,
@@ -139,7 +138,12 @@ async function settled(runtime: WorkflowRuntime, run: FactoryRun) {
 
 describe("accepted progress policy", () => {
 	it("validates the public policy defaults and bounds without opting old recipes in", async () => {
-		const definition = { id: "schema", name: "Schema", steps: [role("work")] };
+		const definition = {
+			engineVersion: "nodes-v1",
+			id: "schema",
+			name: "Schema",
+			steps: [role("work")],
+		};
 		expect(WorkflowSchema.parse(definition).convergence).toBeUndefined();
 		expect(
 			WorkflowSchema.parse({ ...definition, convergence: {} }).convergence,
@@ -211,9 +215,10 @@ describe("accepted progress policy", () => {
 		await runtime.shutdown();
 		const restarted = load(home);
 		const restored = restarted.get(run.id);
-		await restarted.launch(restored);
-		expect(restored.status).toBe("failed");
-		expect(restored.iterationLimit).toMatchObject({ step: "work", limit: 2 });
+		expect(() => restarted.launch(restored)).toThrow(
+			"Created by an older recipe engine; restart it",
+		);
+		expect(restored.status).toBe("stopped");
 		expect(restored.progressBudget).toBeUndefined();
 	});
 });
@@ -235,6 +240,7 @@ it("stops two-route ping-pong across fresh Call frames despite new summaries, at
 		},
 	});
 	const child = (id: string) => ({
+		engineVersion: "nodes-v1",
 		id,
 		name: id,
 		convergence: { maxUnchangedAttempts: 100 },
@@ -351,85 +357,6 @@ it("does not treat empty commits, dirty source or alleged output evidence as new
 	expect(observations(run)).toHaveLength(1);
 	expect(run.progressBudget!.facts).toEqual({});
 	expect(run.progressBudget!.blocked).toMatchObject({ attempts: 2, limit: 2 });
-});
-
-it("accepts new host answers while a passive human wait consumes no elapsed-time budget", async () => {
-	const agent = vi.fn(async (context: ExecutionContext) =>
-		context.run.answers.length < 3
-			? { questions: ["Which accepted requirement should change?"] }
-			: { questions: [], done: true },
-	);
-	const { runtime, create } = fixture({ agent });
-	const run = create([
-		loop({
-			askQuestions: true,
-			branches: [{ when: { path: "done", equals: true }, next: "end" }],
-		}),
-	]);
-	const running = runtime.launch(run);
-	for (const answer of [
-		"Implement requirement A",
-		"Implement requirement B",
-		"Implement requirement C",
-	]) {
-		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-		const before = structuredClone(run.progressBudget);
-		vi.useFakeTimers({ toFake: ["Date"] });
-		vi.setSystemTime(Date.now() + 86_400_000);
-		await runtime.save(run);
-		expect(run.progressBudget).toEqual(before);
-		vi.useRealTimers();
-		runtime.answer(run.id, answer);
-	}
-	await running;
-	expect(run.status, run.error).toBe("completed");
-	expect(run.answers.map((entry) => entry.answer)).toEqual([
-		"Implement requirement A",
-		"Implement requirement B",
-		"Implement requirement C",
-	]);
-	expect(agent.mock.calls.length).toBeGreaterThan(2);
-	expect(run.progressBudget!.blocked).toBeUndefined();
-});
-
-it("uses production Check evidence once, then stops when the same verified evidence repeats", async () => {
-	let executions = 0;
-	const { runtime, create } = fixture({
-		agent: async () => {
-			executions++;
-			return { files: ["source.ts"], ok: true, summary: randomUUID() };
-		},
-	});
-	const run = create([
-		role("work", { next: "proof" }),
-		{
-			id: "proof",
-			name: "Verify committed source",
-			type: "check",
-			maxVisits: 100,
-			reads: { candidate: "work" },
-			checks: [{ check: "files-exist", path: "/inputs/candidate/files/*" }],
-			check: {
-				results: {
-					present: { path: "/evidence/files-exist/verified", equals: true },
-				},
-			},
-			next: "work",
-		},
-	]);
-	await runtime.launch(run);
-	expect(run.status).toBe("failed");
-	expect(executions).toBe(3);
-	expect(run.history.find((entry) => entry.step === "proof")).toMatchObject({
-		output: { passed: true, present: true },
-		evidence: { "files-exist": { verified: true } },
-	});
-	expect(Object.keys(run.progressBudget!.facts).length).toBeGreaterThan(0);
-	expect(run.progressBudget!.blocked).toMatchObject({
-		step: "work",
-		attempts: 2,
-		limit: 2,
-	});
 });
 
 it.each([
@@ -613,40 +540,6 @@ it("distinguishes genuine initial For each items even when their source and oper
 	expect(attempts(run)).toBe(4);
 });
 
-it("leaves passive CI polling uncharged as time passes", async () => {
-	const waiting = barrier();
-	const entered = barrier();
-	const { runtime, create } = fixture({
-		tool: async () => {
-			entered.release();
-			await waiting.promise;
-			return { ready: true };
-		},
-	});
-	const run = create([
-		{
-			id: "ci",
-			name: "Wait for checks",
-			type: "tool",
-			tool: "ci",
-			next: "end",
-		},
-	]);
-	const running = runtime.launch(run);
-	await entered.promise;
-	const before = structuredClone(run.progressBudget);
-	vi.useFakeTimers({ toFake: ["Date"] });
-	vi.setSystemTime(Date.now() + 7 * 86_400_000);
-	await runtime.save(run);
-	expect(run.progressBudget).toEqual(before);
-	expect(attempts(run)).toBe(0);
-	vi.useRealTimers();
-	waiting.release();
-	await running;
-	expect(run.status, run.error).toBe("completed");
-	expect(attempts(run)).toBe(0);
-});
-
 it("retains interrupted physical attempts and native identity over repeated automatic restarts", async () => {
 	let physical = 0;
 	const agent = async (context: ExecutionContext) => {
@@ -694,50 +587,6 @@ it("retains interrupted physical attempts and native identity over repeated auto
 	);
 });
 
-it("does not charge a script waiting for capacity before admission", async () => {
-	const capacityEntered = barrier();
-	const admit = barrier();
-	const script = vi.fn(async () => ({ completed: true }));
-	const { runtime, create } = fixture({
-		script,
-		capacity: {
-			acquireLease: async () => {
-				capacityEntered.release();
-				await admit.promise;
-				return {
-					token: "fixture-only-capacity",
-					run: (operation) => operation(),
-					release: async () => {},
-				};
-			},
-		},
-	});
-	const run = create([
-		{
-			id: "work",
-			name: "Script",
-			type: "script",
-			script: "Controlled hook",
-			next: "end",
-		},
-	]);
-	const running = runtime.launch(run);
-	await capacityEntered.promise;
-	const before = structuredClone(run.progressBudget);
-	vi.useFakeTimers({ toFake: ["Date"] });
-	vi.setSystemTime(Date.now() + 86_400_000);
-	await runtime.save(run);
-	expect(run.progressBudget).toEqual(before);
-	expect(attempts(run)).toBe(0);
-	expect(script).not.toHaveBeenCalled();
-	vi.useRealTimers();
-	admit.release();
-	await running;
-	expect(run.status, run.error).toBe("completed");
-	expect(attempts(run)).toBe(1);
-	expect(script).toHaveBeenCalledOnce();
-});
-
 it("does not charge work queued behind an owned shared resource", async () => {
 	const entered = barrier();
 	const releaseOwner = barrier();
@@ -777,42 +626,6 @@ it("does not charge work queued behind an owned shared resource", async () => {
 	await Promise.all([first, second]);
 	expect(queued.status, queued.error).toBe("completed");
 	expect(attempts(queued)).toBe(1);
-});
-
-it("bounded Continue retains the actual human approval requirement before merge", async () => {
-	let corrected = false;
-	const tools = new FactoryTools({ postComment: async () => {} });
-	const { runtime, create } = fixture({
-		agent: async () => ({ finished: corrected }),
-		tool: (context) => tools.tool(context),
-	});
-	const run = create([
-		loop({
-			branches: [{ when: { path: "finished", equals: true }, next: "merge" }],
-		}),
-		{
-			id: "merge",
-			name: "Merge guarded revision",
-			type: "tool",
-			tool: "merge",
-			next: "end",
-		},
-	]);
-	await runtime.launch(run);
-	expect(run.progressBudget!.blocked).toMatchObject({ attempts: 2, limit: 2 });
-	const history = structuredClone(run.history);
-	const workflow = structuredClone(run.workflow);
-	corrected = true;
-	runtime.retry(run.id);
-	await settled(runtime, run);
-	expect(run.status).toBe("failed");
-	expect(run.error).toMatch(/Explicit human approval required before merge/);
-	expect(run.workflow).toEqual(workflow);
-	expect(run.history.slice(0, history.length)).toEqual(history);
-	expect(run.humanDecisions ?? []).toEqual([]);
-	expect(run.outputs.merge).toBeUndefined();
-	expect(run.progressBudget!.grants).toHaveLength(1);
-	expect(run.progressBudget!.grants[0]!.attempts).toBe(1);
 });
 
 it("retains the original custom visit limit and its explicit additional-visit grant", async () => {
@@ -883,6 +696,7 @@ it("keeps enclosing For each bodies independent through identical Calls and data
 		})),
 		[
 			{
+				engineVersion: "nodes-v1",
 				id: "shared-child",
 				name: "Shared child",
 				steps: [role("work", { next: "end" })],
@@ -930,6 +744,7 @@ it("binds accepted lexical Call values separately from structural scope and retu
 		})),
 		[
 			{
+				engineVersion: "nodes-v1",
 				id: "shared-child",
 				name: "Shared child",
 				inputs: ["payload"],
@@ -982,6 +797,7 @@ it("does not turn reworded role claims forwarded through Call into accepted inpu
 		],
 		[
 			{
+				engineVersion: "nodes-v1",
 				id: "shared-child",
 				name: "Shared child",
 				inputs: ["payload"],
@@ -995,81 +811,6 @@ it("does not turn reworded role claims forwarded through Call into accepted inpu
 	expect(
 		observations(run).filter((entry) => entry.operation.endsWith("/work")),
 	).toHaveLength(1);
-});
-
-it("normalizes repeated accepted view meaning while preserving exact batch receipts and real changes", async () => {
-	let calls = 0;
-	const { runtime, create } = fixture({
-		agent: async () => {
-			calls++;
-			return {};
-		},
-	});
-	const run = create([
-		role("work", { next: "decision" }),
-		{
-			id: "decision",
-			name: "Decision",
-			type: "approve",
-			maxVisits: 100,
-			view: {
-				version: "view-v1",
-				components: [
-					{
-						id: "brief",
-						type: "markdown",
-						data: { literal: { text: "Accepted display" } },
-					},
-				],
-			},
-			next: "work",
-		},
-	]);
-	const running = runtime.launch(run);
-	const facts: string[] = [];
-	for (const feedback of ["Resolve A", "Resolve B", "Resolve A", "Resolve A"]) {
-		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-		const view = run.viewDecision!;
-		const answer = {
-			batchId: view.id,
-			digest: view.digest,
-			accepted: true,
-			approved: false,
-			feedback,
-		};
-		await runtime.answerView(run.id, answer);
-		facts.push(run.progressBudget!.facts.human);
-		expect(run.viewRecords!.at(-1)!.answer!.request).toEqual(answer);
-		expect(run.viewRecords!.at(-1)!.answer!.output).toMatchObject({
-			batchId: view.id,
-			digest: view.digest,
-			approved: false,
-			feedback,
-		});
-		await waitForRuntime(() =>
-			expect(
-				run.status === "failed" ||
-					(run.status === "waiting" && run.viewDecision?.id !== view.id),
-			).toBe(true),
-		);
-	}
-	await running;
-	expect(run.status).toBe("failed");
-	expect(calls).toBe(4);
-	expect(facts[0]).not.toBe(facts[1]);
-	expect(facts[2]).toBe(facts[0]);
-	expect(facts[3]).toBe(facts[0]);
-	expect(
-		new Set(run.viewRecords!.map((record) => record.snapshot.id)).size,
-	).toBe(4);
-	expect(
-		new Set(run.viewRecords!.map((record) => record.sourceDigest)).size,
-	).toBe(1);
-	expect(
-		observations(run)
-			.map((entry) => entry.attempts)
-			.sort(),
-	).toEqual([1, 1, 2]);
 });
 
 it("grants bounded audited observation slots at the real 4096 window without discarding earlier counters", async () => {
@@ -1135,91 +876,6 @@ it("grants bounded audited observation slots at the real 4096 window without dis
 	await runtime.save(run);
 }, 180000);
 
-it.each([
-	"choices",
-	"fields",
-	"display",
-] as const)("recognizes genuine accepted %s changes and returns repeated human meaning to its retained counter", async (axis) => {
-	let calls = 0;
-	const { runtime, create } = fixture({
-		agent: async () => {
-			calls++;
-			return {
-				items: [{ id: "a", title: "Accepted scope" }],
-				brief: {
-					text: axis === "display" && calls === 2 ? "Display B" : "Display A",
-				},
-			};
-		},
-	});
-	const run = create([
-		role("work", { next: "decision" }),
-		{
-			id: "decision",
-			name: "Decision",
-			type: "decide",
-			maxVisits: 100,
-			reads: { result: "work" },
-			view: {
-				version: "view-v1",
-				components: [
-					{
-						id: "brief",
-						type: "markdown",
-						data: { path: "/inputs/result/brief" },
-					},
-					{
-						id: "form",
-						type: "choices",
-						data: {
-							literal: {
-								fields: [{ id: "note", label: "Note", type: "text" }],
-							},
-						},
-					},
-				],
-			},
-			decide: {
-				items: { path: "/inputs/result/items" },
-				actions: [
-					{ id: "fix", label: "Fix" },
-					{ id: "skip", label: "Skip" },
-				],
-			},
-			next: "work",
-		},
-	]);
-	const running = runtime.launch(run);
-	const facts: string[] = [];
-	for (let i = 0; i < 4; i++) {
-		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-		const view = run.viewDecision!;
-		await runtime.answerView(run.id, {
-			batchId: view.id,
-			digest: view.digest,
-			accepted: true,
-			choices: [
-				{ itemId: "a", action: axis === "choices" && i === 1 ? "skip" : "fix" },
-			],
-			fields: { note: axis === "fields" && i === 1 ? "B" : "A" },
-		});
-		facts.push(run.progressBudget!.facts.human);
-		await waitForRuntime(() =>
-			expect(
-				run.status === "failed" ||
-					(run.status === "waiting" && run.viewDecision?.id !== view.id),
-			).toBe(true),
-		);
-	}
-	await running;
-	expect(run.status).toBe("failed");
-	expect(calls).toBe(4);
-	expect(facts[1]).not.toBe(facts[0]);
-	expect(facts[2]).toBe(facts[0]);
-	expect(facts[3]).toBe(facts[0]);
-	expect(run.viewRecords).toHaveLength(4);
-});
-
 it("forwards semantic accepted strings through nested lexical aliases without trusting role prose", async () => {
 	const received: unknown[] = [];
 	const { runtime, create } = fixture({
@@ -1243,6 +899,7 @@ it("forwards semantic accepted strings through nested lexical aliases without tr
 		})),
 		[
 			{
+				engineVersion: "nodes-v1",
 				id: "wrapper",
 				name: "Wrapper",
 				inputs: ["request"],
@@ -1259,6 +916,7 @@ it("forwards semantic accepted strings through nested lexical aliases without tr
 				],
 			},
 			{
+				engineVersion: "nodes-v1",
 				id: "leaf",
 				name: "Leaf",
 				inputs: ["request"],
@@ -1275,227 +933,6 @@ it("forwards semantic accepted strings through nested lexical aliases without tr
 	expect(new Set(observations(run).map((entry) => entry.operation)).size).toBe(
 		1,
 	);
-});
-
-it("consumes distinct native Yes decisions after pending-question reconstruction without replaying accepted work", async () => {
-	const questions = [
-		"Support offline operation?",
-		"Save drafts locally?",
-		"Encrypt drafts?",
-	];
-	const native: (string | undefined)[] = [];
-	const agent = async (context: ExecutionContext) => {
-		native.push(context.resumeAgent?.sessionId);
-		await context.checkpointAgent?.({
-			runner: "codex",
-			sessionId: "native-clarification",
-		});
-		return context.run.answers.length < questions.length
-			? { questions: [questions[context.run.answers.length]] }
-			: { questions: [], done: true };
-	};
-	const { home, runtime, create } = fixture({ agent });
-	const run = create([
-		loop({
-			askQuestions: true,
-			branches: [{ when: { path: "done", equals: true }, next: "end" }],
-		}),
-	]);
-	const running = runtime.launch(run);
-	await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-	expect(run.questions).toEqual([questions[0]]);
-	runtime.answer(run.id, "Yes");
-	await waitForRuntime(() => expect(run.questions).toEqual([questions[1]]));
-	await runtime.save(run);
-	const before = structuredClone({
-		answers: run.answers,
-		history: run.history,
-		budget: run.progressBudget,
-		checkpoint: run.checkpoint,
-		batch: run.questionBatchId,
-	});
-	await runtime.shutdown();
-	await running;
-	const restarted = load(home, { agent });
-	const restored = restarted.get(run.id);
-	expect(restored.answers).toEqual(before.answers);
-	expect(restored.history).toEqual(before.history);
-	expect(restored.progressBudget).toEqual(before.budget);
-	expect(restored.checkpoint).toEqual(before.checkpoint);
-	expect(restored.questionBatchId).toBe(before.batch);
-	restarted.resumeAll();
-	await waitForRuntime(() =>
-		expect(restored.status, restored.error).toBe("waiting"),
-	);
-	expect(native).toHaveLength(2);
-	const facts = [restored.progressBudget!.facts.human];
-	for (const question of questions.slice(1)) {
-		expect(restored.questions).toEqual([question]);
-		restarted.answer(restored.id, "Yes");
-		facts.push(restored.progressBudget!.facts.human);
-		await waitForRuntime(() =>
-			expect(["completed", "failed", "waiting"]).toContain(restored.status),
-		);
-	}
-	await settled(restarted, restored);
-	expect(
-		restored.answers.map(({ questions, answer }) => ({ questions, answer })),
-	).toEqual(
-		questions.map((question) => ({ questions: [question], answer: "Yes" })),
-	);
-	expect(restored.status, restored.error).toBe("completed");
-	expect(native).toEqual([
-		undefined,
-		"native-clarification",
-		"native-clarification",
-		"native-clarification",
-	]);
-	expect(new Set(facts).size).toBe(3);
-	expect(restored.answers.slice(0, before.answers.length)).toEqual(
-		before.answers,
-	);
-	expect(restored.history.slice(0, before.history.length)).toEqual(
-		before.history,
-	);
-	expect(restored.progressBudget!.grantCount).toBe(0);
-});
-
-it.each([
-	"same",
-	"oscillating",
-	"choices",
-	"recommendations",
-	"choice-reason",
-	"recommendation-reason",
-] as const)("retains semantic native %s context without volatile identity credit", async (axis) => {
-	const questions =
-		axis === "oscillating"
-			? [
-					"Support offline operation?",
-					"Save drafts locally?",
-					"Support offline operation?",
-					"Support offline operation?",
-				]
-			: ["Use the suggested scope?"];
-	const scopes = [
-		"Support offline operation",
-		"Save drafts locally",
-		"Encrypt drafts",
-	];
-	const batches: string[] = [],
-		facts: string[] = [],
-		optionIds: string[] = [];
-	let physical = 0;
-	const { runtime, create } = fixture({
-		agent: async (context) => {
-			physical++;
-			await context.checkpointAgent?.({
-				runner: "codex",
-				sessionId: "native-semantic-context",
-			});
-			const index = context.run.answers.length;
-			if (
-				[
-					"choices",
-					"recommendations",
-					"choice-reason",
-					"recommendation-reason",
-				].includes(axis) &&
-				index === 3
-			)
-				return { questions: [], done: true };
-			const id = randomUUID();
-			optionIds.push(id);
-			return {
-				questions: [questions[Math.min(index, questions.length - 1)]],
-				summary: randomUUID(),
-				...(axis === "recommendations" || axis === "recommendation-reason"
-					? {
-							questionRecommendations: [
-								{
-									questionIndex: 0,
-									answer:
-										axis === "recommendation-reason"
-											? "Run selected checks"
-											: scopes[index],
-									reason:
-										axis === "recommendation-reason"
-											? `Cost limit: ${index + 1} credits`
-											: "Accepted scope",
-								},
-							],
-						}
-					: {
-							questionChoices: [
-								{
-									questionIndex: 0,
-									selection: "single",
-									options: [
-										{
-											id,
-											answer: axis === "choices" ? scopes[index] : "Yes",
-											...(axis === "choice-reason"
-												? { reason: `Cost limit: ${index + 1} credits` }
-												: {}),
-										},
-										{ id: randomUUID(), answer: "No" },
-									],
-									preselectedOptionIds: [id],
-								},
-							],
-						}),
-			};
-		},
-	});
-	const run = create([
-		loop({
-			askQuestions: true,
-			branches: [{ when: { path: "done", equals: true }, next: "end" }],
-		}),
-	]);
-	const running = runtime.launch(run);
-	for (let i = 0; i < (axis === "oscillating" ? 4 : 3); i++) {
-		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-		batches.push(run.questionBatchId!);
-		expect(run.questions).toEqual([
-			questions[Math.min(i, questions.length - 1)],
-		]);
-		runtime.answer(run.id, "Yes");
-		facts.push(run.progressBudget!.facts.human);
-		await waitForRuntime(() =>
-			expect(["failed", "waiting", "completed"]).toContain(run.status),
-		);
-	}
-	await running;
-	expect(new Set(batches).size).toBe(batches.length);
-	expect(new Set(optionIds).size).toBe(optionIds.length);
-	expect(run.answers).toHaveLength(batches.length);
-	expect(run.progressBudget!.grantCount).toBe(0);
-	if (axis === "same") {
-		expect(run.status).toBe("failed");
-		expect(physical).toBe(3);
-		expect(new Set(facts).size).toBe(1);
-		expect(
-			observations(run)
-				.map((entry) => entry.attempts)
-				.sort(),
-		).toEqual([1, 2]);
-	} else if (axis === "oscillating") {
-		expect(run.status).toBe("failed");
-		expect(physical).toBe(4);
-		expect(facts[0]).not.toBe(facts[1]);
-		expect(facts[0]).toBe(facts[2]);
-		expect(facts[0]).toBe(facts[3]);
-		expect(
-			observations(run)
-				.map((entry) => entry.attempts)
-				.sort(),
-		).toEqual([1, 1, 2]);
-	} else {
-		expect(run.status, run.error).toBe("completed");
-		expect(physical).toBe(4);
-		expect(new Set(facts).size).toBe(3);
-	}
 });
 
 it("does not retry or route a non-convergence pause from a Check correction loop", async () => {
@@ -1537,30 +974,4 @@ it("does not retry or route a non-convergence pause from a Check correction loop
 		"proof",
 	]);
 	expect(run.outputs.handle).toBeUndefined();
-});
-
-it("counts a step's automatic retries once against convergence", async () => {
-	let executions = 0;
-	const { runtime, create } = fixture({
-		tool: async () => {
-			if (++executions < 3) throw new Error("temporary transport failure");
-			return { ok: true };
-		},
-	});
-	const run = create([
-		{
-			id: "read",
-			name: "Read",
-			type: "tool",
-			tool: "fixture",
-			retry: { max: 2, backoff: 0 },
-		},
-	]);
-	await runtime.launch(run);
-	expect(run.status).toBe("completed");
-	expect(executions).toBe(3);
-	expect(attempts(run)).toBe(1);
-	expect(run.progressBudget!.blocked).toBeUndefined();
-	expect(run.progressBudget!.recent).toHaveLength(1);
-	expect(run.stepAttempts).toHaveLength(3);
 });

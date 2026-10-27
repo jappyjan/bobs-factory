@@ -104,6 +104,7 @@ it("loads dashboard configuration without setup probes, capacity reconciliation 
 it("preserves launch fields and nested step names without sending executable definitions or credential references", async () => {
 	const f = await fixture();
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "local-display",
 		name: "Local display",
 		launchFields: [
@@ -117,13 +118,12 @@ it("preserves launch fields and nested step names without sending executable def
 				type: "agent",
 				prompt: "Private prompt",
 			},
-			{ id: "check", name: "Check", type: "script", script: "private-script" },
+			{ id: "check", name: "Check", type: "exec", command: "private-command" },
 			{
 				id: "ci",
 				name: "CI",
-				type: "tool",
-				tool: "ci",
-				arguments: { private: "tool args" },
+				type: "ci",
+				op: "status",
 			},
 			{
 				id: "parallel",
@@ -145,6 +145,7 @@ it("preserves launch fields and nested step names without sending executable def
 	f.runtime.updateWorkflows([
 		...f.runtime.listWorkflows(),
 		WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "local-child",
 			name: "Local child",
 			internal: true,
@@ -217,33 +218,32 @@ it("preserves launch fields and nested step names without sending executable def
 			id: "prepare",
 			name: "Prepare",
 			type: "agent",
-			presentation: { phase: "red", icon: "✦", fixing: false },
+			presentation: { phase: "violet", icon: "✦", fixing: false },
 		},
 		{
 			id: "check",
 			name: "Check",
-			type: "script",
-			presentation: { phase: "red", icon: "›_", fixing: false },
+			type: "exec",
+			presentation: { phase: "blue", icon: "›_", fixing: false },
 		},
 		{
 			id: "ci",
 			name: "CI",
-			type: "tool",
-			tool: "ci",
-			presentation: { phase: "blue", icon: "🧪", fixing: false },
+			type: "ci",
+			presentation: { phase: "blue", icon: "✓", fixing: false },
 		},
 		{
 			id: "parallel",
 			name: "Parallel",
 			type: "fanout",
-			presentation: { phase: "red", icon: "⫘", fixing: false },
+			presentation: { phase: "orange", icon: "⫘", fixing: false },
 			groups: [
 				[
 					{
 						id: "child",
 						name: "Child",
 						type: "workflow",
-						presentation: { phase: "red", icon: "🧩", fixing: false },
+						presentation: { phase: "yellow", icon: "🧩", fixing: false },
 						workflow: "local-child",
 					},
 				],
@@ -368,6 +368,7 @@ it("upserts only changed recipes atomically, rejecting invalid dependencies and 
 	const f = await fixture();
 	const initial = f.runtime.listWorkflows();
 	const recipe = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "local-patch",
 		name: "Local patch",
 		steps: [{ id: "work", name: "Work", type: "agent", prompt: "Task" }],
@@ -395,15 +396,14 @@ it("upserts only changed recipes atomically, rejecting invalid dependencies and 
 	).toEqual([recipe.id]);
 	expect(response.json().updatedWorkflows[0].steps).toEqual(recipe.steps);
 	expect(response.json()).not.toHaveProperty("workflows");
-	expect(f.runtime.listWorkflows()).toEqual([
-		...initial,
-		{ ...recipe, stepConfigVersion: "step-config-v1" },
-	]);
+	expect(f.runtime.listWorkflows().slice(0, initial.length)).toEqual(initial);
+	expect(f.runtime.listWorkflows().at(-1)).toMatchObject(recipe);
 	expect(f.runtime.getDefaultWorkflow()).toBe("simple");
 	const saved = f.runtime.listWorkflows();
 	const invalid = await patch([
 		{ ...recipe, name: "Should not save" },
 		{
+			engineVersion: "nodes-v1",
 			id: "bad-reference",
 			name: "Bad reference",
 			steps: [

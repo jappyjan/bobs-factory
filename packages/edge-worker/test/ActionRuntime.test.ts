@@ -44,6 +44,7 @@ function recipe(
 	allowedTriggers = ["manual", "workflow"],
 ) {
 	return WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id,
 		name: id,
 		stepConfigVersion: "step-config-v1",
@@ -89,8 +90,6 @@ function fixture(
 	const released = new Set<string>();
 	const visits: string[] = [];
 	const hooks: RuntimeHooks = {
-		agent: async () => ({}),
-		script: async () => ({}),
 		prepare: async (run) => {
 			if (!run.recipeParent || run.setupComplete) return;
 			const workspace = join(home, run.id);
@@ -102,44 +101,49 @@ function fixture(
 			}));
 			run.setupComplete = true;
 		},
-		tool: async (context) => {
-			const id = context.run.recipeParent?.itemId ?? "parent";
-			visits.push(`${id}:${context.step.tool}`);
-			if (context.step.tool === "fixture-hold") {
-				if (!released.has(id))
-					await new Promise<void>((resolve, reject) => {
-						const finish = () => {
-							context.signal.removeEventListener("abort", abort);
-							holds.delete(id);
-							resolve();
-						};
-						const abort = () => {
-							if (holds.get(id) === finish) holds.delete(id);
-							reject(context.signal.reason);
-						};
-						holds.set(id, finish);
-						context.signal.addEventListener("abort", abort, { once: true });
-						if (context.signal.aborted) abort();
-					});
+		ioGitProvider: async (context) =>
+			({
+				view: async (url: string) => {
+					const id = context.run.recipeParent?.itemId ?? "parent";
+					if (!visits.includes(`${id}:merge`)) visits.push(`${id}:merge`);
+					return {
+						url,
+						headRefOid: git(context.run.workspace, "rev-parse", "HEAD"),
+						state: "MERGED",
+						mergeCommitSha: git(context.run.workspace, "rev-parse", "HEAD"),
+					};
+				},
+			}) as any,
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async (context) => {
+				const id = context.run.recipeParent?.itemId ?? "parent";
+				visits.push(`${id}:${context.step.prompt}`);
+				if (context.step.prompt === "fixture-hold") {
+					if (!released.has(id))
+						await new Promise<void>((resolve, reject) => {
+							const finish = () => {
+								context.signal.removeEventListener("abort", abort);
+								holds.delete(id);
+								resolve();
+							};
+							const abort = () => {
+								if (holds.get(id) === finish) holds.delete(id);
+								reject(context.signal.reason);
+							};
+							holds.set(id, finish);
+							context.signal.addEventListener("abort", abort, { once: true });
+							if (context.signal.aborted) abort();
+						});
+					return { completed: true };
+				}
+				const headSha = git(context.run.workspace, "rev-parse", "HEAD");
+				const url = `https://forge.fixture.test/project/pull/${id}`;
+				if (context.step.prompt === "draft-pr")
+					return { repositories: [{ repositoryId: "repo", url, headSha }] };
 				return { completed: true };
-			}
-			const headSha = git(context.run.workspace, "rev-parse", "HEAD");
-			const url = `https://forge.fixture.test/project/pull/${id}`;
-			if (context.step.tool === "draft-pr") return { url, headSha };
-			if (context.step.tool === "merge") {
-				// Explicit fixture human approval plus the controlled provider's exact
-				// confirmation, submitted through real runtime-owned tool receipts.
-				context.run.humanDecisions = [
-					{
-						reviewId: `fixture-human-${id}`,
-						headSha,
-						decision: "approve",
-						at: new Date().toISOString(),
-					},
-				];
-				return { merged: true, url, headSha };
-			}
-			return { completed: true };
+			})(context);
 		},
 		...extra,
 	};
@@ -150,20 +154,20 @@ function fixture(
 			{
 				id: "hold",
 				name: "Controlled implementation",
-				type: "tool",
-				tool: "fixture-hold",
+				type: "agent",
+				prompt: "fixture-hold",
 			},
 			{
 				id: "publish",
 				name: "Controlled publication",
-				type: "tool",
-				tool: "draft-pr",
+				type: "agent",
+				prompt: "draft-pr",
 			},
 			{
 				id: "finish",
 				name: "Controlled provider merge",
-				type: "tool",
-				tool: "merge",
+				type: "merge",
+				reads: { requests: "publish" },
 			},
 		],
 		["workflow"],
@@ -267,8 +271,8 @@ describe("generic side-effect runtime integration", () => {
 				{
 					id: "after",
 					name: "After dispatch",
-					type: "tool",
-					tool: "fixture-after",
+					type: "agent",
+					prompt: "fixture-after",
 				},
 			],
 			{ finished },
@@ -402,13 +406,13 @@ describe("generic side-effect runtime integration", () => {
 	] as const)("stopped parents observe original child %s outcomes without dispatching a dependent or changing accepted receipts", async (outcome) => {
 		const finished = vi.fn(async (_run: FactoryRun) => {});
 		const f = fixture([dispatch(false)], { finished });
-		const tool = f.hooks.tool;
-		f.hooks.tool = async (context) => {
+		const tool = f.hooks.agent;
+		f.hooks.agent = async (context) => {
 			const result = await tool(context);
 			if (
 				outcome === "failed" &&
 				context.run.recipeParent?.itemId === "one" &&
-				context.step.tool === "fixture-hold"
+				context.step.prompt === "fixture-hold"
 			)
 				throw new Error("Controlled failure after parent Stop");
 			return result;
@@ -867,14 +871,14 @@ describe("generic side-effect runtime integration", () => {
 			{
 				id: "after",
 				name: "After dispatch",
-				type: "tool",
-				tool: "fixture-after",
+				type: "agent",
+				prompt: "fixture-after",
 			},
 		]);
-		const originalTool = f.hooks.tool;
+		const originalTool = f.hooks.agent;
 		let fail = true;
-		f.hooks.tool = async (context) => {
-			if (fail && context.step.tool === "fixture-after") {
+		f.hooks.agent = async (context) => {
+			if (fail && context.step.prompt === "fixture-after") {
 				fail = false;
 				throw new Error("Controlled later-step failure");
 			}
@@ -910,11 +914,11 @@ describe("generic side-effect runtime integration", () => {
 		false,
 	])("reports a failed prerequisite batch truthfully with wait=%s instead of completing the parent", async (wait) => {
 		const f = fixture([dispatch(wait)]);
-		const tool = f.hooks.tool;
-		f.hooks.tool = async (context) => {
+		const tool = f.hooks.agent;
+		f.hooks.agent = async (context) => {
 			if (
 				context.run.recipeParent?.itemId === "one" &&
-				context.step.tool === "fixture-hold"
+				context.step.prompt === "fixture-hold"
 			)
 				throw new Error("Controlled prerequisite failure");
 			return tool(context);

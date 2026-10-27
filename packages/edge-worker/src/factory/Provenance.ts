@@ -3,15 +3,9 @@ import {
 	factoryRuntimeIdentity,
 	type RuntimeIdentity,
 } from "bobs-factory-core";
-import { FACTORY_RESULT_CONTRACT_VERSION } from "./FactoryResults.js";
+
 import { diagnosticAttempt } from "./RunDiagnostics.js";
-import {
-	checkArgs,
-	formatOf,
-	hasCheck,
-	resolveStepConfig,
-	reviewEvidenceContract,
-} from "./StepConfig.js";
+import { resolveStepConfig } from "./StepConfig.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 export type AttemptReason =
@@ -98,28 +92,22 @@ export function beginStepAttempt(
 			}
 	}
 	const contract = {
-		validator: FACTORY_RESULT_CONTRACT_VERSION,
-		version: run.contractVersion ?? null,
-		architecture: hasCheck(step, "architecture-proposal")
-			? "architecture-v1"
-			: hasCheck(step, "architecture-candidate")
-				? "architecture-review-v1"
-				: null,
-		review: reviewEvidenceContract(step) ?? null,
-		impact: hasCheck(step, "impact-reuse") ? "impact-v1" : null,
-		qa:
-			formatOf(step)?.startsWith("qa-") || hasCheck(step, "qa-evidence")
-				? "qa-v1"
-				: null,
-		video: checkArgs(step, "media-valid")?.video ? "video-v1" : null,
+		validator: "nodes-v1",
+		version: 1,
+		review: null,
+		qa: null,
+		video: null,
 	};
 	const contextHashes = {
 		human: digest(
 			canonical({
 				input: run.input,
-				answers: run.answers,
+
 				messages: context.chatMessages ?? [],
-				decisions: run.humanDecisions ?? [],
+				decisions:
+					run.viewRecords
+						?.filter((record) => record.answer)
+						.map((record) => record.answer) ?? [],
 			}),
 		),
 		feedback: digest(
@@ -228,29 +216,12 @@ export function recordAttemptInstructions(
 	attempt.instructionsHash = digest(instructions);
 	attempt.instructionsSource = "effective";
 	const progress = context.progress;
-	const previous = [...(context.run.stepAttempts ?? [])]
-		.reverse()
-		.find(
-			(a) =>
-				a.id !== attempt.id &&
-				a.step === attempt.step &&
-				a.kind === attempt.kind,
-		);
 	if (progress?.currentRevision)
 		attempt.revision = {
 			headSha: progress.currentRevision.headSha,
-			...(progress.reviewScope?.baseSha
-				? { baseSha: progress.reviewScope.baseSha }
-				: {}),
 		};
 	if (attempt.reason === "resume" || attempt.reason === "workflow-transition") {
 		if (context.resumeAgent?.rejected) attempt.reason = "output-correction";
-		else if (
-			previous?.revision?.baseSha &&
-			progress?.reviewScope?.baseSha &&
-			previous.revision.baseSha !== progress.reviewScope.baseSha
-		)
-			attempt.reason = "base-change";
 		else if (progress && !progress.uncertain && !progress.unchangedCode)
 			attempt.reason = "code-change";
 	}

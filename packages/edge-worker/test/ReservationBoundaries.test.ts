@@ -5,11 +5,12 @@ import { afterEach, expect, it } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { AccessSchema } from "../src/factory/StepConfig.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
-import {
-	type ExecutionContext,
+import type {
+	ExecutionContext,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
+import { resourceRuntime } from "./fixtures/resource-node.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -32,7 +33,7 @@ function home() {
 function definition(steps: unknown[]): Workflow {
 	return validateWorkflows([
 		...defaultWorkflows,
-		{ id: "boundaries", name: "Boundaries", steps },
+		{ engineVersion: "nodes-v1", id: "boundaries", name: "Boundaries", steps },
 	]).at(-1)!;
 }
 function create(runtime: WorkflowRuntime, workflow: Workflow, input: string) {
@@ -69,10 +70,9 @@ const qa = (computeIntensive = false) =>
 		{
 			id: "inspect",
 			name: "Shared QA",
-			type: "tool",
-			tool: "fixture-qa",
+			type: computeIntensive ? "agent" : "fixture-resource",
+			prompt: "Fixture resource",
 			resources: ["docker:fixture/database"],
-			computeIntensive,
 			next: "end",
 		},
 	]);
@@ -81,7 +81,7 @@ it("does not acquire a shared environment while its intensive action awaits capa
 	const capacity = new SessionSemaphore(1);
 	const blocker = await capacity.acquireLease();
 	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(home(), {
+	const runtime = resourceRuntime(home(), {
 		capacity,
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -109,7 +109,7 @@ it("holds a stopped mutator's resource until its hook cleanup actually settles",
 		entered = deferred(),
 		stopping = deferred();
 	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(home(), {
+	const runtime = resourceRuntime(home(), {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async ({ run, signal }) => {
@@ -152,7 +152,7 @@ it("uses capable agent turn admission after capacity, and keeps cleanup exclusiv
 		cleanup = deferred(),
 		releaseCleanup = deferred();
 	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(home(), {
+	const runtime = resourceRuntime(home(), {
 		agentExecutionBoundary: true,
 		capacity,
 		agent: async (context: ExecutionContext) => {
@@ -214,68 +214,6 @@ it("uses capable agent turn admission after capacity, and keeps cleanup exclusiv
 	expect(visits).toEqual(["agent", "next"]);
 });
 
-it("retains broad publication exclusion for an unsplit push-capable agent", async () => {
-	const held = deferred(),
-		entered = deferred();
-	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(home(), {
-		agent: async () => {
-			entered.resolve();
-			await held.promise;
-			return {};
-		},
-		script: async () => ({}),
-		tool: async ({ run }) => {
-			visits.push(run.input);
-			return {};
-		},
-	});
-	const first = create(
-		runtime,
-		definition([
-			{
-				id: "combined",
-				name: "Combined correction and push",
-				type: "agent",
-				prompt: "Correct and push",
-				access: "push",
-				next: "end",
-			},
-		]),
-		"legacy",
-	);
-	const a = runtime.launch(first);
-	await entered.promise;
-	expect(first.deliveryCoordination?.reason).toBe(
-		"Push-capable agent: no proven boundary inside its execution",
-	);
-	const second = create(
-		runtime,
-		definition([
-			{
-				id: "publish",
-				name: "Publish",
-				type: "tool",
-				tool: "draft-pr",
-				next: "end",
-			},
-		]),
-		"ready",
-	);
-	const b = runtime.launch(second);
-	try {
-		await waitFor(() =>
-			expect(second.deliveryCoordination?.phase).toBe("queued"),
-		);
-		expect(visits).toEqual([]);
-	} finally {
-		held.resolve();
-		await Promise.all([a, b]);
-		await runtime.shutdown();
-	}
-	expect(visits).toEqual(["ready"]);
-});
-
 it("rejects a contradictory action publication access declaration", () => {
 	expect(
 		AccessSchema.safeParse({ mode: "push", publication: "action" }).success,
@@ -289,189 +227,12 @@ it("rejects a contradictory action publication access declaration", () => {
 	).toEqual({ mode: "workspace", publication: "action", priority: "normal" });
 });
 
-it("rereads the current human decision after a final delivery waited for its target", async () => {
-	const { FactoryTools } = await import("../src/factory/FactoryTools.js");
-	const { githubApiReceipt, githubRequest } = await import(
-		"./fixtures/github-api.js"
-	);
-	const held = deferred(),
-		entered = deferred();
-	let mutations = 0;
-	const tools = new FactoryTools({
-		postComment: async () => {},
-		command: async (_context, exe, args) => {
-			if (exe === "git") return args[0] === "rev-parse" ? "head" : "";
-			if (githubRequest(args).path.endsWith("/merge")) mutations++;
-			return JSON.stringify(
-				githubApiReceipt(args, {
-					isDraft: false,
-					reviewDecision: "APPROVED",
-					mergeStateStatus: "CLEAN",
-				}),
-			);
-		},
-	});
-	const runtime = new WorkflowRuntime(home(), {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async (context) => {
-			if (context.run.input === "owner") {
-				entered.resolve();
-				await held.promise;
-				return {};
-			}
-			return tools.tool(context);
-		},
-	});
-	const owner = create(
-		runtime,
-		definition([
-			{
-				id: "publish",
-				name: "Publish",
-				type: "tool",
-				tool: "draft-pr",
-				next: "end",
-			},
-		]),
-		"owner",
-	);
-	const a = runtime.launch(owner);
-	await entered.promise;
-	const final = create(
-		runtime,
-		definition([
-			{ id: "final", name: "Merge", type: "tool", tool: "merge", next: "end" },
-		]),
-		"delivery",
-	);
-	final.outputs["draft-pr"] = {
-		url: "https://github.com/fixture/shared/pull/1",
-		headSha: "head",
-	};
-	final.humanDecisions = [
-		{ decision: "approve", headSha: "head", reviewId: "original", at: "" },
-	];
-	const b = runtime.launch(final);
-	try {
-		await waitFor(() =>
-			expect(final.deliveryCoordination?.phase).toBe("queued"),
-		);
-		final.humanDecisions.push({
-			decision: "reject",
-			headSha: "head",
-			reviewId: "current-rejection",
-			at: "",
-		});
-	} finally {
-		held.resolve();
-		await Promise.all([a, b]);
-		await runtime.shutdown();
-	}
-	expect(mutations).toBe(0);
-	expect(final.status).toBe("failed");
-	expect(final.error).toMatch(/Explicit human approval/);
-	expect(final.humanDecisions[0]).toMatchObject({
-		decision: "approve",
-		reviewId: "original",
-	});
-});
-
-it.each([
-	true,
-	false,
-])("continues a reviewed non-draft PR only with original publication authority (%s)", async (receipt) => {
-	const { FactoryTools } = await import("../src/factory/FactoryTools.js");
-	const { githubApiReceipt, githubRequest } = await import(
-		"./fixtures/github-api.js"
-	);
-	const effects: string[] = [];
-	const tools = new FactoryTools({
-		postComment: async () => {},
-		command: async (_context, exe, args) => {
-			if (exe === "git") {
-				effects.push(args[0]!);
-				if (args[0] === "branch") return "feature";
-				if (args[0] === "status") return " M source.ts";
-				if (args[0] === "rev-list") return "1";
-				if (args[0] === "diff") return "source.ts";
-				if (args[0] === "rev-parse") return "head";
-				return "";
-			}
-			const request = githubRequest(args);
-			effects.push(`${request.method ?? "GET"}:${request.path}`);
-			return JSON.stringify(githubApiReceipt(args, { isDraft: false }));
-		},
-	});
-	const runtime = new WorkflowRuntime(home(), {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: (context) => tools.tool(context),
-	});
-	const workflow = definition([
-		{
-			id: "original",
-			name: "Initial publication",
-			type: "tool",
-			tool: "draft-pr",
-		},
-		{
-			id: "continued",
-			name: "Publish correction",
-			type: "tool",
-			tool: "draft-pr",
-			arguments: { publication: "existing" },
-			reads: { draftPr: "original" },
-			next: "end",
-		},
-	]);
-	const run = create(runtime, workflow, "correction");
-	run.repositories![0]!.githubUrl = "https://github.com/test/repo";
-	const original = {
-		url: "https://github.com/test/repo/pull/1",
-		branch: "feature",
-		headSha: "before",
-	};
-	if (receipt) {
-		run.outputs.original = original;
-		run.history.push({ step: "original", at: run.createdAt, output: original });
-	}
-	const pending = tools.tool({
-		run,
-		step: workflow.steps[1]!,
-		stepKey: "continued",
-		outputs: run.outputs,
-		input: {},
-		signal: new AbortController().signal,
-		log: () => {},
-		evidenceDir: home(),
-	});
-	try {
-		if (receipt) {
-			expect(await pending).toMatchObject({
-				url: original.url,
-				branch: "feature",
-				headSha: "head",
-			});
-			expect(effects.filter((x) => x === "push")).toHaveLength(1);
-			expect(
-				effects.some((x) => x.startsWith("POST:") || x.startsWith("PATCH:")),
-			).toBe(false);
-		} else {
-			await expect(pending).rejects.toThrow("original executed PR receipt");
-			expect(effects).toEqual([]);
-		}
-	} finally {
-		await runtime.shutdown();
-	}
-});
-
 it("coordinates only concrete resource leaves through nested For each, Parallel and Call", async () => {
 	const directory = home();
 	let active = 0,
 		peak = 0;
 	const visits: string[] = [];
-	const runtime = new WorkflowRuntime(directory, {
+	const runtime = resourceRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async (context) => {
@@ -494,6 +255,7 @@ it("coordinates only concrete resource leaves through nested For each, Parallel 
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "resource-child",
 			name: "QA leaf",
 			allowedTriggers: ["workflow"],
@@ -501,14 +263,14 @@ it("coordinates only concrete resource leaves through nested For each, Parallel 
 				{
 					id: "qa",
 					name: "Shared QA",
-					type: "tool",
-					tool: "fixture-qa",
+					type: "fixture-resource",
 					resources: ["docker:shared/fixture"],
 					next: "end",
 				},
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "nested-reservations",
 			name: "Nested resources",
 			steps: [

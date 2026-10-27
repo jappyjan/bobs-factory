@@ -10,21 +10,14 @@ export function humanViewText(
 	snapshot = publicViewSnapshot(snapshot);
 	const limit = Math.max(1000, Math.min(100000, options.maxLength ?? 100000));
 	const header: string[] = [snapshot.kind];
-	if (
-		snapshot.kind !== "show" &&
-		!(snapshot.kind === "display" && !snapshot.interactive)
-	) {
+	if (!(snapshot.kind === "display" && !snapshot.interactive)) {
 		header.push(
 			`Decision batch: ${snapshot.id}`,
 			`Displayed digest: ${snapshot.digest}`,
 		);
 		if (options.includeProtocol !== false)
 			header.push(
-				snapshot.kind === "display"
-					? `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","documentDigest":"${snapshot.documentDigest}","accepted":true,"action":"…","values":{},"choices":[]} using only displayed action, field and item IDs. Omit action when no document actions are shown.`
-					: snapshot.kind === "approve"
-						? `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"approved":true} or approved:false with feedback.`
-						: `Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.`,
+				`Reply with /view-answer {"batchId":"${snapshot.id}","digest":"${snapshot.digest}","documentDigest":"${snapshot.documentDigest}","accepted":true,"action":"…","values":{},"choices":[]} using only displayed action, field and item IDs. Omit action when no document actions are shown.`,
 			);
 		header.push(
 			"Review the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.",
@@ -44,12 +37,6 @@ export function humanViewText(
 					: [viewPlainText(`Error: ${thread.error}`)]),
 			);
 	}
-	if (snapshot.actions)
-		sections.push(
-			viewPlainText(
-				`Actions: ${snapshot.actions.map((a) => `${a.id} (${a.label})`).join(", ")}`,
-			),
-		);
 	sections.push(viewText(snapshot.view));
 	for (const item of snapshot.items ?? [])
 		sections.push(

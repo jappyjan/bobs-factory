@@ -393,12 +393,10 @@ it("does not create a runner when slow configuration resolves after timeout", as
 it("persists global settings independently of recipes and frozen run snapshots", async () => {
 	const directory = home(),
 		hooks = {
-			agent: async () => ({}),
-			script: async () => ({}),
-			tool: async () => ({}),
 			titleDefaults: (
 				runner: RunTitleJob["settings"]["runner"] = "claude",
 			) => ({ runner, model: `${runner}-global` }),
+			agent: async () => ({}),
 		};
 	const runtime = new WorkflowRuntime(directory, hooks);
 	runtime.updateTitleSettings({
@@ -456,11 +454,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 });
 it("migrates mutable title fields, retains frozen definitions, and ignores legacy request titles", async () => {
 	const directory = home();
-	const runtime = new WorkflowRuntime(directory, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(directory, { agent: async () => ({}) });
 	const old = structuredClone(defaultWorkflows);
 	old.find((workflow) => workflow.id === "simple")!.launchFields = [
 		{
@@ -483,11 +477,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		JSON.stringify(old),
 	);
 	await runtime.flush();
-	const restored = new WorkflowRuntime(directory, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const restored = new WorkflowRuntime(directory, { agent: async () => ({}) });
 	if (restored.catalog.read().migration?.conflicts.simple) {
 		expect(() => restored.selectWorkflow([], "manual", "simple")).toThrow(
 			"unavailable",
@@ -529,10 +519,8 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 it("keeps primary launches available when inherited title provider settings become incompatible", async () => {
 	let runner: RunTitleJob["settings"]["runner"] = "codex";
 	const runtime = new WorkflowRuntime(home(), {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
 		titleDefaults: () => ({ runner }),
+		agent: async () => ({}),
 	});
 	runtime.updateTitleSettings({ reasoningEffort: "low" });
 	runner = "gemini";

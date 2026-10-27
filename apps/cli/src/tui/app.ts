@@ -3,12 +3,7 @@
 // running work in compact rows and finished work in Settled.
 import { attention, finished, settleReason } from "bobs-factory-edge-worker";
 import type { FactoryChange, FactoryClient } from "./client.js";
-import {
-	AnswerForm,
-	type FormResult,
-	LaunchForm,
-	PromptForm,
-} from "./forms.js";
+import { type FormResult, LaunchForm, PromptForm } from "./forms.js";
 import {
 	type ActivityPage,
 	ago,
@@ -50,7 +45,6 @@ type Overlay =
 	| { kind: "help" }
 	| { kind: "switcher"; input: TextInput; index: number }
 	| { kind: "launch"; form: LaunchForm }
-	| { kind: "answer"; form: AnswerForm }
 	| {
 			kind: "prompt";
 			form: PromptForm;
@@ -159,10 +153,7 @@ export class TodayApp {
 	}
 
 	private visibleDetails() {
-		return new Set([
-			this.target()?.id,
-			this.overlay?.kind === "answer" ? this.overlay.form.run.id : undefined,
-		]);
+		return new Set([this.target()?.id]);
 	}
 	private readRuns() {
 		this.runsRequest ??= this.options.client
@@ -299,32 +290,6 @@ export class TodayApp {
 				`/api/runs/${encodeURIComponent(id)}?view=dashboard`,
 			);
 			this.details.set(id, detail);
-			if (this.overlay?.kind === "answer" && this.overlay.form.run.id === id) {
-				const before = this.overlay.form.run;
-				if (
-					JSON.stringify([
-						before.questions,
-						before.questionBatchId,
-						before.questionChoices,
-						before.questionRecommendations,
-						before.step,
-						before.status,
-					]) !==
-					JSON.stringify([
-						detail.questions,
-						detail.questionBatchId,
-						detail.questionChoices,
-						detail.questionRecommendations,
-						detail.step,
-						detail.status,
-					])
-				) {
-					this.overlay =
-						detail.status === "waiting" && detail.questions?.length
-							? { kind: "answer", form: new AnswerForm(detail) }
-							: undefined;
-				}
-			}
 		} catch (error) {
 			if ((error as { status?: number }).status === 404)
 				this.details.delete(id);
@@ -496,7 +461,7 @@ export class TodayApp {
 			this.overlay = undefined;
 			return;
 		}
-		if (overlay.kind === "launch" || overlay.kind === "answer") {
+		if (overlay.kind === "launch") {
 			const { body, error } = overlay.form.request();
 			if (!body) {
 				overlay.form.error = error ?? "Incomplete";
@@ -513,15 +478,6 @@ export class TodayApp {
 						this.draft = undefined;
 						await this.refreshAll();
 						if (run?.id) this.openRun(run.id);
-					});
-				} else {
-					const run = overlay.form.run;
-					await this.perform("Reply sent", async () => {
-						await this.options.client.post(
-							this.path(run as RunItem, "answer"),
-							body,
-						);
-						this.overlay = undefined;
 					});
 				}
 			} catch (error) {
@@ -550,7 +506,7 @@ export class TodayApp {
 				form: new PromptForm(
 					snapshot.title,
 					"Review the view in the conversation, then explicitly submit the displayed batch and digest.",
-					"Decision JSON including batchId, digest, accepted:true and choices or approved/feedback",
+					"Decision JSON including batchId, digest, accepted:true and action, values and choices",
 				),
 				submit: async (text) => {
 					const request = JSON.parse(text);
@@ -570,91 +526,9 @@ export class TodayApp {
 			};
 			return;
 		}
-		if (!detail?.questions?.length) {
-			this.ensureDetail(run);
-			return this.notify("Loading the question…");
-		}
-		this.overlay = { kind: "answer", form: new AnswerForm(detail) };
-	}
-
-	private acceptRecommendations(run: RunItem) {
-		const detail = this.details.get(run.id);
-		const form = detail?.questions?.length ? new AnswerForm(detail) : undefined;
-		if (!form) return this.notify("Loading the question…");
-		if (
-			detail?.questionChoices?.length ||
-			form.questions.some((_, i) => !form.recommendation(i))
-		)
-			return this.answer(run);
-		const { body } = form.request();
-		void this.perform("Accepted Bob’s recommendations", () =>
-			this.options.client.post(this.path(run, "answer"), body),
-		).catch(() => {});
-	}
-
-	private reviewRequest(run: RunItem) {
-		const displayed =
-			this.details.get(run.id) ??
-			("nativeView" in run ? (run as RunDetail) : undefined);
-		if (!displayed) {
-			this.ensureDetail(run);
-			this.notify("Loading the review. Read it before deciding.");
-			return;
-		}
-		const gate = displayed.reviewGate;
-		if (
-			gate?.status !== "pending" ||
-			!gate.id ||
-			(!gate.headSha && gate.mode !== "external")
-		) {
-			this.notify("No review is waiting on this run", true);
-			return;
-		}
-		// Capture the displayed version before opening confirmation. Background
-		// refreshes must never replace consent with an unseen current digest.
-		return {
-			reviewId: gate.id,
-			headSha: gate.headSha ?? "",
-			externalDigest: gate.externalDigest,
-			...(displayed.nativeView
-				? { display: { digest: displayed.nativeView.digest } }
-				: {}),
-		};
-	}
-
-	private approve(run: RunItem) {
-		const request = this.reviewRequest(run);
-		if (!request) return;
-		this.overlay = {
-			kind: "confirm",
-			text: `Approve “${run.title}”? Bob continues to merge.`,
-			action: () =>
-				this.options.client.post(this.path(run, "review"), {
-					...request,
-					decision: "approve",
-				}),
-		};
-	}
-
-	private requestChanges(run: RunItem) {
-		const request = this.reviewRequest(run);
-		if (!request) return;
-		this.overlay = {
-			kind: "prompt",
-			form: new PromptForm(
-				"Request changes",
-				run.title,
-				"What should Bob change?",
-			),
-			submit: async (feedback) => {
-				await this.options.client.post(this.path(run, "review"), {
-					...request,
-					decision: "reject",
-					feedback,
-				});
-				this.notify("Feedback sent — Bob is on it");
-			},
-		};
+		this.ensureDetail(run);
+		this.notify("Open the Display in your browser to review and respond.");
+		this.openInBrowser(run);
 	}
 
 	private message(run: RunItem) {
@@ -713,19 +587,6 @@ export class TodayApp {
 	}
 
 	private retry(run: RunItem) {
-		const question = this.details.get(run.id);
-		if (attention(run) === "question" && question?.recheckAvailable) {
-			void this.perform("Bob is checking the blocker again", () =>
-				this.options.client.post(this.path(run, "recheck"), {
-					context: {
-						step: question.step,
-						questionBatchId: question.questionBatchId,
-						questions: question.questions,
-					},
-				}),
-			).catch(() => {});
-			return;
-		}
 		if (attention(run) !== "stuck")
 			return this.notify("Only stuck runs can be retried", true);
 		const detail = this.details.get(run.id);
@@ -797,8 +658,7 @@ export class TodayApp {
 	}
 
 	private openInBrowser(run: RunItem) {
-		const review = run.reviewGate?.status === "pending" ? "/review" : "";
-		const url = `${this.options.client.origin}/#/runs/${encodeURIComponent(run.id)}${review}`;
+		const url = `${this.options.client.origin}/#/runs/${encodeURIComponent(run.id)}`;
 		void this.options.openUrl(url).then(
 			() => this.notify("Opened in your browser"),
 			() => this.notify(`Open ${url}`, true),
@@ -975,14 +835,12 @@ export class TodayApp {
 		switch (name) {
 			case "a":
 				if (kind === "question") return this.answer(run);
-				if (kind === "review" && run.reviewGate?.status === "pending")
-					return this.approve(run);
+
 				return this.notify("Nothing to answer or approve here", true);
 			case "y":
-				if (kind === "question") return this.acceptRecommendations(run);
 				return;
 			case "r":
-				return this.requestChanges(run);
+				return this.answer(run);
 			case "c":
 				return this.retry(run);
 			case "m":
@@ -1043,10 +901,7 @@ export class TodayApp {
 		const kind = attention(run);
 		if (kind === "question") return ["?", t.question];
 		if (kind === "stuck") return ["!", t.stuck];
-		if (kind === "review")
-			return run.reviewGate?.status === "pending"
-				? ["◆", t.review]
-				: ["✓", t.review];
+		if (kind === "review") return ["✓", t.review];
 		if (run.status === "capacity-waiting") return ["◌", t.muted];
 		if (run.status === "stopping") return ["■", t.muted];
 		if (["running", "active", "waiting"].includes(run.status))
@@ -1117,7 +972,9 @@ export class TodayApp {
 		const kind = attention(run);
 		const detail = this.details.get(run.id);
 		if (kind === "question")
-			return detail?.questions?.[0] ?? "Bob has a question for you.";
+			return (
+				detail?.viewDecision?.title ?? "Review the displayed input request."
+			);
 		if (kind === "stuck")
 			return (
 				(
@@ -1126,10 +983,6 @@ export class TodayApp {
 					run.error
 				)?.split("\n")[0] ?? "The run stopped before finishing."
 			);
-		if (run.reviewGate?.status === "pending")
-			return run.reviewGate.url
-				? `Ready for review · ${run.reviewGate.url}`
-				: "Ready for your review.";
 		return "Finished — check the result, then settle it.";
 	}
 
@@ -1148,35 +1001,6 @@ export class TodayApp {
 					text,
 					style: t.text,
 				}));
-			(detail.questions ?? []).slice(0, 3).forEach((question, i) => {
-				const lead = question.replace(/\s+/g, " ").trim();
-				for (const line of wrap(`${i + 1}. ${lead}`, inner).slice(0, 2))
-					lines.push({ text: line, style: t.text });
-				const choices = detail.questionChoices?.find(
-					(item) => item.questionIndex === i,
-				);
-				if (choices)
-					lines.push({
-						text: clip(
-							`   → ${choices.selection === "single" ? "Choose one" : "Choose one or more"}: ${choices.options.map((option) => option.answer).join(", ")}`,
-							inner,
-						),
-						style: t.review,
-					});
-				const recommendation = detail.questionRecommendations?.find(
-					(item) => item.questionIndex === i,
-				);
-				if (recommendation)
-					lines.push({
-						text: clip(`   → ${recommendation.answer}`, inner),
-						style: t.review,
-					});
-			});
-			if ((detail.questions?.length ?? 0) > 3)
-				lines.push({
-					text: `+${detail.questions!.length - 3} more questions`,
-					style: t.muted,
-				});
 		} else if (kind === "stuck") {
 			for (const line of wrap(
 				run.workflowBlock?.reason ??
@@ -1201,20 +1025,14 @@ export class TodayApp {
 	private hints(run: RunItem): string {
 		const kind = attention(run);
 		const detail = this.details.get(run.id);
-		if (kind === "question") {
-			const all = detail?.questions?.every((_, i) =>
-				detail.questionRecommendations?.some((r) => r.questionIndex === i),
-			);
-			return `a answer${all ? " · y accept recommendations" : ""}${detail?.recheckAvailable ? " · c check again" : ""} · enter open · x stop`;
-		}
+		if (kind === "question")
+			return "a respond · o open Display in browser · x stop";
 		if (kind === "stuck" && (run.workflowBlock || run.status === "blocked"))
 			return detail?.resumeEligible
 				? "c resume · enter open"
 				: "Resume unavailable · enable workflow in Recipes and wait for execution to stop · enter open";
 		if (kind === "stuck")
 			return `c ${run.status === "stopped" ? "resume run" : detail?.iterationLimit && detail.iterationLimit.visits > detail.iterationLimit.limit ? "continue (+4 passes)" : "retry step"} · enter open · s settle`;
-		if (run.reviewGate?.status === "pending")
-			return "a approve · r request changes · o open guide in browser · enter open";
 		return "s settle · m follow-up · o open in browser · enter open";
 	}
 
@@ -1379,7 +1197,6 @@ export class TodayApp {
 				? `${detail.runner}${detail.model ? `/${detail.model}` : ""}`
 				: undefined,
 			ago(run.createdAt),
-			run.reviewGate?.url,
 		]
 			.filter(Boolean)
 			.join(" · ");
@@ -1416,9 +1233,7 @@ export class TodayApp {
 					? "? Bob asks"
 					: kind === "stuck"
 						? "! Stuck"
-						: run.reviewGate?.status === "pending"
-							? "◆ Review"
-							: "✓ Finished";
+						: "✓ Finished";
 			screen.put(2, bottom, heading, { ...glyphStyle, bold: true });
 			panel.forEach((line, i) => {
 				screen.put(4, bottom + 1 + i, line.text, line.style, screen.w - 6);
@@ -1630,11 +1445,7 @@ export class TodayApp {
 			);
 			return;
 		}
-		if (
-			overlay.kind === "launch" ||
-			overlay.kind === "answer" ||
-			overlay.kind === "prompt"
-		) {
+		if (overlay.kind === "launch" || overlay.kind === "prompt") {
 			overlay.form.render(screen, t);
 			return;
 		}

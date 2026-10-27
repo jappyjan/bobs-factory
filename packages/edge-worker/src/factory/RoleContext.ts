@@ -31,7 +31,6 @@ export function roleContextPolicy(
 	if (!context.run.roleContext) return;
 	const owner = workflowIdForStep(context.step);
 	const recipe = [
-		context.run.recoveryWorkflow,
 		context.run.workflow,
 		...(context.run.workflowDefinitions ?? []),
 	].find((recipe) => recipe?.id === owner);
@@ -166,16 +165,7 @@ export function roleAgentContext(context: ExecutionContext): unknown {
 			source: source("/input"),
 			value: context.run.input,
 		},
-		answers: context.run.answers.map((value, index) => ({
-			kind: "human-answer",
-			source: source(`/answers/${index}`),
-			value,
-		})),
-		decisions: (context.run.humanDecisions ?? []).map((value, index) => ({
-			kind: "human-decision",
-			source: source(`/humanDecisions/${index}`),
-			value,
-		})),
+
 		steering: (context.chatMessages ?? []).map((value) => ({
 			kind: "human-steering",
 			source: { ...source("/chatMessages"), id: value.id },
@@ -192,17 +182,6 @@ export function roleAgentContext(context: ExecutionContext): unknown {
 			{ id: context.run.repositoryId, workspace: context.run.workspace },
 		],
 		progress: context.progress,
-		// Ledger and rounds are derived from review history; without review rounds
-		// they are empty, so do not send the role looking for them.
-		reviewMemory:
-			Object.hasOwn(input, "history") && context.run.reviewRounds?.length
-				? {
-						ledger: "/contextMemory/reviewLedger",
-						rounds: "/contextMemory/reviewRounds",
-						authority:
-							"Original output claims and rationale; native receipt/currentness checks remain required",
-					}
-				: undefined,
 		gaps,
 		policy: {
 			mode: "outputs-first",

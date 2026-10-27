@@ -1,5 +1,5 @@
 import { immutableJson } from "bobs-factory-core";
-import { digest } from "../../Delivery.js";
+import { digest } from "../../EvidenceDigest.js";
 import { foreachPointer, foreachScope } from "../../Foreach.js";
 import { acceptedProgressValue } from "../../ProgressBudget.js";
 import { snapshotInputMappings } from "../../RepositorySnapshot.js";
@@ -20,7 +20,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 		workflowId,
 		graphChat: chat,
 		parallel,
-		reviewBaseline,
 	} = ctx;
 	const key = ctx.stepKey!;
 	const state = checkpoint.active!;
@@ -82,7 +81,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 	state.children[0]!.progressPath =
 		`${checkpoint.progressPath ?? workflowId}/${definition.id}`;
 	state.children[0]!.progressItem = checkpoint.progressItem;
-	state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 	state.children[0]!.iteration ??= checkpoint.iteration;
 	if (
 		checkpoint.projectResults ||
@@ -173,7 +171,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 		definition.id,
 		definition.chat ?? chat,
 		parallel,
-		config.explicit ? reviewBaseline : undefined,
 	);
 	const output = {
 		workflow: definition.id,
@@ -195,7 +192,6 @@ export async function execute(ctx: NodeContext): Promise<unknown> {
 				}
 			: {}),
 	};
-	checkpoint.reviewKey = state.children[0]!.reviewKey;
 
 	return output;
 }

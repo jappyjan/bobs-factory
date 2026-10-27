@@ -29,12 +29,6 @@ function runtime(directory: string, hooks: Partial<RuntimeHooks>) {
 		agent: async () => {
 			throw new Error("Unexpected agent invocation");
 		},
-		tool: async () => {
-			throw new Error("Unexpected action invocation");
-		},
-		script: async () => {
-			throw new Error("Unexpected script invocation");
-		},
 		...hooks,
 	});
 	runtimes.push(instance);
@@ -60,6 +54,7 @@ const each = (
 	...extra,
 });
 const child = (steps: unknown[], modern = true) => ({
+	engineVersion: "nodes-v1",
 	id: "child",
 	name: "Child",
 	allowedTriggers: ["workflow"],
@@ -77,6 +72,7 @@ function create(
 		...defaultWorkflows,
 		...dependencies,
 		{
+			engineVersion: "nodes-v1",
 			id: "ownership-fixture",
 			name: "Ownership fixture",
 			...(modern ? { stepConfigVersion: "step-config-v1" } : {}),
@@ -401,74 +397,6 @@ describe("For each and mapped Call output ownership", () => {
 				? output.results!.a.parallel
 				: output.outputs!.parallel,
 		).toEqual([{ route: { inherited: outerApproval } }]);
-	});
-
-	it("preserves unmapped legacy Call shared context and its original wrapper shape", async () => {
-		const directory = home();
-		const instance = runtime(directory, {
-			agent: async (context) =>
-				context.stepKey === "skipped"
-					? outerApproval
-					: { inherited: stepBindings(context).skipped },
-		});
-		const run = create(
-			instance,
-			directory,
-			[
-				agent("skipped"),
-				{ id: "call", name: "Call", type: "workflow", workflow: "child" },
-			],
-			[
-				child(
-					[
-						agent("route", { inputs: ["skipped"], next: "end" }),
-						agent("skipped"),
-					],
-					false,
-				),
-			],
-			false,
-		);
-		await instance.launch(run);
-		expect(run.error).toBeUndefined();
-		expect(run.outputs.call).toEqual({ workflow: "child", completed: true });
-		expect(run.outputs.route).toEqual({ inherited: outerApproval });
-		expect(run.outputs.skipped).toEqual(outerApproval);
-	});
-
-	it("preserves old Parallel output projection outside the new projected scopes", async () => {
-		const directory = home();
-		const instance = runtime(directory, {
-			agent: async (context) =>
-				context.stepKey === "skipped"
-					? outerApproval
-					: { inherited: stepBindings(context).skipped },
-		});
-		const run = create(
-			instance,
-			directory,
-			[
-				agent("skipped"),
-				{
-					id: "parallel",
-					name: "Parallel",
-					type: "fanout",
-					groups: [
-						[
-							agent("route", { inputs: ["skipped"], next: "end" }),
-							agent("skipped"),
-						],
-					],
-				},
-			],
-			[],
-			false,
-		);
-		await instance.launch(run);
-		expect(run.error).toBeUndefined();
-		expect(run.outputs.parallel).toEqual([
-			{ route: { inherited: outerApproval }, skipped: outerApproval },
-		]);
 	});
 
 	it("reloads exact owned item results without replaying completed items or losing unfinished native context", async () => {

@@ -95,6 +95,7 @@ const each = (id: string, body: unknown[]) => ({
 it("preflights every frozen inline, nested, called and title provider, resolving each provider once", async () => {
 	const workflow = immutableJson(
 		WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "parent",
 			name: "Parent",
 			stepConfigVersion: "step-config-v1",
@@ -117,6 +118,7 @@ it("preflights every frozen inline, nested, called and title provider, resolving
 	);
 	const called = immutableJson(
 		WorkflowSchema.parse({
+			engineVersion: "nodes-v1",
 			id: "worker",
 			name: "Worker",
 			stepConfigVersion: "step-config-v1",

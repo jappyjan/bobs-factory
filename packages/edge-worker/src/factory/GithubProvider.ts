@@ -8,7 +8,7 @@ import {
 	samePullRequestReference,
 	sameRepositoryReference,
 } from "./GitProviderReference.js";
-import type { ProviderCommand } from "./MergeReadiness.js";
+import type { ProviderCommand } from "./ProviderReadiness.js";
 
 export function githubPullRequest(value: any) {
 	return PullRequestSchema.parse({
@@ -35,7 +35,7 @@ export function githubProvider(
 	command: ProviderCommand,
 	repositoryUrl: string,
 	checkReceipts?: NonNullable<
-		import("./CISupervision.js").CISupervision["checkReceipts"]
+		import("./ProviderCheckReceipts.js").ProviderCheckState["checkReceipts"]
 	>,
 ): GitProvider {
 	const api = new GithubApi(command, repositoryUrl);

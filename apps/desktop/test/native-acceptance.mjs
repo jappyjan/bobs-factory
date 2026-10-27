@@ -219,7 +219,7 @@ async function main() {
 				{
 					passed: true,
 					workerPid: worker.pid,
-					reviewGatePreserved: true,
+					reviewDisplayPreserved: true,
 					completedWorkNotReplayed: true,
 					syntheticNativeCheckpointRetained: true,
 					independentBackendAlive: true,
@@ -260,10 +260,9 @@ async function main() {
 			"complete\n",
 		);
 		const question = diskRun("acceptance-question");
-		writeFileSync(join(localHome, "answer-fixture"), "blue\n");
 		const result = await fetchJson(
 			local,
-			"/api/runs/acceptance-question/answer",
+			"/api/runs/acceptance-question/view-answer",
 			{
 				method: "POST",
 				headers: {
@@ -271,12 +270,11 @@ async function main() {
 					"X-Factory-Request": "1",
 				},
 				body: JSON.stringify({
-					answer: "Blue",
-					context: {
-						questions: question.questions,
-						questionBatchId: question.questionBatchId,
-						step: question.step,
-					},
+					batchId: question.viewDecision.id,
+					digest: question.viewDecision.digest,
+					documentDigest: question.viewDecision.documentDigest,
+					accepted: true,
+					values: { color: "Blue" },
 				}),
 			},
 		);
@@ -285,12 +283,12 @@ async function main() {
 			() => diskRun("acceptance-question").status === "completed",
 			"accepted answer completion",
 		);
-		assert.deepEqual(
-			diskRun("acceptance-question").answers.map((entry) => ({
-				answer: entry.answer,
-				questions: entry.questions,
-			})),
-			[{ answer: "Blue", questions: ["Which fixture color?"] }],
+		assert.deepEqual(diskRun("acceptance-question").outputs.question.values, {
+			color: "Blue",
+		});
+		assert.equal(
+			diskRun("acceptance-question").outputs.question.documentDigest,
+			question.viewDecision.documentDigest,
 		);
 		assert.equal(
 			readFileSync(join(localHome, "mock-preparation-receipt"), "utf8"),

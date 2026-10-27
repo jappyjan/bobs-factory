@@ -9,7 +9,7 @@ import {
 	repositoryReference,
 	sameRepositoryReference,
 } from "./GitProviderReference.js";
-import type { ProviderCommand } from "./MergeReadiness.js";
+import type { ProviderCommand } from "./ProviderReadiness.js";
 
 /** Capture all discussion pages; only selected same-repository open PRs are supported. */
 export async function inspectGithubPullRequest(

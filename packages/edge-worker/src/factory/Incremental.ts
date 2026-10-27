@@ -9,7 +9,6 @@ import {
 } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { promisify } from "node:util";
-import { instructionSlot } from "./InstructionLibrary.js";
 import {
 	type RepositoryRevision,
 	type RunRepository,
@@ -18,8 +17,8 @@ import {
 	scopeRevision,
 } from "./RepositoryScope.js";
 import { outputRevisionBinding, sameOutputBinding } from "./RevisionBinding.js";
-import { hasCheck, readOutput, readsSource } from "./StepConfig.js";
 import { snapshotHistory } from "./WorkflowInput.js";
+
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 const exec = promisify(execFile);
@@ -40,19 +39,6 @@ export interface RoleProgress {
 	unchangedCode: boolean;
 	uncertain: boolean;
 	newHistory: unknown[];
-	approvalDelta?: { headSha: string; files: string[] };
-	reviewScope?: {
-		baseSha: string;
-		headSha: string;
-		files: string[];
-		diffStat: string;
-		source: "whole-pr";
-		repositories?: (NonNullable<RoleProgress["reviewScope"]> & {
-			repositoryId: string;
-			name: string;
-			workspace: string;
-		})[];
-	};
 }
 function historyProgress(context: ExecutionContext) {
 	const { run } = context;
@@ -68,13 +54,11 @@ function historyProgress(context: ExecutionContext) {
 	return {
 		visit: visits + 1,
 		previousOutput: previous < 0 ? undefined : run.history[previous]!.output,
-		newHistory: context.step.inputs
-			? []
-			: snapshotHistory(
-					run.history,
-					run.roleRevisions?.[key]?.historyLength ?? 0,
-					context.reviewBaseline?.historyLength ?? run.history.length,
-				),
+		newHistory: snapshotHistory(
+			run.history,
+			run.roleRevisions?.[key]?.historyLength ?? 0,
+			run.history.length,
+		),
 	};
 }
 export async function roleProgress(
@@ -106,18 +90,6 @@ export async function roleProgress(
 					]
 				: [],
 		);
-		const scopes = parts.flatMap(({ repository, progress }) =>
-			progress.reviewScope
-				? [
-						{
-							...progress.reviewScope,
-							repositoryId: repository.id,
-							name: repository.name,
-							workspace: repository.workspace,
-						},
-					]
-				: [],
-		);
 		return {
 			...first,
 			previousRevision,
@@ -142,39 +114,6 @@ export async function roleProgress(
 				.join("\n"),
 			uncertain: parts.some(({ progress }) => progress.uncertain),
 			unchangedCode: parts.every(({ progress }) => progress.unchangedCode),
-			approvalDelta: parts.some(({ progress }) => progress.approvalDelta)
-				? {
-						headSha:
-							context.run.humanDecisions
-								?.filter((item) => item.decision === "approve")
-								.at(-1)?.headSha ?? "",
-						files: parts.flatMap(({ repository, progress }) =>
-							(progress.approvalDelta?.files ?? []).map(
-								(file) => `${repository.name}/${file}`,
-							),
-						),
-					}
-				: undefined,
-			reviewScope:
-				scopes.length && revisions.length === repositories.length
-					? {
-							baseSha: scopeRevision(
-								scopes.map((scope) => ({
-									repositoryId: scope.repositoryId,
-									headSha: scope.baseSha,
-								})),
-							),
-							headSha: scopeRevision(revisions),
-							source: "whole-pr",
-							repositories: scopes,
-							files: scopes.flatMap((scope) =>
-								scope.files.map((file) => `${scope.name}/${file}`),
-							),
-							diffStat: scopes
-								.map((scope) => `${scope.name}:\n${scope.diffStat}`)
-								.join("\n"),
-						}
-					: undefined,
 		};
 	}
 	const { run } = context,
@@ -204,44 +143,6 @@ export async function roleProgress(
 			historyLength: run.history.length,
 			at: new Date().toISOString(),
 		};
-		// Guide snapshots need runtime-owned revision scope even when the agent's
-		// upstream outputs are restricted by a customized recipe.
-		if (readsSource(context.step, "mergeReadiness")) {
-			const receipt = (run.mergeReadiness ??
-				readOutput(context.step, "ci", context.outputs ?? run.outputs)) as
-				| { baseSha?: string }
-				| undefined;
-			if (receipt?.baseSha) {
-				const baseSha = (
-					await git(["merge-base", receipt.baseSha, headSha])
-				).trim();
-				result.reviewScope = {
-					baseSha,
-					headSha,
-					source: "whole-pr",
-					files: (
-						await git(["diff", "--name-only", "-z", `${baseSha}...${headSha}`])
-					)
-						.split("\0")
-						.filter(Boolean),
-					diffStat: await git(["diff", "--stat", `${baseSha}...${headSha}`]),
-				};
-			}
-		}
-		if (hasCheck(context.step, "requirement-coverage")) {
-			const approval = [...(run.humanDecisions ?? [])]
-				.reverse()
-				.find((d) => d.decision === "approve");
-			if (approval)
-				result.approvalDelta = {
-					headSha: approval.headSha,
-					files: (
-						await git(["diff", "--name-only", "-z", approval.headSha, headSha])
-					)
-						.split("\0")
-						.filter(Boolean),
-				};
-		}
 		if (previousRevision) {
 			result.changedFiles = (
 				await git(["diff", "--name-only", "-z", previousRevision.headSha])
@@ -373,17 +274,6 @@ export async function completedAgentResult(
 ): Promise<{ output: unknown } | undefined> {
 	const saved = context.resumeAgent?.result;
 	if (!saved) return;
-	const impact = (
-		context.input as
-			| { impactSnapshot?: { reuseVersion?: string; digest: string } }
-			| undefined
-	)?.impactSnapshot;
-	if (
-		hasCheck(context.step, "impact-reuse") &&
-		impact?.reuseVersion === "composed-v1" &&
-		saved.impactSnapshotDigest !== impact.digest
-	)
-		return;
 	const binding = await outputRevisionBinding(context, saved.binding);
 	if (binding && !sameOutputBinding(saved.binding, binding)) return;
 	context.progress = await roleProgress(context);
@@ -399,12 +289,4 @@ export async function completedAgentResult(
 		"Revalidating completed agent output; existing work is preserved.",
 	);
 	return { output: structuredClone(saved.output) };
-}
-export const incrementalInstructions = `On repeated visits, start with /progress through factory-context: previous role result, revision, changed files/diff and new history. When compact memory is present, /progress/newHistory is an index: follow outputPath only for relevant new evidence, and use /contextMemory/reviewLedger and /contextMemory/reviewRounds for past findings, dispositions and review reasoning. Reuse established decisions and supported findings; inspect only changed requirements/files and affected dependencies, while retaining all unresolved findings and disputes. Do not reread the entire ticket/plan/repository by default. Fetch unchanged context only when needed to assess a new change. An uncertain or dirty revision requires full relevant inspection. Automated F1 validation uses deterministic mocked agents or recorded transcript replays. Set F1_AGENT_MODE=mock and inject mocked runners in embedded harnesses; older worktree harnesses may require explicit mocking. Live agent CLI/API validation requires explicit user authorization for provider credits. Report mocked evidence accurately. Never skip required checks or assume human approval. If code is unchanged, validate new feedback/results rather than redoing the same repository exploration. Planning/clarification should update prior results for new answers/feedback, not start over; reviewers assess the delta, regressions and all unresolved findings, preserving stable issue IDs and past dispositions.`;
-
-export { incrementalRoleInstructions } from "./InstructionLibrary.js";
-
-/** Runtime role instructions follow the accepted shared instruction IDs. */
-export function roleInstructions(step: object): string {
-	return instructionSlot(step, "role");
 }

@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { executeCommand } from "../../src/factory/FactoryTools.js";
+import { executeCommand } from "../../src/factory/nodes/execute/command.js";
 import type { RunRepository } from "../../src/factory/RepositoryScope.js";
 import type { ExecutionContext } from "../../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./github-api.js";

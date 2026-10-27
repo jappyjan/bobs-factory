@@ -1,7 +1,5 @@
-import { QaScopeSchema } from "../../src/factory/FactoryResults.js";
-import { QaCaptureSchema } from "../../src/factory/FactoryTools.js";
 export function qaScope(surface: "ui" | "api" | "cli" = "api") {
-	return QaScopeSchema.parse({
+	return {
 		qaContract: "qa-v1",
 		changed: surface === "ui",
 		captureBudget: 24,
@@ -33,12 +31,12 @@ export function qaScope(surface: "ui" | "api" | "cli" = "api") {
 			},
 		],
 		exclusions: [],
-	});
+	};
 }
 export function qaExecution(
 	outcome: "passed" | "failed" | "blocked" = "passed",
 ) {
-	return QaCaptureSchema.parse({
+	return {
 		qaContract: "qa-v1",
 		screenshots: [],
 		unavailable: [],
@@ -73,5 +71,5 @@ export function qaExecution(
 				],
 			},
 		],
-	});
+	};
 }

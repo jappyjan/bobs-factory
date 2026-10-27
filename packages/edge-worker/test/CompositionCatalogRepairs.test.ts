@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
@@ -11,8 +11,6 @@ const hooks = {
 	agent: async () => {
 		throw new Error("No agent effects authorized");
 	},
-	tool: async () => ({}),
-	script: async () => ({}),
 };
 function runtime(home?: string) {
 	if (!home) {
@@ -29,122 +27,71 @@ afterEach(async () => {
 		rmSync(root, { recursive: true, force: true });
 });
 
-it("R5 preserves compatible correction entries and saves Finish, sibling and Return edits through catalog reload", () => {
+it("preserves compatible route entries and saves Finish, sibling and Return edits through reload", () => {
 	const { instance, home } = runtime();
-	const fork = instance.forkWorkflow("factory", "Editable correction routes");
-	const step = fork.steps.find((s) => s.id === "review")!;
-	const index = step.branches.findIndex((b) => b.when.equals === "to-ci-fix");
-	const original = structuredClone(step.branches[index]!);
-	const recipes = instance.listWorkflows();
-	expect(changeRouteTarget(original, "ci", fork.steps, recipes)).toEqual(
-		original,
-	);
-	const saved: unknown[] = [];
-	for (const next of ["end", "qa", "to-architecture"]) {
-		// A declared Return is tested on its owning recipe, not as a sibling step.
-		const owner =
-			next === "to-architecture"
-				? instance.forkWorkflow("route-delivery", "Return editing")
-				: fork;
-		const targetStep =
-			next === "to-architecture"
-				? owner.steps.find((s) => s.id === "delivery-route")!
-				: step;
-		if (next === "to-architecture")
-			targetStep.branches.push(structuredClone(original));
-		const targetIndex =
-			next === "to-architecture" ? targetStep.branches.length - 1 : index;
-		targetStep.branches[targetIndex] = changeRouteTarget(
+	const leaf = (id) => ({
+		id,
+		name: id,
+		type: "transform",
+		transform: { ok: { literal: true } },
+		branches: [],
+		maxVisits: 8,
+	});
+	const child = {
+		engineVersion: "nodes-v1",
+		id: "route-child",
+		name: "Route child",
+		steps: [leaf("entry")],
+		outcomes: ["returned"],
+		allowedTriggers: ["workflow"],
+	};
+	const local = {
+		engineVersion: "nodes-v1",
+		id: "route-local",
+		name: "Route local",
+		outcomes: ["returned"],
+		steps: [
+			{
+				id: "call",
+				name: "Call",
+				type: "workflow",
+				workflow: child.id,
+				branches: [],
+				maxVisits: 8,
+			},
+			leaf("sibling"),
+			{
+				...leaf("route"),
+				branches: [
+					{
+						when: { path: "repair", equals: true },
+						next: "call",
+						entry: "entry",
+					},
+				],
+			},
+		],
+	};
+	instance.updateWorkflows([...instance.listWorkflows(), child, local]);
+	const original = local.steps[2].branches[0];
+	expect(
+		changeRouteTarget(original, "call", local.steps, instance.listWorkflows()),
+	).toEqual(original);
+	for (const next of ["end", "sibling", "returned"]) {
+		local.steps[2].branches[0] = changeRouteTarget(
 			original,
 			next,
-			owner.steps,
+			local.steps,
 			instance.listWorkflows(),
 		);
-		expect(targetStep.branches[targetIndex]!.entry).toBeUndefined();
+		expect(local.steps[2].branches[0].entry).toBeUndefined();
 		instance.updateWorkflows(
-			instance.listWorkflows().map((w) => (w.id === owner.id ? owner : w)),
+			instance.listWorkflows().map((w) => (w.id === local.id ? local : w)),
 		);
-		const reloaded = runtime(home)
-			.instance.listWorkflows()
-			.find((w) => w.id === owner.id)!;
 		expect(
-			reloaded.steps.find((s) => s.id === targetStep.id)!.branches[targetIndex],
-		).toEqual(targetStep.branches[targetIndex]);
-		saved.push({ next, recipe: reloaded });
+			runtime(home)
+				.instance.listWorkflows()
+				.find((w) => w.id === local.id).steps[2].branches[0],
+		).toEqual(local.steps[2].branches[0]);
 	}
-	writeFileSync(
-		"/tmp/taskbot142-r2-route-entry.json",
-		JSON.stringify(
-			{
-				original,
-				saved,
-				configuration: JSON.parse(
-					readFileSync(join(home, "factory", "workflows.json"), "utf8"),
-				),
-			},
-			null,
-			2,
-		),
-	);
-});
-
-it("R6 retains legacy planning settings at every actual role owner and preserves explicit overrides visibly", () => {
-	const { instance, home } = runtime();
-	const path = join(home, "factory", "workflows.json");
-	const state = instance.catalog.read();
-	const settings = {
-		runner: "codex" as const,
-		model: "gpt-6.1-sol",
-		reasoningEffort: "xhigh",
-		serviceTier: "fast",
-	};
-	const current = { ...settings, model: "current-choice" };
-	state.preferences["factory-pipeline"] = {
-		clarify: settings,
-		plan: settings,
-		"plan-review": settings,
-	};
-	state.preferences["clarify-plan"] = { plan: current };
-	state.preferences["external-delivery"] = { clarify: current };
-	writeFileSync(path, JSON.stringify(state));
-	const migrated = runtime(home).instance;
-	for (const owner of ["clarify-plan", "route-delivery", "external-delivery"]) {
-		for (const role of ["clarify", "plan", "plan-review"]) {
-			const expected =
-				(owner === "clarify-plan" && role === "plan") ||
-				(owner === "external-delivery" && role === "clarify")
-					? current
-					: settings;
-			expect(
-				migrated
-					.listWorkflows()
-					.find((w) => w.id === owner)!
-					.steps.find((s) => s.id === role),
-			).toMatchObject(expected);
-		}
-	}
-	expect(migrated.catalog.read().inactive).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({
-				role: "plan",
-				settings,
-				reason: expect.stringContaining("clarify-plan/plan"),
-			}),
-			expect.objectContaining({
-				role: "clarify",
-				settings,
-				reason: expect.stringContaining("external-delivery/clarify"),
-			}),
-		]),
-	);
-	const preferences = migrated.catalog.read().preferences;
-	// Persist and reload through the same catalog write API used by the product.
-	migrated.updatePreferences("clarify-plan", preferences["clarify-plan"]!);
-	expect(runtime(home).instance.catalog.read().preferences).toEqual(
-		preferences,
-	);
-	writeFileSync(
-		"/tmp/taskbot142-r2-preferences.json",
-		JSON.stringify(migrated.catalog.read(), null, 2),
-	);
 });

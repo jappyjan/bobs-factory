@@ -15,11 +15,7 @@ import { z } from "zod";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { nodeRegistry } from "../src/factory/nodes/index.js";
 import { stepFields } from "../src/factory/nodes/schema.js";
-import {
-	factoryRoleInstruction,
-	nativeAgentReads,
-	withRuntimeRolePrompt,
-} from "../src/factory/RolePrompt.js";
+import { nativeAgentReads } from "../src/factory/RolePrompt.js";
 import { materializeWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -233,8 +229,6 @@ function fixture(runnerType: RunnerType = "codex") {
 	});
 	const hooks = {
 		agent: (ctx: ExecutionContext) => worker.executeFactoryAgent(ctx),
-		script: async () => ({}),
-		tool: async () => ({}),
 	};
 	const runtime = (overrides: Partial<RuntimeHooks> = {}) => {
 		const value = new WorkflowRuntime(home, { ...hooks, ...overrides });
@@ -258,66 +252,6 @@ function fixture(runnerType: RunnerType = "codex") {
 		},
 	};
 }
-
-it.each([
-	"claude",
-	"codex",
-	"gemini",
-	"cursor",
-	"opencode",
-] as const)("resumes the %s node after a separate human node and a cold restart, with new reads in the new message", async (runner) => {
-	const f = fixture(runner);
-	let runtime = f.runtime();
-	const workflow = WorkflowSchema.parse(recipe);
-	const run = runtime.create({
-		repositoryId: "repo",
-		workspace: f.workspace,
-		workflow,
-		input: "Compose",
-		runner,
-		triggerOrigin: { type: "manual", workflowId: workflow.id },
-	});
-	void runtime.launch(run);
-	await waitForRuntime(() =>
-		expect(
-			answer,
-			JSON.stringify({ status: run.status, error: run.error }),
-		).toBeTypeOf("function"),
-	);
-	expect(f.turns).toHaveLength(1);
-	expect(run.questions).toEqual([]);
-	await runtime.flush(run.id);
-	runtime.stop(run.id);
-	await runtime.shutdown();
-	answer = undefined;
-	runtime = f.runtime();
-	runtime.resume(run.id);
-	await waitForRuntime(() =>
-		expect(
-			answer,
-			JSON.stringify({ status: run.status, error: run.error }),
-		).toBeTypeOf("function"),
-	);
-	answer!();
-	await waitForRuntime(() =>
-		expect(runtime.get(run.id).status).toBe("completed"),
-	);
-	expect(runtime.get(run.id).error).toBeUndefined();
-	expect(f.turns.map(({ runner, resume }) => ({ runner, resume }))).toEqual([
-		{ runner, resume: undefined },
-		{ runner, resume: `native-${runner}-1` },
-	]);
-	expect(f.turns[1]!.prompt).toContain(
-		'Current reads (JSON):\n{"answer":"Use the saved value"}',
-	);
-	expect(runtime.get(run.id).history.map((entry) => entry.step)).toEqual([
-		"compose",
-		"status",
-		"human",
-		"compose",
-		"status",
-	]);
-});
 
 it("starts a fresh conversation on a revisit when session is omitted", async () => {
 	const f = fixture();
@@ -447,26 +381,6 @@ it("preserves the new definition contract through serialization and builder proj
 	expect(html).not.toContain('aria-label="Checks"');
 });
 
-it("keeps new agent instructions generic even when runtime legacy additions are requested", () => {
-	const step = WorkflowSchema.parse(recipe).steps[0]!;
-	const augmented = withRuntimeRolePrompt(step, [], {
-		assessedCorrection: true,
-		calibratedReview: true,
-	});
-	expect(augmented).toBe(step);
-	expect(
-		factoryRoleInstruction(augmented, {
-			repositoryScope: "<workspace>",
-			gitProvider: "",
-			customProviderInstructions: "",
-			ticket: "",
-			questions: "legacy human UI",
-		}),
-	).toBe(
-		`Execute the configured agent node: Compose.\n${step.prompt}\n\n<workspace>\nReturn JSON matching the configured output schema and rules.`,
-	);
-});
-
 it("keeps large and native transcript reads on the scoped MCP connection", () => {
 	const workflow = WorkflowSchema.parse({
 		...recipe,
@@ -523,8 +437,6 @@ it("continues with a warning if a revisited resume node has no native session", 
 			ctx.resumeFallback
 				? f.worker.executeFactoryAgent(ctx)
 				: { status: "needs-input", display: { title: "Choose a value" } },
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	runtimes.push(runtime);
 	const workflow = WorkflowSchema.parse(recipe);

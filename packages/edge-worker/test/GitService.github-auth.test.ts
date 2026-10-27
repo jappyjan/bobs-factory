@@ -20,12 +20,12 @@ import type {
 import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
-import { executeCommand } from "../src/factory/FactoryTools.js";
 import {
 	githubGitEnvironment,
 	managedGithubAgentEnvironment,
 	managedGithubGitEnvironment,
 } from "../src/factory/GithubApi.js";
+import { executeCommand } from "../src/factory/nodes/execute/command.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type {
 	ExecutionContext,
@@ -202,6 +202,7 @@ it.each([
 	const f = fixture();
 	hostEnvironment(f.managedEnvironment);
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "metadata-owner",
 		name: "Owner",
 		stepConfigVersion: "step-config-v1",
@@ -211,7 +212,6 @@ it.each([
 				name: "Data",
 				type: "agent",
 				prompt: "Return data",
-				checks: [],
 			},
 		],
 	});

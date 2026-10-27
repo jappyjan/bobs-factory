@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { afterEach, expect, it, vi } from "vitest";
 import { TodayApp } from "./app.js";
 import { FactoryClient } from "./client.js";
-import { AnswerForm, LaunchForm } from "./forms.js";
+import { LaunchForm } from "./forms.js";
 import { tuiPort } from "./index.js";
 import {
 	conversation,
@@ -50,7 +50,7 @@ it("groups Today like the dashboard: questions, stuck, reviews first; settled ou
 	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-14T12:00:00Z"));
 	const runs = [
 		run("working", "running"),
-		run("review", "waiting", { reviewGate: { status: "pending" } }),
+		run("review", "completed"),
 		run("stuck", "failed"),
 		run("question", "waiting"),
 		run("settled", "completed", { viewState: { settledAt: at(1) } }),
@@ -229,25 +229,6 @@ it("uses the saved recipe default and keeps the focused launch field visible at 
 	});
 });
 
-it("keeps a long focused question and its answer inside a short terminal", () => {
-	const form = new AnswerForm({
-		...run("questions", "waiting"),
-		questions: ["word ".repeat(200), "Second question"],
-		questionRecommendations: [{ questionIndex: 0, answer: "Yes" }],
-	});
-	form.key({ name: "text", text: "My answer" });
-	const screen = new Screen(60, 16, tokens("light").base);
-	form.render(screen, tokens("light"));
-	expect(screen.cursor!.y).toBeLessThan(13);
-	expect(screen.cells.join("")).toContain("My answer");
-	form.key({ name: "tab" });
-	form.key({ name: "text", text: "Second answer" });
-	const next = new Screen(60, 16, tokens("light").base);
-	form.render(next, tokens("light"));
-	expect(next.cells.join("")).toContain("Second answer");
-	expect(next.cursor!.y).toBeLessThan(13);
-});
-
 it("strips terminal control sequences from untrusted text and measures wide glyphs", () => {
 	expect(sanitize("ok\x1b]52;c;cHduZWQ=\x07 \x1b[2Jdone\x07")).toBe("ok done");
 	expect(width("日本😀a")).toBe(7);
@@ -335,154 +316,6 @@ it("requests a new terminal session once when the server forgets it, and sends w
 	await expect(client.get("/api/runs")).rejects.toThrow("same home (/home)");
 });
 
-it("selects terminal choices explicitly, preserves mode drafts and submits in option order", () => {
-	const form = new AnswerForm({
-		...run("choices", "waiting"),
-		questions: ["Platforms?", "Strategy?"],
-		questionChoices: [
-			{
-				questionIndex: 0,
-				selection: "multiple",
-				options: [
-					{ id: "a", answer: "Alpha" },
-					{ id: "b", answer: "Beta" },
-				],
-			},
-			{
-				questionIndex: 1,
-				selection: "single",
-				options: [
-					{ id: "one", answer: "Explain via examples" },
-					{ id: "two", answer: "Use text" },
-				],
-				preselectedOptionIds: ["one"],
-			},
-		],
-	});
-	expect(form.request().body).toBeUndefined();
-	form.key({ name: "down" });
-	form.key({ name: "text", text: " " });
-	form.key({ name: "up" });
-	form.key({ name: "text", text: " " });
-	expect(form.answers()).toEqual(["- Alpha\n- Beta", "Explain via examples"]);
-	expect(form.key({ name: "text", text: "unhandled" })).toBeUndefined();
-	form.key({ name: "down" });
-	form.key({ name: "down" });
-	form.key({ name: "text", text: " " });
-	expect(form.request().body).toBeUndefined();
-	form.key({ name: "text", text: "Custom platform" });
-	expect(form.answers()[0]).toBe("Custom platform");
-	const screen = new Screen(60, 16, tokens("light").base);
-	form.render(screen, tokens("light"));
-	expect(screen.cells.join("")).toContain("Custom platform");
-	expect(screen.cursor!.y).toBeLessThan(13);
-	form.key({ name: "ctrl-space" });
-	expect(form.answers()[0]).toBe("- Alpha\n- Beta");
-	form.key({ name: "tab" });
-	form.key({ name: "down" });
-	form.key({ name: "text", text: " " });
-	expect(form.answers()[1]).toBe("Use text");
-	expect(form.request().body?.kind).toBe("answer");
-	expect(form.key({ name: "ctrl-s" })).toBe("submit");
-});
-
-it("scrolls to late options in a short terminal and sanitizes their labels", () => {
-	const options = Array.from({ length: 20 }, (_, i) => ({
-		id: String(i),
-		answer:
-			`Option ${i + 1} with a long readable label` +
-			(i === 19 ? "\x1b[2J" : ""),
-	}));
-	const form = new AnswerForm({
-		...run("long-choices", "waiting"),
-		questions: ["Choose a platform"],
-		questionChoices: [{ questionIndex: 0, selection: "single", options }],
-	});
-	for (let i = 0; i < 19; i++) form.key({ name: "down" });
-	const screen = new Screen(60, 12, tokens("light").base);
-	form.render(screen, tokens("light"));
-	expect(screen.cells.join("")).toContain("Option 20");
-	expect(screen.cells.join("")).toContain("ctrl-s send");
-	expect(screen.cells.join("")).not.toContain("\x1b");
-	form.key({ name: "text", text: " " });
-	expect(form.answers()[0]).toContain("Option 20");
-});
-
-it("shows multiline and wrapped question context above terminal choices", () => {
-	const question =
-		"Should we run real-agent tests?\nThey use provider credits and the cost is unknown. " +
-		"The remaining tests confirm agents resume after your reply and generate suitable suggestions.";
-	const form = new AnswerForm({
-		...run("question-context", "waiting"),
-		questions: [question],
-		questionChoices: [
-			{
-				questionIndex: 0,
-				selection: "single",
-				options: [
-					{ id: "run", answer: "Run real-agent tests" },
-					{ id: "wait", answer: "Wait" },
-				],
-			},
-		],
-	});
-	const screen = new Screen(100, 30, tokens("light").base);
-	form.render(screen, tokens("light"));
-	const text = screen.cells.join("");
-	for (const line of wrap(question, 90)) expect(text).toContain(line);
-	expect(text).toContain("Run real-agent tests");
-	expect(text).toContain("Custom answer");
-	expect(text).toContain("ctrl-s send");
-});
-
-it("lets every long question line be read without changing answer drafts", () => {
-	const lines = Array.from({ length: 35 }, (_, i) => `Context line ${i + 1}.`);
-	const form = new AnswerForm({
-		...run("scroll-question", "waiting"),
-		questions: [lines.join("\n"), "Second question"],
-		questionChoices: [0, 1].map((questionIndex) => ({
-			questionIndex,
-			selection: "single" as const,
-			options: [
-				{ id: "yes", answer: "Proceed" },
-				{ id: "no", answer: "Wait" },
-			],
-			preselectedOptionIds: ["yes"],
-		})),
-	});
-	const seen = new Set<string>();
-	const render = (w = 60, h = 16) => {
-		const screen = new Screen(w, h, tokens("light").base);
-		form.render(screen, tokens("light"));
-		return screen.cells.join("");
-	};
-	for (let page = 0; page < lines.length; page++) {
-		const text = render();
-		for (const line of lines) if (text.includes(line)) seen.add(line);
-		expect(text).toContain("PgUp/PgDn scroll");
-		expect(text).toContain("ctrl-s send");
-		form.key({ name: "pagedown" });
-	}
-	expect([...seen]).toEqual(lines);
-	expect(form.answers()).toEqual(["Proceed", "Proceed"]);
-	// Scroll controls still work while editing custom text and after a resize.
-	form.key({ name: "down" });
-	form.key({ name: "down" });
-	form.key({ name: "text", text: " " });
-	form.key({ name: "text", text: "Custom response" });
-	expect(render(80, 24)).toContain("Context line 35.");
-	for (let page = 0; page < lines.length; page++) {
-		form.key({ name: "pageup" });
-		render();
-	}
-	expect(render()).toContain("Context line 1.");
-	expect(form.answers()).toEqual(["Custom response", "Proceed"]);
-	form.key({ name: "tab" });
-	expect(render()).toContain("Second question");
-	form.key({ name: "shift-tab" });
-	expect(render()).toContain("Context line 1.");
-});
-
 it("offers only enabled manual workflows with available dependencies", () => {
 	expect(
 		launchableWorkflows({
@@ -546,52 +379,6 @@ it("shows the blocked reason and resumes only eligible runs from the terminal", 
 		app.key({ name: "text", text: "c" });
 		await vi.waitFor(() =>
 			expect(post).toHaveBeenCalledExactlyOnceWith("/api/runs/blocked/resume"),
-		);
-	} finally {
-		app.stop();
-	}
-});
-
-it("rechecks a waiting role with its exact question context instead of submitting an answer", async () => {
-	const waiting = run("waiting", "waiting", { step: "pipeline/code-fix" });
-	const context = {
-		step: waiting.step,
-		questionBatchId: "current-batch",
-		questions: ["Restore access"],
-	};
-	const post = vi.fn(async () => ({}));
-	let frame = "";
-	const client = {
-		origin: "http://localhost:3457",
-		get: vi.fn(async (path: string) => {
-			if (path === "/api/config?view=dashboard")
-				return { repositories: [], workflows: [] };
-			if (path === "/api/runs") return [waiting];
-			return { ...waiting, ...context, recheckAvailable: true };
-		}),
-		post,
-		events: () => () => {},
-	} as unknown as FactoryClient;
-	const app = new TodayApp({
-		client,
-		theme: "dark",
-		sgr: () => "",
-		write: (value) => {
-			frame = value;
-		},
-		size: () => ({ columns: 120, rows: 32 }),
-		openUrl: async () => {},
-		quit: () => {},
-	});
-	app.start();
-	try {
-		await vi.waitFor(() => expect(frame).toContain("c check again"));
-		app.key({ name: "text", text: "c" });
-		await vi.waitFor(() =>
-			expect(post).toHaveBeenCalledExactlyOnceWith(
-				"/api/runs/waiting/recheck",
-				{ context },
-			),
 		);
 	} finally {
 		app.stop();

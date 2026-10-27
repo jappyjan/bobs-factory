@@ -7,7 +7,7 @@ import {
 	FileIssuesConfigurationSchema,
 	FileIssueTitleSchema,
 } from "./ActionSteps.js";
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import {
 	type ForeachScope,
 	foreachPointer,

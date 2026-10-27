@@ -7,9 +7,9 @@ import {
 	renameSync,
 	writeFileSync,
 } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { isDeepStrictEqual } from "node:util";
+
 import type {
 	RunTitleJob,
 	WorkflowTrigger,
@@ -44,26 +44,6 @@ import {
 	resolveNativePreferences,
 } from "./AgentSettings.js";
 import {
-	type ArchitectureDecision,
-	ArchitectureDecisionSchema,
-	type ArchitectureProposal,
-	ArchitectureReviewSchema,
-	ArchitectureSchema,
-	assertReviewBrief,
-	openDecisions,
-	reviewedArchitectureContinuation,
-	snapshotProposal,
-	verifyProposal,
-} from "./Architecture.js";
-import {
-	DeliveryContractSchema,
-	type DeliveryState,
-	digest,
-	externalCompletionProven,
-	freezeDelivery,
-	validateDeliveryContract,
-} from "./Delivery.js";
-import {
 	acquireDelivery,
 	type DeliveryCoordination,
 	deliveryScopes,
@@ -72,11 +52,8 @@ import {
 	resourceScopes,
 	restoreDelivery,
 } from "./DeliveryCoordination.js";
-import {
-	upgradedArchitectureSteps,
-	upgradedGuideStep,
-	upgradeHandoffReadiness,
-} from "./defaultWorkflows.js";
+import { digest } from "./EvidenceDigest.js";
+
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
 import {
 	EffectReconciliationError,
@@ -97,30 +74,10 @@ import type {
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { GitSettings } from "./GitSettings.js";
 import type { ViewRecord, ViewSnapshot } from "./HumanStep.js";
-import {
-	assertImpactFresh,
-	bindExtractedInventory,
-	type ConvergenceState,
-	collectImpactSnapshot,
-	continuationEligible,
-	decisionFor,
-	historicalInventoryRead,
-	type ImpactDecision,
-	type ImpactSnapshot,
-	impactDecisionDigest,
-	impactFanout,
-	impactProgressEvidence,
-	recordConvergence,
-	STALE_IMPACT_MESSAGE,
-	validateImpact,
-} from "./Impact.js";
+
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
 import type { IssueDestination } from "./IssueDestination.js";
-import {
-	attachmentDirectories,
-	LaunchAssetStore,
-	type LaunchAttachments,
-} from "./LaunchAssets.js";
+import { LaunchAssetStore, type LaunchAttachments } from "./LaunchAssets.js";
 import {
 	type LaunchRunBatch,
 	launchBatchProjection,
@@ -128,12 +85,7 @@ import {
 	stopLaunchRuns,
 	tickLaunchRuns,
 } from "./LaunchRuns.js";
-import { recordFeedbackAssessment } from "./MergeReadiness.js";
-import {
-	pendingMergeConfirmation,
-	recordMergeConfirmation,
-} from "./MergeRecovery.js";
-import { nativeViewText } from "./NativeViews.js";
+
 import { reusableNodeOutput, scopedNodeRevisions } from "./NodeGuarantees.js";
 import { nodeContext, nodeWaitPhase } from "./nodes/context.js";
 import { NODE_REROUTE } from "./nodes/control.js";
@@ -145,26 +97,15 @@ import {
 	continueProgress,
 	initializeProgressBudget,
 	type ProgressBudget,
-	recordProgressEvidence,
 	recordProgressFailure,
-	recordProgressInput,
 } from "./ProgressBudget.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
-import { qaDigest as importDigest } from "./Qa.js";
-import {
-	isExplanationRequest,
-	normalizeQuestionResult,
-	type QuestionChoices,
-	type QuestionRecommendation,
-	questionNotification,
-} from "./Questions.js";
-import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
+
 import type {
 	SnapshotInputProvenance,
 	SnapshotReceipt,
 } from "./RepositorySnapshot.js";
-import { guideHeadline } from "./ReviewBrief.js";
-import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
+
 import {
 	assertBoundInspectionFresh,
 	bindingHistory,
@@ -174,66 +115,27 @@ import {
 	sameOutputBinding,
 } from "./RevisionBinding.js";
 import { newRoleContext, roleContextAccess } from "./RoleContext.js";
-import { withRuntimeRolePrompt } from "./RolePrompt.js";
+
 import {
-	diagnosticReuse,
 	diagnosticSummary,
 	RunAccounting,
 	type RunTimingUpdate,
 	runDiagnostics,
 	timingOperation,
 } from "./RunDiagnostics.js";
-import { currentStepView, presentationOutputKeys } from "./RunOutputRoles.js";
+import { currentStepView } from "./RunOutputRoles.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
-import {
-	aggregateReview,
-	type Inventory,
-	latestAggregate,
-	originalReviewContext,
-	type ReviewBaseline,
-	reviewedRunRevision,
-	scopeContextDigest,
-	stampSpecialist,
-	validateContractOutput,
-} from "./SpecialistReview.js";
-import {
-	allRunSteps,
-	mappedStepBindings,
-	stepBindings,
-} from "./StepBindings.js";
+
+import { stepBindings } from "./StepBindings.js";
 import {
 	accessMode,
-	architectureRevisionDecision,
-	checkArgs,
-	consumesImpact,
-	consumesReview,
-	fixerPublication,
-	formatOf,
-	hasCheck,
-	inheritStepConfig,
 	isNodeEngineStep,
-	legacyToolOutput,
-	readOutput,
-	readStep,
 	registerWorkflowConfig,
 	resolveStepConfig,
-	reviewEvidenceContract,
 } from "./StepConfig.js";
-import {
-	stockFactorySteps,
-	stockWorkflowMetadata,
-} from "./stockFactorySteps.js";
+
 import { recordTicketMilestone } from "./TicketTracking.js";
-import {
-	boundStepKey,
-	nextProducerKey,
-	outputForTool,
-	producerKey,
-	producerValue,
-	registerOutputHistory,
-	stepForRun,
-	writeBoundOutput,
-} from "./ToolBindings.js";
+import { producerKey, producerValue, stepForRun } from "./ToolBindings.js";
 import { HumanViews } from "./ViewRuntime.js";
 import {
 	isComputeIntensive,
@@ -244,11 +146,7 @@ import {
 	WorkflowSchema,
 	type WorkflowStep,
 } from "./Workflow.js";
-import {
-	type WorkflowBlock,
-	WorkflowCatalog,
-	workflowClosure,
-} from "./WorkflowCatalog.js";
+import { type WorkflowBlock, WorkflowCatalog } from "./WorkflowCatalog.js";
 import { snapshotHistory, snapshotWorkflowInput } from "./WorkflowInput.js";
 
 export type RunStatus =
@@ -298,8 +196,6 @@ export interface AgentCheckpoint {
 		revision: RoleRevision;
 		finalizing?: boolean;
 		binding?: OutputRevisionBinding;
-		impactSnapshotDigest?: string;
-		reviewScope?: RoleProgress["reviewScope"];
 	};
 	rejected?: {
 		output: unknown;
@@ -315,16 +211,9 @@ export interface AgentCheckpoint {
 		reserved?: boolean;
 		exhausted?: boolean;
 		retryGeneration?: number;
-		screenshots?: { path: string; area: string; state?: string }[];
 	};
 }
-export interface QuestionRecheck {
-	questionBatchId: string;
-	questions: string[];
-	at: string;
-	convergence?: { key: string; snapshotDigest: string; at: string };
-	convergenceConsumed?: true;
-}
+
 export interface ItemFrame {
 	id: string;
 	index: number;
@@ -348,7 +237,7 @@ export interface GraphCheckpoint {
 	/** Completed Parallel scopes remain the owners of their qualified producers. */
 	branches?: Record<string, GraphCheckpoint[]>;
 	/** The exact accepted review context inherited by this lexical frame. */
-	baseline?: Pick<ReviewBaseline, "key" | "round">;
+
 	/** A producer refresh executes in its original frame and returns without following its route. */
 	producerRefresh?: {
 		source: string;
@@ -366,7 +255,7 @@ export interface GraphCheckpoint {
 	projectResults?: true;
 	resultReceipts?: Record<string, { key: string; output: unknown }>;
 	// Inherited by called workflows and fanout branches; calls return it to their caller.
-	reviewKey?: string;
+
 	current: string;
 	visits: Record<string, number>;
 	/** Exact native identities for the configured roles in this frame; never completed results. */
@@ -403,58 +292,17 @@ export interface GraphCheckpoint {
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
 		terminalFailure?: true;
-		questionRecheck?: QuestionRecheck;
-		questionDisplay?: {
-			source?: {
-				questions: string[];
-				recommendations?: QuestionRecommendation[];
-				choices?: QuestionChoices[];
-			};
-			questions: string[];
-			recommendations?: QuestionRecommendation[];
-			choices?: QuestionChoices[];
-		};
-		questionExplanation?: {
-			source?: {
-				questions: string[];
-				recommendations?: QuestionRecommendation[];
-				choices?: QuestionChoices[];
-			};
-			text: string;
-			questions: string[];
-			agent?: AgentCheckpoint;
-		};
+
 		agent?: AgentCheckpoint;
 		children?: GraphCheckpoint[];
 		foreach?: ForeachCheckpoint;
 		call?: WorkflowCall;
 		refreshProducer?: string;
-		reviewBaseline?: ReviewBaseline;
-		impactSnapshot?: ImpactSnapshot;
 	};
 	// Fanouts and modern calls own output frames; old calls retain their shared scope.
 	outputs?: Record<string, unknown>;
 }
-export interface HumanDecision {
-	url?: string;
-	mode?: "repository" | "external" | "mixed";
-	externalDigest?: string;
-	repositories?: import("./RepositoryScope.js").ApprovedRepository[];
-	reviewId: string;
-	headSha: string;
-	decision: "approve" | "reject";
-	feedback?: string;
-	at: string;
-}
-export interface ReviewGate {
-	mode?: "repository" | "external" | "mixed";
-	externalDigest?: string;
-	repositories?: import("./RepositoryScope.js").ApprovedRepository[];
-	id: string;
-	headSha: string;
-	url: string;
-	status: "pending" | "approve" | "reject";
-}
+
 export interface RunViewState {
 	settledAt?: string;
 	keptOpen?: boolean;
@@ -464,11 +312,11 @@ export interface RunViewState {
 import {
 	type StepVisitBudgetUpgrade,
 	stepVisitLimit,
-	upgradeStockStepVisits,
 } from "./StepVisitBudget.js";
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	providerChecks?: import("./ProviderCheckReceipts.js").ProviderCheckState;
 	verifiedMedia?: import("./VerifiedMedia.js").VerifiedMedia[];
 	/** Structural step paths include call sites, branch indices and foreach item IDs, never visits. */
 	agentNodeSessions?: Record<
@@ -500,25 +348,7 @@ export interface FactoryRun {
 	};
 	stepVisitBudget?: StepVisitBudgetUpgrade;
 	workflowBlock?: WorkflowBlock;
-	delivery?: DeliveryState;
-	deliveryContracts?: DeliveryState[];
-	recoveryWorkflow?: Workflow;
-	externalReverifications?: {
-		actor: string;
-		at: string;
-		previousCheckpoint?: GraphCheckpoint;
-		previousOverlay?: Workflow;
-	}[];
-	deliveryRecovery?: {
-		requestId: string;
-		actor: string;
-		at: string;
-		previousWorkflow: Workflow;
-		previousCheckpoint?: GraphCheckpoint;
-		contractDigest: string;
-	};
-	impactDecisions?: ImpactDecision[];
-	impactConvergence?: Record<string, ConvergenceState>;
+
 	progressBudget?: ProgressBudget;
 	roleContext?: {
 		version: 1;
@@ -526,14 +356,7 @@ export interface FactoryRun {
 		adoption: "new-run";
 		policy: RoleContextPolicy;
 	};
-	approvalContinuations?: {
-		originalReviewId: string;
-		decisionDigest: string;
-		headSha: string;
-		repositories?: import("./RepositoryScope.js").ApprovedRepository[];
-		at: string;
-	}[];
-	ciSupervision?: import("./CISupervision.js").CISupervision;
+
 	stepAttempts?: import("./Provenance.js").StepAttempt[];
 	deliveryCoordination?: DeliveryCoordination;
 	deliveryReservations?: Record<string, DeliveryCoordination>;
@@ -602,29 +425,21 @@ export interface FactoryRun {
 	launchRequest?: import("./LaunchFields.js").ResolvedLaunchRequest;
 	setupComplete?: boolean;
 	sessionSnapshot?: import("bobs-factory-core").SerializedCyrusAgentSession;
-	architectureProposals?: ArchitectureProposal[];
-	architectureDecisions?: ArchitectureDecision[];
-	architectureGate?: {
-		proposalId: string;
-		source: string;
-		stepKey: string;
-		planOutput: string;
-	};
-	reviewGate?: ReviewGate;
+
 	/** Presentation ownership only; never native approval authority. */
-	nativeViewOwners?: Record<string, string>;
+
 	viewDecision?: ViewSnapshot;
 	viewDisplays?: ViewSnapshot[];
 	viewRecords?: ViewRecord[];
-	humanDecisions?: HumanDecision[];
+
 	roleRevisions?: Record<string, RoleRevision>;
 	boundOutputs?: Record<string, OutputRevisionBinding>;
-	mergeReadiness?: import("./MergeReadiness.js").MergeReadiness;
+
 	/** Provider-verified takeover snapshot; ordinary output slots cannot replace it. */
 	takeoverSource?: unknown;
 	/** Tracker input captured by the host, independently of authored output IDs. */
 	ticketSnapshot?: unknown;
-	reviewRounds?: ReviewBaseline[];
+
 	nodeEffects?: Record<
 		string,
 		import("./nodes/NodeDefinition.js").EffectRecord
@@ -639,7 +454,7 @@ export interface FactoryRun {
 		evidence?: Record<string, unknown>;
 		at: string;
 		call?: WorkflowCall;
-		questionRecheck?: QuestionRecheck;
+
 		iteration?: {
 			frame: string;
 			id: string;
@@ -647,12 +462,7 @@ export interface FactoryRun {
 			itemDigest: string;
 		};
 	}[];
-	answers: { questions: string[]; answer: string; at: string }[];
-	questionRequests?: { questions: string[]; text: string; at: string }[];
-	questions: string[];
-	questionRecommendations?: QuestionRecommendation[];
-	questionChoices?: QuestionChoices[];
-	questionBatchId?: string;
+
 	events: RunEvent[];
 	activitySteps?: { at: string; step: string }[];
 	iterationLimit?: { step: string; visits: number; limit: number };
@@ -692,13 +502,9 @@ export interface ExecutionContext {
 	/** Yield passive waits at saved checkpoints when update admission closes. */
 	assertSchedulingOpen?: () => void;
 	/** Revalidate the complete grouped approval under the operation reservation. */
-	qaEnvironmentProof?: { declarationDigest: string; valueDigest: string };
-	executionApproval?: HumanDecision;
-	groupedImpactValidated?: boolean;
-	impactKey?: string;
+
 	/** Resolve impact inputs in their retained owning frame, never the consumer's aliases. */
-	impactContext?: (key: string) => ExecutionContext;
-	validateDelivery?: () => Promise<Record<string, unknown> | undefined>;
+
 	/** Nested publication discovered by passive grouped readiness must also claim targets. */
 	coordinateDelivery?: <T>(operation: () => Promise<T>) => Promise<T>;
 	/** Capable hooks call after capacity admission, and release after runner cleanup. */
@@ -707,10 +513,10 @@ export interface ExecutionContext {
 	factoryHome?: string;
 	checkpointDiagnostics?: () => void;
 	attemptId?: string;
-	reviewKey?: string;
+
 	execution?: ResolvedExecutionEnvironment;
 	stepKey?: string;
-	reviewBaseline?: ReviewBaseline;
+
 	historyIndex?: () => { step: string; at: string }[];
 	currentScope?: () => unknown;
 	capacity?: CapacityOptions;
@@ -733,12 +539,11 @@ export interface ExecutionContext {
 	resumeAgent?: AgentCheckpoint;
 	previousAgentOutput?: unknown;
 	resumeFallback?: { output?: unknown };
-	questionRecheck?: QuestionRecheck;
+
 	checkpointAgent?: (agent: AgentCheckpoint) => void | Promise<void>;
 	/** Persist per-repository side effects before the whole step completes. */
 	save?: () => void | Promise<void>;
 	allowUnchangedRepository?: boolean;
-	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
 	ioGitProvider?(
@@ -782,10 +587,7 @@ export interface RuntimeHooks {
 	): RunTitleJob["settings"];
 	stopTitle?(id: string): void;
 	agent(context: ExecutionContext): Promise<unknown>;
-	script(context: ExecutionContext): Promise<unknown>;
-	tool(context: ExecutionContext): Promise<unknown>;
-	evidence?(context: ExecutionContext): Promise<Record<string, unknown>>;
-	question?(run: FactoryRun): Promise<void>;
+
 	viewDecision?(run: FactoryRun, text: string): Promise<void>;
 	simple?(run: FactoryRun, signal: AbortSignal): Promise<void>;
 	prepare?(run: FactoryRun, signal: AbortSignal): Promise<void>;
@@ -983,35 +785,32 @@ export class WorkflowRuntime {
 						createdAt: string;
 					},
 				);
-			run.workflow = WorkflowSchema.parse(run.workflow);
-			if (run.recoveryWorkflow)
-				run.recoveryWorkflow = WorkflowSchema.parse(run.recoveryWorkflow);
-			for (const definition of [
-				run.workflow,
-				...(run.workflowDefinitions ?? []),
-				...(run.recoveryWorkflow ? [run.recoveryWorkflow] : []),
-			])
-				registerWorkflowConfig(definition, run.workflow.id);
-			// Graphless Simple conversations predate recipe engines and remain resumable.
+			// Graphless Simple conversations intentionally remain resumable.
 			const oldEngine =
 				run.workflow.steps.length > 0 &&
 				run.workflow.engineVersion !== "nodes-v1";
+			if (!oldEngine) {
+				WorkflowSchema.parse(run.workflow);
+				for (const definition of [
+					run.workflow,
+					...(run.workflowDefinitions ?? []),
+				])
+					registerWorkflowConfig(definition, run.workflow.id);
+			}
 			if (oldEngine) this.oldEngineRuns.add(run.id);
-			const visitBudgetUpgraded = !oldEngine && upgradeStockStepVisits(run);
+
 			// Process-owned operations must reacquire after restart. Legacy broad
 			// ownership cannot block restored passive parent/CI frames.
 			if (["running", "waiting", "interrupted"].includes(run.status))
 				restoreDelivery(run);
 
-			// Persisted definitions are immutable. Legacy contract migration occurs
-			// explicitly at retry/start, preserving graph positions and native IDs.
+			// Accepted definitions and native IDs remain immutable across restart.
 
 			immutableTranscript(run.events);
 			// Completed receipts remain independent of mutable live outputs.
 			immutableTranscript(run.history);
-			if (run.reviewRounds) immutableTranscript(run.reviewRounds);
+
 			this.runs.set(run.id, run);
-			registerOutputHistory(run, () => this.historyPreviews(run));
 			if (!oldEngine && this.catalog.getBlock(run.id)) {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
@@ -1023,7 +822,7 @@ export class WorkflowRuntime {
 				run.status = "stopped";
 				run.error = "Created by an older recipe engine; restart it";
 				this.save(run);
-			} else if (visitBudgetUpgraded) this.save(run);
+			}
 		}
 		this.launchAssets.cleanupRuns(new Set(this.runs.keys()));
 		cleanupVideoEvidence(
@@ -1506,14 +1305,12 @@ export class WorkflowRuntime {
 			updatedAt: now,
 			outputs: {},
 			history: [],
-			answers: [],
-			questions: [],
+
 			events: [],
 		};
 		run.roleContext = newRoleContext(run);
 		initializeProgressBudget(run);
 		this.runs.set(run.id, run);
-		registerOutputHistory(run, () => this.historyPreviews(run));
 		this.save(run);
 		return run;
 	}
@@ -1569,7 +1366,7 @@ export class WorkflowRuntime {
 		if (run.status === "waiting") run.status = "running";
 		// Explicit Resume makes stopped stock work eligible without changing its
 		// frozen graph. Persist the one-time allowance before any resumed role.
-		if (upgradeStockStepVisits(run)) this.save(run);
+
 		this.controllers.set(run.id, controller);
 		const execution = this.execute(run, controller, task);
 		this.executions.set(run.id, execution);
@@ -1618,27 +1415,9 @@ export class WorkflowRuntime {
 			for (const definition of [
 				run.workflow,
 				...(run.workflowDefinitions ?? []),
-				...(run.recoveryWorkflow ? [run.recoveryWorkflow] : []),
 			])
 				registerWorkflowConfig(definition, run.workflow.id);
-			if (run.contractVersion !== 2) {
-				if (run.contractVersion !== undefined && run.contractVersion !== 1)
-					throw new Error(
-						`Unsupported workflow contract version: ${run.contractVersion}`,
-					);
-				run.contractVersion = 2;
-				this.log(
-					run,
-					"run",
-					"Migrated legacy output contract to v2 at execution boundary; workflow definitions, checkpoint positions and accepted history preserved.",
-				);
-			}
 			initializeProgressBudget(run, true);
-			if (!run.mergeReadiness)
-				run.mergeReadiness = legacyToolOutput(
-					run,
-					"merge-readiness",
-				) as FactoryRun["mergeReadiness"];
 			this.launchAssets.verify(run.id, run.launchAttachments);
 			await this.hooks.prepare?.(run, controller.signal);
 			timingOperation(run, "run");
@@ -1671,7 +1450,7 @@ export class WorkflowRuntime {
 				await this.save(run);
 				await this.graph(
 					run,
-					(run.recoveryWorkflow ?? run.workflow).steps,
+					run.workflow.steps,
 					run.outputs,
 					controller.signal,
 					"",
@@ -1682,57 +1461,11 @@ export class WorkflowRuntime {
 			}
 			controller.signal.throwIfAborted();
 			this.requireRunAvailable(run);
-			// Outcome recipes can be preparation-only blocks. They cannot claim delivery
-			// completion; every graph declaring delivery work or retaining effects keeps the guard.
-			const root = run.recoveryWorkflow ?? run.workflow;
-			const deliveryWork =
-				!root.outcomes?.length ||
-				allRunSteps({
-					...run,
-					workflowDefinitions: workflowClosure(
-						root,
-						run.workflowDefinitions ?? [],
-					),
-				}).some((step) =>
-					[
-						"external-apply",
-						"external-verify",
-						"external-human-review",
-						"external-final",
-						"external-reverify",
-						"merge",
-					].includes(step.tool ?? ""),
-				) ||
-				[run.delivery, ...(run.deliveryContracts ?? [])].some(
-					(delivery) =>
-						delivery &&
-						(delivery.receipts.length > 0 ||
-							delivery.verification ||
-							delivery.finalCheck),
-				);
-			if (
-				deliveryWork &&
-				run.delivery &&
-				run.delivery.contract.mode !== "repository" &&
-				!externalCompletionProven(run)
-			)
-				throw new Error(
-					"External delivery lacks verified acceptance and final state proof",
-				);
-			if (
-				deliveryWork &&
-				run.delivery?.contract.mode === "mixed" &&
-				readPath(outputForTool(run, "merge"), "merged") !== true
-			)
-				throw new Error(
-					"Mixed delivery requires all provider-confirmed repository merges",
-				);
 			run.status = this.launchOutcomeStatus(run);
 			if (run.status === "failed")
 				run.error =
 					"Child batch retains blocked or cancelled outcomes. Inspect the original children; Retry reconciles their retained identities and dependencies.";
-			if (readPath(outputForTool(run, "merge"), "merged") === true)
-				this.updateViewState(run.id, { settledAt: new Date().toISOString() });
+
 			this.log(
 				run,
 				"run",
@@ -1987,28 +1720,9 @@ export class WorkflowRuntime {
 		await this.hooks.retryTracking?.(this.get(id));
 	}
 
-	/** Use the accepted semantic source, including frozen presets whose read is named scopePlan. */
-	private deliveryCandidateDigest(
-		step: WorkflowStep,
-		outputs: Record<string, unknown>,
-	): string {
-		const sources = checkArgs(step, "scope-inputs")?.sources;
-		const name =
-			sources && typeof sources === "object" && Object.hasOwn(sources, "plan")
-				? (sources as Record<string, unknown>).plan
-				: "plan";
-		// The fallback is a declared read name, never an output/step ID. An invalid
-		// explicit scope mapping must not borrow another plan or infer a protocol.
-		const plan =
-			typeof name === "string" ? readOutput(step, name, outputs) : undefined;
-		return digest(readPath(plan, "deliveryContract"));
-	}
 	private stepInput(
 		run: FactoryRun,
-		step: WorkflowStep,
 		outputs: Record<string, unknown>,
-		reviewBaseline?: ReviewBaseline,
-		deliveryAware = !!run.delivery,
 		binding?: OutputRevisionBinding,
 		iteration?: ItemFrame,
 	) {
@@ -2018,103 +1732,22 @@ export class WorkflowRuntime {
 					.filter((key) => Object.hasOwn(outputs, key))
 					.map((key) => [key, outputs[key]]),
 			);
-		const config = resolveStepConfig(step);
-		const input = reviewBaseline
-			? snapshotWorkflowInput({
-					...(originalReviewContext(
-						reviewBaseline,
-						run,
-						this.historyPreviews(run),
-					) as Record<string, unknown>),
-					reviewBaseline,
-				})
-			: config.inputs
-				? {
-						...(run.ticketReference
-							? {
-									ticketReference: structuredClone(run.ticketReference),
-									ticketSync: structuredClone(run.ticketSync),
-								}
-							: {}),
-						...(deliveryAware
-							? {
-									delivery: structuredClone(run.delivery),
-									deliveryExecutionReference: digest(
-										run.executionSnapshot ?? {
-											runner: run.runner,
-											repositoryId: run.repositoryId,
-										},
-									),
-									deliveryCandidateDigest: this.deliveryCandidateDigest(
-										step,
-										outputs,
-									),
-								}
-							: {}),
-						...Object.fromEntries(
-							config.inputs.map((name) => [
-								name,
-								Object.hasOwn(outputs, name) ? outputs[name] : undefined,
-							]),
-						),
-						...(step.askQuestions || step.tool === "impact-checks"
-							? { answers: structuredClone(run.answers) }
-							: {}),
-					}
-				: {
-						originalInput: run.input,
-						...(deliveryAware
-							? {
-									delivery: structuredClone(run.delivery),
-									deliveryExecutionReference: digest(
-										run.executionSnapshot ?? {
-											runner: run.runner,
-											repositoryId: run.repositoryId,
-										},
-									),
-									deliveryCandidateDigest: this.deliveryCandidateDigest(
-										step,
-										outputs,
-									),
-								}
-							: {}),
-						...(run.ticketReference
-							? {
-									ticketReference: structuredClone(run.ticketReference),
-									ticketSync: structuredClone(run.ticketSync),
-								}
-							: {}),
-						launchInputs: structuredClone(run.launchInputs ?? {}),
-						outputs: snapshotWorkflowInput(outputs),
-						answers: structuredClone(run.answers),
-						chatMessages: structuredClone(this.chatMessages(run.id)),
-						history: snapshotHistory(
-							run.history,
-							0,
-							binding?.inputScope?.historyLength ?? run.history.length,
-						),
-						humanDecisions: structuredClone(run.humanDecisions ?? []),
-						architectureProposals: structuredClone(
-							run.architectureProposals ?? [],
-						),
-						architectureDecisions: structuredClone(
-							run.architectureDecisions ?? [],
-						),
-					};
-		if (config.inputs) retainTranscriptSource(outputs, input);
+		const input = {
+			originalInput: run.input,
+			launchInputs: structuredClone(run.launchInputs ?? {}),
+			outputs: snapshotWorkflowInput(outputs),
+			chatMessages: structuredClone(this.chatMessages(run.id)),
+			history: snapshotHistory(
+				run.history,
+				0,
+				binding?.inputScope?.historyLength ?? run.history.length,
+			),
+		};
+
 		if (run.launchAttachments && Object.keys(run.launchAttachments).length) {
 			Object.assign(input, {
 				launchAttachments: structuredClone(run.launchAttachments),
 			});
-			for (const name of config.inputs ?? [])
-				if (
-					name !== "launchAttachments" &&
-					Object.hasOwn(run.launchAttachments, name) &&
-					!Object.hasOwn(outputs, name)
-				)
-					Object.assign(input, {
-						[name]: structuredClone(run.launchAttachments[name]),
-					});
 		}
 		if (iteration)
 			Object.assign(input, {
@@ -2211,7 +1844,7 @@ export class WorkflowRuntime {
 			}
 			return undefined;
 		};
-		const workflow = run.recoveryWorkflow ?? run.workflow;
+		const workflow = run.workflow;
 		const found =
 			run.checkpoint &&
 			find(
@@ -2230,22 +1863,6 @@ export class WorkflowRuntime {
 			this.restoreFrameReceipts(run, found.steps, found.frame, found.prefix);
 		return found;
 	}
-	private frameBaseline(
-		run: FactoryRun,
-		frame: GraphCheckpoint,
-	): ReviewBaseline | undefined {
-		if (!frame.baseline) return undefined;
-		const original = run.reviewRounds?.find(
-			(record) =>
-				record.key === frame.baseline!.key &&
-				record.round === frame.baseline!.round,
-		);
-		if (!original)
-			throw new Error(
-				"Retained producer frame has no original review baseline",
-			);
-		return original;
-	}
 
 	private importedProducerContext(
 		consumer: ExecutionContext,
@@ -2262,8 +1879,7 @@ export class WorkflowRuntime {
 			iteration: owner.frame.iteration,
 			callInputs: owner.frame.callInputs,
 			snapshotInputs: owner.frame.snapshotInputs,
-			reviewKey: owner.frame.reviewKey,
-			reviewBaseline: this.frameBaseline(consumer.run, owner.frame),
+
 			bindingInput: (source, previous) =>
 				this.producerInput(
 					context,
@@ -2280,8 +1896,6 @@ export class WorkflowRuntime {
 		context.currentScope = () => ({
 			originalInput: consumer.run.input,
 			outputs,
-			answers: consumer.run.answers,
-			humanDecisions: consumer.run.humanDecisions ?? [],
 		});
 		return context;
 	}
@@ -2371,7 +1985,6 @@ export class WorkflowRuntime {
 			owner.workflow.id,
 			owner.chat,
 			owner.parallel,
-			this.frameBaseline(run, frame),
 		);
 	}
 
@@ -2382,27 +1995,16 @@ export class WorkflowRuntime {
 		source: WorkflowStep,
 		previous?: OutputRevisionBinding,
 	) {
-		const { run, reviewBaseline } = context;
+		const { run } = context;
 		const outputs = context.outputs ?? run.outputs;
-		const deliveryAware =
-			!!run.delivery ||
-			!!(context.input as Record<string, unknown>)?.deliveryExecutionReference;
-		const sourceInput = this.stepInput(
-			run,
-			source,
-			outputs,
-			reviewBaseline,
-			deliveryAware,
-			previous,
-			frame.iteration,
-		);
+
+		const sourceInput = this.stepInput(run, outputs, previous, frame.iteration);
 		const sourceContext = {
 			...context,
 			step: source,
 			stepKey: `${prefix}${source.id}`,
 			input: sourceInput,
 		};
-		const sourceConfig = resolveStepConfig(source);
 		const bindings = stepBindings(
 			sourceContext,
 			bindingHistory(sourceContext, previous),
@@ -2410,33 +2012,10 @@ export class WorkflowRuntime {
 		if (source.reads) {
 			Object.assign(sourceInput, bindings);
 			retainTranscriptSource(bindings, sourceInput);
-		} else if (
-			sourceConfig.inputs &&
-			sourceConfig.reads.answers &&
-			Object.hasOwn(bindings, "answers")
-		) {
-			const selected = mappedStepBindings(bindings, { answers: "answers" });
-			Object.assign(sourceInput, selected);
-			retainTranscriptSource(selected, sourceInput);
 		}
-		const sources = checkArgs(source, "scope-inputs")?.sources;
-		if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
-			Object.assign(sourceInput, {
-				scopeSources:
-					sources && typeof sources === "object"
-						? mappedStepBindings(bindings, sources)
-						: {},
-			});
 		return sourceInput;
 	}
 
-	private async executeCheck(
-		context: ExecutionContext,
-		preparedEvidence?: unknown,
-	): Promise<unknown> {
-		const { executeCheck } = await import("./nodes/execute/check.js");
-		return executeCheck(context, this.nodeEngine(), preparedEvidence);
-	}
 	private nodeEngine(): NodeEngine {
 		return {
 			graph: this.graph.bind(this),
@@ -2462,18 +2041,10 @@ export class WorkflowRuntime {
 		workflowId: string,
 		chat = false,
 		parallel = false,
-		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
-		if (reviewBaseline)
-			checkpoint.baseline = {
-				key: reviewBaseline.key,
-				round: reviewBaseline.round,
-			};
-		else reviewBaseline = this.frameBaseline(run, checkpoint);
-		const definition = [
-			run.recoveryWorkflow ?? run.workflow,
-			...(run.workflowDefinitions ?? []),
-		].find((item) => item.id === workflowId);
+		const definition = [run.workflow, ...(run.workflowDefinitions ?? [])].find(
+			(item) => item.id === workflowId,
+		);
 		const outcomes = definition?.outcomes ?? [];
 		if (!prefix && definition?.inputs) {
 			for (const name of definition.inputs) {
@@ -2515,36 +2086,11 @@ export class WorkflowRuntime {
 			const key = `${prefix}${step.id}`;
 			const config = resolveStepConfig(step);
 			this.hydrateProducerInputs(run, prefix, step, outputs);
-			const reviewConfig = consumesReview(step)
-				? {
-						inventory: readStep(step, "inventory")!,
-						fanout: readStep(step, "fanout"),
-					}
-				: undefined;
-			const impactConfig = hasCheck(step, "impact-reuse")
-				? {
-						inventory: readStep(step, "inventory")!,
-						fanout: readStep(step, "fanout")!,
-						maxUnchangedCycles: Number(
-							checkArgs(step, "impact-reuse")?.maxUnchangedCycles ?? 3,
-						),
-					}
-				: undefined;
-			const impactSourceId = consumesImpact(step)
-				? readStep(step, "impact")
-				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
 				const retainedSession =
 					run.progressBudget?.sessions[key] ??
-					(definition?.outcomes?.length ||
-					reviewBaseline?.impact?.snapshot.reuseVersion === "composed-v1" ||
-					checkArgs(step, "impact-reuse")?.reuseVersion === "composed-v1" ||
-					(checkpoint.reviewKey &&
-						decisionFor(run, checkpoint.reviewKey)?.snapshot.reuseVersion ===
-							"composed-v1")
-						? checkpoint.agentSessions?.[step.id]
-						: undefined);
+					checkpoint.agentSessions?.[step.id];
 				const session =
 					step.type === "agent" && step.session
 						? step.session === "resume"
@@ -2577,24 +2123,7 @@ export class WorkflowRuntime {
 				);
 			}
 			run.step = key;
-			if (
-				["delivery-route", "accept-delivery"].includes(step.tool ?? "") &&
-				!parallel &&
-				this.reopenInvalidDeliveryPlan(run, checkpoint, steps, prefix, outputs)
-			) {
-				await this.save(run);
-				continue;
-			}
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
-			const deliveryAware =
-				!!run.delivery ||
-				steps.some(
-					(s) =>
-						resolveStepConfig(s).explicit && hasCheck(s, "delivery-contract"),
-				) ||
-				steps.some((s) =>
-					["delivery-route", "accept-delivery"].includes(s.tool ?? ""),
-				);
 			const boundScope =
 				checkpoint.producerRefresh?.source === step.id ||
 				checkpoint.refreshes?.at(-1)?.source === step.id ||
@@ -2603,10 +2132,7 @@ export class WorkflowRuntime {
 					: undefined;
 			const input = this.stepInput(
 				run,
-				step,
 				outputs,
-				reviewBaseline,
-				deliveryAware,
 				boundScope,
 				checkpoint.iteration,
 			);
@@ -2628,7 +2154,7 @@ export class WorkflowRuntime {
 				attemptId: state.attemptId,
 				checkpointDiagnostics: () => this.checkpointDiagnostics(run),
 				execution,
-				reviewKey: checkpoint.reviewKey,
+
 				iteration: checkpoint.iteration
 					? immutableJson(checkpoint.iteration)
 					: undefined,
@@ -2641,13 +2167,7 @@ export class WorkflowRuntime {
 				run,
 				step,
 				stepKey: key,
-				reviewBaseline,
 				historyIndex: () => this.historyPreviews(run),
-				impactContext: (ownerKey) => {
-					const owner = this.importedProducerContext(context, ownerKey);
-					owner.currentScope = () => owner.input;
-					return owner;
-				},
 				currentScope: () => ({
 					originalInput: run.input,
 					...(checkpoint.iteration
@@ -2657,28 +2177,11 @@ export class WorkflowRuntime {
 							}
 						: {}),
 					launchAttachments: run.launchAttachments,
-					...(deliveryAware
-						? {
-								delivery: structuredClone(run.delivery),
-								deliveryExecutionReference: digest(
-									run.executionSnapshot ?? {
-										runner: run.runner,
-										repositoryId: run.repositoryId,
-									},
-								),
-								deliveryCandidateDigest: this.deliveryCandidateDigest(
-									step,
-									outputs,
-								),
-							}
-						: {}),
 					outputs,
-					answers: run.answers,
 					chatMessages: this.chatMessages(run.id),
-					humanDecisions: run.humanDecisions ?? [],
 				}),
 				capacity: this.capacityOptions(run, key, count),
-				chat: reviewBaseline ? false : (step.chat ?? chat),
+				chat: step.chat ?? chat,
 				chatMessages: structuredClone(this.chatMessages(run.id)),
 				input,
 				bindingInput: (source, previous) =>
@@ -2702,19 +2205,7 @@ export class WorkflowRuntime {
 									run.agentNodeSessions?.[key]?.output ?? outputs[step.id],
 							}
 						: undefined),
-				questionRecheck: state.questionRecheck,
 				checkpointAgent: async (agent) => {
-					if (
-						agent.result &&
-						state.impactSnapshot?.reuseVersion === "composed-v1"
-					)
-						agent = {
-							...agent,
-							result: {
-								...agent.result,
-								impactSnapshotDigest: state.impactSnapshot.digest,
-							},
-						};
 					state.agent = agent;
 					if (agent.sessionId && agent.sessionId !== "pending") {
 						checkpoint.agentSessions ??= {};
@@ -2763,74 +2254,17 @@ export class WorkflowRuntime {
 				consumedReads = bindings;
 				Object.assign(input, bindings);
 				retainTranscriptSource(bindings, input);
-			} else if (config.inputs && config.reads.answers) {
-				const bindings = stepBindings(context);
-				if (Object.hasOwn(bindings, "answers")) {
-					const selected = mappedStepBindings(bindings, { answers: "answers" });
-					Object.assign(input, selected);
-					retainTranscriptSource(selected, input);
-				}
 			}
 			if (checkpoint.iteration)
 				Object.assign(input, {
 					item: structuredClone(checkpoint.iteration.value),
 					index: checkpoint.iteration.index,
 				});
-			const scopeSources = checkArgs(step, "scope-inputs")?.sources;
-			const sourceValues = () => {
-				if (!scopeSources || typeof scopeSources !== "object") return undefined;
-				const bindings = stepBindings(context);
-				return mappedStepBindings(bindings, scopeSources);
-			};
-			if (!config.inputs && (scopeSources || config.explicit))
-				Object.assign(input, { scopeSources: sourceValues() ?? {} });
-			const currentScope = context.currentScope!;
-			context.currentScope = () => ({
-				...(currentScope() as Record<string, unknown>),
-				...(scopeSources || config.explicit
-					? { scopeSources: sourceValues() ?? {} }
-					: {}),
-			});
 			if (state.refreshProducer) {
 				await this.refreshImportedProducer(context, state.refreshProducer);
 				delete state.refreshProducer;
 				await this.save(run);
 				continue;
-			}
-			// A just-executed extraction must be bound before ordinary input freshness
-			// can schedule it again. Other assessment drift still returns to its owner.
-			if (step.tool === "impact-checks" && state.phase === "executing") {
-				const assessorKey = boundStepKey(context, "impact");
-				const assessor = assessorKey && stepForRun(run, assessorKey);
-				const fanoutKey =
-					assessor &&
-					boundStepKey({ run, step: assessor, stepKey: assessorKey }, "fanout");
-				const decision = fanoutKey && decisionFor(run, fanoutKey);
-				if (
-					decision &&
-					decision.snapshot.reuseVersion === "composed-v1" &&
-					decision.extractRequirements &&
-					!decision.inventoryBinding
-				) {
-					try {
-						await bindExtractedInventory(
-							context,
-							decision,
-							stepForRun(run, fanoutKey)!,
-						);
-						await this.save(run);
-					} catch (error) {
-						if (
-							error instanceof Error &&
-							error.message === STALE_IMPACT_MESSAGE &&
-							this.renewStaleImpact(run, checkpoint, steps, prefix)
-						) {
-							await this.save(run);
-							continue;
-						}
-						throw error;
-					}
-				}
 			}
 			let staleSource: WorkflowStep | undefined;
 			let importedSource: string | undefined;
@@ -2854,8 +2288,6 @@ export class WorkflowRuntime {
 					: this.importedProducerContext(context, sourceKey);
 				const current = await outputRevisionBinding(sourceContext, receipt);
 				if (!current || sameOutputBinding(receipt, current)) continue;
-				if (await historicalInventoryRead(context, source, receipt, current))
-					continue;
 				if (local) staleSource = source;
 				else importedSource = sourceKey;
 				break;
@@ -2911,116 +2343,9 @@ export class WorkflowRuntime {
 					continue;
 				}
 			}
-			const impactProducer = impactSourceId
-				? boundStepKey(context, "impact")
-				: undefined;
-			const impactSource = impactProducer
-				? stepForRun(run, impactProducer)
-				: undefined;
-			context.impactKey =
-				impactSource && readStep(impactSource, "fanout")
-					? boundStepKey(
-							{ run, step: impactSource, stepKey: impactProducer },
-							"fanout",
-						)
-					: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
-			if (state.questionRecheck) {
-				context.input = {
-					...(context.input as Record<string, unknown>),
-					questionRecheck: structuredClone(state.questionRecheck),
-				};
-				context.step = {
-					...context.step,
-					prompt: `${context.step.prompt ?? ""}\n\nThe operator requested a fresh check of this role's pending assistance. Read /questionRecheck and current runtime context, inspect the original blocker and verify whether it is resolved. This request supplies no answer, makes no scope decision and grants no approval. Continue only within the existing accepted scope; retain unanswered decisions and require all configured evidence and approval gates. If the blocker remains, return the concrete questions again. Preserve completed work and use the existing native conversation.`,
-				};
-				inheritStepConfig(step, context.step);
-			}
-			const assessedCorrection = this.assessedCorrection(
-				run,
-				steps,
-				outputs,
-				prefix,
-				step.id,
-			);
-			if (assessedCorrection)
-				context.input = {
-					...(context.input as Record<string, unknown>),
-					assessedCorrection,
-				};
-			context.step = withRuntimeRolePrompt(context.step, steps, {
-				assessedCorrection: !!assessedCorrection,
-				calibratedReview: !!reviewBaseline?.impact,
-			});
 			mkdirSync(context.evidenceDir, { recursive: true });
-			if (
-				impactSourceId &&
-				step.tool === "impact-checks" &&
-				state.phase === "executing"
-			) {
-				const source = impactProducer && stepForRun(run, impactProducer);
-				const fanoutKey =
-					source &&
-					boundStepKey(
-						{ run, step: source, stepKey: impactProducer },
-						"fanout",
-					);
-				const fanout = fanoutKey && stepForRun(run, fanoutKey);
-				const decision = fanoutKey && decisionFor(run, fanoutKey);
-				if (!decision || !fanout)
-					throw new Error(
-						"Selected checks require a completed impact decision",
-					);
-				try {
-					if (decision.extractRequirements)
-						await bindExtractedInventory(context, decision, fanout);
-					await assertImpactFresh(context, decision, fanout);
-				} catch (error) {
-					if (
-						!signal.aborted &&
-						!parallel &&
-						error instanceof Error &&
-						error.message === STALE_IMPACT_MESSAGE &&
-						this.renewStaleImpact(run, checkpoint, steps, prefix)
-					) {
-						await this.save(run);
-						continue;
-					}
-					throw error;
-				}
-				await this.save(run);
-			}
-			if (hasCheck(step, "impact-reuse") && state.phase === "executing") {
-				const fanoutKey = boundStepKey(context, "fanout")!;
-				const fanout = stepForRun(run, fanoutKey)!;
-				const snapshot = await collectImpactSnapshot(
-					context,
-					fanout,
-					fanoutKey,
-				);
-				if (
-					state.impactSnapshot &&
-					state.impactSnapshot.digest !== snapshot.digest
-				) {
-					state.agent =
-						snapshot.reuseVersion === "composed-v1" && state.agent?.sessionId
-							? { runner: state.agent.runner, sessionId: state.agent.sessionId }
-							: undefined;
-					context.resumeAgent = state.agent;
-				}
-				state.impactSnapshot = snapshot;
-				context.input = {
-					...(context.input as Record<string, unknown>),
-					impactSnapshot: snapshot,
-					impactEvidence:
-						latestAggregate(run, snapshot.key)?.reviewers.map((r) => ({
-							digest: importDigest(r),
-							receipt: r,
-						})) ?? [],
-				};
-				await this.save(run);
-			}
 			let output: unknown = outputs[step.id];
 			const advance = (next: string) => {
 				const route = step.branches.find(
@@ -3077,73 +2402,6 @@ export class WorkflowRuntime {
 						nodeCtx.guarantee.state = structuredClone(reused!.guarantee?.state);
 						output = structuredClone(reused!.output);
 						completionMessage = "reused (inputs unchanged)";
-					} else if (
-						(step.tool === "review-gate" ||
-							(step.type === "check" && hasCheck(step, "review-evidence"))) &&
-						reviewConfig
-					) {
-						const fanoutKey = `${prefix}${reviewConfig!.fanout}`;
-						const baseline = [...(run.reviewRounds ?? [])]
-							.reverse()
-							.find((r) => r.key === fanoutKey);
-						if (!baseline)
-							throw new Error("Configured review baseline is unavailable");
-						const inventory = outputs[reviewConfig!.inventory] as
-							| Inventory
-							| undefined;
-						if (
-							inventory?.digest !== baseline.inventory.digest ||
-							inventory?.version !== baseline.inventory.version ||
-							inventory?.sourceContextDigest !==
-								baseline.inventory.sourceContextDigest
-						)
-							throw new Error(
-								"Requirement inventory changed without a new specialist round",
-							);
-						const revision = await reviewedRunRevision(run, baseline);
-						if (revision.headSha !== baseline.headSha)
-							throw new Error("Revision changed during specialist review");
-						if (baseline.impact) {
-							const decision = decisionFor(run, fanoutKey);
-							if (!decision)
-								throw new Error("Review impact decision unavailable");
-							await assertImpactFresh(
-								context,
-								decision,
-								steps.find((s) => s.id === reviewConfig!.fanout)!,
-							);
-						}
-						output = aggregateReview(
-							baseline,
-							outputs[reviewConfig!.fanout!] as Record<string, unknown>[],
-							latestAggregate(run, fanoutKey),
-						);
-						const incomplete = (
-							output as import("./SpecialistReview.js").AggregateReview
-						).reviewers.filter(
-							(r) => r.status !== "completed" || r.blockers.length,
-						);
-						if (baseline.impact && incomplete.length)
-							output = {
-								...(output as Record<string, unknown>),
-								reviewBlocked: true,
-								reviewIncomplete: true,
-								questions: [
-									`Review could not finish: ${incomplete.map((r) => `${r.stamp.reviewer}: ${r.blockers.join("; ") || r.summary}`).join("; ")}. Provide the missing access or evidence needed to resume the selected review. Completed work is retained; this answer cannot waive review.`,
-								],
-							};
-						const questions = reviewRecoveryQuestions(context, output, {
-							headSha: revision.headSha,
-							dirty: false,
-						});
-						if (questions.length)
-							output = {
-								...(output as Record<string, unknown>),
-								reviewBlocked: true,
-								questions,
-							};
-						if (step.type === "check")
-							output = await this.executeCheck(context, output);
 					} else if (!nodeRegistry.get(step.type).inline) {
 						output = await nodeRegistry.execute(nodeCtx);
 						if (output === NODE_REROUTE) continue;
@@ -3151,18 +2409,7 @@ export class WorkflowRuntime {
 						if (summary) completionMessage = summary;
 					} else {
 						run.capacityLeaves ??= {};
-						run.capacityLeaves[key] = {
-							phase:
-								step.tool === "ci" ||
-								step.tool === "merge-readiness" ||
-								step.tool === "handoff"
-									? "waiting-ci"
-									: ["human-review", "architecture-decision"].includes(
-												step.tool ?? "",
-											)
-										? "waiting-human"
-										: "executing",
-						};
+						run.capacityLeaves[key] = { phase: "executing" };
 						timingOperation(run, key, {
 							kind:
 								run.capacityLeaves[key].phase === "waiting-ci"
@@ -3186,67 +2433,9 @@ export class WorkflowRuntime {
 										(await outputRevisionBinding(context, boundScope, true));
 									await assertBoundInspectionFresh(context);
 								}
-								const readiness = steps.find(
-									(item) =>
-										["ci", "handoff", "merge"].includes(item.tool ?? "") &&
-										item.branches.some(
-											(branch) =>
-												branch.next === step.id &&
-												branch.when.path === "fix" &&
-												branch.when.equals === true,
-										),
-								);
-								if (
-									step.type === "agent" &&
-									readiness &&
-									!state.agent &&
-									readPath(fixerPublication(step, readiness, outputs), "url")
-								) {
-									const preflight = {
-										...readiness,
-										id: step.id,
-										tool: "ci-fix-readiness",
-										reads: Object.fromEntries(
-											Object.entries(resolveStepConfig(readiness).reads).map(
-												([name, binding]) => [name, binding.from],
-											),
-										),
-									};
-									inheritStepConfig(readiness, preflight);
-									const fresh = await this.hooks.tool({
-										...context,
-										step: preflight,
-									});
-									if (
-										readPath(fresh, "skipFix") === true &&
-										!assessedCorrection
-									) {
-										context.log(
-											"Fresh readiness resolved the queued failure; skipping the obsolete fixer and retaining review/QA/approval gates.",
-										);
-										return {
-											summary:
-												"Queued provider failure resolved before correction",
-											checks: [],
-											reviewRequired: false,
-											skipped: true,
-										};
-									}
-									if (readPath(fresh, "skipFix") === true && assessedCorrection)
-										context.log(
-											`Provider failure cleared; ${assessedCorrection.source} still requires correction. Retaining the declared fixer and independent follow-up gates.`,
-										);
-									// Supply current head/base, feedback and checks, not the obsolete queued receipt.
-									context.input = {
-										...(context.input as Record<string, unknown>),
-										outputs: structuredClone(outputs),
-									};
-								}
 								if (step.type !== "agent" || !this.hooks.agentExecutionBoundary)
 									await context.beginProgressAttempt?.();
-								return this.hooks[step.type as "agent" | "script" | "tool"](
-									context,
-								);
+								return this.hooks.agent(context);
 							};
 							const resources = resourceScopes(context);
 							const mutation = deliveryStep(run, step);
@@ -3288,7 +2477,6 @@ export class WorkflowRuntime {
 								) {
 									const lease = await this.hooks.capacity.acquireLease(signal, {
 										...context.capacity,
-										remote: step.tool?.startsWith("mcp__"),
 									});
 									try {
 										signal.throwIfAborted();
@@ -3300,31 +2488,6 @@ export class WorkflowRuntime {
 								} else output = await admitted();
 							}
 							await assertBoundInspectionFresh(context);
-							if (reviewEvidenceContract(step)) {
-								output = validateContractOutput(context, output);
-								if (reviewEvidenceContract(step) === "inventory-v1")
-									output = {
-										...(output as Inventory),
-										sourceContextDigest: scopeContextDigest(context.input),
-									};
-								if (hasCheck(step, "specialist-evidence")) {
-									const revision = await reviewedRunRevision(
-										run,
-										reviewBaseline,
-										// Sibling runners may still own temporary project files.
-										// The fanout join checks cleanliness after every cleanup.
-										{ requireClean: false },
-									);
-									if (
-										!reviewBaseline ||
-										revision.headSha !== reviewBaseline.headSha
-									)
-										throw new Error(
-											"Reviewer changed the reviewed revision; review invalidated",
-										);
-									output = stampSpecialist(context, output);
-								}
-							}
 						} catch (error) {
 							if (
 								!execution ||
@@ -3352,159 +2515,6 @@ export class WorkflowRuntime {
 					signal.throwIfAborted();
 					if (execution && output !== undefined)
 						output = JSON.parse(execution.redact(JSON.stringify(output)));
-					if (hasCheck(step, "impact-reuse")) {
-						const fanout = stepForRun(run, boundStepKey(context, "fanout"))!;
-						const fresh = await collectImpactSnapshot(
-							context,
-							fanout,
-							state.impactSnapshot!.key,
-						);
-						if (fresh.digest !== state.impactSnapshot!.digest)
-							throw new Error(
-								"Source or delivery target changed during impact assessment",
-							);
-						const decision = validateImpact(output, fresh, run);
-						if (decision.status === "completed" && !decision.questions.length) {
-							const progress = impactProgressEvidence(decision);
-							recordProgressEvidence(context, {
-								repositories: progress.repositories,
-								source: progress.source,
-								environment: progress.environment,
-								findings: progress.findings,
-								valid: progress.valid,
-							});
-						}
-						run.impactDecisions ??= [];
-						if (decision.commentAssessments.length)
-							Object.assign(
-								decision,
-								recordFeedbackAssessment(context, {
-									...decision,
-									addressedCommentIds: decision.commentAssessments.map(
-										(c) => c.id,
-									),
-								}),
-							);
-						const assistance = recordConvergence(
-							run,
-							fresh.key,
-							decision,
-							impactConfig!.maxUnchangedCycles,
-							state.questionRecheck?.convergenceConsumed
-								? undefined
-								: state.questionRecheck?.convergence,
-						);
-						if (state.questionRecheck?.convergence)
-							state.questionRecheck.convergenceConsumed = true;
-						if (assistance.length) {
-							decision.status = "blocked";
-							decision.questions = assistance;
-						}
-						run.impactDecisions.push(decision);
-						if (decision.status === "completed" && !decision.questions.length) {
-							for (const reuse of decision.reuseRecords)
-								diagnosticReuse(
-									run,
-									key,
-									reuse.originalDigest,
-									reuse.original.stamp.reviewer,
-								);
-							if (decision.inventoryBinding)
-								diagnosticReuse(
-									run,
-									key,
-									decision.inventoryBinding.receiptDigest,
-									decision.inventoryBinding.producerKey,
-								);
-						}
-						if (
-							decision.status === "completed" &&
-							decision.scopeReuse &&
-							decision.snapshot.reuseVersion !== "composed-v1"
-						) {
-							const inventory = outputs[impactConfig!.inventory] as Inventory;
-							outputs[impactConfig!.inventory] = {
-								...structuredClone(inventory),
-								sourceContextDigest: scopeContextDigest(context.input),
-								scopeReuse: {
-									...decision.scopeReuse,
-									snapshotDigest: decision.snapshot.digest,
-								},
-							};
-						}
-						// Accepted authored evidence must not share the operational record's
-						// mutable snapshot, pending reviewers or check results.
-						output = structuredClone(decision);
-						completionMessage = `${decision.summary} Fresh specialists: ${decision.specialists.join(", ") || "none"}. Reused evidence: ${decision.reuseRecords.map((r) => r.original.stamp.reviewer).join(", ") || "none"}. ${decision.approvalRationale}`;
-					}
-					if (hasCheck(step, "architecture-proposal")) {
-						const architecture = ArchitectureSchema.parse(output);
-						if (
-							["architecture-brief-v1", "architecture-checkin-v1"].includes(
-								formatOf(step) ?? "",
-							)
-						)
-							assertReviewBrief(
-								architecture,
-								formatOf(step) === "architecture-checkin-v1"
-									? "checkin-v1"
-									: "review-v1",
-							);
-						run.architectureProposals ??= [];
-						const proposals = run.architectureProposals;
-						const proposal = await snapshotProposal(
-							architecture,
-							key,
-							proposals.length + 1,
-							context.evidenceDir,
-							signal,
-							[
-								context.evidenceDir,
-								...attachmentDirectories(run.launchAttachments),
-								...runRepositories(run).flatMap((repo) => [
-									repo.workspace,
-									repo.repositoryPath,
-								]),
-								join(
-									dirname(this.directory),
-									basename(run.workspace),
-									"attachments",
-								),
-							],
-							runRepositories(run),
-						);
-						for (const previous of proposals)
-							if (
-								previous.source === key &&
-								["proposed", "pending", "accepted", "routine"].includes(
-									previous.status,
-								)
-							)
-								previous.status = "superseded";
-						proposals.push(proposal);
-						output = {
-							...proposal.content,
-							proposalId: proposal.id,
-							version: proposal.version,
-							digest: proposal.digest,
-							footprint: proposal.footprint,
-						};
-					}
-					if (hasCheck(step, "architecture-candidate")) {
-						const proposal = [...(run.architectureProposals ?? [])]
-							.reverse()
-							.find(
-								(p) => p.source === `${prefix}${readStep(step, "proposal")}`,
-							);
-						if (!proposal || proposal.status !== "proposed")
-							throw new Error("Candidate review has no current proposal");
-						verifyProposal(proposal);
-						output = {
-							...ArchitectureReviewSchema.parse(output),
-							proposalId: proposal.id,
-							proposalDigest: proposal.digest,
-						};
-					}
 					if (
 						!reuseHit &&
 						((step.type === "agent" && accessMode(step) !== "read-only") ||
@@ -3527,11 +2537,7 @@ export class WorkflowRuntime {
 							acceptedBinding ??
 							(await outputRevisionBinding(context, boundScope, true))!;
 					}
-					if (
-						((config.explicit || !!checkpoint.iteration) && key !== step.id) ||
-						hasCheck(step, "specialist-evidence")
-					)
-						run.outputs[key] = output;
+					if (key !== step.id) run.outputs[key] = output;
 					run.history.push(
 						immutableJson({
 							step: key,
@@ -3546,14 +2552,9 @@ export class WorkflowRuntime {
 										},
 									}
 								: {}),
-							...(step.type === "check" && context.checkEvidence
-								? { evidence: context.checkEvidence }
-								: {}),
+
 							at: new Date().toISOString(),
 							...(state.call ? { call: state.call } : {}),
-							...(state.questionRecheck
-								? { questionRecheck: state.questionRecheck }
-								: {}),
 						}),
 					);
 					delete checkpoint.error;
@@ -3563,14 +2564,10 @@ export class WorkflowRuntime {
 						context,
 						readPath(output, "status") === "failed"
 							? "failed"
-							: readPath(output, "status") === "blocked" ||
-									readPath(output, "reviewBlocked") === true ||
-									readPath(output, "reviewIncomplete") === true
+							: readPath(output, "status") === "blocked"
 								? "blocked"
 								: "completed",
 					);
-					// Logging persists a snapshot too. Publish impact completion only
-					// after its decision, one-shot recheck and result receipt agree.
 					if (completionMessage) this.log(run, key, completionMessage);
 					await this.save(run);
 					signal.throwIfAborted();
@@ -3629,16 +2626,7 @@ export class WorkflowRuntime {
 								? "blocked"
 								: "failed",
 					);
-					if (
-						!signal.aborted &&
-						!parallel &&
-						error instanceof Error &&
-						error.message === STALE_IMPACT_MESSAGE &&
-						this.renewStaleImpact(run, checkpoint, steps, prefix)
-					) {
-						await this.save(run);
-						continue;
-					}
+
 					if (
 						!signal.aborted &&
 						!isUpdatePaused(error) &&
@@ -3683,773 +2671,6 @@ export class WorkflowRuntime {
 					throw error;
 				}
 			}
-			if (step.tool === "handoff" && readPath(output, "merged") === true) {
-				const pending = pendingMergeConfirmation(run, output);
-				if (!pending?.fromHandoff)
-					throw new Error(
-						"Merged handoff cannot skip unfinished workflow work",
-					);
-				recordMergeConfirmation(run, pending, output);
-				this.log(
-					run,
-					key,
-					"Confirmed the previously approved revision was already merged.",
-				);
-				await this.save(run);
-				continue;
-			}
-			// Restored waits must use current gate logic, retaining all role evidence.
-			if (
-				(step.tool === "visual-gate" ||
-					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
-				state.phase === "waiting" &&
-				hasCheck(step, "qa-evidence")
-			) {
-				output = outputs[step.id] =
-					step.type === "check"
-						? await this.executeCheck(context)
-						: await this.hooks.tool(context);
-				// Keep the restored wait until its questions and suggestions are compared
-				// below. Gate revalidation alone does not create a new question batch.
-				await this.save(run);
-				signal.throwIfAborted();
-			}
-			if (
-				(step.tool === "visual-gate" ||
-					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
-				readPath(output, "reviewBlocked") !== true &&
-				Array.isArray(readPath(output, "findings")) &&
-				(readPath(output, "findings") as unknown[]).length
-			) {
-				// Review assistance retains its saved questions for waitForAnswers to
-				// compare after restart. Findings without a wait proceed to correction.
-				run.status = "running";
-				run.questions = [];
-			}
-			if (
-				step.tool === "merge" &&
-				run.delivery?.contract.mode === "mixed" &&
-				readPath(output, "merged") === true
-			) {
-				output = {
-					...(output as Record<string, unknown>),
-					externalPending: true,
-				};
-				outputs[step.id] = output;
-				await this.save(run);
-				signal.throwIfAborted();
-			}
-			if (
-				step.tool === "draft-pr" ||
-				(step.tool === "external-final" &&
-					readPath(output, "complete") === true) ||
-				step.tool === "handoff" ||
-				step.tool === "merge" ||
-				hasCheck(step, "ticket-milestone")
-			) {
-				const pr = readPath(output, "url");
-				const merged =
-					step.tool === "merge" && readPath(output, "merged") === true;
-				const externalPending =
-					run.delivery?.contract.mode === "mixed" &&
-					!externalCompletionProven(run);
-				const handoffFix =
-					step.tool === "handoff" &&
-					(readPath(output, "fix") === true ||
-						readPath(output, "guideRecovery") !== undefined);
-				const externalComplete =
-					step.tool === "external-final" && externalCompletionProven(run);
-				const stage =
-					externalComplete || (merged && !externalPending)
-						? "done"
-						: step.tool === "handoff"
-							? handoffFix
-								? "in_progress"
-								: "in_review"
-							: step.tool === "merge"
-								? readPath(output, "fix") === true
-									? "in_progress"
-									: "in_review"
-								: "in_progress";
-				let body = externalComplete
-					? "External ticket changes independently verified, explicitly accepted and checked again against current state. Completion proof retained in Factory."
-					: merged
-						? `Git provider confirmed merge: ${pr}. Run ${run.id}.`
-						: step.tool === "handoff"
-							? handoffFix
-								? `Handoff requires corrections: ${pr}. Corrective work continues in Factory.`
-								: `Ready for human review: ${pr}. Review the guide and explicitly approve this revision or request changes in Factory. ${readOutput(step, "guide", outputs) ? guideHeadline(readOutput(step, "guide", outputs)) : ""}`
-							: step.tool === "draft-pr"
-								? `Draft PR created or continued: ${pr}. Review and validation are underway.`
-								: `${step.name}: ${String(readPath(output, "summary") ?? (checkArgs(step, "ticket-milestone")?.kind === "plan" ? "Implementation direction recorded in the accepted plan." : "Inspect the implementation receipts and checks in Factory."))}`;
-
-				if (merged) {
-					const summary = readPath(
-						readOutput(step, "implementation", outputs),
-						"summary",
-					);
-					const checks = readPath(
-						readOutput(step, "implementation", outputs),
-						"checks",
-					);
-					const risks = readPath(readOutput(step, "guide", outputs), "risks");
-					body = `Delivered: ${pr}. The Git provider confirmed merge.`;
-					if (typeof summary === "string") body += `\n\n${summary}`;
-					if (Array.isArray(checks) && checks.length)
-						body += `\n\nVerification:\n${checks
-							.filter((v) => typeof v === "string")
-							.map((v) => `- ${v}`)
-							.join("\n")}`;
-					if (Array.isArray(risks) && risks.length)
-						body += `\n\nLimitations:\n${risks
-							.filter((v) => typeof v === "string")
-							.map((v) => `- ${v}`)
-							.join("\n")}`;
-				}
-
-				const blockers = readPath(output, "blockers");
-				if (handoffFix && Array.isArray(blockers))
-					body += `\n\nBlockers:\n${blockers
-						.map((blocker) => readPath(blocker, "message"))
-						.filter((message) => typeof message === "string")
-						.map((message) => `- ${message}`)
-						.join("\n")}`;
-				const checks = readPath(output, "checks");
-				if (
-					checkArgs(step, "ticket-milestone")?.kind === "implementation" &&
-					Array.isArray(checks)
-				)
-					body += `\n\nChecks:\n${checks
-						.filter((check) => typeof check === "string")
-						.map((check) => `- ${check}`)
-						.join("\n")}`;
-				if (run.ticketReference && this.hooks.track) {
-					await this.track(run, {
-						key: `${key}:${count}:${readPath(output, "headSha") ?? "result"}`,
-						stage,
-						body,
-						...(typeof pr === "string" ? { pr } : {}),
-						...(merged ? { merged: true } : {}),
-						...(externalComplete
-							? {
-									completion: {
-										mode: run.delivery!.contract.mode as "external" | "mixed",
-										digest: run.delivery!.verification!.digest,
-										reviewId: run.delivery!.finalCheck!.reviewId,
-									},
-								}
-							: {}),
-					});
-					for (const delivery of deliveryRevisions(output).slice(1))
-						await this.track(run, {
-							key: `${key}:${count}:${delivery.repositoryId}:${delivery.headSha}`,
-							pr: delivery.url,
-							body: `${delivery.name}: ${delivery.url}. ${body}`,
-						});
-				}
-			}
-			const ciAssistance = readPath(output, "ciAssistance");
-			if (
-				Array.isArray(ciAssistance) &&
-				ciAssistance.length &&
-				!(
-					readPath(output, "fix") === true &&
-					step.branches.some(
-						(branch) =>
-							branch.when.path === "fix" &&
-							branch.when.equals === true &&
-							branch.next !== "end",
-					)
-				) &&
-				["ci", "merge-readiness", "handoff", "merge"].includes(step.tool ?? "")
-			) {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				if (ciAssistance.some((question) => typeof question !== "string"))
-					throw new Error("Invalid CI assistance receipt");
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						ciAssistance,
-						signal,
-						state,
-						undefined,
-						context,
-					);
-				checkpoint.active = undefined;
-				await this.save(run);
-				signal.throwIfAborted();
-				continue;
-			}
-			if (
-				readPath(output, "reviewIncomplete") === true &&
-				!impactSourceId &&
-				(["review-gate", "visual-gate"].includes(step.tool ?? "") ||
-					(step.type === "check" && hasCheck(step, "review-assistance")))
-			) {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				const reviewer = steps.find(
-					(item) => item.id === readStep(step, "review"),
-				);
-				if (
-					!reviewer ||
-					!["agent", "script"].includes(reviewer.type) ||
-					this.nextStep(steps, reviewer, {}) !== step.id
-				)
-					throw new Error(
-						"Incomplete review requires a configured reviewer → gate recovery path",
-					);
-				const questions = readPath(output, "questions");
-				if (
-					!Array.isArray(questions) ||
-					!questions.length ||
-					questions.some((question) => typeof question !== "string")
-				)
-					throw new Error("Incomplete review requires an assistance question");
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						questions,
-						signal,
-						state,
-						undefined,
-						context,
-					);
-				advance(
-					step.type === "check"
-						? this.nextStep(steps, step, output)
-						: reviewer.id,
-				);
-				const destination = steps.find(
-					(item) => item.id === checkpoint.current,
-				);
-				let recoverySession =
-					destination?.type === "agent"
-						? checkpoint.agentSessions?.[destination.id]
-						: undefined;
-				if (!recoverySession?.sessionId && destination?.type === "agent") {
-					// Older frames can retain native init events without a per-role map.
-					// Recover only the chosen destination's identity, never another role's.
-					for (const event of [...run.events].reverse()) {
-						if (event.step !== `${prefix}${destination.id}`) continue;
-						try {
-							const message = JSON.parse(event.message);
-							if (
-								message.type === "system" &&
-								message.subtype === "init" &&
-								typeof message.session_id === "string" &&
-								message.session_id &&
-								message.session_id !== "pending"
-							) {
-								const runner = AgentSettingsSchema.shape.runner.safeParse(
-									destination.runner ?? run.runner ?? "claude",
-								);
-								if (runner.success && runner.data) {
-									recoverySession = {
-										runner: runner.data,
-										sessionId: message.session_id,
-									};
-									break;
-								}
-							}
-						} catch {
-							/* Non-native activity does not establish a session identity. */
-						}
-					}
-				}
-				checkpoint.active = recoverySession?.sessionId
-					? { phase: "executing", agent: { ...recoverySession } }
-					: undefined;
-				if (checkpoint.active && destination)
-					checkpoint.visits[destination.id] =
-						(checkpoint.visits[destination.id] ?? 0) + 1;
-				await this.save(run);
-				signal.throwIfAborted();
-				continue;
-			}
-			if (
-				(step.tool === "visual-gate" ||
-					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
-				(readPath(output, "captureBlocked") === true ||
-					readPath(output, "qaBlocked") === true ||
-					readPath(output, "qaRetry") === true) &&
-				!(
-					Array.isArray(readPath(output, "findings")) &&
-					(readPath(output, "findings") as unknown[]).length
-				)
-			) {
-				// Existing runs keep their frozen graph. Recover inside that graph rather
-				// than replacing its recipe or rerunning implementation/code fixes.
-				const capture = steps.find(
-					(item) => item.id === readStep(step, "capture"),
-				);
-				const review = steps.find(
-					(item) => item.id === readStep(step, "review"),
-				);
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				if (
-					!capture ||
-					!["agent", "script"].includes(capture.type) ||
-					capture.branches.length > 0 ||
-					!review ||
-					!["agent", "script"].includes(review.type) ||
-					review.branches.length > 0 ||
-					this.nextStep(steps, capture, {}) !== review.id ||
-					this.nextStep(steps, review, {}) !== step.id
-				)
-					throw new Error(
-						"QA or visual evidence is incomplete and this recipe has no capture → visual-review → visual-gate recovery path. Configure that path for a new run; missing evidence cannot be approved.",
-					);
-				if (readPath(output, "qaRetry") === true) {
-					advance(
-						step.type === "check"
-							? this.nextStep(steps, step, output)
-							: capture.id,
-					);
-					checkpoint.active = undefined;
-					run.questions = [];
-					run.status = "running";
-					this.log(
-						run,
-						key,
-						`Retrying invalid QA evidence: ${JSON.stringify(readPath(output, "evidenceIssues"))}`,
-					);
-					continue;
-				}
-				const questions = readPath(output, "questions");
-				if (
-					!Array.isArray(questions) ||
-					!questions.length ||
-					questions.some((item) => typeof item !== "string" || !item.trim())
-				)
-					throw new Error("QA/capture assistance requires a question");
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						questions,
-						signal,
-						state,
-						normalizeQuestionResult(output).questionRecommendations as
-							| QuestionRecommendation[]
-							| undefined,
-						context,
-					);
-				advance(
-					step.type === "check"
-						? this.nextStep(steps, step, output)
-						: capture.id,
-				);
-				checkpoint.active = undefined;
-				this.log(
-					run,
-					key,
-					"QA/capture assistance received; retrying testing and screenshot review with prior evidence retained.",
-				);
-				continue;
-			}
-			if (
-				(step.tool === "review-after-fix" ||
-					(step.type === "check" && hasCheck(step, "post-fix-evidence"))) &&
-				Array.isArray(readPath(output, "questions")) &&
-				(readPath(output, "questions") as unknown[]).length
-			) {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				if (!steps.some((item) => item.id === readStep(step, "fix")))
-					throw new Error("CI assistance has no configured fixer");
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						readPath(output, "questions") as string[],
-						signal,
-						state,
-						undefined,
-						context,
-					);
-				advance(
-					step.type === "check"
-						? this.nextStep(steps, step, output)
-						: readStep(step, "fix")!,
-				);
-				checkpoint.active = undefined;
-				continue;
-			}
-			if (
-				(["review-gate", "visual-gate"].includes(step.tool ?? "") ||
-					(step.type === "check" && hasCheck(step, "review-assistance"))) &&
-				readPath(output, "reviewBlocked") === true
-			) {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				const fixer =
-					step.type !== "check" &&
-					impactSourceId &&
-					readPath(output, "reviewIncomplete") === true
-						? impactSourceId
-						: this.nextStep(steps, step, output);
-				if (
-					!outcomes.includes(fixer) &&
-					!steps.some(
-						(item) =>
-							item.id === fixer && ["agent", "script"].includes(item.type),
-					)
-				)
-					throw new Error(
-						"Review assistance has no configured fixer recovery path",
-					);
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						readPath(output, "questions") as string[],
-						signal,
-						state,
-						normalizeQuestionResult(output).questionRecommendations as
-							| QuestionRecommendation[]
-							| undefined,
-						context,
-					);
-				advance(fixer);
-				checkpoint.active = undefined;
-				continue;
-			}
-			if (
-				step.type === "agent" &&
-				hasCheck(step, "architecture-revision") &&
-				readPath(output, "architectureRevision") === true &&
-				!outcomes.includes(this.nextStep(steps, step, output))
-			) {
-				const decisionStep = architectureRevisionDecision(step, steps);
-				const target = String(
-					decisionStep ? readStep(decisionStep, "revise") : undefined,
-				);
-				if (
-					!decisionStep ||
-					!steps.some(
-						(s) => s.id === target && hasCheck(s, "architecture-proposal"),
-					)
-				)
-					throw new Error(
-						"Changed architecture requires a configured proposal route",
-					);
-				checkpoint.current = target!;
-				checkpoint.active = undefined;
-				this.log(
-					run,
-					key,
-					"Requirements changed the architecture; reviewing a new proposal before further implementation.",
-				);
-				await this.save(run);
-				signal.throwIfAborted();
-				continue;
-			}
-			if (
-				hasCheck(step, "architecture-candidate") &&
-				Array.isArray(readPath(output, "questions")) &&
-				(readPath(output, "questions") as unknown[]).length
-			) {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				if (state.phase !== "answered")
-					await this.waitForAnswers(
-						run,
-						readPath(output, "questions") as string[],
-						signal,
-						state,
-						undefined,
-						context,
-					);
-				// Keep the accepted graph: a rejected review returns to its configured
-				// candidate route with the explicit answer, never an implicit acceptance.
-				advance(this.nextStep(steps, step, output));
-				checkpoint.active = undefined;
-				await this.save(run);
-				continue;
-			}
-			if (step.tool === "architecture-decision") {
-				if (parallel)
-					throw new Error("Human checkpoints belong outside fanout branches");
-				const args = step.arguments ?? {};
-				const source = `${prefix}${readStep(step, "proposal")}`;
-				const proposal = [...(run.architectureProposals ?? [])]
-					.reverse()
-					.find((p) => p.source === source);
-				const reviewed = readOutput(step, "review", outputs);
-				if (
-					!proposal ||
-					readPath(reviewed, "approved") !== true ||
-					readPath(reviewed, "proposalId") !== proposal.id ||
-					readPath(reviewed, "proposalDigest") !== proposal.digest
-				)
-					throw new Error(
-						"Architecture requires review of the exact current candidate before a decision",
-					);
-				verifyProposal(proposal);
-				const planOutput = readStep(step, "plan")!;
-				if (proposal.status === "proposed") {
-					const policy = args.approval ?? "meaningful";
-					if (!["meaningful", "always", "never"].includes(String(policy)))
-						throw new Error("Unknown architecture approval policy");
-					const continuation =
-						policy === "meaningful" &&
-						args.continueAccepted === true &&
-						hasCheck(
-							steps.find((s) => s.id === readStep(step, "review")) ?? {},
-							"architecture-candidate",
-						)
-							? reviewedArchitectureContinuation(
-									readPath(reviewed, "continuation"),
-									proposal,
-									run.architectureProposals ?? [],
-									run.architectureDecisions ?? [],
-								)
-							: undefined;
-					// Open decisions need a human answer whatever the policy says.
-					if (
-						!openDecisions(proposal.content) &&
-						(continuation ||
-							policy === "never" ||
-							(policy === "meaningful" &&
-								proposal.content.classification === "routine"))
-					) {
-						proposal.status = "routine";
-						proposal.continuation = continuation;
-						proposal.bypassReason = continuation
-							? `Continues your approval of architecture version ${continuation.version}. ${continuation.reason}`
-							: policy === "never"
-								? "Operator configured approval=never"
-								: proposal.content.rationale;
-						writeBoundOutput(
-							context,
-							"plan",
-							structuredClone(proposal.content.candidate),
-						);
-						outputs[step.id] = {
-							decision: "routine",
-							proposalId: proposal.id,
-							digest: proposal.digest,
-							reason: proposal.bypassReason,
-							...(continuation ? { continuation } : {}),
-						};
-						if (continuation) this.log(run, key, proposal.bypassReason);
-						await this.save(run);
-						signal.throwIfAborted();
-					} else {
-						proposal.status = "pending";
-						proposal.shownAt ??= new Date().toISOString();
-						run.architectureGate = {
-							proposalId: proposal.id,
-							source,
-							stepKey: key,
-							planOutput: config.explicit
-								? boundStepKey(context, "plan")!
-								: planOutput,
-						};
-						await this.save(run);
-						signal.throwIfAborted();
-					}
-				}
-				if (proposal.status === "pending") {
-					outputs[step.id] = {
-						proposal: structuredClone(proposal.content),
-						proposalId: proposal.id,
-						version: proposal.version,
-						digest: proposal.digest,
-					};
-					if (state.phase !== "answered")
-						await this.waitForAnswers(
-							run,
-							[
-								`Bob has architecture proposal version ${proposal.version} ready. Open it to approve it, ask a question or ask for changes. Messages never approve it.`,
-							],
-							signal,
-							state,
-							undefined,
-							context,
-						);
-					signal.throwIfAborted();
-				}
-				if (
-					proposal.status === "accepted" ||
-					proposal.status === "rejected" ||
-					proposal.status === "superseded"
-				) {
-					const decision = [...(run.architectureDecisions ?? [])]
-						.reverse()
-						.find(
-							(d) =>
-								d.proposalId === proposal.id &&
-								["accept", "revise", "discuss"].includes(d.decision),
-						);
-					if (!decision)
-						throw new Error("Architecture decision receipt unavailable");
-					output = outputs[step.id] = {
-						...decision,
-						decision: proposal.status === "accepted" ? "accept" : "revise",
-					};
-					if (proposal.status === "accepted")
-						writeBoundOutput(
-							context,
-							"plan",
-							structuredClone(proposal.content.candidate),
-						);
-					else {
-						const target = readStep(step, "revise");
-						if (
-							!steps.some(
-								(s) => s.id === target && hasCheck(s, "architecture-proposal"),
-							)
-						)
-							throw new Error(
-								"Architecture revision requires a configured proposal role",
-							);
-						checkpoint.current = target!;
-						checkpoint.active = undefined;
-						await this.save(run);
-						signal.throwIfAborted();
-						continue;
-					}
-				} else if (proposal.status === "routine") output = outputs[step.id];
-				else
-					throw new Error(
-						"Architecture proposal is not authorized for implementation",
-					);
-			}
-			if (
-				step.askQuestions ||
-				(hasCheck(step, "optional-questions") &&
-					Array.isArray(readPath(output, "questions")))
-			) {
-				const questions = readPath(output, "questions");
-				if (
-					!Array.isArray(questions) ||
-					questions.some((item) => typeof item !== "string")
-				)
-					throw new Error("Clarifier must return a questions array");
-				if (questions.length) {
-					if (parallel)
-						throw new Error("Human checkpoints belong outside fanout branches");
-					if (
-						state.phase !== "answered" &&
-						(await this.waitForAnswers(
-							run,
-							questions,
-							signal,
-							state,
-							normalizeQuestionResult(output).questionRecommendations as
-								| QuestionRecommendation[]
-								| undefined,
-							context,
-						))
-					)
-						continue;
-					if (step.tool === "impact-checks") {
-						checkpoint.current = impactSourceId!;
-						checkpoint.active = undefined;
-						await this.save(run);
-						continue;
-					}
-					// Answers start a new turn in the same conversation. Discard the
-					// completed result so unchanged-code recovery cannot replay it.
-					checkpoint.active = state.agent
-						? {
-								phase: "executing",
-								agent: {
-									runner: state.agent.runner,
-									sessionId: state.agent.sessionId,
-								},
-							}
-						: undefined;
-					if (state.agent) checkpoint.visits[step.id] = count + 1;
-					await this.save(run);
-					signal.throwIfAborted();
-					continue;
-				}
-			}
-			if (step.tool === "human-review" && readPath(output, "rework") === true) {
-				const next = this.nextStep(steps, step, output);
-				if (next === step.next || next === "end")
-					throw new Error(
-						"Changed review scope needs an explicit rework route before human approval",
-					);
-				advance(next);
-				checkpoint.active = undefined;
-				await this.save(run);
-				signal.throwIfAborted();
-				continue;
-			}
-			if (step.tool === "human-review") {
-				const impact = context.reviewKey
-					? decisionFor(run, context.reviewKey)
-					: undefined;
-				const continued =
-					impactSourceId &&
-					continuationEligible(impact, latestAggregate(run, context.reviewKey));
-				if (continued) {
-					try {
-						await assertImpactFresh(
-							context,
-							impact!,
-							impactFanout(context, impact!),
-						);
-					} catch (error) {
-						if (
-							!signal.aborted &&
-							error instanceof Error &&
-							error.message === STALE_IMPACT_MESSAGE &&
-							this.renewStaleImpact(run, checkpoint, steps, prefix)
-						) {
-							await this.save(run);
-							continue;
-						}
-						throw error;
-					}
-					const result = output as { headSha: string };
-					run.approvalContinuations ??= [];
-					run.approvalContinuations.push({
-						originalReviewId: impact!.snapshot.approval!.reviewId,
-						decisionDigest: impactDecisionDigest(impact!),
-						headSha: result.headSha,
-						repositories: deliveryRevisions(output),
-						at: new Date().toISOString(),
-					});
-					this.log(
-						run,
-						key,
-						"Prior explicit approval continues after independent impact review and required checks. The original human decision is retained.",
-					);
-				}
-				if (state.phase !== "answered" && !continued)
-					await this.waitForHuman(
-						run,
-						output as { headSha: string; url: string },
-						signal,
-						state,
-					);
-				output = outputs[step.id] = run.humanDecisions!.at(-1)!;
-				const decision = output as HumanDecision;
-				if (run.ticketReference && this.hooks.track)
-					await this.track(run, {
-						key: `decision:${decision.reviewId}`,
-						stage: decision.decision === "reject" ? "in_progress" : "in_review",
-						body:
-							decision.decision === "reject"
-								? `Human requested corrections: ${decision.feedback}. Corrective work resumes with the existing PR.`
-								: "Human approved the revision. Waiting for provider requirements or confirmed merge; ticket remains In Review.",
-					});
-				if (
-					!run.history.some(
-						(item) =>
-							item.step === key &&
-							(item.output as HumanDecision)?.reviewId ===
-								(output as HumanDecision).reviewId,
-					)
-				)
-					run.history.push(
-						immutableJson({ step: key, output, at: new Date().toISOString() }),
-					);
-			}
 			if (checkpoint.projectResults)
 				Object.defineProperty(checkpoint.resultReceipts!, step.id, {
 					value: immutableJson({ key, output: snapshotWorkflowInput(output) }),
@@ -4475,9 +2696,7 @@ export class WorkflowRuntime {
 				if (
 					checkpoint.iteration &&
 					next === "end" &&
-					(["failed", "blocked"].includes(String(readPath(output, "status"))) ||
-						readPath(output, "reviewBlocked") === true ||
-						readPath(output, "reviewIncomplete") === true)
+					["failed", "blocked"].includes(String(readPath(output, "status")))
 				) {
 					// Failure belongs to its exact lexical destination, including inside calls/Parallel.
 					// Retain the accepted receipt and native checkpoint until explicit Retry.
@@ -4570,699 +2789,6 @@ export class WorkflowRuntime {
 			);
 		return this.answerView(id, JSON.parse(text.slice(13)));
 	}
-	private async waitForAnswers(
-		run: FactoryRun,
-		questions: string[],
-		signal: AbortSignal,
-		state: NonNullable<GraphCheckpoint["active"]>,
-		recommendations: QuestionRecommendation[] | undefined,
-		context: ExecutionContext,
-	): Promise<boolean> {
-		const output = context.outputs?.[context.step.id];
-		let choices =
-			output && typeof output === "object" && "questions" in output
-				? (normalizeQuestionResult(output).questionChoices as
-						| QuestionChoices[]
-						| undefined)
-				: undefined;
-		const source = structuredClone({
-			questions,
-			...(recommendations === undefined ? {} : { recommendations }),
-			...(choices === undefined ? {} : { choices }),
-		});
-		// A rephrasing belongs to the decision it explained. Revalidated gates
-		// may change while waiting; legacy displays without provenance cannot
-		// establish that the decision is still the same.
-		if (
-			state.questionDisplay &&
-			!isDeepStrictEqual(state.questionDisplay.source, source)
-		) {
-			state.questionDisplay = undefined;
-			state.questionExplanation = undefined;
-		}
-		if (
-			state.questionExplanation &&
-			!isDeepStrictEqual(state.questionExplanation.source, source)
-		)
-			state.questionExplanation = undefined;
-		questions = state.questionDisplay?.questions ?? questions;
-		recommendations = state.questionDisplay
-			? state.questionDisplay.recommendations
-			: recommendations;
-		choices = state.questionDisplay ? state.questionDisplay.choices : choices;
-		const restored =
-			state.phase === "waiting" &&
-			isDeepStrictEqual(run.questions, questions) &&
-			isDeepStrictEqual(run.questionRecommendations, recommendations) &&
-			isDeepStrictEqual(run.questionChoices, choices);
-		state.phase = "waiting";
-		releaseDelivery(run, "Awaiting assistance");
-		run.questions = questions;
-		run.questionRecommendations = recommendations;
-		run.questionChoices = choices;
-		if (!restored || !run.questionBatchId) run.questionBatchId = randomUUID();
-		run.nativeViewOwners ??= {};
-		run.nativeViewOwners[
-			run.architectureGate?.proposalId ?? run.questionBatchId
-		] = context.stepKey ?? run.step!;
-		run.status = "waiting";
-		let notify = !restored;
-		while (true) {
-			signal.throwIfAborted();
-			if (state.questionExplanation) {
-				// This is a separate explanation turn, never an answered checkpoint or
-				// another execution of the blocked fixer/capture/implementation role.
-				const request = state.questionExplanation;
-				run.status = "running";
-				await this.save(run);
-				const explained = normalizeQuestionResult(
-					await this.hooks.agent({
-						...context,
-						step: {
-							id: "question-explanation",
-							name: "Explain the pending decision",
-							type: "agent",
-							branches: [],
-							maxVisits: 1,
-							askQuestions: true,
-							access: {
-								mode: "workspace",
-								tools: [
-									"mcp__factory-context__list_context",
-									"mcp__factory-context__read_context",
-								],
-							},
-							runner: context.step.runner,
-							model: context.step.model,
-							reasoningEffort: context.step.reasoningEffort,
-							modelVariant: context.step.modelVariant,
-							serviceTier: context.step.serviceTier,
-							prompt:
-								"Explain the pending questions using only the supplied context. The user has not answered or authorized any work. Do not implement, run checks, spend credits on tests, publish, change files or clear blockers. Use only factory-context tools. Return a questions array with one clearer question for each original question, preserving the same decisions, constraints and authorization requirements. Optional questionRecommendations must preserve existing recommendations. questionChoices must preserve option IDs, answer text, selection mode and preselected IDs; omit it to retain the original choice contract. Return no other role results.",
-						},
-						chat: false,
-						stepKey: `${context.stepKey}/question-explanation`,
-						input: {
-							questions: request.questions,
-							request: request.text,
-							questionChoices: choices,
-							recommendations,
-							blocker: context.outputs?.[context.step.id],
-							answers: structuredClone(run.answers),
-						},
-						resumeAgent: request.agent,
-						checkpointAgent: async (agent) => {
-							request.agent = agent;
-							await this.save(run);
-						},
-					}),
-				);
-				signal.throwIfAborted();
-				const clarified = explained.questions as string[];
-				if (clarified.length !== questions.length)
-					throw new Error(
-						"An explanation must preserve every pending decision",
-					);
-				if (context.step.tool === "architecture-decision") {
-					const proposal = run.architectureProposals?.find(
-						(p) => p.id === run.architectureGate?.proposalId,
-					);
-					proposal?.feedback.push({
-						kind: "explanation",
-						text: clarified.join("\n\n"),
-						at: new Date().toISOString(),
-					});
-				}
-				if (
-					explained.questionChoices !== undefined &&
-					!isDeepStrictEqual(explained.questionChoices, choices)
-				)
-					throw new Error("An explanation must preserve the choice contract");
-				questions = clarified;
-				recommendations = (explained.questionRecommendations ??
-					recommendations) as QuestionRecommendation[] | undefined;
-				normalizeQuestionResult({
-					questions,
-					questionRecommendations: recommendations,
-					questionChoices: choices,
-				});
-				notify = true;
-				state.questionDisplay = { source, questions, recommendations, choices };
-				state.questionExplanation = undefined;
-				run.questions = questions;
-				run.questionRecommendations = recommendations;
-				run.questionChoices = choices;
-				// Explaining architecture keeps the exact proposal pending. Reuse its
-				// ticket receipt; a revised proposal gets a new batch on the next wait.
-				if (context.step.tool !== "architecture-decision")
-					run.questionBatchId = randomUUID();
-				await this.save(run);
-			}
-			run.status = "waiting";
-			const waiting = new Promise<void>((resolve, reject) =>
-				this.pendingAnswers.set(run.id, { resolve, reject }),
-			);
-			void waiting.catch(() => {});
-			const abort = () =>
-				this.pendingAnswers.get(run.id)?.reject(new Error("Run terminated"));
-			signal.addEventListener("abort", abort, { once: true });
-			this.log(run, run.step ?? "clarify", questions.join("\n"));
-			try {
-				if (run.ticketReference && this.hooks.track) {
-					const body = `Factory needs assistance:\n\n${context.step.view ? nativeViewText(run, 16000) : questionNotification(questions, run.questionRecommendations, run.questionChoices)}`;
-					const legacyKey = `questions:${run.step}:${run.answers.length}${state.questionDisplay ? `:explanation:${run.questionBatchId}` : ""}`;
-					const batchKey = `questions:${run.step}:${run.answers.length}:${run.questionBatchId}`;
-					// Reuse unchanged receipts from before all waits used batch identities.
-					const receipts = run.ticketSync?.receipts ?? [];
-					const legacyReceipt =
-						!notify &&
-						!receipts.some((receipt) => receipt.key === batchKey) &&
-						receipts.some(
-							(receipt) => receipt.key === legacyKey && receipt.body === body,
-						);
-					await this.track(run, {
-						key: legacyReceipt ? legacyKey : batchKey,
-						body,
-					});
-				}
-				if (notify) await this.hooks.question?.(run);
-				signal.throwIfAborted();
-				await waiting;
-			} finally {
-				signal.removeEventListener("abort", abort);
-				this.pendingAnswers.delete(run.id);
-			}
-			if (!state.questionExplanation)
-				return (
-					(state as NonNullable<GraphCheckpoint["active"]>).phase ===
-					"executing"
-				);
-		}
-	}
-
-	private async waitForHuman(
-		run: FactoryRun,
-		result: {
-			headSha: string;
-			url: string;
-			mode?: ReviewGate["mode"];
-			externalDigest?: string;
-		},
-		signal: AbortSignal,
-		state: NonNullable<GraphCheckpoint["active"]>,
-	): Promise<void> {
-		if (state.phase !== "waiting")
-			run.reviewGate = {
-				id: randomUUID(),
-				headSha: result.headSha,
-				mode: result.mode,
-				externalDigest: result.externalDigest,
-				url: result.url,
-				repositories: deliveryRevisions(result),
-				status: "pending",
-			};
-		run.nativeViewOwners ??= {};
-		run.nativeViewOwners[run.reviewGate!.id] = run.step!;
-		state.phase = "waiting";
-		run.status = "waiting";
-		releaseDelivery(run, "Awaiting human review");
-		run.questions = [];
-		run.questionRecommendations = undefined;
-		run.questionChoices = undefined;
-		run.questionBatchId = undefined;
-		const waiting = new Promise<void>((resolve, reject) =>
-			this.pendingAnswers.set(run.id, { resolve, reject }),
-		);
-		// Stop/restart can abort while the waiting gate is still publishing its
-		// notification. Observe rejection now; the ordinary await still propagates it.
-		void waiting.catch(() => {});
-		const abort = () =>
-			this.pendingAnswers.get(run.id)?.reject(new Error("Run terminated"));
-		signal.addEventListener("abort", abort, { once: true });
-		this.log(
-			run,
-			run.step ?? "human-review",
-			"Ready for explicit human review. Approve this revision or request changes in the factory UI.",
-		);
-		try {
-			if (run.ticketReference && this.hooks.track)
-				await this.track(run, {
-					key: `review:${run.reviewGate!.id}`,
-					stage: "in_review",
-					pr: result.url || undefined,
-					body: stepForRun(run, run.step)?.view
-						? nativeViewText(run, 16000)!
-						: result.mode === "external"
-							? "External changes applied and independently verified. Review the guide and accept completed work or request changes. Applied work is retained after rejection."
-							: `Awaiting explicit human approval for ${result.url}. Review the guide, then approve this revision or request changes in Factory.`,
-				});
-			signal.throwIfAborted();
-			await waiting;
-		} finally {
-			signal.removeEventListener("abort", abort);
-			this.pendingAnswers.delete(run.id);
-		}
-	}
-	decideArchitecture(id: string, value: unknown): void {
-		const decision = ArchitectureDecisionSchema.parse(value);
-		const run = this.get(id),
-			gate = run.architectureGate,
-			pending = this.pendingAnswers.get(id);
-		const proposal = run.architectureProposals?.find(
-			(p) => p.id === gate?.proposalId,
-		);
-		if (
-			run.status !== "waiting" ||
-			!pending ||
-			!proposal ||
-			proposal.status !== "pending"
-		)
-			throw new Error("Run is not waiting for an architecture decision");
-		if (
-			decision.proposalId !== proposal.id ||
-			decision.version !== proposal.version ||
-			decision.digest !== proposal.digest
-		)
-			throw new Error(
-				"Architecture proposal changed. Refresh and review again.",
-			);
-		verifyProposal(proposal);
-		if (decision.decision === "explain") {
-			proposal.feedback.push({
-				kind: "explain",
-				text: decision.feedback!,
-				at: new Date().toISOString(),
-			});
-			this.answer(id, decision.feedback!, "explanation");
-			return;
-		}
-		if (decision.decision === "accept" && openDecisions(proposal.content))
-			throw new Error(
-				"Answer Bob's open questions and ask for a new version before approving",
-			);
-		run.architectureDecisions ??= [];
-		run.architectureDecisions.push({
-			...decision,
-			at: new Date().toISOString(),
-		});
-		if (decision.decision === "accept") {
-			proposal.status = "accepted";
-			run.outputs[gate!.planOutput] = structuredClone(
-				proposal.content.candidate,
-			);
-		} else {
-			// A human-requested version of a stock proposal is written as a check-in.
-			let upgraded = false;
-			for (const workflow of [
-				run.workflow,
-				...(run.workflowDefinitions ?? []),
-			]) {
-				const steps = upgradedArchitectureSteps(workflow.steps);
-				if (!steps) continue;
-				// The waiting graph holds this array; replace the frozen steps in place.
-				workflow.steps.splice(0, workflow.steps.length, ...steps);
-				upgraded = true;
-			}
-			if (upgraded)
-				this.log(
-					run,
-					gate!.stepKey,
-					"The next version is written as a check-in with the current stock prompt.",
-				);
-			proposal.status =
-				decision.decision === "revise" ? "rejected" : "superseded";
-			proposal.feedback.push({
-				kind: decision.decision,
-				text: decision.feedback!,
-				at: new Date().toISOString(),
-			});
-			// Discussion regenerates a candidate, never grants acceptance.
-			recordProgressInput(run, decision.feedback!);
-			run.answers.push({
-				questions: [...run.questions],
-				answer: decision.feedback!,
-				at: new Date().toISOString(),
-			});
-		}
-		const answered = (frame?: GraphCheckpoint): void => {
-			if (frame?.active?.phase === "waiting" && !frame.active.children?.length)
-				frame.active.phase = "answered";
-			frame?.active?.children?.forEach(answered);
-		};
-		answered(run.checkpoint);
-		run.status = "running";
-		run.questions = [];
-		run.questionRecommendations = undefined;
-		run.questionChoices = undefined;
-		run.questionBatchId = undefined;
-		delete run.architectureGate;
-		this.log(
-			run,
-			gate!.stepKey,
-			decision.decision === "accept"
-				? `Accepted architecture version ${proposal.version}`
-				: `Architecture feedback: ${decision.feedback}`,
-		);
-		// Persist the authorization and exact handoff before waking the graph.
-		this.save(run);
-		void this.flush(id).then(
-			() => pending.resolve(),
-			(error) => pending.reject(error),
-		);
-	}
-	decide(id: string, decision: Omit<HumanDecision, "at">): void {
-		const run = this.get(id);
-		this.requireRunAvailable(run);
-		const pending = this.pendingAnswers.get(id),
-			gate = run.reviewGate;
-		if (run.status !== "waiting" || !pending || gate?.status !== "pending")
-			throw new Error("Run is not waiting for human review");
-		if (
-			(gate.mode !== "external" && !decision.headSha) ||
-			gate.id !== decision.reviewId ||
-			gate.headSha !== decision.headSha ||
-			(gate.externalDigest !== undefined &&
-				(gate.externalDigest !== decision.externalDigest ||
-					gate.externalDigest !== run.delivery?.verification?.digest))
-		)
-			throw new Error(
-				"The reviewed revision changed. Refresh and review again.",
-			);
-		if (decision.decision === "reject" && !decision.feedback?.trim())
-			throw new Error("Explain what Bob should change");
-		run.humanDecisions ??= [];
-		run.humanDecisions.push({
-			...decision,
-			mode: gate.mode,
-			...(gate.url ? { url: gate.url } : {}),
-			externalDigest: gate.externalDigest,
-			repositories: structuredClone(gate.repositories),
-			at: new Date().toISOString(),
-		});
-		gate.status = decision.decision;
-		const answered = (frame?: GraphCheckpoint): void => {
-			if (frame?.active?.phase === "waiting") frame.active.phase = "answered";
-			frame?.active?.children?.forEach(answered);
-		};
-		answered(run.checkpoint);
-		const reviewStep = stepForRun(run, run.step);
-		run.outputs[
-			reviewStep && resolveStepConfig(reviewStep).explicit
-				? run.step!
-				: "human-review"
-		] = run.humanDecisions.at(-1)!;
-		run.status = "running";
-		this.log(
-			run,
-			run.step ?? "human-review",
-			`Human ${decision.decision}: ${decision.feedback ?? decision.headSha}`,
-		);
-		void this.flush(id).then(
-			() => pending.resolve(),
-			(error) => pending.reject(error),
-		);
-	}
-	private questionCheckpoint(
-		run: FactoryRun,
-	): { frame: GraphCheckpoint; step: WorkflowStep; key: string } | undefined {
-		if (
-			this.shuttingDown ||
-			run.status !== "waiting" ||
-			!this.pendingAnswers.has(run.id) ||
-			!run.questions.length ||
-			!run.questionBatchId ||
-			run.architectureGate ||
-			run.reviewGate?.status === "pending" ||
-			run.workflowBlock ||
-			this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
-				.length
-		)
-			return;
-		const locate = (
-			frame: GraphCheckpoint | undefined,
-			steps: WorkflowStep[],
-			prefix: string,
-		):
-			| { frame: GraphCheckpoint; step: WorkflowStep; key: string }
-			| undefined => {
-			if (!frame) return;
-			const step = steps.find((s) => s.id === frame.current);
-			if (!step || step.type === "fanout" || step.type === "foreach") return;
-			const state = frame.active;
-			if (!state) return;
-			const key = `${prefix}${step.id}`;
-			if (step.type === "workflow") {
-				const child = run.workflowDefinitions?.find(
-					(w) => w.id === step.workflow,
-				);
-				if (!child || state.children?.length !== 1) return;
-				return locate(state.children[0], child.steps, `${key}/`);
-			}
-			if (
-				state.phase !== "waiting" ||
-				state.children?.length ||
-				state.questionExplanation ||
-				step.type !== "agent" ||
-				hasCheck(step, "architecture-proposal") ||
-				hasCheck(step, "architecture-candidate") ||
-				["human-review", "architecture-decision"].includes(step.tool ?? "") ||
-				key !== run.step ||
-				!(step.askQuestions || hasCheck(step, "optional-questions"))
-			)
-				return;
-			return { frame, step, key };
-		};
-		return locate(
-			run.checkpoint,
-			(run.recoveryWorkflow ?? run.workflow).steps,
-			"",
-		);
-	}
-	canRecheckQuestions(id: string): boolean {
-		return !!this.questionCheckpoint(this.get(id));
-	}
-	async recheckQuestions(
-		id: string,
-		context: { step: string; questionBatchId: string; questions: string[] },
-	): Promise<FactoryRun> {
-		const run = this.get(id);
-		this.requireRunAvailable(run);
-		const found = this.questionCheckpoint(run);
-		if (!found)
-			throw new Error("Run is not waiting for recheckable assistance");
-		if (
-			!context.questionBatchId ||
-			context.questionBatchId !== run.questionBatchId ||
-			context.step !== run.step ||
-			!isDeepStrictEqual(context.questions, run.questions)
-		)
-			throw new Error(
-				"The question or step changed. Refresh before rechecking.",
-			);
-		const { frame, step, key } = found;
-		const state = frame.active!;
-		const pending = this.pendingAnswers.get(id)!;
-		const previous =
-			run.outputs[resolveStepConfig(step).explicit ? key : step.id];
-		const decision = hasCheck(step, "impact-reuse")
-			? [...(run.impactDecisions ?? [])]
-					.reverse()
-					.find(
-						(item) =>
-							item.snapshot.digest === readPath(previous, "snapshot.digest") &&
-							item.at === readPath(previous, "at"),
-					)
-			: undefined;
-		state.questionRecheck = {
-			questionBatchId: context.questionBatchId,
-			questions: [...run.questions],
-			at: new Date().toISOString(),
-			...(decision?.status === "blocked"
-				? {
-						convergence: {
-							key: decision.snapshot.key,
-							snapshotDigest: decision.snapshot.digest,
-							at: decision.at,
-						},
-					}
-				: {}),
-		};
-		const agent = state.agent ?? frame.agentSessions?.[step.id];
-		// Drop only the completed turn cache. Its receipt and exact native identity
-		// remain retained; an unchanged revision must still perform a fresh check.
-		state.agent = agent
-			? { runner: agent.runner, sessionId: agent.sessionId }
-			: undefined;
-		state.phase = "executing";
-		delete state.attemptId;
-		delete state.questionDisplay;
-		delete state.questionExplanation;
-		frame.visits[step.id] = (frame.visits[step.id] ?? 0) + 1;
-		run.questions = [];
-		delete run.questionRecommendations;
-		delete run.questionChoices;
-		delete run.questionBatchId;
-		run.status = "running";
-		try {
-			this.log(
-				run,
-				key,
-				"Explicit assistance recheck requested. Re-evaluating this role with saved work and conversation retained; no answer or approval was supplied.",
-			);
-			await this.flush(id);
-			pending.resolve();
-		} catch (error) {
-			pending.reject(error instanceof Error ? error : new Error(String(error)));
-			throw error;
-		}
-		return run;
-	}
-	answer(id: string, answer: string, kind?: "answer" | "explanation"): void {
-		const run = this.get(id);
-		this.requireRunAvailable(run);
-		const pending = this.pendingAnswers.get(id);
-		if (
-			run.status !== "waiting" ||
-			!pending ||
-			run.reviewGate?.status === "pending"
-		)
-			throw new Error("Run is not waiting for an answer");
-		if (!answer.trim()) throw new Error("Enter an answer");
-		if (
-			run.architectureGate &&
-			kind !== "explanation" &&
-			!(kind === undefined && isExplanationRequest(answer, run.questions))
-		) {
-			const proposal = run.architectureProposals!.find(
-				(p) => p.id === run.architectureGate!.proposalId,
-			)!;
-			this.decideArchitecture(id, {
-				proposalId: proposal.id,
-				version: proposal.version,
-				digest: proposal.digest,
-				decision: "discuss",
-				feedback: answer,
-			});
-			return;
-		}
-
-		if (
-			kind === "explanation" ||
-			(kind === undefined && isExplanationRequest(answer, run.questions))
-		) {
-			const locate = (frame?: GraphCheckpoint): GraphCheckpoint["active"] => {
-				if (
-					frame?.active?.phase === "waiting" &&
-					!frame.active.children?.length
-				)
-					return frame.active;
-				for (const child of frame?.active?.children ?? []) {
-					const found = locate(child);
-					if (found) return found;
-				}
-				return undefined;
-			};
-			const state = locate(run.checkpoint);
-			if (!state) throw new Error("Pending question checkpoint unavailable");
-			run.questionRequests ??= [];
-			run.questionRequests.push({
-				questions: [...run.questions],
-				text: answer,
-				at: new Date().toISOString(),
-			});
-			run.status = "running";
-			state.questionExplanation = {
-				source: structuredClone(
-					state.questionDisplay?.source ?? {
-						questions: run.questions,
-						...(run.questionChoices === undefined
-							? {}
-							: { choices: run.questionChoices }),
-						...(run.questionRecommendations === undefined
-							? {}
-							: {
-									recommendations: run.questionRecommendations,
-								}),
-					},
-				),
-				text: answer,
-				questions: [...run.questions],
-			};
-			this.log(
-				run,
-				run.step ?? "clarify",
-				`Human explanation request: ${answer}`,
-			);
-			void this.flush(id).then(
-				() => pending.resolve(),
-				(error) => pending.reject(error),
-			);
-			return;
-		}
-		if (run.progressBudget) {
-			// An explanation belongs to its original decision, not a new scope grant.
-			const source =
-				this.questionCheckpoint(run)?.frame.active?.questionDisplay?.source;
-			const choices = source ? source.choices : run.questionChoices;
-			const recommendations = source
-				? source.recommendations
-				: run.questionRecommendations;
-			const optionMeaning = ({
-				answer,
-				reason,
-			}: QuestionChoices["options"][number]) =>
-				JSON.stringify({ answer: answer.trim(), reason: reason?.trim() ?? "" });
-			recordProgressInput(
-				run,
-				JSON.stringify({
-					questions: (source?.questions ?? run.questions).map((question) =>
-						question.trim(),
-					),
-					choices: (choices ?? [])
-						.map((choice) => ({
-							questionIndex: choice.questionIndex,
-							selection: choice.selection,
-							options: choice.options.map(optionMeaning).sort(),
-							preselected: choice.options
-								.filter((option) =>
-									choice.preselectedOptionIds?.includes(option.id),
-								)
-								.map(optionMeaning)
-								.sort(),
-						}))
-						.sort((a, b) => a.questionIndex - b.questionIndex),
-					recommendations: (recommendations ?? [])
-						.map(({ questionIndex, answer, reason }) => ({
-							questionIndex,
-							answer: answer.trim(),
-							reason: reason.trim(),
-						}))
-						.sort((a, b) => a.questionIndex - b.questionIndex),
-					answer: answer.trim(),
-				}),
-			);
-		}
-		run.answers.push({
-			questions: [...run.questions],
-			answer,
-			at: new Date().toISOString(),
-		});
-		const markAnswered = (frame?: GraphCheckpoint): void => {
-			if (frame?.active?.phase === "waiting") frame.active.phase = "answered";
-			frame?.active?.children?.forEach(markAnswered);
-		};
-		markAnswered(run.checkpoint);
-		run.questions = [];
-		run.questionRecommendations = undefined;
-		run.questionChoices = undefined;
-		run.questionBatchId = undefined;
-		run.status = "running";
-		this.log(run, run.step ?? "clarify", `Human answer: ${answer}`);
-		void this.flush(id).then(
-			() => pending.resolve(),
-			(error) => pending.reject(error),
-		);
-	}
 	stop(id: string): void {
 		const run = this.get(id);
 		for (const batch of Object.values(run.launchActions ?? {}))
@@ -5280,346 +2806,6 @@ export class WorkflowRuntime {
 			});
 	}
 	/** The same graph capability drives the API action and its presentation. */
-	canRefreshGuide(id: string): boolean {
-		const run = this.get(id);
-		if (
-			this.shuttingDown ||
-			run.status !== "waiting" ||
-			run.reviewGate?.status !== "pending"
-		)
-			return false;
-		try {
-			this.requireRunAvailable(run);
-		} catch {
-			return false;
-		}
-		return !!this.guideRefreshTarget(run);
-	}
-	private guideRefreshTarget(run: FactoryRun) {
-		const find = (
-			frame: GraphCheckpoint | undefined,
-			steps: WorkflowStep[],
-			prefix = "",
-		):
-			| {
-					frame: GraphCheckpoint;
-					prefix: string;
-					steps: WorkflowStep[];
-					guide: WorkflowStep;
-					handoff: WorkflowStep;
-					review: WorkflowStep;
-			  }
-			| undefined => {
-			if (!frame) return;
-			const step = steps.find((s) => s.id === frame.current);
-			const guide = step
-				? steps.find(
-						(s) => s.id === readStep(step, "guide") && s.type === "agent",
-					)
-				: undefined;
-			const handoff = guide
-				? steps.find((s) => s.id === guide.next && s.tool === "handoff")
-				: undefined;
-			if (
-				step?.tool === "human-review" &&
-				frame.active?.phase === "waiting" &&
-				guide &&
-				handoff?.next === step.id
-			)
-				return { frame, prefix, steps, guide, handoff, review: step };
-			if (step?.type === "workflow") {
-				const child = run.workflowDefinitions?.find(
-					(w) => w.id === step.workflow,
-				);
-				if (child)
-					return find(
-						frame.active?.children?.[0],
-						child.steps,
-						`${prefix}${step.id}/`,
-					);
-			}
-			return undefined;
-		};
-		return find(run.checkpoint, run.workflow.steps);
-	}
-	async refreshGuide(id: string, reviewId: string): Promise<FactoryRun> {
-		const run = this.get(id);
-		this.requireRunAvailable(run);
-		if (
-			this.shuttingDown ||
-			run.status !== "waiting" ||
-			run.reviewGate?.status !== "pending" ||
-			run.reviewGate.id !== reviewId
-		)
-			throw new Error(
-				"Only the current pending human guide can be regenerated",
-			);
-		const found = this.guideRefreshTarget(run);
-		if (!found)
-			throw new Error("This workflow has no regeneratable guide checkpoint");
-		const { frame, prefix, steps, guide, handoff, review } = found;
-		delete run.reviewGate;
-		this.controllers.get(id)?.abort();
-		await this.executions.get(id);
-		frame.current = guide.id;
-		delete frame.active;
-		for (const step of [handoff, review]) {
-			delete run.outputs[
-				resolveStepConfig(step).explicit ? `${prefix}${step.id}` : step.id
-			];
-			if (frame.outputs) delete frame.outputs[step.id];
-		}
-		const index = steps.indexOf(guide);
-		const upgraded = upgradedGuideStep(guide);
-		if (upgraded) steps[index] = upgraded;
-		run.status = "running";
-		delete run.error;
-		this.log(
-			run,
-			"guide",
-			`Regenerating the full PR review guide${upgraded ? " in the current show & tell format with Dig deeper" : ""}; implementation, reviews and captures are retained.`,
-		);
-		await this.save(run);
-		void this.launch(run);
-		return run;
-	}
-
-	/** Locate a real sequential action without flattening or changing its accepted Call closure. */
-	private actionPath(
-		run: FactoryRun,
-		root: Workflow,
-		tool: string,
-	): WorkflowStep[] | undefined {
-		const find = (
-			definition: Workflow,
-			seen: Set<string>,
-		): WorkflowStep[] | undefined => {
-			for (const step of definition.steps) {
-				if (step.tool === tool) return [step];
-				if (step.type !== "workflow" || seen.has(step.workflow!)) continue;
-				const child = run.workflowDefinitions?.find(
-					(w) => w.id === step.workflow,
-				);
-				const path = child && find(child, new Set([...seen, child.id]));
-				if (path) return [step, ...path];
-			}
-			return undefined;
-		};
-		return find(root, new Set([root.id]));
-	}
-	private outcomePath(run: FactoryRun, root: Workflow, path?: WorkflowStep[]) {
-		return Boolean(
-			root.outcomes?.length ||
-				path?.some(
-					(s) =>
-						s.type === "workflow" &&
-						run.workflowDefinitions?.find((w) => w.id === s.workflow)?.outcomes
-							?.length,
-				),
-		);
-	}
-	/** Explicit audited re-entry retains original children, native sessions, visits and output ownership. */
-	private reenterAction(run: FactoryRun, root: Workflow, path: WorkflowStep[]) {
-		const enter = (frame: GraphCheckpoint, remaining: WorkflowStep[]): void => {
-			const step = remaining[0]!;
-			const active = frame.current === step.id ? frame.active : undefined;
-			frame.current = step.id;
-			delete frame.outcome;
-			delete frame.entry;
-			if (remaining.length === 1) {
-				frame.active = undefined;
-				return;
-			}
-			const childDefinition = run.workflowDefinitions!.find(
-				(w) => w.id === step.workflow,
-			)!;
-			const child =
-				frame.calls?.[step.id] ??
-				active?.children?.[0] ??
-				this.newCheckpoint(childDefinition.steps);
-			enter(child, remaining.slice(1));
-			if (childDefinition.outcomes?.length) {
-				frame.calls ??= {};
-				frame.calls[step.id] = child;
-			}
-			frame.active = { phase: "executing", children: [child] };
-		};
-		run.checkpoint ??= this.newCheckpoint(root.steps);
-		enter(run.checkpoint, path);
-	}
-	reverifyExternal(id: string, actor: string): FactoryRun {
-		const run = this.get(id);
-		if (
-			this.shuttingDown ||
-			this.isExecuting(id) ||
-			run.status !== "completed" ||
-			!run.delivery ||
-			run.delivery.contract.mode === "repository" ||
-			!run.ticketSync?.error
-		)
-			throw new Error(
-				"Renewed external verification requires an idle completed run with a ticket synchronization blocker",
-			);
-		for (const other of this.runs.values())
-			if (
-				other.id !== id &&
-				run.ticketReference &&
-				other.ticketReference?.url === run.ticketReference.url &&
-				["running", "waiting", "interrupted"].includes(other.status)
-			)
-				throw new Error("Another run owns this ticket");
-		const root = run.recoveryWorkflow ?? run.workflow;
-		const path = this.actionPath(run, root, "external-verify");
-		const composed = this.outcomePath(run, root, path);
-		const definition = composed
-			? root
-			: [
-					run.recoveryWorkflow,
-					run.workflow,
-					...(run.workflowDefinitions ?? []),
-				].find((w) => w?.steps.some((s) => s.tool === "external-verify"));
-		if (!definition || (composed && !path))
-			throw new Error("Accepted workflow has no external reverification path");
-		run.externalReverifications ??= [];
-		run.externalReverifications.push({
-			actor,
-			at: new Date().toISOString(),
-			previousCheckpoint: structuredClone(run.checkpoint),
-			previousOverlay: structuredClone(run.recoveryWorkflow),
-		});
-		run.recoveryWorkflow = {
-			...structuredClone(definition),
-			id: "external-reverification",
-			name: "Renewed external verification",
-		};
-		if (composed) this.reenterAction(run, root, path!);
-		else
-			run.checkpoint = {
-				current: run.recoveryWorkflow.steps.find(
-					(s) => s.tool === "external-verify",
-				)!.id,
-				visits: {},
-			};
-		delete run.reviewGate;
-		delete run.delivery.finalCheck;
-		const finalPath = this.actionPath(
-			run,
-			run.recoveryWorkflow,
-			"external-final",
-		);
-		if (finalPath)
-			run.outputs[finalPath.map((s) => s.id).join("/")] = {
-				drift: true,
-				complete: false,
-			};
-		for (const receipt of run.ticketSync.receipts)
-			if (receipt.completion && !receipt.delivered && !receipt.superseded) {
-				receipt.superseded = true;
-				receipt.limitation =
-					"Previous external completion retired for renewed verification and acceptance.";
-			}
-		delete run.ticketSync.error;
-		run.status = "running";
-		this.updateViewState(id, { keptOpen: true });
-		this.log(
-			run,
-			"external-reverify",
-			`Operator ${actor} requested renewed verification and acceptance. Applied changes and repository merge receipts are retained.`,
-		);
-		this.save(run);
-		void this.launch(run);
-		return run;
-	}
-	recoverExternal(
-		id: string,
-		requestId: string,
-		value: unknown,
-		reviewedDigest: string,
-		actor: string,
-	): FactoryRun {
-		const run = this.get(id);
-		const contract = DeliveryContractSchema.parse(value);
-		if (run.deliveryRecovery?.requestId === requestId) {
-			if (run.deliveryRecovery.contractDigest !== digest(contract))
-				throw new Error("Recovery request ID already names another contract");
-			return run;
-		}
-		if (
-			this.shuttingDown ||
-			this.isExecuting(id) ||
-			run.status !== "failed" ||
-			stepForRun(run, run.step)?.tool !== "draft-pr" ||
-			run.deliveryRecovery
-		)
-			throw new Error(
-				"Recovery requires an idle failed draft-pr run without a prior recovery",
-			);
-		if (
-			!run.ticketReference ||
-			contract.mode !== "external" ||
-			contract.authorization.status !== "authorized" ||
-			digest(contract) !== reviewedDigest
-		)
-			throw new Error(
-				"Explicitly reviewed authorized external contract and originating ticket required",
-			);
-		const origin = run.ticketReference;
-		if (!contract.targets.some((t) => t.resource.url === origin.url))
-			throw new Error(
-				"Recovery contract must include the verified originating ticket",
-			);
-		for (const other of this.runs.values())
-			if (
-				other.id !== id &&
-				other.ticketReference?.url === origin.url &&
-				["running", "waiting", "interrupted"].includes(other.status)
-			)
-				throw new Error("Another run owns this ticket");
-		freezeDelivery(run, contract);
-		run.deliveryRecovery = {
-			requestId,
-			actor,
-			at: new Date().toISOString(),
-			previousWorkflow: structuredClone(run.workflow),
-			previousCheckpoint: structuredClone(run.checkpoint),
-			contractDigest: reviewedDigest,
-		};
-		const root = run.recoveryWorkflow ?? run.workflow;
-		const path = this.actionPath(run, root, "external-verify");
-		if (path && this.outcomePath(run, root, path)) {
-			run.recoveryWorkflow = {
-				...structuredClone(root),
-				id: "external-recovery",
-				name: "Audited external recovery",
-			};
-			this.reenterAction(run, root, path);
-		} else {
-			// Bounded pre-142 recovery adapter: frozen runs keep the exact former destination.
-			run.recoveryWorkflow = {
-				...structuredClone(stockWorkflowMetadata["factory-pipeline"]!),
-				steps: structuredClone(Object.values(stockFactorySteps)),
-				id: "external-recovery",
-				name: "Audited external recovery",
-			};
-			run.checkpoint = {
-				current: run.recoveryWorkflow.steps.find(
-					(s) => s.tool === "external-verify",
-				)!.id,
-				visits: {},
-			};
-		}
-		delete run.reviewGate;
-		run.status = "running";
-		delete run.error;
-		this.log(
-			run,
-			"external-recovery",
-			`Operator ${actor} requested external recovery. Original definition/checkpoint and failed publication evidence retained; independently reconcile current tickets before review.`,
-		);
-		this.save(run);
-		void this.launch(run);
-		return run;
-	}
 	canResume(id: string): boolean {
 		const run = this.get(id);
 		return (
@@ -5645,177 +2831,11 @@ export class WorkflowRuntime {
 			key,
 		);
 	}
-	private reopenInvalidDeliveryPlan(
-		run: FactoryRun,
-		frame: GraphCheckpoint,
-		steps: WorkflowStep[],
-		prefix: string,
-		outputs: Record<string, unknown>,
-	): boolean {
-		const router = steps.find((s) => s.id === frame.current)!;
-		const candidate = readOutput(router, "plan", outputs);
-		try {
-			validateDeliveryContract(run, readPath(candidate, "deliveryContract"));
-			return false;
-		} catch (error) {
-			const plan = steps.find(
-				(s) => s.id === readStep(router, "plan") && s.type === "agent",
-			);
-			const review = steps.find(
-				(s) => s.id === readStep(router, "review") && s.type === "agent",
-			);
-			const revision = plan
-				? run.roleRevisions?.[`${prefix}${plan.id}`]
-				: undefined;
-			// Only re-enter the accepted author -> independent review -> gate route.
-			if (
-				!plan ||
-				!review ||
-				!revision ||
-				revision.dirty ||
-				this.nextStep(steps, plan, candidate) !== review.id ||
-				this.nextStep(steps, review, outputs[review.id]) !== frame.current
-			)
-				return false;
-			frame.current = plan.id;
-			frame.visits[plan.id] = (frame.visits[plan.id] ?? 0) + 1;
-			frame.active = {
-				phase: "executing",
-				agent: {
-					...frame.agentSessions?.[plan.id],
-					runner:
-						frame.agentSessions?.[plan.id]?.runner ??
-						AgentSettingsSchema.shape.runner
-							.unwrap()
-							.parse(plan.runner ?? run.runner ?? "claude"),
-					result: { output: candidate, revision },
-				},
-			};
-			this.log(
-				run,
-				"run",
-				`Returning invalid delivery candidate to ${prefix}${plan.id} for bounded output correction and fresh independent review: ${error instanceof Error ? error.message : String(error)}`,
-			);
-			return true;
-		}
-	}
-	private assessedCorrection(
-		run: FactoryRun,
-		steps: WorkflowStep[],
-		outputs: Record<string, unknown>,
-		prefix: string,
-		fixer: string,
-	) {
-		const call = stepForRun(run, prefix.replace(/\/$/, ""));
-		const names = [
-			...steps.map((step) => step.id),
-			...Object.keys(call?.bindings ?? {}),
-		];
-		const candidates = [
-			...new Set(names.map((name) => producerKey(run, prefix, name))),
-		];
-		for (const sourceKey of candidates) {
-			const assessor = stepForRun(run, sourceKey);
-			if (
-				!assessor ||
-				!hasCheck(assessor, "impact-reuse") ||
-				!readStep(assessor, "fanout")
-			)
-				continue;
-			const fanoutKey = boundStepKey(
-				{ run, step: assessor, stepKey: sourceKey },
-				"fanout",
-			);
-			const decision = [...(run.impactDecisions ?? [])]
-				.reverse()
-				.find((item) => item.snapshot.key === fanoutKey);
-			const original =
-				sourceKey.startsWith(prefix) &&
-				sourceKey.slice(prefix.length) === assessor.id
-					? outputs[assessor.id]
-					: producerValue(run, sourceKey);
-			if (
-				!decision?.correctionRequired ||
-				readPath(original, "snapshot.digest") !== decision.snapshot.digest ||
-				readPath(original, "at") !== decision.at ||
-				nextProducerKey(run, sourceKey, decision) !== `${prefix}${fixer}`
-			)
-				continue;
-			return {
-				source: sourceKey,
-				required: true,
-				snapshotDigest: decision.snapshot.digest,
-				summary: decision.summary,
-				rationale: decision.rationale,
-				uncertainty: [...decision.uncertainty],
-				commentAssessments: structuredClone(decision.commentAssessments),
-			};
-		}
-		return undefined;
-	}
-	private renewStaleImpact(
-		run: FactoryRun,
-		frame: GraphCheckpoint,
-		steps: WorkflowStep[],
-		prefix: string,
-	): boolean {
-		const current = steps.find((s) => s.id === frame.current);
-		const source =
-			current && consumesImpact(current)
-				? readStep(current, "impact")
-				: undefined;
-		const assessor = steps.find(
-			(s) => s.id === source && hasCheck(s, "impact-reuse"),
-		);
-		if (!assessor) {
-			const definition = run.workflowDefinitions?.find((item) =>
-				item.steps.some((step) => step === current),
-			);
-			const route = current?.branches.find(
-				(branch) =>
-					branch.when.path === "impactRequired" && branch.when.equals === true,
-			);
-			const key =
-				current &&
-				boundStepKey(
-					{ run, step: current, stepKey: `${prefix}${current.id}` },
-					"impact",
-				);
-			if (
-				!route ||
-				!definition?.outcomes?.includes(route.next) ||
-				!hasCheck(stepForRun(run, key) ?? {}, "impact-reuse")
-			)
-				return false;
-			frame.outcome = route.next;
-			frame.current = "end";
-			frame.active = undefined;
-			this.log(
-				run,
-				"run",
-				`Returning ${route.next} to renew its declared impact source; original frames, pass limits and evidence remain retained.`,
-			);
-			return true;
-		}
-		frame.current = assessor.id;
-		frame.active = undefined;
-		this.log(
-			run,
-			"run",
-			`Renewing stale impact through ${prefix}${assessor.id}; completed work and evidence remain retained and required gates must pass again. Existing pass limits still apply.`,
-		);
-		return true;
-	}
 	retry(id: string, transcriptExtension?: TranscriptExtension): FactoryRun {
 		const run = this.get(id);
 		this.requireRunAvailable(run);
 		if (this.shuttingDown) throw new Error("Factory is shutting down");
-		if (
-			this.controllers.has(id) ||
-			(!["failed", "interrupted"].includes(run.status) &&
-				!(run.status === "stopped" && run.architectureGate))
-		)
-			throw new Error("Only failed or interrupted runs can be retried");
+
 		if (transcriptExtension) {
 			const step = stepForRun(run, transcriptExtension.work);
 			if (!step || step.type !== "agent")
@@ -5854,13 +2874,9 @@ export class WorkflowRuntime {
 			steps: WorkflowStep[],
 			prefix: string,
 		) => {
-			let step = steps.find((item) => item.id === frame.current);
+			const step = steps.find((item) => item.id === frame.current);
 			if (!step) return;
-			if (
-				run.error === STALE_IMPACT_MESSAGE &&
-				this.renewStaleImpact(run, frame, steps, prefix)
-			)
-				step = steps.find((s) => s.id === frame.current);
+
 			if (!step) return;
 			const key = `${prefix}${step.id}`;
 			if (frame.active?.terminalFailure) {
@@ -5964,8 +2980,7 @@ export class WorkflowRuntime {
 				});
 			}
 		};
-		if (run.checkpoint)
-			extend(run.checkpoint, (run.recoveryWorkflow ?? run.workflow).steps, "");
+		if (run.checkpoint) extend(run.checkpoint, run.workflow.steps, "");
 		delete run.iterationLimit;
 		run.status = "running";
 		delete run.error;
@@ -6297,10 +3312,8 @@ export class WorkflowRuntime {
 		step: WorkflowStep,
 		output: unknown,
 	): string {
-		const routes = step.tool === "handoff" ? structuredClone(steps) : steps;
-		if (routes !== steps) upgradeHandoffReadiness(routes);
 		return routeResult(
-			routes.find((s) => s.id === step.id) ?? step,
+			step,
 			output,
 			steps[steps.indexOf(step) + 1]?.id ?? "end",
 		);
@@ -6384,23 +3397,6 @@ export class WorkflowRuntime {
 						consumed.add(child.index);
 				frame.visits[step.id] = (frame.visits[step.id] ?? 0) + 1;
 				outputs[step.id] = receipt.output;
-				if (
-					step.askQuestions &&
-					Array.isArray(readPath(receipt.output, "questions")) &&
-					(readPath(receipt.output, "questions") as unknown[]).length
-				) {
-					const answered = run.answers.some(
-						(answer) =>
-							answer.at >= receipt.at &&
-							JSON.stringify(answer.questions) ===
-								JSON.stringify(readPath(receipt.output, "questions")),
-					);
-					if (!answered) {
-						frame.active = { phase: "waiting" };
-						break;
-					}
-					continue;
-				}
 				frame.current = this.nextStep(steps, step, receipt.output);
 			}
 			return frame;
@@ -6461,9 +3457,6 @@ export class WorkflowRuntime {
 			{
 				events: 1,
 				history: 1,
-				reviewRounds: 1,
-				architectureProposals: 1,
-				impactDecisions: 1,
 			},
 		);
 		this.pendingSaves.set(run.id, save);
@@ -6571,8 +3564,6 @@ export class WorkflowRuntime {
 					superseded,
 				})),
 			},
-			reviewGate: run.reviewGate,
-			questionCount: run.questions?.length ?? 0,
 			viewDecision: run.viewDecision
 				? {
 						id: run.viewDecision.id,
@@ -6581,10 +3572,6 @@ export class WorkflowRuntime {
 						...(run.viewDecision.answer ? { answer: true } : {}),
 					}
 				: undefined,
-			architectureGate: run.architectureGate ? { pending: true } : undefined,
-			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
-				? this.summaries.get(run.id)?.hasGuide
-				: !!presentationOutputKeys(run).guide,
 			history: this.historyPreviews(run),
 		};
 	}
@@ -6607,22 +3594,6 @@ export class WorkflowRuntime {
 				.map(({ step, at, call }) => ({ step, at, call })),
 		];
 	}
-	previousReviewGuide(run: FactoryRun, guidePreview: unknown): unknown {
-		const head = (guidePreview as { previousHeadSha?: string } | undefined)
-			?.previousHeadSha;
-		if (!head) return undefined;
-		const index = this.historyPreviews(run);
-		for (let position = index.length - 1; position >= 0; position--) {
-			const step = index[position]!.step;
-			const role = stepForRun(run, step);
-			if (!role || !hasCheck(role, "requirement-coverage")) continue;
-			const guide = run.history[position]?.output as
-				| { reviewFiles?: { headSha?: string }; chapters?: unknown }
-				| undefined;
-			if (guide?.reviewFiles?.headSha === head && guide.chapters) return guide;
-		}
-		return undefined;
-	}
 	async prepareDashboard(run: FactoryRun): Promise<void> {
 		// Completed legacy runs may never execute another step. Give their first
 		// dashboard read committed preview metadata, keeping the original bytes
@@ -6639,12 +3610,7 @@ export class WorkflowRuntime {
 		keys = Object.keys(run.outputs),
 		options: { compact?: boolean } = {},
 	): Record<string, unknown> {
-		const detailed = new Set([
-			...Object.values(presentationOutputKeys(run)),
-			// Named launch context is independent of authored graph identities.
-			"source",
-			"existing-work",
-		]);
+		const detailed = new Set(["source"]);
 		return Object.fromEntries(
 			keys
 				.filter((key) => Object.hasOwn(run.outputs, key))

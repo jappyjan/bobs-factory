@@ -6,7 +6,7 @@ it("submits a terminal view decision only with the displayed batch, digest and e
 	const snapshot = {
 		id: "627507d5-f895-42ac-b716-7ca2050d2500",
 		digest: "b".repeat(64),
-		kind: "approve",
+		kind: "display",
 		title: "Approve displayed artifact",
 	};
 	const run = {
@@ -53,7 +53,7 @@ it("submits a terminal view decision only with the displayed batch, digest and e
 			text: JSON.stringify({
 				batchId: snapshot.id,
 				digest: snapshot.digest,
-				approved: true,
+				action: "approve",
 			}),
 		});
 		app.key({ name: "enter" });
@@ -65,8 +65,8 @@ it("submits a terminal view decision only with the displayed batch, digest and e
 			batchId: snapshot.id,
 			digest: snapshot.digest,
 			accepted: true,
-			approved: false,
-			feedback: "Clarify the example",
+			action: "changes",
+			values: { feedback: "Clarify the example" },
 		};
 		app.key({ name: "paste", text: JSON.stringify(payload) });
 		app.key({ name: "enter" });

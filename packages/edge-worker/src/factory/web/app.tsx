@@ -12,7 +12,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { deliveryTargetLabel } from "../RunAttention";
-import { ArchitectureEntry, ArchitecturePage } from "./architecture";
+
 import { ArtifactCard, Inspector } from "./artifacts";
 import { AccessBoundary } from "./auth";
 import { RecipeParentLink, RunChildren } from "./child-runs";
@@ -43,7 +43,6 @@ import {
 	FocusCard,
 	GenericHumanDecision,
 	originLabel,
-	ReviewEntry,
 	RunMeta,
 	RunOrigin,
 	RunTitleStatus,
@@ -69,7 +68,7 @@ import {
 	restoredView,
 	useRestorableState,
 } from "./restoration";
-import { ReviewPage } from "./review-page";
+
 import {
 	readStored,
 	readTextStored,
@@ -412,7 +411,7 @@ function Today({
 }: {
 	runs: any[];
 	config: any;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 }) {
 	const settle = useSettle(),
 		navigate = useNavigate(),
@@ -787,7 +786,7 @@ function RunPage({
 }: {
 	runs: any[];
 	config: any;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 }) {
 	const { id } = useParams(),
 		query = useRun(id),
@@ -872,7 +871,7 @@ function RunPage({
 					name: key === "setup" ? "Prepare workspace" : key.split("/").at(-1),
 				})),
 		],
-		pr = roleOutput(run, "draft-pr")?.url;
+		pr = run.requestUrls?.[0];
 	return (
 		<>
 			<Link className="back-link" to="/">
@@ -890,22 +889,14 @@ function RunPage({
 									? "Workflow disabled · Resume required"
 									: kind === "question"
 										? run.viewDecision && !run.viewDecision.answer
-											? run.viewDecision.kind === "display"
-												? "Your response is needed"
-												: run.viewDecision.kind === "approve"
-													? "Your approval is needed"
-													: "Choose actions for each item"
-											: `${run.questions?.length ?? 0} question(s) for you`
+											? "Your response is needed"
+											: "Decision needed"
 										: kind === "stuck"
 											? run.status === "stopped"
 												? "Stopped — resume?"
 												: "Stuck — retry?"
 											: kind === "review"
-												? ["review", "external-review"].includes(
-														run.nativeView?.preset,
-													)
-													? "Ready for your review"
-													: "Done — take a look"
+												? "Done — take a look"
 												: workingLabel(run))}
 						</span>
 						<RunMeta run={run} config={config} />
@@ -949,9 +940,6 @@ function RunPage({
 					)}
 				</div>
 			</header>
-			{!(run.status === "waiting" && run.nativeView?.preset === "approve") && (
-				<ArchitectureEntry run={run} />
-			)}
 			<ExecutionDetails run={run} />
 			<RunDiagnosticsPanel runId={run.id} />
 			<RecipeParentLink run={run} />
@@ -1009,12 +997,6 @@ function RunPage({
 					settling={settle.busy}
 				/>
 			)}
-			{["review", "external-review"].includes(run.nativeView?.preset) &&
-				(!kind || reason) && (
-					<section className="review-surface">
-						<ReviewEntry run={run} />
-					</section>
-				)}
 			<section className="artifacts-section">
 				<div className="section-heading">
 					<h2>
@@ -1027,7 +1009,7 @@ function RunPage({
 							key={artifact.name}
 							artifact={artifact}
 							run={run}
-							onOpen={(name, image) => onInspect(run, name, image)}
+							onOpen={(name) => onInspect(run, name)}
 						/>
 					))}
 				</div>
@@ -1112,7 +1094,7 @@ function RunPage({
 											<ArtifactCard
 												artifact={artifact}
 												run={run}
-												onOpen={(name, image) => onInspect(run, name, image)}
+												onOpen={(name) => onInspect(run, name)}
 											/>
 										)}
 										<RunConversation
@@ -1147,7 +1129,6 @@ function Loading() {
 function App() {
 	const pwa = usePwa();
 	useLiveUpdates();
-	const settle = useSettle();
 	const runsQuery = useRuns(),
 		configQuery = useConfig(),
 		runs = runsQuery.data ?? [],
@@ -1156,7 +1137,7 @@ function App() {
 		navigate = useNavigate(),
 		[shortcuts, setShortcuts] = useState(false),
 		[inspection, setInspection] = useRestorableState<
-			{ runId: string; name: string; image?: number } | undefined
+			{ runId: string; name: string } | undefined
 		>("inspector/selection", undefined);
 	const inspectionRun = useRun(inspection?.runId);
 
@@ -1226,8 +1207,8 @@ function App() {
 			history.scrollRestoration = previous;
 		};
 	}, []);
-	const inspect = (run: any, name: string, image?: number) =>
-		setInspection({ runId: run.id, name, image });
+	const inspect = (run: any, name: string) =>
+		setInspection({ runId: run.id, name });
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
@@ -1260,21 +1241,6 @@ function App() {
 							/>
 							<Route path="/recipes" element={<Recipes />} />
 							<Route path="/settings/*" element={<Settings />} />
-							<Route
-								path="/runs/:id/architecture"
-								element={<ArchitecturePage key={location.pathname} />}
-							/>
-							<Route
-								path="/runs/:id/review"
-								element={
-									<ReviewPage
-										key={location.pathname}
-										config={config}
-										onSettled={(run) => void settle.change(run, "settle")}
-										settling={settle.busy}
-									/>
-								}
-							/>
 
 							<Route
 								path="/runs/:id"
@@ -1336,9 +1302,7 @@ function App() {
 					run={inspectionRun.data}
 					selected={inspection}
 					onClose={() => setInspection(undefined)}
-					onChange={(name, image) =>
-						setInspection({ ...inspection, name, image })
-					}
+					onChange={(name) => setInspection({ runId: inspection.runId, name })}
 				/>
 			)}
 		</>

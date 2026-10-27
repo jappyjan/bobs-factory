@@ -7,7 +7,7 @@ import {
 	type SnapshotConfiguration,
 	SnapshotConfigurationSchema,
 } from "./ActionSteps.js";
-import { digest } from "./Delivery.js";
+import { digest } from "./EvidenceDigest.js";
 import {
 	foreachPointer,
 	foreachPointerSchema,
@@ -162,15 +162,9 @@ function historySnapshot(
 					: undefined,
 			createdAt: timestamp(candidate.createdAt),
 			updatedAt: timestamp(candidate.updatedAt),
-			wait: candidate.architectureGate
-				? "architecture"
-				: candidate.reviewGate
-					? "human-review"
-					: candidate.questions?.length
-						? "questions"
-						: Object.values(candidate.capacityLeaves ?? {})
-								.map((leaf) => leaf.phase)
-								.filter((phase) => /^[a-z-]+$/.test(phase)),
+			wait: Object.values(candidate.capacityLeaves ?? {}).map(
+				(leaf) => leaf.phase,
+			),
 			transitions: (candidate.activitySteps ?? [])
 				.filter((item) => safeIdentity.test(item.step) && dated(item.at))
 				.slice(-50)

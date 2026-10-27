@@ -68,6 +68,7 @@ function fixture(
 		return git(workspace, "rev-parse", "HEAD");
 	};
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "pinned-review",
 		name: "Pinned review",
 		stepConfigVersion: "step-config-v1",
@@ -96,11 +97,7 @@ function fixture(
 			},
 		],
 	});
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	runtimes.push(runtime);
 	const run = runtime.create({
 		repositoryId: repositories[0]!.id,
@@ -301,56 +298,4 @@ it("retains the saved start snapshot across JSON restart and refuses to trust it
 		),
 	).toEqual(f.original);
 	expect(f.runner.start).toHaveBeenCalledOnce();
-});
-
-it.each([
-	false,
-	true,
-])("binds the actual feedback supplied to a native turn and rejects concurrent feedback drift (changed=%s)", async (changed) => {
-	const f = fixture(
-		false,
-		({ context }) => {
-			if (changed)
-				context.run.mergeReadiness = {
-					...context.run.mergeReadiness!,
-					headSha: "provider-B",
-				};
-		},
-		{
-			output: undefined,
-			reads: { feedback: "@feedback" },
-			checks: ["feedback-assessment"],
-		},
-	);
-	const context = f.context();
-	context.run.mergeReadiness = {
-		headSha: "provider-A",
-		baseSha: "base",
-		url: "https://github.com/fixture/repo/pull/1",
-		state: "OPEN",
-		isDraft: false,
-		approved: false,
-		reviewReady: true,
-		fix: false,
-		blockers: [],
-		checks: [],
-		threads: [],
-		comments: [],
-		reviews: [],
-		queued: false,
-		mergeMethod: "squash",
-	};
-	if (changed)
-		await expect(f.execute(context)).rejects.toBeInstanceOf(
-			StaleBoundInspectionError,
-		);
-	else
-		await expect(f.execute(context)).resolves.toMatchObject({
-			accepted: true,
-			feedbackAssessment: { headSha: "provider-A" },
-		});
-	expect(f.inputs).toHaveLength(1);
-	expect(f.inputs[0]).toMatchObject({
-		feedback: { readiness: { headSha: "provider-A" } },
-	});
 });

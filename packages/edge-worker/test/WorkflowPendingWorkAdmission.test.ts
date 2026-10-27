@@ -28,11 +28,7 @@ it.each([
 	const home = mkdtempSync(join(tmpdir(), "pending-admission-"));
 	homes.push(home);
 	const capacity = new MachineCapacity(1, join(home, "capacity"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		tool: async () => ({}),
-		script: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	let options: any;
 	let notify: (() => void) | undefined;
 	let done = false;

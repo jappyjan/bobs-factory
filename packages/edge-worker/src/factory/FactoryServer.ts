@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
 import {
@@ -18,7 +18,7 @@ import {
 } from "../updates/UpdateManager.js";
 import { activityMarkers, activityPage } from "./ActivityPage.js";
 import { reasoningLevels, serviceTierRunners } from "./AgentSettings.js";
-import { ArchitectureDecisionSchema } from "./Architecture.js";
+
 import { evaluateCheckAsync } from "./Check.js";
 import {
 	capacitySummary,
@@ -36,10 +36,9 @@ import {
 	PairingRateLimitError,
 } from "./FactoryAuth.js";
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
-import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
+
 import { factoryWebAssets } from "./FactoryWebAssets.js";
 import {
-	DecideConfigurationSchema,
 	ViewAnswerSchema,
 	ViewAskSchema,
 	ViewNotificationsSchema,
@@ -64,29 +63,14 @@ import {
 	localFactoryBrowserRequest,
 	localFactoryOrigin,
 } from "./LocalFactoryAccess.js";
-import {
-	architectureViewSnapshot,
-	nativeReviewContext,
-	nativeViewSnapshot,
-	nativeViewText,
-	prepareNativeViewConsent,
-	savedReviewViewSnapshot,
-} from "./NativeViews.js";
+
 import { nodeRegistry } from "./nodes/index.js";
 import { transformOutput } from "./nodes/transform.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
-import {
-	readReviewManifest,
-	readReviewPatch,
-	resolveGuideSnapshot,
-} from "./ReviewFiles.js";
-import {
-	artifactOutputKey,
-	presentationOutputKeys,
-	presentationRoleRevisions,
-} from "./RunOutputRoles.js";
+
+import { artifactOutputKey } from "./RunOutputRoles.js";
 import {
 	dashboardRun,
 	entryPreviews,
@@ -108,8 +92,7 @@ import {
 	resolveStepConfig,
 } from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
-import { outputForCheck } from "./ToolBindings.js";
-import type { VideoCapture } from "./Video.js";
+
 import { registerVideoRoutes } from "./VideoServer.js";
 import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
 import { readViewScreenshot } from "./ViewAssets.js";
@@ -1248,9 +1231,9 @@ export class FactoryServer {
 						workflowId: z.string().min(1).max(80),
 						stepId: z.string().min(1).max(400),
 						view: ViewSourceSchema,
-						type: z.enum(["decide", "approve", "show", "display"]).optional(),
+						type: z.literal("display").optional(),
 						name: z.string().min(1).optional(),
-						decide: DecideConfigurationSchema.optional(),
+
 						reads: z.unknown().optional(),
 						notifications: ViewNotificationsSchema.optional(),
 						runId: z.string().min(1).max(200).optional(),
@@ -1767,29 +1750,17 @@ export class FactoryServer {
 					.find((item) => item.id === request.params.id);
 				if (!run && !session)
 					return reply.code(404).send({ error: "Run not found" });
-				const architecture = request.query.view === "architecture";
-				const dashboard = request.query.view === "dashboard" || architecture;
+				const dashboard = request.query.view === "dashboard";
 				const focus = request.query.view === "focus";
 				if (run && dashboard) await runtime.prepareDashboard(run);
 				else if (!focus) await runtime.flush(request.params.id);
 				const projected =
 					run && focus
-						? focusRun(
-								run,
-								runtime.outputPreviews(
-									run,
-									Object.entries(presentationOutputKeys(run))
-										.filter(([name]) => ["guide", "draft-pr"].includes(name))
-										.map(([, key]) => key),
-								),
-								runtime.hasRunValue(run, "deliveryRecovery"),
-							)
+						? focusRun(run, {})
 						: run && dashboard
 							? dashboardRun(
 									run,
 									runtime.outputPreviews(run, undefined, { compact: true }),
-									runtime.hasRunValue(run, "deliveryRecovery"),
-									architecture,
 								)
 							: run;
 				const status = runtime.catalog.getBlock(request.params.id)
@@ -1797,73 +1768,8 @@ export class FactoryServer {
 					: run
 						? capacityRunStatus(run)
 						: session!.status;
-				const focusReply =
-					focus &&
-					!(projected as { outputs?: Record<string, unknown> } | undefined)
-						?.outputs?.guide &&
-					(["completed", "complete"].includes(status) ||
-						(status === "waiting" && run?.reviewGate?.status === "pending"));
-				let nativeView: ReturnType<typeof nativeViewSnapshot>;
-				let nativeViewError: string | undefined;
-				try {
-					nativeView = run
-						? ((
-								projected as {
-									nativeView?: ReturnType<typeof nativeViewSnapshot>;
-								}
-							)?.nativeView ?? nativeViewSnapshot(run))
-						: undefined;
-				} catch {
-					nativeViewError =
-						"The configured human view cannot be displayed. Correct its public bindings or data before continuing.";
-				}
-				if (nativeView && run)
-					for (const resource of Object.values(nativeView.resources))
-						resource.value = runtime.outputPreviews(run, [resource.source])[
-							resource.source
-						];
-				let savedReviewView: ReturnType<typeof savedReviewViewSnapshot>;
-				let savedReviewViewError: string | undefined;
-				try {
-					savedReviewView =
-						run && !focus ? savedReviewViewSnapshot(run) : undefined;
-					if (savedReviewView && run)
-						for (const resource of Object.values(savedReviewView.resources))
-							resource.value = runtime.outputPreviews(run, [resource.source])[
-								resource.source
-							];
-				} catch {
-					savedReviewViewError =
-						"The saved review view cannot be displayed. Correct its public bindings or data.";
-				}
+				const focusReply = focus && ["completed", "complete"].includes(status);
 				const detail = {
-					savedReviewView,
-					savedReviewViewError,
-					nativeView,
-					nativeViewError,
-					...(architecture && run
-						? {
-								architectureViews: Object.fromEntries(
-									(run.architectureProposals ?? []).map((proposal) => {
-										try {
-											return [
-												proposal.id,
-												architectureViewSnapshot(run, proposal),
-											];
-										} catch {
-											return [
-												proposal.id,
-												{
-													error:
-														"This saved check-in view cannot be displayed. Correct its public bindings or data.",
-												},
-											];
-										}
-									}),
-								),
-							}
-						: {}),
-					reviewContext: run ? nativeReviewContext(run) : undefined,
 					...(projected ?? {
 						...session,
 						workflow:
@@ -1883,12 +1789,7 @@ export class FactoryServer {
 								viewRecords: undefined,
 								viewDecision: runtime.humanViews.snapshot(run),
 								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
-								viewText: runtime.humanViews.displayText(
-									run,
-									nativeView
-										? (limit) => nativeViewText(run, limit)
-										: undefined,
-								),
+								viewText: runtime.humanViews.displayText(run),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(
 									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
@@ -1898,17 +1799,8 @@ export class FactoryServer {
 								),
 							}
 						: {}),
-					...(run && !focus
-						? {
-								outputRoles: presentationOutputKeys(run),
-								roleRevisions: presentationRoleRevisions(run),
-							}
-						: {}),
-					reviewCapabilities: {
-						refreshGuide: !!run && runtime.canRefreshGuide(run.id),
-					},
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
-					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
+
 					resumeEligible:
 						!!runtime.catalog.getBlock(request.params.id) &&
 						!runtime.catalog.unavailable(
@@ -1925,18 +1817,10 @@ export class FactoryServer {
 							? !runtime.isExecuting(run.id)
 							: (hooks.resumeEligible?.(request.params.id) ?? false)),
 					status,
-					chat:
-						run?.status === "waiting" && run.architectureGate
-							? {
-									enabled: true,
-									available: true,
-									mode: "continue",
-									step: run.step,
-								}
-							: (hooks.chat?.(request.params.id) ?? {
-									enabled: false,
-									available: false,
-								}),
+					chat: hooks.chat?.(request.params.id) ?? {
+						enabled: false,
+						available: false,
+					},
 					chatMessages: focus
 						? undefined
 						: runtime.chatMessages(request.params.id),
@@ -1978,16 +1862,6 @@ export class FactoryServer {
 				};
 				return {
 					...slim,
-					// Supply only the adjacent retained guide for legacy reading-progress
-					// migration. Other historical outputs stay out of dashboard responses.
-					previousReviewGuide: run
-						? runtime.previousReviewGuide(
-								run,
-								(projected as { outputs?: Record<string, unknown> }).outputs?.[
-									presentationOutputKeys(run).guide ?? ""
-								],
-							)
-						: undefined,
 					history: run ? runtime.historyPreviews(run) : [],
 					events: (run?.events ?? []).slice(-15).map((event) => ({
 						...event,
@@ -2029,35 +1903,6 @@ export class FactoryServer {
 					.code(409)
 					.send({ error: "Artifact changed; refresh this run" });
 			return value;
-		});
-		this.app.get<{ Params: { id: string }; Querystring: { guide: string } }>(
-			"/api/runs/:id/review-files",
-			async (request) => {
-				const run = runtime.get(request.params.id);
-				const guide = z
-					.string()
-					.regex(/^[a-f0-9]{64}$/)
-					.parse(request.query.guide);
-				const evidence = join(runtime.directory, "evidence", run.id);
-				const ref = await resolveGuideSnapshot(run, evidence, guide);
-				return readReviewManifest(evidence, run.id, ref);
-			},
-		);
-		this.app.get<{
-			Params: { id: string; snapshot: string; file: string };
-			Querystring: { guide: string };
-		}>("/api/runs/:id/review-files/:snapshot/:file", async (request) => {
-			const run = runtime.get(request.params.id);
-			const guide = z
-				.string()
-				.regex(/^[a-f0-9]{64}$/)
-				.parse(request.query.guide);
-			const evidence = join(runtime.directory, "evidence", run.id);
-			const ref = await resolveGuideSnapshot(run, evidence, guide);
-			if (ref.snapshotId !== request.params.snapshot)
-				throw new Error("Snapshot is not the requested guide revision");
-			const manifest = await readReviewManifest(evidence, run.id, ref);
-			return readReviewPatch(evidence, manifest, request.params.file);
 		});
 
 		this.app.get<{
@@ -2117,18 +1962,7 @@ export class FactoryServer {
 				const { text } = z
 					.object({ text: z.string().trim().min(1).max(100000) })
 					.parse(request.body);
-				const proposalRun = runtime.runs.get(id);
-				if (proposalRun?.status === "waiting" && proposalRun.architectureGate) {
-					runtime.answer(id, text);
-					const message = runtime.recordChatMessage(
-						id,
-						text,
-						proposalRun.step ?? "architecture-decision",
-					);
-					return reply
-						.code(202)
-						.send({ ...actionResult(id), message, mode: "continue" });
-				}
+
 				const result = await operator.steer(id, text);
 				return reply.code(202).send({ ...actionResult(id), ...result });
 			},
@@ -2144,90 +1978,6 @@ export class FactoryServer {
 			},
 		);
 
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/external-reverify",
-			async (request, reply) => {
-				const session = sessionFor(request)!;
-				runtime.reverifyExternal(request.params.id, session.credential);
-				await runtime.flush(request.params.id);
-				return reply.code(202).send(actionResult(request.params.id));
-			},
-		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/external-recovery",
-			async (request, reply) => {
-				const body = z
-					.object({
-						requestId: z.string().min(1).max(100),
-						contract: z.unknown(),
-						reviewedDigest: z.string().regex(/^[a-f0-9]{64}$/),
-					})
-					.parse(request.body);
-				const session = sessionFor(request)!;
-				runtime.recoverExternal(
-					request.params.id,
-					body.requestId,
-					body.contract,
-					body.reviewedDigest,
-					session.credential,
-				);
-				await runtime.flush(request.params.id);
-				return reply.code(202).send(actionResult(request.params.id));
-			},
-		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/architecture-decision",
-			async (request, reply) => {
-				try {
-					const { display, ...nativeDecision } = request.body as Record<
-						string,
-						unknown
-					>;
-					const currentDisplay = await prepareNativeViewConsent(
-						runtime,
-						runtime.get(request.params.id),
-						display,
-					);
-					currentDisplay();
-					runtime.decideArchitecture(
-						request.params.id,
-						ArchitectureDecisionSchema.parse(nativeDecision),
-					);
-					await runtime.flush(request.params.id);
-					return reply.code(202).send(actionResult(request.params.id));
-				} catch (error) {
-					return reply.code(409).send({
-						error: error instanceof Error ? error.message : String(error),
-					});
-				}
-			},
-		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/review",
-			async (request, reply) => {
-				const decision = z
-					.object({
-						reviewId: z.string().min(1),
-						headSha: z.string(),
-						externalDigest: z
-							.string()
-							.regex(/^[a-f0-9]{64}$/)
-							.optional(),
-						decision: z.enum(["approve", "reject"]),
-						feedback: z.string().trim().max(100000).optional(),
-					})
-					.parse(request.body);
-				const currentDisplay = await prepareNativeViewConsent(
-					runtime,
-					runtime.get(request.params.id),
-					(request.body as { display?: unknown })?.display,
-				);
-				currentDisplay();
-				runtime.decide(request.params.id, decision);
-				await runtime.flush(request.params.id);
-				return reply.code(202).send(actionResult(request.params.id));
-			},
-		);
 		this.app.put<{ Params: { id: string } }>(
 			"/api/runs/:id/view",
 			(request, reply) => {
@@ -2291,21 +2041,7 @@ export class FactoryServer {
 				return { ...actionResult(request.params.id), stopped: true };
 			},
 		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/guide/refresh",
-			async (request, reply) => {
-				const { reviewId } = z
-					.object({ reviewId: z.string().min(1) })
-					.parse(request.body);
-				return reply
-					.code(202)
-					.send(
-						runActionResult(
-							await runtime.refreshGuide(request.params.id, reviewId),
-						),
-					);
-			},
-		);
+
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/retry",
 			(request, reply) =>
@@ -2313,28 +2049,7 @@ export class FactoryServer {
 					.code(202)
 					.send(runActionResult(operator.retry(request.params.id))),
 		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/recheck",
-			async (request, reply) => {
-				const { context } = z
-					.object({
-						context: z
-							.object({
-								step: z.string().min(1),
-								questionBatchId: z.string().min(1),
-								questions: z.array(z.string()).min(1),
-							})
-							.strict(),
-					})
-					.strict()
-					.parse(request.body);
-				return reply
-					.code(202)
-					.send(
-						runActionResult(await operator.recheck(request.params.id, context)),
-					);
-			},
-		);
+
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/view-answer",
 			{ bodyLimit: 256 * 1024 },
@@ -2352,96 +2067,7 @@ export class FactoryServer {
 			async (request) =>
 				runtime.askView(request.params.id, ViewAskSchema.parse(request.body)),
 		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/answer",
-			async (request) => {
-				const { answer, context, kind } = z
-					.object({
-						answer: z.string().trim().min(1).max(100000),
-						kind: z.enum(["answer", "explanation"]).optional(),
-						context: z
-							.object({
-								questions: z.array(z.string()),
-								questionBatchId: z.string().optional(),
-								step: z.string().optional(),
-							})
-							.optional(),
-					})
-					.parse(request.body);
-				const currentDisplay = await prepareNativeViewConsent(
-					runtime,
-					runtime.get(request.params.id),
-					(request.body as { display?: unknown })?.display,
-				);
-				currentDisplay();
-				await operator.answer(request.params.id, answer, kind, context);
-				return actionResult(request.params.id);
-			},
-		);
-		this.app.get<{ Params: { id: string } }>(
-			"/api/runs/:id/evidence",
-			(request) => {
-				const run = runtime.get(request.params.id);
-				const capture = outputForCheck(run, "capture-evidence") as
-					| {
-							screenshots?: {
-								area: string;
-								state: string;
-								caption: string;
-								context?: string;
-								imageSha256?: string;
-							}[];
-					  }
-					| undefined;
-				return {
-					videos: ((capture as VideoCapture | undefined)?.videos ?? [])
-						.filter((v) => v.validation)
-						.map((v) => ({
-							taskId: v.taskId,
-							caption: v.caption,
-							transcript: v.transcript,
-							duration: v.validation!.duration,
-							mime: v.validation!.mime,
-							codecs: v.validation!.codecs,
-							revision: v.validation!.captureRevision,
-							validatedRevision: v.validation!.validatedRevision,
-							sha256: v.validation!.sha256,
-							captions: Boolean(v.validation!.captions),
-							available: existsSync(v.path) && existsSync(v.posterPath),
-						})),
-					videoUnavailable:
-						(capture as VideoCapture | undefined)?.videoUnavailable ?? [],
-					screenshots: (capture?.screenshots ?? []).map(
-						({ area, state, caption, context, imageSha256 }, index) => ({
-							area,
-							state,
-							caption,
-							context,
-							imageSha256,
-							index,
-						}),
-					),
-				};
-			},
-		);
-		this.app.get<{ Params: { id: string; name: string } }>(
-			"/api/runs/:id/question-images/:name",
-			(request, reply) => {
-				const run = runtime.get(request.params.id);
-				const name = z
-					.string()
-					.regex(/^[a-zA-Z0-9][\w.-]*\.(?:png|jpe?g)$/i)
-					.parse(request.params.name);
-				const directory = join(runtime.directory, "evidence", run.id);
-				if (!existsSync(join(directory, name)))
-					return reply.code(404).send({ error: "Question image not found" });
-				const bytes = readFileSync(verifiedScreenshot(name, directory));
-				return reply
-					.header("Cache-Control", "no-store")
-					.type(bytes[0] === 137 ? "image/png" : "image/jpeg")
-					.send(bytes);
-			},
-		);
+
 		this.app.get<{
 			Params: { id: string; index: string };
 			Querystring: { v: string };
@@ -2464,53 +2090,6 @@ export class FactoryServer {
 			return reply
 				.header("Cache-Control", "no-store")
 				.header("X-Content-Type-Options", "nosniff")
-				.type(bytes[0] === 137 ? "image/png" : "image/jpeg")
-				.send(bytes);
-		});
-		this.app.get<{
-			Params: { id: string; index: string };
-			Querystring: { artifact?: string; v?: string };
-		}>("/api/runs/:id/screenshots/:index", (request, reply) => {
-			const run = runtime.get(request.params.id);
-			const index = z.coerce
-				.number()
-				.int()
-				.nonnegative()
-				.parse(request.params.index);
-			const key = request.query.artifact
-				? artifactOutputKey(run, request.query.artifact)
-				: presentationOutputKeys(run).capture;
-			const value = key ? run.outputs[key] : undefined;
-			const shot = CaptureSchema.parse(value).screenshots[index];
-			if (!shot) return reply.code(404).send({ error: "Screenshot not found" });
-			const path = verifiedScreenshot(
-				shot.path,
-				join(runtime.directory, "evidence", run.id),
-				shot.imageSha256,
-			);
-			const bytes = readFileSync(path);
-			const actualHash = createHash("sha256").update(bytes).digest("hex");
-			if (shot.imageSha256 && shot.imageSha256 !== actualHash)
-				return reply
-					.code(409)
-					.send({ error: "Screenshot content changed after verification" });
-			if (
-				request.query.v &&
-				request.query.v !== shot.imageSha256 &&
-				request.query.v !== shot.path &&
-				request.query.v !==
-					createHash("sha256").update(JSON.stringify(value)).digest("hex")
-			)
-				return reply
-					.code(409)
-					.send({ error: "Screenshot changed; refresh this run" });
-			return reply
-				.header(
-					"Cache-Control",
-					request.query.v && shot.imageSha256
-						? "private, max-age=3600"
-						: "no-cache",
-				)
 				.type(bytes[0] === 137 ? "image/png" : "image/jpeg")
 				.send(bytes);
 		});

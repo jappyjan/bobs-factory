@@ -349,14 +349,18 @@ function fixture(
 		agent: async (ctx) =>
 			runEvidenceChecks(
 				ctx,
-				await parseStepOutputAsync(ctx.step, await scripted(ctx)),
+				await parseStepOutputAsync(
+					ctx.step,
+					ctx.step.prompt === "fixture port"
+						? JSON.parse(ctx.run.launchInputs![ctx.step.id]!)
+						: await scripted(ctx),
+				),
 			),
-		script: async (ctx) => JSON.parse(ctx.run.launchInputs![ctx.step.id]!),
-		tool: async () => ({}),
 	});
 	let definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			...defaultWorkflows.find((recipe) => recipe.id === "v2-approval")!,
 			id: "c3-approval",
 			internal: false,
@@ -366,8 +370,8 @@ function fixture(
 					.map((id) => ({
 						id,
 						name: id,
-						type: "script",
-						script: "fixture port",
+						type: "agent",
+						prompt: "fixture port",
 					})),
 				...defaultWorkflows.find((recipe) => recipe.id === "v2-approval")!
 					.steps,
@@ -392,8 +396,8 @@ function fixture(
 						(id) => ({
 							id,
 							name: id,
-							type: "script",
-							script: "fixture port",
+							type: "agent",
+							prompt: "fixture port",
 						}),
 					),
 					{
@@ -891,11 +895,7 @@ it("serves node-verified screenshots and video in Display, then rejects stale or
 	});
 	expect(streamed.statusCode, streamed.body).toBe(206);
 	expect(streamed.rawPayload.length).toBe(16);
-	const restarted = new WorkflowRuntime(f.home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const restarted = new WorkflowRuntime(f.home, { agent: async () => ({}) });
 	try {
 		const loaded = restarted.get(f.run.id);
 		expect(acceptedMedia(loaded)).toEqual(media);

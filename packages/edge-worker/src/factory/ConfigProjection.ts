@@ -27,7 +27,6 @@ function stepSummary(step: WorkflowStep): WorkflowStepSummary {
 		name: step.name,
 		type: step.type,
 		presentation: stepPresentation(step),
-		...(step.tool ? { tool: step.tool } : {}),
 		...(step.workflow ? { workflow: step.workflow } : {}),
 		...(step.type === "foreach"
 			? {

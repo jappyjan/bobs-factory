@@ -1,16 +1,8 @@
 import { factoryRecipes } from "./factoryRecipes.js";
 import { improvementRecipes } from "./improvementWorkflow.js";
-import { stockWorkflowMetadata } from "./stockFactorySteps.js";
 import { takeoverIntakeRecipe } from "./takeoverIntakeRecipe.js";
 import { validateWorkflows } from "./Workflow.js";
-
-export {
-	conservativeWorkflows,
-	legacyReviewSteps,
-	upgradedArchitectureSteps,
-	upgradedGuideStep,
-	upgradeHandoffReadiness,
-} from "./legacyDefaultWorkflows.js";
+import { stockWorkflowMetadata } from "./workflowMetadata.js";
 
 /** Newly accepted definitions are static. Historical snapshots and forks keep their graphs. */
 export const defaultWorkflows = validateWorkflows([

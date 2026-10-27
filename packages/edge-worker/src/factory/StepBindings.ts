@@ -10,7 +10,7 @@ import { roleTranscriptSource } from "./RoleContext.js";
 import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { isNodeEngineStep, resolveStepConfig } from "./StepConfig.js";
-import { stepContextSources } from "./StepContextSources.js";
+
 import { stepForRun } from "./ToolBindings.js";
 import { acceptedMedia } from "./VerifiedMedia.js";
 import { childRunsView } from "./ViewRuntime.js";
@@ -93,16 +93,13 @@ export function stepBindings(
 		},
 		callInputs: context.callInputs ?? {},
 		error: context.error,
-		delivery: run.delivery,
+
 		get childRuns() {
 			return childRunsView(run);
 		},
 		item: context.iteration?.value,
 		index: context.iteration?.index,
-		answers: run.answers,
-		decisions: run.humanDecisions ?? [],
-		architectureProposals: run.architectureProposals ?? [],
-		architectureDecisions: run.architectureDecisions ?? [],
+
 		get reviewLedger() {
 			return (
 				factoryContextView({ history }) as {
@@ -110,7 +107,7 @@ export function stepBindings(
 				}
 			).contextMemory.reviewLedger;
 		},
-		reviewRounds: run.reviewRounds ?? [],
+
 		repository:
 			(run.repositories?.length ?? 0) > 1
 				? run.repositories
@@ -133,26 +130,10 @@ export function stepBindings(
 		},
 		history: snapshotHistory(history),
 		launchInputs: run.launchInputs ?? {},
-		mergeReadiness: run.mergeReadiness,
+
 		get media() {
 			return acceptedMedia(run);
 		},
-		get feedback() {
-			return (
-				stepContextSources(context).feedback ??
-				(context.input as Record<string, unknown> | undefined)?.feedback
-			);
-		},
-		get reviewFix() {
-			return (
-				stepContextSources(context).reviewFix ??
-				(context.input as Record<string, unknown> | undefined)?.reviewFix
-			);
-		},
-		qaReuse:
-			context.input && typeof context.input === "object"
-				? (context.input as Record<string, unknown>).qaReuse
-				: undefined,
 	};
 	const result: Record<string, unknown> = {};
 	const conditions = Object.defineProperties(
@@ -206,8 +187,7 @@ export function allRunSteps(run: FactoryRun): WorkflowStep[] {
 			...(step.groups ?? []).flatMap(flatten),
 			...flatten(step.body ?? []),
 		]);
-	return [
-		run.recoveryWorkflow ?? run.workflow,
-		...(run.workflowDefinitions ?? []),
-	].flatMap((workflow) => flatten(workflow.steps));
+	return [run.workflow, ...(run.workflowDefinitions ?? [])].flatMap(
+		(workflow) => flatten(workflow.steps),
+	);
 }

@@ -7,11 +7,7 @@ import { FactoryServer } from "./fixtures/authenticated-factory.js";
 
 it("validates custom output schemas without allowing external references or unknown schema keywords", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-schema-editor-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => ({}) });
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -100,7 +96,10 @@ it("validates custom output schemas without allowing external references or unkn
 				{ output: { format: "missing-v1" } },
 				"Unknown output format: missing-v1",
 			],
-			[{ checks: ["missing-check"] }, "Unknown evidence check: missing-check"],
+			[
+				{ verify: [{ check: "missing-check", path: "/" }] },
+				expect.stringContaining("Invalid input"),
+			],
 			[
 				{ instructions: ["missing-instruction"] },
 				"Unknown shared instruction: missing-instruction",
@@ -116,6 +115,7 @@ it("validates custom output schemas without allowing external references or unkn
 				payload: {
 					workflows: [
 						{
+							engineVersion: "nodes-v1",
 							id: "invalid-library-id",
 							name: "Invalid library ID",
 							stepConfigVersion: "step-config-v1",
@@ -150,6 +150,7 @@ it("validates custom output schemas without allowing external references or unkn
 				payload: {
 					workflows: [
 						{
+							engineVersion: "nodes-v1",
 							id: "unsafe-inline",
 							name: "Unsafe inline",
 							stepConfigVersion: "step-config-v1",
@@ -177,7 +178,7 @@ it("validates custom output schemas without allowing external references or unkn
 		});
 		expect(catalog.statusCode).toBe(200);
 		expect(catalog.json().formats).toContainEqual({
-			id: "qa-capture-v1",
+			id: "json-v1",
 			version: 1,
 		});
 		// Saving crosses asynchronous compilation into synchronous catalogue
@@ -198,6 +199,7 @@ it("validates custom output schemas without allowing external references or unkn
 			payload: {
 				workflows: [
 					{
+						engineVersion: "nodes-v1",
 						id: "saved-inline",
 						name: "Saved inline schema",
 						stepConfigVersion: "step-config-v1",

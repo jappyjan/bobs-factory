@@ -97,14 +97,9 @@ export class UpdateDrain {
 				workflowDefinitions: run.workflowDefinitions,
 				checkpoint: run.checkpoint,
 				outputs: run.outputs,
-				answers: run.answers,
-				reviewGate: run.reviewGate,
-				humanDecisions: run.humanDecisions,
-				questionBatchId: run.questionBatchId,
-				questions: run.questions,
-				questionRecommendations: run.questionRecommendations,
+				viewRecords: run.viewRecords,
+				nodeEffects: run.nodeEffects,
 				executionSnapshot: run.executionSnapshot,
-				delivery: run.delivery,
 				ticketSync: run.ticketSync,
 			}))
 			.sort((a, b) => a.id.localeCompare(b.id));

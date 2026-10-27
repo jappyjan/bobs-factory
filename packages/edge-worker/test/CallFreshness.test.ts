@@ -9,15 +9,11 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import {
-	DeliveryContractSchema,
-	TicketDelivery,
-} from "../src/factory/Delivery.js";
+
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
+
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
-import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const instances: WorkflowRuntime[] = [],
 	homes: string[] = [];
@@ -58,6 +54,7 @@ it.each([
 	git("commit", "-m", "fixture [skip ci]");
 	const sourceKey = parallel ? "first/work/0/original" : "first/original";
 	const source = {
+		engineVersion: "nodes-v1",
 		id: "source-recipe",
 		name: "Source",
 		stepConfigVersion: "step-config-v1",
@@ -76,6 +73,7 @@ it.each([
 			: [role("original", { revision: "bound" })],
 	};
 	const consumer = {
+		engineVersion: "nodes-v1",
 		id: "consumer-recipe",
 		name: "Consumer",
 		stepConfigVersion: "step-config-v1",
@@ -85,6 +83,7 @@ it.each([
 		steps: [role("consume", { reads: { source: "source" } })],
 	};
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "cross-call-reader",
 		name: "Parent",
 		stepConfigVersion: "step-config-v1",
@@ -99,8 +98,8 @@ it.each([
 			{
 				id: "mutate",
 				name: "Mutate",
-				type: "tool",
-				tool: "fixture",
+				type: "agent",
+				prompt: "fixture-tool",
 				next: "second",
 			},
 			{
@@ -122,21 +121,25 @@ it.each([
 	let calls = 0,
 		received: any;
 	const r = new WorkflowRuntime(join(h, "state"), {
-		agent: async (c) => {
-			if (c.step.id === "original") {
-				calls++;
-				return { text: readFileSync(join(repo, "record.txt"), "utf8") };
-			}
-			received = (c.input as any).source;
-			return { received };
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-tool")
+				return (async () => {
+					writeFileSync(join(repo, "record.txt"), "after");
+					git("add", ".");
+					git("commit", "-m", "changed [skip ci]");
+					return {};
+				})(context);
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async (c) => {
+				if (c.step.id === "original") {
+					calls++;
+					return { text: readFileSync(join(repo, "record.txt"), "utf8") };
+				}
+				received = (c.input as any).source;
+				return { received };
+			})(context);
 		},
-		tool: async () => {
-			writeFileSync(join(repo, "record.txt"), "after");
-			git("add", ".");
-			git("commit", "-m", "changed [skip ci]");
-			return {};
-		},
-		script: async () => ({}),
 	});
 	instances.push(r);
 	r.updateWorkflows(defs, parent.id);
@@ -170,163 +173,6 @@ it.each([
 	expect(received).toEqual({ text: "after" });
 	expect(calls).toBe(2);
 });
-it("refreshes current human inputs through the original native session after a persisted wait, without replaying adjacent actions", async () => {
-	const h = mkdtempSync(join(tmpdir(), "call-input-freshness-"));
-	homes.push(h);
-	const repo = join(h, "repo");
-	mkdirSync(repo);
-	const git = (...args: string[]) =>
-		execFileSync("git", args, {
-			cwd: repo,
-			encoding: "utf8",
-			stdio: "pipe",
-		}).trim();
-	git("init", "-b", "main");
-	git("config", "user.name", "Fixture");
-	git("config", "user.email", "fixture@example.invalid");
-	git("config", "commit.gpgsign", "false");
-	writeFileSync(join(repo, "record.txt"), "same");
-	git("add", ".");
-	git("commit", "-m", "fixture [skip ci]");
-	const source = {
-		id: "input-source",
-		name: "Source",
-		stepConfigVersion: "step-config-v1",
-		allowedTriggers: ["workflow"],
-		outcomes: ["completed"],
-		steps: [
-			role("original", {
-				revision: "bound",
-				reads: { answers: "@answers" },
-				next: "adjacent",
-			}),
-			{
-				id: "adjacent",
-				name: "Adjacent",
-				type: "tool",
-				tool: "fixture",
-				next: "end",
-			},
-		],
-	};
-	const reader = {
-		id: "input-reader",
-		name: "Reader",
-		stepConfigVersion: "step-config-v1",
-		allowedTriggers: ["workflow"],
-		inputs: ["source"],
-		outcomes: ["completed"],
-		steps: [role("consume", { reads: { source: "source" } })],
-	};
-	const parent = {
-		id: "input-parent",
-		name: "Parent",
-		stepConfigVersion: "step-config-v1",
-		steps: [
-			{
-				id: "first",
-				name: "Source",
-				type: "workflow",
-				workflow: source.id,
-				next: "ask",
-			},
-			role("ask", { askQuestions: true, next: "second" }),
-			{
-				id: "second",
-				name: "Reader",
-				type: "workflow",
-				workflow: reader.id,
-				bindings: { source: "first/original" },
-				next: "end",
-			},
-		],
-	};
-	const defs = validateWorkflows([...defaultWorkflows, source, reader, parent]);
-	let produced = 0,
-		adjacent = 0;
-	let received: unknown;
-	const sessions: (string | undefined)[] = [];
-	const hooks = {
-		agent: async (
-			c: import("../src/factory/WorkflowRuntime.js").ExecutionContext,
-		) => {
-			if (c.step.id === "original") {
-				sessions.push(c.resumeAgent?.sessionId);
-				await c.checkpointAgent?.({
-					runner: "codex",
-					sessionId: "controlled-original",
-				});
-				return {
-					answers: c.run.answers.map((x) => x.answer),
-					visit: ++produced,
-				};
-			}
-			if (c.step.id === "ask")
-				return {
-					questions: c.run.answers.length ? [] : ["Which current value?"],
-				};
-			received = (c.input as { source: unknown }).source;
-			return { received };
-		},
-		tool: async () => {
-			adjacent++;
-			return { executed: true };
-		},
-		script: async () => ({}),
-	};
-	let r = new WorkflowRuntime(join(h, "state"), hooks);
-	instances.push(r);
-	r.updateWorkflows(defs, parent.id);
-	let run = r.create({
-		title: "Current input",
-		repositoryId: "fixture",
-		workspace: repo,
-		input: "Inspect current answer",
-		workflow: defs.at(-1)!,
-		triggerOrigin: { type: "manual", workflowId: parent.id },
-	});
-	let running = r.launch(run);
-	await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-	const history = structuredClone(run.history),
-		binding = structuredClone(run.boundOutputs!["first/original"]);
-	await r.shutdown();
-	await running;
-	r = new WorkflowRuntime(join(h, "state"), hooks);
-	instances.push(r);
-	run = r.get(run.id);
-	running = r.launch(run);
-	await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
-	r.answer(run.id, "after");
-	await running;
-	expect(run.status, run.error).toBe("completed");
-	expect(received).toEqual({ answers: ["after"], visit: 2 });
-	expect(produced).toBe(2);
-	expect(adjacent).toBe(1);
-	expect(sessions).toEqual([undefined, "controlled-original"]);
-	expect(run.history.slice(0, history.length)).toEqual(history);
-	expect(run.boundOutputs!["first/original"]!.repositories).toEqual(
-		binding!.repositories,
-	);
-	expect(run.boundOutputs!["first/original"]!.inputDigest).not.toBe(
-		binding!.inputDigest,
-	);
-	expect(run.checkpoint!.calls!.first!.visits.original).toBe(2);
-	writeFileSync(
-		"/tmp/taskbot142-r1-input-freshness.json",
-		JSON.stringify(
-			{
-				status: run.status,
-				history: run.history,
-				checkpoint: run.checkpoint,
-				received,
-				sessions,
-				adjacent,
-			},
-			null,
-			2,
-		),
-	);
-});
 
 it("refreshes a completed Parallel producer after its enclosing declared seed port changes", async () => {
 	const h = mkdtempSync(join(tmpdir(), "enclosing-port-"));
@@ -348,6 +194,7 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 	git("commit", "-m", "fixture [skip ci]");
 	const revision = git("rev-parse", "HEAD");
 	const source = {
+		engineVersion: "nodes-v1",
 		id: "source-recipe",
 		name: "Source",
 		stepConfigVersion: "step-config-v1",
@@ -363,6 +210,7 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 				groups: [
 					[
 						role("original", {
+							session: "resume",
 							revision: "bound",
 							reads: { seed: "seed" },
 							next: "adjacent",
@@ -370,8 +218,8 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 						{
 							id: "adjacent",
 							name: "Adjacent",
-							type: "tool",
-							tool: "fixture",
+							type: "agent",
+							prompt: "fixture-tool",
 							next: "end",
 						},
 					],
@@ -380,6 +228,7 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 		],
 	};
 	const consumer = {
+		engineVersion: "nodes-v1",
 		id: "consumer-recipe",
 		name: "Consumer",
 		stepConfigVersion: "step-config-v1",
@@ -390,6 +239,7 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 	};
 	const sourceKey = "first/work/0/original";
 	const parent = {
+		engineVersion: "nodes-v1",
 		id: "enclosing-port-parent",
 		name: "Parent",
 		stepConfigVersion: "step-config-v1",
@@ -428,28 +278,32 @@ it("refreshes a completed Parallel producer after its enclosing declared seed po
 	let received: unknown, originalHistory: unknown;
 	const sessions: (string | undefined)[] = [];
 	const r = new WorkflowRuntime(join(h, "state"), {
-		agent: async (c) => {
-			if (c.step.id === "seed") {
-				if (seed === 1) originalHistory = structuredClone(c.run.history);
-				return { version: ++seed };
-			}
-			if (c.step.id === "original") {
-				calls++;
-				sessions.push(c.resumeAgent?.sessionId);
-				await c.checkpointAgent?.({
-					runner: "codex",
-					sessionId: "controlled-enclosing-producer",
-				});
-				return { seed: (c.input as { seed: unknown }).seed };
-			}
-			received = (c.input as { source: unknown }).source;
-			return { received };
+		agent: async (context) => {
+			if (context.step.prompt === "fixture-tool")
+				return (async () => {
+					adjacent++;
+					return { executed: true };
+				})(context);
+			if (context.step.prompt === "fixture-script")
+				return (async () => ({}))(context);
+			return (async (c) => {
+				if (c.step.id === "seed") {
+					if (seed === 1) originalHistory = structuredClone(c.run.history);
+					return { version: ++seed };
+				}
+				if (c.step.id === "original") {
+					calls++;
+					sessions.push(c.resumeAgent?.sessionId);
+					await c.checkpointAgent?.({
+						runner: "codex",
+						sessionId: "controlled-enclosing-producer",
+					});
+					return { seed: (c.input as { seed: unknown }).seed };
+				}
+				received = (c.input as { source: unknown }).source;
+				return { received };
+			})(context);
 		},
-		tool: async () => {
-			adjacent++;
-			return { executed: true };
-		},
-		script: async () => ({}),
 	});
 	instances.push(r);
 	r.updateWorkflows(defs, parent.id);

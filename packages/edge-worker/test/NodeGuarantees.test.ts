@@ -6,8 +6,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { digest } from "../src/factory/Delivery.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { digest } from "../src/factory/EvidenceDigest.js";
 import * as gitProviders from "../src/factory/GitProvider.js";
 import {
 	freshNodeOutput,
@@ -70,13 +70,11 @@ function runtime(
 	if (!homes.includes(home)) homes.push(home);
 	const instance = new WorkflowRuntime(home, {
 		agent: agent ?? (async () => ({})),
-		tool: async () => ({}),
-		script: async () => ({}),
 	});
 	runtimes.push(instance);
 	return { instance, home };
 }
-function recipe(steps: unknown[], engineVersion?: "nodes-v1") {
+function recipe(steps: unknown[], engineVersion: "nodes-v1" = "nodes-v1") {
 	return validateWorkflows([
 		...defaultWorkflows,
 		{
@@ -93,7 +91,7 @@ function start(
 	home: string,
 	steps: unknown[],
 	workspace = home,
-	engineVersion?: "nodes-v1",
+	engineVersion: "nodes-v1" = "nodes-v1",
 ) {
 	const workflow = recipe(steps, engineVersion);
 	return instance.create({
@@ -742,6 +740,7 @@ it("resolves bound Call aliases in the producer's frame after restart", async ()
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "guarantees-parent",
 			name: "Parent",
 			stepConfigVersion: "step-config-v1",
@@ -757,6 +756,7 @@ it("resolves bound Call aliases in the producer's frame after restart", async ()
 			],
 		},
 		{
+			engineVersion: "nodes-v1",
 			id: "guarantees-child",
 			name: "Child",
 			inputs: ["alias"],

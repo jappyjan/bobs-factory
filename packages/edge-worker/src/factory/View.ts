@@ -4,10 +4,6 @@ import {
 	foreachPointerSchema,
 	sanitizeJsonConfiguration,
 } from "./Foreach.js";
-import {
-	QuestionChoicesSchema,
-	QuestionRecommendationSchema,
-} from "./Questions.js";
 
 /** Views are display data. Neither a component ID nor an action label grants authority. */
 export const VIEW_VERSION = "view-v1" as const;
@@ -300,43 +296,7 @@ export const viewDataSchemas = {
 		})
 		.strict(),
 	codeTour: codeTourSchema,
-	questions: z
-		.object({
-			questions: z.array(text(16000)).min(1).max(100),
-			questionChoices: z.array(QuestionChoicesSchema).max(100).optional(),
-			questionRecommendations: z
-				.array(QuestionRecommendationSchema)
-				.max(100)
-				.optional(),
-		})
-		.strict(),
-	"checkin-section": z
-		.object({
-			section: z.enum([
-				"since",
-				"understood",
-				"plan",
-				"notice",
-				"open",
-				"check-0",
-				"check-1",
-				"check-2",
-				"size",
-				"limits",
-				"notes",
-			]),
-			proposalId: text(100),
-			digest: hash,
-			text: z.string().max(64000),
-		})
-		.strict(),
-	"review-guide": z
-		.object({
-			source: text(500),
-			digest: hash,
-			text: z.string().max(64000),
-		})
-		.strict(),
+
 	markdown: z.object({ text: text(16_000) }).strict(),
 	checklist: z
 		.object({
@@ -567,9 +527,6 @@ export const components = z.discriminatedUnion("type", [
 	component("actions", viewDataSchemas.actions),
 	component("section", viewDataSchemas.section),
 	component("codeTour", viewDataSchemas.codeTour),
-	component("questions", viewDataSchemas.questions),
-	component("checkin-section", viewDataSchemas["checkin-section"]),
-	component("review-guide", viewDataSchemas["review-guide"]),
 	component("markdown", viewDataSchemas.markdown),
 	component("checklist", viewDataSchemas.checklist),
 	component("beforeAfter", viewDataSchemas.beforeAfter),
@@ -590,9 +547,6 @@ const resolvedComponents = z.discriminatedUnion("type", [
 	resolvedComponent("actions", viewDataSchemas.actions),
 	resolvedComponent("section", viewDataSchemas.section),
 	resolvedComponent("codeTour", viewDataSchemas.codeTour),
-	resolvedComponent("questions", viewDataSchemas.questions),
-	resolvedComponent("checkin-section", viewDataSchemas["checkin-section"]),
-	resolvedComponent("review-guide", viewDataSchemas["review-guide"]),
 	resolvedComponent("markdown", viewDataSchemas.markdown),
 	resolvedComponent("checklist", viewDataSchemas.checklist),
 	resolvedComponent("beforeAfter", viewDataSchemas.beforeAfter),
@@ -626,7 +580,7 @@ export const ViewReadsSchema = z.record(
 export const definitionSchema = z
 	.object({
 		version: z.literal(VIEW_VERSION),
-		preset: z.enum(["ask", "approve", "review", "external-review"]).optional(),
+
 		reads: ViewReadsSchema.optional(),
 		components: z
 			.array(components)
@@ -656,9 +610,7 @@ export const ResolvedViewSchema = z.preprocess(
 	z
 		.object({
 			version: z.literal(VIEW_VERSION),
-			preset: z
-				.enum(["ask", "approve", "review", "external-review"])
-				.optional(),
+
 			components: z
 				.array(resolvedComponents)
 				.min(1)
@@ -799,7 +751,7 @@ export function resolveView(
 	});
 	return ResolvedViewSchema.parse({
 		version: VIEW_VERSION,
-		...(definition.preset ? { preset: definition.preset } : {}),
+
 		components: resolved,
 	});
 }
@@ -889,30 +841,7 @@ export function viewText(view: ResolvedView): string {
 						);
 				}
 				break;
-			case "questions":
-				component.data.questions.forEach((question, index) => {
-					lines.push(`${index + 1}. ${s(question)}`);
-					for (const choices of component.data.questionChoices ?? [])
-						if (choices.questionIndex === index)
-							for (const option of choices.options)
-								lines.push(
-									`${s(option.id)}: ${s(option.answer)}${option.reason ? ` — ${s(option.reason)}` : ""}`,
-								);
-					for (const recommendation of component.data.questionRecommendations ??
-						[])
-						if (recommendation.questionIndex === index)
-							lines.push(
-								`Recommendation (requires explicit submission): ${s(recommendation.answer)} — ${s(recommendation.reason)}`,
-							);
-				});
-				lines.push(
-					"Custom answers are available. Defaults never submit themselves.",
-				);
-				break;
-			case "checkin-section":
-			case "review-guide":
-				lines.push(s(component.data.text));
-				break;
+
 			case "markdown":
 				lines.push(s(component.data.text));
 				break;

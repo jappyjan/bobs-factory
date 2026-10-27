@@ -13,17 +13,10 @@ describe("passive child batch attention", () => {
 		expect(attention(parent)).toBeUndefined();
 		expect(workingLabel(parent)).toBe("Tracking child runs");
 	});
-	it("does not hide genuine questions, architecture or exact human review", () => {
-		expect(attention({ ...parent, questions: ["Which repository?"] })).toBe(
-			"question",
-		);
-		expect(attention({ ...parent, questionCount: 1 })).toBe("question");
-		expect(attention({ ...parent, architectureGate: { pending: true } })).toBe(
-			"question",
-		);
-		expect(attention({ ...parent, reviewGate: { status: "pending" } })).toBe(
-			"review",
-		);
+	it("does not hide pending Display input or a failed parent behind child tracking", () => {
+		expect(
+			attention({ ...parent, viewDecision: { id: "batch", kind: "display" } }),
+		).toBe("question");
 		expect(attention({ ...parent, status: "failed" })).toBe("stuck");
 	});
 });

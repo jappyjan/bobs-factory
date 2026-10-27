@@ -11,19 +11,13 @@ export interface RunSummary {
 		title?: string;
 		answer?: unknown;
 	};
-	questions?: unknown[];
-	questionCount?: number;
-	architectureGate?: unknown;
 	status: string;
 	createdAt: string;
 	updatedAt?: string;
 	capacityLeaves?: Record<string, { phase: string }>;
 	deliveryCoordination?: { phase: string; reason?: string };
-	reviewGate?: { status?: string };
 	viewState?: { settledAt?: string; seenAt?: string; keptOpen?: boolean };
 	triggerOrigin?: { manual?: { sourceRunId?: string } };
-	hasGuide?: boolean;
-	outputs?: { guide?: unknown };
 }
 export type Attention = "question" | "stuck" | "review";
 
@@ -79,19 +73,8 @@ function trackingChildren(run: RunSummary): boolean {
 }
 export function workingLabel(run: RunSummary): string {
 	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
-		return run.viewDecision.kind === "display"
-			? "Waiting for your response"
-			: run.viewDecision.kind === "approve"
-				? "Waiting for approval"
-				: "Waiting for decisions";
-	if (
-		run.status === "waiting" &&
-		trackingChildren(run) &&
-		!run.questions?.length &&
-		!run.questionCount &&
-		!run.architectureGate &&
-		run.reviewGate?.status !== "pending"
-	)
+		return "Waiting for your response";
+	if (run.status === "waiting" && trackingChildren(run))
 		return "Tracking child runs";
 	if (run.deliveryCoordination?.phase === "queued")
 		return run.deliveryCoordination.reason === "Shared QA/environment resource"
@@ -114,12 +97,7 @@ export function settleReason(
 	const view = run.viewState ?? {};
 	if (view.keptOpen) return undefined;
 	if (view.settledAt) return "✓ Settled by you";
-	if (
-		view.seenAt &&
-		["complete", "completed"].includes(run.status) &&
-		!run.outputs?.guide &&
-		!run.hasGuide
-	)
+	if (view.seenAt && ["complete", "completed"].includes(run.status))
 		return "👀 Seen after it finished";
 	if (["stopped", "cancelled"].includes(run.status)) return "■ Stopped";
 	if (
@@ -136,17 +114,10 @@ export function settleReason(
 	return undefined;
 }
 export function attention(run: RunSummary): Attention | undefined {
-	if (run.reviewGate?.status === "pending" && run.status === "waiting")
-		return "review";
 	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
 		return "question";
 	if (run.status === "waiting")
-		return trackingChildren(run) &&
-			!run.questions?.length &&
-			!run.questionCount &&
-			!run.architectureGate
-			? undefined
-			: "question";
+		return trackingChildren(run) ? undefined : "question";
 	if (["failed", "error", "interrupted", "blocked"].includes(run.status))
 		return "stuck";
 	if (["stopped", "cancelled"].includes(run.status) && run.viewState?.keptOpen)

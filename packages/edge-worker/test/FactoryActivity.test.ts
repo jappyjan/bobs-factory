@@ -71,8 +71,9 @@ describe("factory conversation history", () => {
 			},
 			workflowDefinitions: [
 				{
+					engineVersion: "nodes-v1",
 					id: "shared",
-					steps: [{ id: "build-checks", type: "tool", tool: "ci" }],
+					steps: [{ id: "build-checks", type: "ci", op: "status" }],
 				},
 			],
 			events: [

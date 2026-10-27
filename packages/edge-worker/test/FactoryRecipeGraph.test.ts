@@ -27,6 +27,7 @@ const step = (id: string, extra: Partial<Step> = {}): Step => ({
 	...extra,
 });
 const recipe = (steps: Step[], id = "local"): Recipe => ({
+	engineVersion: "nodes-v1",
 	id,
 	name: id,
 	description: "",
@@ -99,7 +100,7 @@ describe("recipe graph", () => {
 				from: "call",
 				to: "start",
 				kind: "branch",
-				label: "Rework needed",
+				label: "rework is true",
 				back: true,
 				index: 0,
 			},
@@ -269,7 +270,7 @@ describe("recipe graph", () => {
 		expect(loop).toMatchObject({
 			kind: "branch",
 			back: true,
-			label: "Changes requested",
+			label: "approved is false",
 		});
 		for (const r of routes)
 			if (r.kind === "flow" && main.has(r.from) && main.has(r.to))
@@ -279,11 +280,11 @@ describe("recipe graph", () => {
 	it("puts every pipeline step in a phase and new steps beside their neighbours", () => {
 		const steps = pipeline.steps;
 		const phases = phasesOf(steps);
-		expect(phases.clarify!.label).toBe("Understand");
-		expect(phases["human-fix"]!.label).toBe("Fix loops");
-		expect(phases["external-apply"]!.label).toBe("External delivery");
+		expect(phases.clarify!.label).toBe("Steps");
+		expect(phases["human-fix"]!.label).toBe("Steps");
+		expect(phases["external-apply"]!.label).toBe("Steps");
 		const edited = insertStepAfter(recipe(steps), "implement", step("lint"));
-		expect(phasesOf(edited.steps).lint!.label).toBe("Build");
+		expect(phasesOf(edited.steps).lint!.label).toBe("Steps");
 	});
 });
 

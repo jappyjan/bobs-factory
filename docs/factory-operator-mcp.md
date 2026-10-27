@@ -34,7 +34,7 @@ Capabilities are independent:
 | Capability | Operations |
 | --- | --- |
 | `inspect` | List/inspect runs, read workflow activity, inspect/check MCP connections |
-| `operate` | Retry, resume, recheck questions, stop, answer, steer, retry ticket synchronization |
+| `operate` | Retry, resume, stop, steer, retry ticket synchronization |
 | `configure` | Update owned MCP connections and matching permissions |
 
 Grant only the needed capabilities. For recovery, `inspect,operate,configure`
@@ -79,28 +79,24 @@ the correct operation. Run results identify the instance and run.
 | Tool | Behavior |
 | --- | --- |
 | `list_runs` | Filter by status/repository; `offset` and `limit` (1–50) page summaries |
-| `inspect_run` | Failure, pending questions, execution/connection diagnosis, progress and action eligibility |
+| `inspect_run` | Failure, pending Display decisions, execution/connection diagnosis, progress and action eligibility |
 | `read_run_activity` | Page sanitized workflow events; agent payloads are excluded |
 | `retry_run` | Retry a failed run through its existing checkpoint; optional exact-counter `transcriptExtension` uses the accepted bounded diagnostic increment |
 | `resume_run` | Resume interrupted or explicitly stopped saved progress, or a disabled run after its workflow is enabled and execution has stopped |
 | `retry_ticket_sync` | Retry tracker synchronization only |
 | `stop_run` | Stop an active/waiting/interrupted run and retain work |
-| `recheck_run` | Reassess a waiting agent's current questions in its retained conversation after an update, access repair or other changed condition |
-| `answer_run` | Answer current questions or request an explanation with `kind: "explanation"` |
 | `steer_run` | Send a message through enabled and currently available workflow chat |
 | `inspect_mcp_connections` | Actual runner, source provenance, endpoint, permission decision, authentication mechanism and configuration revision |
 | `update_mcp_connection` | Revision-checked HTTP/SSE connection plus explicit exact tool permissions |
 | `check_mcp_connection` | Read the originating Taskbot ticket, or select `server` for read-only tool discovery through the run's actual transport |
 
-Follow `nextOffset` until null to read all pages. Activity, error and question text
+Follow `nextOffset` until null to read all pages. Activity and error text
 is sanitized and bounded. Inspection does not expose snapshots, environments,
 provider bodies or credentials. Ticket synchronization includes the most recent
 25 receipt summaries and retains errors/limitations.
 
 Run mutations require `expectedRevision` from a fresh `inspect_run` result.
-`answer_run` and `recheck_run` additionally require the complete `questionContext` as `context`.
-Changed questions, batches or steps reject without answering. An explanation
-request remains an explanation; it does not count as an answer or approval.
+Display responses use the dashboard or terminal, bound to the current display batch and document digest.
 Parallel mutations are serialized per run, and stale requests reject without
 replaying work. Accepted action receipts distinguish accepted recovery from
 completed recovery; inspect again to observe progress.
@@ -116,16 +112,7 @@ There is no context-tool self-grant, policy rewrite, native permission expansion
 progress reset or human/provider/final-delivery waiver. See
 [context access](factory/context-memory.md#diagnostic-exceptions-and-cumulative-bounds).
 
-The dashboard's **Check again** button and terminal's `c check again` action use
-the same bounded recheck operation. Restart alone keeps unanswered questions.
-Recheck records an investigation request, submits no answer and grants no extra
-iterations. It retains the native conversation, accepted recipe, completed work
-and decisions. Approval gates cannot be rechecked this way. An exact blocked
-impact assessment may reassess once before the engine's repeated-state guard
-pauses it again; its own missing-input questions and all independent checks and
-approval obligations remain required.
-
-Completed, stopped, active and pending-human-review runs are not resumable merely
+Completed, active and waiting Display runs are not resumable merely
 because they have a checkpoint. Retry/resume retains completed outputs, publication
 receipts, evidence and decisions. Steering follows the accepted recipe and actual
 runner availability. Saved Simple runs resume through the workflow engine and retain their native conversation. Re-enabling a workflow does not resume its blocked runs; each run requires an explicit Resume. The terminal shows the blocked reason and offers `c resume` when eligible. Human review remains a dashboard/human decision.

@@ -5,8 +5,8 @@ import {
 } from "../../DeliveryCoordination.js";
 import { resolveGitProvider } from "../../GitProvider.js";
 import { repositoryReference } from "../../GitProviderReference.js";
-import { delay } from "../../MergeReadiness.js";
 import { latestNodeReceipt, nodeReference } from "../../NodeGuarantees.js";
+import { delay } from "../../ProviderReadiness.js";
 import { repositoryRun, runRepositories } from "../../RepositoryScope.js";
 import { requestSchema, type schema } from "../merge.js";
 import type { NodeContext } from "../NodeDefinition.js";
@@ -79,7 +79,7 @@ export async function execute(ctx: NodeContext<z.output<typeof schema>>) {
 		const reservation = `node:${key}`;
 		const context = { ...ctx, run: repositoryRun(ctx.run, repository) };
 		const getProvider = async () => {
-			const { executeCommand } = await import("../../FactoryTools.js");
+			const { executeCommand } = await import("./command.js");
 			const provider = ctx.engine.hooks.ioGitProvider
 				? await ctx.engine.hooks.ioGitProvider(context)
 				: await resolveGitProvider(

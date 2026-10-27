@@ -122,10 +122,6 @@ it("drives scoped reuse across commits, bound freshness and convergence through 
 			}
 			return { accepted: true };
 		},
-		script: async () => {
-			throw new Error("Unexpected legacy script");
-		},
-		tool: async () => ({}),
 	};
 	const runtime = new WorkflowRuntime(home, hooks);
 	runtime.updateWorkflows([...defaultWorkflows, workflow]);
@@ -303,11 +299,7 @@ it.each([
 			],
 		},
 	]).at(-1)!;
-	const hooks = {
-		agent: async () => ({ reviewed: true }),
-		script: async () => ({}),
-		tool: async () => ({}),
-	};
+	const hooks = { agent: async () => ({ reviewed: true }) };
 	const runtime = new WorkflowRuntime(home, hooks);
 	let restarted: WorkflowRuntime | undefined;
 	let server: FactoryServer | undefined;
@@ -553,8 +545,6 @@ it("stamps commit, push and PR ensure after effects so a bound Display stays fre
 			title: "Change",
 			body: "Description",
 		}),
-		script: async () => ({}),
-		tool: async () => ({}),
 	};
 	const runtime = new WorkflowRuntime(home, hooks);
 	let restarted: WorkflowRuntime | undefined;

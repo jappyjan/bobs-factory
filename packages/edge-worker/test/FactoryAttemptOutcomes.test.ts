@@ -14,12 +14,9 @@ it.each([
 	],
 ])("records the actual reviewer outcome %j", async (result, outcome) => {
 	const home = mkdtempSync(join(tmpdir(), "factory-review-outcome-"));
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => result,
-		script: async () => ({}),
-		tool: async () => ({}),
-	});
+	const runtime = new WorkflowRuntime(home, { agent: async () => result });
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "review",
 		name: "Review",
 		steps: [
@@ -57,10 +54,9 @@ it("records missing native startup infrastructure as blocked without fabricating
 			});
 			throw new Error("Required native MCP tool unavailable");
 		},
-		script: async () => ({}),
-		tool: async () => ({}),
 	});
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "startup",
 		name: "Startup",
 		steps: [{ id: "guide", name: "Guide", type: "agent", prompt: "Guide" }],

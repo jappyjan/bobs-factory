@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { isDeepStrictEqual } from "node:util";
+
 import { operatorTools } from "bobs-factory-mcp-tools";
 import type { UpdateDrain } from "../updates/UpdateDrain.js";
 import type { ChatState } from "./SessionChat.js";
@@ -147,7 +147,7 @@ export class OperatorService {
 	}
 	inspect(id: string) {
 		const run = this.run(id),
-			pendingReview = run.reviewGate?.status === "pending";
+			pendingReview = !!run.viewDecision && !run.viewDecision.answer;
 		const action = (available: boolean, reason: string) => ({
 			available,
 			reason: available ? undefined : reason,
@@ -196,11 +196,7 @@ export class OperatorService {
 						}
 					: undefined,
 			},
-			questionContext: {
-				step: run.step,
-				questionBatchId: run.questionBatchId,
-				questions: run.questions.map((q) => this.text(q)),
-			},
+
 			// Bind submissions to the displayed sanitized contents and the underlying run revision.
 			ticket: run.ticketReference
 				? { provider: run.ticketReference.provider }
@@ -253,17 +249,7 @@ export class OperatorService {
 					["running", "waiting", "interrupted"].includes(run.status),
 					"Run is already finished",
 				),
-				answer_run: action(
-					executionAllowed &&
-						run.status === "waiting" &&
-						!!run.questions.length &&
-						!pendingReview,
-					"Run must be waiting for workflow questions, outside human review",
-				),
-				recheck_run: action(
-					executionAllowed && this.runtime.canRecheckQuestions(id),
-					"Recheck requires a waiting agent question outside approval gates",
-				),
+
 				steer_run: action(
 					executionAllowed &&
 						!!chat?.enabled &&
@@ -467,30 +453,7 @@ export class OperatorService {
 				else this.runtime.retry(run.id, args.transcriptExtension);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
-			else if (name === "answer_run" || name === "recheck_run") {
-				const displayed = this.inspect(run.id).questionContext;
-				if (
-					args.context.step !== displayed.step ||
-					args.context.questionBatchId !== displayed.questionBatchId ||
-					!isDeepStrictEqual(args.context.questions, displayed.questions)
-				)
-					throw new OperatorError(
-						"stale_state",
-						"The question batch changed. Inspect again before acting.",
-					);
-				if (name === "recheck_run")
-					await this.recheck(run.id, {
-						step: run.step!,
-						questionBatchId: run.questionBatchId!,
-						questions: [...run.questions],
-					});
-				else
-					await this.answer(run.id, args.answer, args.kind, {
-						step: run.step,
-						questionBatchId: run.questionBatchId,
-						questions: run.questions,
-					});
-			} else if (name === "steer_run") await this.steer(run.id, args.text);
+			else if (name === "steer_run") await this.steer(run.id, args.text);
 			this.epochs.set(run.id, (this.epochs.get(run.id) ?? 0) + 1);
 			return {
 				instance: this.instance,
@@ -516,33 +479,7 @@ export class OperatorService {
 	retryTracking(id: string) {
 		return this.runtime.retryTracking(id);
 	}
-	recheck(
-		id: string,
-		context: { step: string; questionBatchId: string; questions: string[] },
-	) {
-		return this.runtime.recheckQuestions(id, context);
-	}
-	async answer(
-		id: string,
-		answer: string,
-		kind?: "answer" | "explanation",
-		context?: { step?: string; questionBatchId?: string; questions: string[] },
-	) {
-		const run = this.run(id);
-		if (
-			context &&
-			(context.step !== run.step ||
-				(context.questionBatchId !== undefined &&
-					context.questionBatchId !== run.questionBatchId) ||
-				!isDeepStrictEqual(context.questions, run.questions))
-		)
-			throw new OperatorError(
-				"stale_state",
-				"The question or step changed. Refresh before answering.",
-			);
-		this.runtime.answer(id, answer, kind);
-		await this.runtime.flush(id);
-	}
+
 	async steer(id: string, text: string) {
 		const state = this.hooks.chat?.(id);
 		if (!state?.enabled || !state.available || !this.hooks.message)
