@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Show a visible update blocker when worker ownership is missing or unverifiable, preserving queued Install consent. Restore ownership only for the supervisor’s verified live child; otherwise guide operators to desktop Stop and owner reconciliation. ([Taskbot #171](https://taskbot.apps.janjaap.de/p/bobs-factory/t/171))
+- Show a visible update blocker when worker ownership is missing or unverifiable, preserving queued Install consent. Restore ownership only for the supervisor’s verified live child; otherwise guide operators to desktop Stop and owner reconciliation. ([Taskbot #171](https://taskbot.apps.janjaap.de/p/bobs-factory/t/171), [#218](https://github.com/jappyjan/bobs-factory/pull/218))
 
 - Keep complete desktop upgrade/rollback validation compatible with node-based recipes, retaining real waiting decisions, native checkpoints, worker identity and recovery checks; audit maintained release fixtures for removed step shapes and routes. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#217](https://github.com/jappyjan/bobs-factory/pull/217))
 
