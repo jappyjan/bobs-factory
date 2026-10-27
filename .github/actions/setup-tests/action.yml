@@ -15,9 +15,16 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install --no-install-recommends -y bubblewrap ffmpeg jq
+        sudo apt-get install --no-install-recommends -y apparmor-profiles bubblewrap ffmpeg jq
     - name: Verify Linux Exec sandbox prerequisites
       shell: bash
       run: |
         bwrap --version
+        if ! bwrap --die-with-parent --unshare-pid --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true; then
+          # Ubuntu 24.04 keeps this per-program policy opt-in. Preserve the
+          # host-wide user namespace restrictions and use the distro profile,
+          # which strips namespace capabilities from the sandboxed command.
+          sudo install -m 0644 /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+        fi
         bwrap --die-with-parent --unshare-pid --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true

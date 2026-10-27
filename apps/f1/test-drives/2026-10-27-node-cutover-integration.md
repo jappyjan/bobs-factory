@@ -43,6 +43,12 @@ original identities; the nightly no longer executes deleted engine imports.
   setup now installs Bubblewrap and probes the actual namespace/bind invocation
   before testing. Sandbox enforcement and its assertions remain enabled. The
   nightly drive budget is 30 minutes to accommodate observed Linux disk timings.
+- The early Linux probe then exposed Ubuntu's user-namespace mediation:
+  `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. Setup now loads
+  the distribution's optional `bwrap-userns-restrict` AppArmor profile only if
+  the sandbox probe fails, then requires the probe to pass. Global user-namespace
+  restrictions remain enabled; the packaged profile strips capabilities from
+  the executed command. See the [upstream profile](https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/bwrap-userns-restrict).
 
 ## Completed maintained scripted drives
 
