@@ -15,7 +15,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FactoryServer } from "../../../../packages/edge-worker/dist/factory/FactoryServer.js";
-import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../../../../packages/edge-worker/dist/MachineCapacity.js";
 import { UpdateDrain } from "../../../../packages/edge-worker/dist/updates/UpdateDrain.js";
 import { acquireInstanceLock } from "../../../cli/dist/src/services/InstanceLock.js";
@@ -27,6 +26,7 @@ import {
 } from "../../../desktop/src/app-lifecycle.mjs";
 import { DesktopAppSource } from "../../../desktop/src/app-source.mjs";
 import * as services from "../../../desktop/src/update-services.mjs";
+import { shellCheckpoint } from "../../../desktop/test/shell-checkpoint.mjs";
 import {
 	appRelease,
 	fixtureClient,
@@ -42,49 +42,11 @@ mkdirSync(home);
 process.env.BOBS_FACTORY_DESKTOP_OWNER = "1";
 const owned = await acquireInstanceLock(home);
 const worker = services.workerOwner(home);
-const runtime = new WorkflowRuntime(home, {
-	agent: async () => {
-		throw Error("No agent permitted in retained waiting fixture");
-	},
-	script: async () => ({}),
-	tool: async () => ({}),
-});
-const run = runtime.create({
+const { runtime, run } = await shellCheckpoint(home, root, {
 	id: "shell-retained-wait",
 	title: "Waiting during UI update",
-	repositoryId: "fixture",
-	workspace: root,
-	input: "fixture",
-	triggerOrigin: {
-		type: "manual",
-		workflowId: "fixture",
-		at: new Date().toISOString(),
-	},
-	workflow: {
-		id: "fixture",
-		name: "Fixture",
-		allowedTriggers: ["manual"],
-		steps: [
-			{
-				id: "ask",
-				name: "Ask",
-				type: "agent",
-				prompt: "Mock",
-				askQuestions: true,
-				next: "end",
-			},
-		],
-	},
+	sessionId: "mock-native-retained",
 });
-run.status = "waiting";
-run.questions = ["Retained decision"];
-run.questionBatchId = "retained";
-run.checkpoint = {
-	step: "ask",
-	agent: { runner: "codex", sessionId: "mock-native-retained" },
-};
-run.outputs = { prior: { receipt: "accepted" } };
-await runtime.save(run);
 writeFileSync(
 	join(home, "config.json"),
 	JSON.stringify({ repositories: [], fixture: "preserved" }),

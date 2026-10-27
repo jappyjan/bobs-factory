@@ -525,12 +525,12 @@ it("denies remote protected GET/HEAD/write before hooks, including unknown paths
 		"/api/runs/id",
 		"/api/runs/id/transcript",
 		"/api/runs/id/raw",
-		"/api/runs/id/screenshots/0",
+		"/api/runs/id/view-screenshots/0?v=hash",
 		"/api/runs/id/videos/demo/media?v=hash",
 		"/api/runs/id/videos/demo/poster?v=hash",
 		"/api/runs/id/videos/demo/captions?v=hash",
-		"/api/runs/id/question-images/a.png",
-		"/api/runs/id/review-files",
+		"/api/runs/id/artifacts/attachment",
+		"/api/runs/id/activity/entries/0",
 		"/api/auth/keys",
 		"/api/new-route",
 		"/private-file",
@@ -721,7 +721,7 @@ it.each([
 	expect(
 		(
 			await f.server.app.inject({
-				url: "/api/runs/id/screenshots/0",
+				url: "/api/runs/id/view-screenshots/0?v=hash",
 				headers: { host, cookie },
 			})
 		).statusCode,

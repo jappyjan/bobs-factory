@@ -15,9 +15,6 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { defaultWorkflows } from "../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
-import { validateWorkflows } from "../../../packages/edge-worker/dist/factory/Workflow.js";
-import { WorkflowRuntime } from "../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../../../packages/edge-worker/dist/MachineCapacity.js";
 import { sha256File } from "../../../scripts/lib/binary-release.mjs";
 import { prepareElectronLicenses } from "../../../scripts/lib/desktop-licenses.mjs";
@@ -35,6 +32,7 @@ import {
 	nativeShellInputReceipt,
 	nativeShellPlan,
 } from "./native-shell-fixture.mjs";
+import { shellCheckpoint } from "./shell-checkpoint.mjs";
 import { appRelease, fixtureClient } from "./shell-fixture.mjs";
 
 assert.equal(
@@ -167,70 +165,11 @@ writeFileSync(
 		defaultRunner: "codex",
 	}),
 );
-const seed = new WorkflowRuntime(home, {
-	agent: async (ctx) => {
-		ctx.checkpointAgent?.({
-			runner: "codex",
-			sessionId: "mock-native-shell-checkpoint",
-			cwd: repository,
-		});
-		return { prepared: true, scope: "mock checkpoint only" };
-	},
-	script: async () => ({}),
-	tool: async () => ({
-		headSha: "d".repeat(40),
-		url: "https://example.invalid/shell-review",
-	}),
-});
-const workflow = validateWorkflows([
-	...defaultWorkflows,
-	{
-		id: "fixture",
-		name: "Fixture",
-		allowedTriggers: ["manual"],
-		steps: [
-			{
-				id: "prepare",
-				name: "Mock completed checkpoint",
-				type: "agent",
-				runner: "codex",
-				prompt: "Mock only",
-				next: "review",
-			},
-			{
-				id: "review",
-				name: "Retained human review",
-				type: "tool",
-				tool: "human-review",
-				next: "end",
-			},
-		],
-	},
-]).at(-1);
-const run = seed.create({
+const { runtime: seed, run } = await shellCheckpoint(home, repository, {
 	id: "native-shell-wait",
 	title: "Retained shell checkpoint",
-	repositoryId: "fixture",
-	workspace: repository,
-	input: "fixture",
-	triggerOrigin: {
-		type: "manual",
-		workflowId: "fixture",
-		at: new Date().toISOString(),
-	},
-	workflow,
+	sessionId: "mock-native-shell-checkpoint",
 });
-run.titleGeneration = {
-	...run.titleGeneration,
-	state: "failed",
-	error: "Fixture disables title inference",
-};
-run.setupComplete = true;
-seed.save(run);
-void seed.launch(run);
-for (let n = 0; n < 100 && run.status !== "waiting"; n++)
-	await new Promise((resolve) => setTimeout(resolve, 100));
-assert.equal(run.status, "waiting");
 await seed.shutdown();
 const env = {
 	...process.env,

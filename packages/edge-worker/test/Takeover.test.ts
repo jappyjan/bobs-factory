@@ -1,12 +1,10 @@
 import { expect, it, vi } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 
 import { GITHUB_API_COMMAND } from "../src/factory/GithubApi.js";
 import {
 	inspectPullRequest,
 	ticketIdentifier,
 } from "../src/factory/Takeover.js";
-import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { githubRequest } from "./fixtures/github-api.js";
 
 const pr = {
@@ -77,49 +75,3 @@ it("captures all issue/review discussion pages and rejects another repository or
 	).toBe("TEAM-4");
 	expect(() => ticketIdentifier("https://example.com/TEAM-4")).toThrow();
 });
-function _context(tool: string): ExecutionContext {
-	return {
-		run: {
-			id: "run",
-			title: "Continue work",
-			repositoryId: "repo",
-			repositories: [
-				{
-					id: "repo",
-					name: "Selected",
-					repositoryPath: "/tmp",
-					workspace: "/tmp",
-					baseBranch: "main",
-					githubUrl: "https://github.com/owner/repo",
-				},
-			],
-			workflow: defaultWorkflows.find((w) => w.id === "takeover")!,
-			status: "running",
-			workspace: "/tmp",
-			input: "Continue",
-			createdAt: "",
-			updatedAt: "",
-			takeoverSource: { ...pr, isDraft: true },
-			outputs: {
-				source: { ...pr, isDraft: true },
-				repository: { baseBranch: "main" },
-			},
-			history: [],
-			answers: [],
-			questions: [],
-			events: [],
-		},
-		step: {
-			id: tool,
-			name: tool,
-			type: "tool",
-			tool,
-			branches: [],
-			maxVisits: 8,
-		},
-		input: {},
-		signal: new AbortController().signal,
-		log: () => {},
-		evidenceDir: "/tmp/evidence",
-	};
-}
