@@ -11,6 +11,7 @@ import { foreachPointerSchema, prepareForeach } from "./Foreach.js";
 import { ProgressPolicySchema } from "./ProgressPolicy.js";
 
 import {
+	inlineSchemaIssues,
 	registerWorkflowConfig,
 	type StepConfigFields,
 	stepConfigIssues,
@@ -368,7 +369,10 @@ export function assertForeachBody(
 	}
 }
 
-export function validateWorkflows(value: unknown): Workflow[] {
+export function validateWorkflows(
+	value: unknown,
+	compileSchema: typeof inlineSchemaIssues = inlineSchemaIssues,
+): Workflow[] {
 	const workflows = z.array(WorkflowSchema).min(1).max(200).parse(value);
 	const ids = new Set<string>();
 	for (const workflow of workflows) {
@@ -440,7 +444,12 @@ export function validateWorkflows(value: unknown): Workflow[] {
 				);
 			if (names.size !== steps.length) throw new Error("Duplicate step IDs");
 			for (const step of steps) {
-				const configIssues = stepConfigIssues(step, steps, inherited);
+				const configIssues = stepConfigIssues(
+					step,
+					steps,
+					inherited,
+					compileSchema,
+				);
 				if (configIssues.length) throw new Error(configIssues.join("; "));
 				if (step.type === "agent" && step.runner)
 					resolveAgentSettings(step.runner, step);

@@ -470,6 +470,7 @@ export function stepConfigIssues(
 	step: ConfiguredStep & { prompt?: string },
 	siblings: { id: string }[],
 	inherited: string[] = [],
+	compileSchema: typeof inlineSchemaIssues = inlineSchemaIssues,
 ): string[] {
 	const issues: string[] = checkStepEvidenceIssues(step);
 	const ids = new Set([...siblings.map((s) => s.id), ...inherited]);
@@ -480,7 +481,7 @@ export function stepConfigIssues(
 			issues.push(`${step.id}: read "${name}" names unknown step ${head}`);
 	}
 	if (step.output && "schema" in step.output)
-		for (const issue of inlineSchemaIssues(step.output.schema))
+		for (const issue of compileSchema(step.output.schema))
 			issues.push(`${step.id}: output schema ${issue}`);
 	if (step.output && !["agent", "transform"].includes(step.type ?? ""))
 		issues.push(`${step.id}: output formats apply to agent steps`);

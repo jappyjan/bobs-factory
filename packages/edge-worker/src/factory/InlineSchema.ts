@@ -648,8 +648,9 @@ function dataIssues(value: unknown): Issue[] {
 		];
 	return [];
 }
-export function compileInlineSchemaSync(
+function compileSchemaSync(
 	schema: Record<string, unknown>,
+	trusted: boolean,
 ): string[] {
 	const preflight = inlineSchemaPreflight(schema);
 	if (preflight.length) return preflight;
@@ -659,9 +660,24 @@ export function compileInlineSchemaSync(
 		return [
 			"Inline JSON Schema compilation result expired; retry the save request",
 		];
-	const result = executeSync({ schema, validate: false });
+	const job = { schema, validate: false };
+	const result = trusted ? executeInlineSchemaJob(job) : executeSync(job);
 	remember(schema, result);
 	return result.schemaIssues;
+}
+export function compileInlineSchemaSync(
+	schema: Record<string, unknown>,
+): string[] {
+	return compileSchemaSync(schema, false);
+}
+/** Only for constants defined by bundled code, never saved or request data.
+ * Validate with the same preflight/Ajv engine and warm the content-keyed cache
+ * without spawning a process per trusted schema. User-authored compilation and
+ * every output validation retain their isolated resource boundaries. */
+export function compileTrustedInlineSchemaSync(
+	schema: Record<string, unknown>,
+): string[] {
+	return compileSchemaSync(schema, true);
 }
 export async function compileInlineSchema(
 	schema: Record<string, unknown>,
