@@ -50,22 +50,22 @@ jobs:
             command: pnpm -r --filter '!bobs-factory-edge-worker' test:run
           - name: edge-worker 1/6
             slug: edge-worker-1
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=1/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 1 6 packages/edge-worker)
           - name: edge-worker 2/6
             slug: edge-worker-2
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=2/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 2 6 packages/edge-worker)
           - name: edge-worker 3/6
             slug: edge-worker-3
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=3/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 3 6 packages/edge-worker)
           - name: edge-worker 4/6
             slug: edge-worker-4
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=4/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 4 6 packages/edge-worker)
           - name: edge-worker 5/6
             slug: edge-worker-5
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=5/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 5 6 packages/edge-worker)
           - name: edge-worker 6/6
             slug: edge-worker-6
-            command: pnpm --filter bobs-factory-edge-worker exec vitest run --shard=6/6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 6 6 packages/edge-worker)
           - name: release scripts
             slug: release-scripts
             command: pnpm --filter bobs-factory-desktop exec bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test --test-reporter=spec scripts/tests/*.test.mjs
