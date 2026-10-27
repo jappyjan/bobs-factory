@@ -1,0 +1,51 @@
+name: ZZ retry probe (temporary, removed before merge)
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/zz-retry-probe.yml']
+permissions:
+  contents: read
+jobs:
+  produce:
+    name: probe produce
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "payload from attempt ${{ github.run_attempt }}" > payload.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: probe-built-${{ github.run_id }}
+          path: payload.txt
+          overwrite: true
+  freeze:
+    name: probe freeze
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Restore on retry
+        id: restore
+        if: github.run_attempt != '1'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: probe-frozen-${{ github.run_id }}
+          path: restored
+      - run: |
+          mkdir -p frozen
+          echo "restore outcome: ${{ steps.restore.outcome }}"
+          ls -R restored 2>/dev/null || true
+          echo "frozen in attempt ${{ github.run_attempt }}" > frozen/frozen.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: probe-frozen-${{ github.run_id }}
+          path: frozen/
+          overwrite: true
+  consume:
+    name: probe consume
+    needs: [produce, freeze]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: probe-built-${{ github.run_id }}
+      - run: cat payload.txt
+      - name: Fail on the first attempt only
+        run: test "${{ github.run_attempt }}" != "1"
