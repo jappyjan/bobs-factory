@@ -42,6 +42,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep updates from before the node-engine cutover compatible with the frozen v2 preserved-state receipt, including retained answers, approvals and delivery data. Preserve saved recipe settings during startup reconciliation. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173), [#220](https://github.com/jappyjan/bobs-factory/pull/220))
+
 - Updates no longer fail when an agent installed tools into its isolated home. ([Taskbot #172](https://taskbot.apps.janjaap.de/p/bobs-factory/t/172), [#219](https://github.com/jappyjan/bobs-factory/pull/219))
 - Check copy space before updates, release ownership after failed state copies, and reclaim superseded update snapshots through Storage. ([#219](https://github.com/jappyjan/bobs-factory/pull/219))
 

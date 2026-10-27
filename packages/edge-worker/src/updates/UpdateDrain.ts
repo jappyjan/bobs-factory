@@ -11,6 +11,8 @@ import type { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
 import type { CapacitySnapshot, MachineCapacity } from "../MachineCapacity.js";
 import { UpdateManager } from "./UpdateManager.js";
 
+// This projection is frozen: older installed supervisors compare against it.
+// Changes require a new contract and supervisor support for comparing per contract.
 export const preservationContract = "factory-preservation-v2";
 
 /** Freeze intake and slot admission once staging completes. Active steps finish
@@ -90,18 +92,36 @@ export class UpdateDrain {
 				: null;
 		};
 		const records = [...this.runtime.runs.values()]
-			.map((run) => ({
-				id: run.id,
-				workspace: run.workspace,
-				workflow: run.workflow,
-				workflowDefinitions: run.workflowDefinitions,
-				checkpoint: run.checkpoint,
-				outputs: run.outputs,
-				viewRecords: run.viewRecords,
-				nodeEffects: run.nodeEffects,
-				executionSnapshot: run.executionSnapshot,
-				ticketSync: run.ticketSync,
-			}))
+			.map((run) => {
+				// Raw legacy runs retain these fields even though the node engine no
+				// longer declares them. They still belong to the v2 wire contract.
+				const legacy = run as {
+					answers?: unknown;
+					reviewGate?: unknown;
+					humanDecisions?: unknown;
+					questionBatchId?: unknown;
+					questions?: unknown;
+					questionRecommendations?: unknown;
+					delivery?: unknown;
+				};
+				return {
+					id: run.id,
+					workspace: run.workspace,
+					workflow: run.workflow,
+					workflowDefinitions: run.workflowDefinitions,
+					checkpoint: run.checkpoint,
+					outputs: run.outputs,
+					answers: legacy.answers,
+					reviewGate: legacy.reviewGate,
+					humanDecisions: legacy.humanDecisions,
+					questionBatchId: legacy.questionBatchId,
+					questions: legacy.questions,
+					questionRecommendations: legacy.questionRecommendations,
+					executionSnapshot: run.executionSnapshot,
+					delivery: legacy.delivery,
+					ticketSync: run.ticketSync,
+				};
+			})
 			.sort((a, b) => a.id.localeCompare(b.id));
 		return {
 			preservationContract,
@@ -114,7 +134,7 @@ export class UpdateDrain {
 						// saved graphs, preferences and availability instead; hashing the
 						// resolved catalog rejects every legitimate bundled prompt update.
 						workflows: fileDigest("factory/workflows.json"),
-						defaultWorkflow: this.runtime.getDefaultWorkflow(),
+						defaultWorkflow: this.runtime.catalog.preservedDefaultWorkflow(),
 						titles: this.runtime.getTitleSettings(),
 						executionProfiles: this.runtime.executionProfiles.read(),
 						config: ["config.json", ".env"].map(fileDigest),

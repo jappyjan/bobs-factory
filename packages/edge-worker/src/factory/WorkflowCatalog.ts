@@ -277,6 +277,7 @@ function empty(): WorkflowConfiguration {
 
 /** Installed behavior and operator-owned data meet only in this resolver. */
 export class WorkflowCatalog {
+	private savedDefaultWorkflow?: string;
 	private path: string;
 	private blocksPath: string;
 	private blocks: Record<string, WorkflowBlock>;
@@ -308,9 +309,11 @@ export class WorkflowCatalog {
 		const source = JSON.parse(bytes);
 		if (source.format === "workflow-catalog-v1") {
 			this.state = envelopeSchema.parse(source);
+			this.savedDefaultWorkflow = this.state.defaultWorkflow;
 			this.reconcile(this.state);
 			this.validate(this.state);
-			atomic(this.path, this.state);
+			// Reconcile bundled-code changes in memory. Startup must not rewrite
+			// saved catalog bytes: v2 update receipts protect them across versions.
 			return;
 		}
 		const result = this.migrate(source, bytes);
@@ -607,6 +610,10 @@ export class WorkflowCatalog {
 	defaultWorkflow(): string {
 		return this.state.defaultWorkflow;
 	}
+	/** The v2 receipt predates bundled workflow removals and their fallback. */
+	preservedDefaultWorkflow(): string {
+		return this.savedDefaultWorkflow ?? this.state.defaultWorkflow;
+	}
 	metadata(id: string, definitions = this.list()) {
 		const w = definitions.find((w) => w.id === id)!;
 		const unavailable = this.unavailable(w, definitions);
@@ -841,6 +848,7 @@ export class WorkflowCatalog {
 		this.validate(next);
 		atomic(this.path, next);
 		this.state = next;
+		this.savedDefaultWorkflow = next.defaultWorkflow;
 	}
 	fork(id: string, name?: string): Workflow {
 		if (id === "simple") throw new Error("Simple cannot be forked");
