@@ -42,6 +42,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Self-updates from an installation running before the node engine cutover no longer roll back at the preserved-state health check: the update receipt now reflects run recipes the way the previously running Factory held them in memory. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173))
+
 - Superseded update snapshots are now cleaned up right after an update even when a cleanup sweep was already in progress, instead of waiting for the next daily pass. ([#221](https://github.com/jappyjan/bobs-factory/pull/221))
 
 - Keep updates from before the node-engine cutover compatible with the frozen v2 preserved-state receipt, including retained answers, approvals and delivery data. Preserve saved recipe settings during startup reconciliation. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173), [#220](https://github.com/jappyjan/bobs-factory/pull/220))

@@ -65,11 +65,14 @@ it("pins the pre-node-engine v2 receipt, including legacy fields and property or
 				sessions: [{ id: "native", codex: "saved-id" }],
 			}),
 		);
-		// Captured from 5d5f2760 UpdateDrain.receipt(), without reimplementing its projection.
+		// Captured from 5d5f2760 UpdateDrain.receipt() over this run after its
+		// WorkflowRuntime loader parsed the graph (which adds allowedTriggers), as
+		// the running worker held it. Hashing the unparsed object gave b6ecda8f...,
+		// which no running worker ever reported.
 		const expected = {
 			preservationContract: "factory-preservation-v2",
 			preservedStateSha256:
-				"b6ecda8f11225f43709fe1779aef6f5d0537cd94278c0198da0fab9e353c2e07",
+				"97751ac487f7697286de7064a4685293fc993b4b2cf4ddbc5350a8fbcfce6fcb",
 			runIds: ["legacy-run"],
 		};
 		expect(drain.receipt()).toEqual(expected);
@@ -188,6 +191,107 @@ it("preserves the raw legacy receipt across runtime load and bundled catalog rec
 		expect(drain(restored).receipt()).not.toEqual(before);
 	} finally {
 		await restored?.shutdown();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("hashes stored legacy graphs as the running pre-node-engine worker held them", async () => {
+	const home = mkdtempSync(join(tmpdir(), "update-receipt-parsed-"));
+	const runtime = new WorkflowRuntime(home, {
+		agent: async () => {
+			throw new Error("No agent permitted");
+		},
+	});
+	try {
+		writeFileSync(join(home, "factory/workflows.json"), "saved catalog\n");
+		writeFileSync(join(home, "config.json"), '{"fixture":true}\n');
+		writeFileSync(join(home, ".env"), "FIXTURE=value\n");
+		// Stored bytes as an earlier worker wrote them: unordered properties, no
+		// schema defaults and no allowed triggers. The old worker re-parsed these
+		// on load, so its receipt covers the normalized shape, and the new loader
+		// retains the stored bytes verbatim.
+		const stored = {
+			steps: [
+				{
+					id: "ask",
+					name: "Ask",
+					type: "agent",
+					prompt: "Go",
+					json: true,
+					askQuestions: false,
+					runner: "codex",
+					model: "gpt-5",
+					next: "run",
+				},
+				{
+					id: "run",
+					name: "Run",
+					type: "tool",
+					tool: "noop",
+					branches: [{ next: "ask", when: { equals: 1, path: "/x" } }],
+				},
+				{
+					id: "each",
+					name: "Each",
+					type: "foreach",
+					items: { from: "/list" },
+					body: [
+						{
+							id: "inner",
+							name: "Inner",
+							type: "agent",
+							prompt: "P",
+							askQuestions: true,
+							json: false,
+						},
+					],
+				},
+			],
+			labels: ["a"],
+			chat: true,
+			name: "Legacy",
+			id: "legacy-graph",
+			description: "d",
+		};
+		const run = (id: string, workflow: unknown) =>
+			({
+				id,
+				title: "Legacy",
+				repositoryId: "repo",
+				workspace: "/fixture/workspace",
+				input: "fixture",
+				status: "stopped",
+				createdAt: "2026-10-25T00:00:00.000Z",
+				updatedAt: "2026-10-25T00:00:00.000Z",
+				workflow,
+				workflowDefinitions: [],
+				checkpoint: { current: "end", visits: {} },
+				outputs: {},
+				history: [],
+				events: [],
+			}) as unknown as FactoryRun;
+		for (const item of [
+			run("a", stored),
+			run("b", { name: "Simple", id: "simple", steps: [] }),
+		])
+			runtime.runs.set(item.id, item);
+		const drain = new UpdateDrain(
+			home,
+			runtime,
+			{} as MachineCapacity,
+			() => false,
+			() => {},
+			() => ({ pendingIntegrationEvents: {}, sessions: [] }),
+		);
+		// Captured from 5d5f2760 UpdateDrain.receipt() after WorkflowSchema.parse
+		// of the same stored graphs, as its WorkflowRuntime loader assigned them.
+		expect(drain.receipt().preservedStateSha256).toBe(
+			"27741e13da073e94aaf5834ad27ca9ac6232bc197e1650a9eda458970b3193a7",
+		);
+		// Receipts never alter the retained run.
+		expect(Object.keys(runtime.runs.get("a")!.workflow)[0]).toBe("steps");
+	} finally {
 		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
