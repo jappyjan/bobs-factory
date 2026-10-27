@@ -15,6 +15,7 @@ import { EdgeWorker } from "../../../../packages/edge-worker/src/EdgeWorker.ts";
 import { WorkflowSchema } from "../../../../packages/edge-worker/src/factory/Workflow.ts";
 import type { WorkflowRuntime } from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
+import { displayAnswer, nodeDisplay } from "./node-display.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const root = mkdtempSync(join(tmpdir(), "f1-api-responsiveness-"));
@@ -86,7 +87,7 @@ const config: EdgeWorkerConfig = {
 				);
 			const response = run
 				? JSON.stringify({
-						questions: run.answers.length ? [] : ["Continue this run?"],
+						summary: "Controlled role completed",
 					})
 				: "F1 API fixture completed without live inference.";
 			const mock = f1AgentHandlers("mock", response)!.createAgentRunner!(
@@ -231,17 +232,12 @@ try {
 
 	const runtime = inside().getFactoryRuntime();
 	const workflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "api-fixture",
 		name: "API fixture",
 		allowedTriggers: ["manual"],
 		steps: [
-			{
-				id: "ask",
-				name: "Ask",
-				type: "agent",
-				prompt: "Ask the fixture question.",
-				askQuestions: true,
-			},
+			nodeDisplay("ask", "Continue this run?", "memory-check"),
 			{
 				id: "memory-check",
 				name: "Read retained evidence",
@@ -251,8 +247,10 @@ try {
 			{
 				id: "finish",
 				name: "Finish",
-				type: "script",
-				script: "printf '{\"complete\":true}'",
+				type: "exec",
+				command: "sh",
+				json: true,
+				args: ["-c", "printf '{\"complete\":true}'"],
 			},
 		],
 	});
@@ -290,8 +288,7 @@ try {
 	await runtime.save(run);
 	const context = {
 		step: run.step,
-		questions: [...run.questions],
-		questionBatchId: run.questionBatchId,
+		viewDecision: structuredClone(run.viewDecision),
 	};
 	await worker.stop();
 	worker = new EdgeWorker(config);
@@ -321,15 +318,17 @@ try {
 	);
 	const focus = await request<{
 		status: string;
-		questions: string[];
-		questionBatchId?: string;
+		viewDecision: typeof run.viewDecision;
 		step?: string;
 		checkpoint?: unknown;
 		history?: unknown;
 	}>(`/api/runs/${started.id}?view=focus`);
 	assert.equal(focus.status, "waiting");
-	assert.deepEqual(focus.questions, context.questions);
-	assert.equal(focus.questionBatchId, context.questionBatchId);
+	assert.equal(focus.viewDecision?.id, context.viewDecision?.id);
+	assert.equal(
+		focus.viewDecision?.documentDigest,
+		context.viewDecision?.documentDigest,
+	);
 	assert.equal(focus.checkpoint, undefined);
 	assert.equal(focus.history, undefined);
 	assert(measurements.at(-1)!.bytes < 50000, "Focus loaded execution evidence");
@@ -364,10 +363,10 @@ try {
 	void probes.catch(() => {});
 	try {
 		const answer = await request<{ accepted: boolean }>(
-			`/api/runs/${started.id}/answer`,
-			{ answer: "Continue", context, kind: "answer" },
+			`/api/runs/${started.id}/view-answer`,
+			displayAnswer(restored.get(started.id), "Continue"),
 		);
-		assert(answer.accepted);
+		assert.equal(answer.accepted, true);
 		assert(measurements.at(-1)!.bytes < 1024);
 		await wait(
 			() => restored.get(started.id).status === "completed",
@@ -386,10 +385,11 @@ try {
 		memoryProbes.length > 0,
 		"No HTTP probes ran during retained-history preparation",
 	);
-	assert.equal(restored.get(started.id).answers.length, 1);
+	assert.equal(restored.get(started.id).outputs.ask.action, "continue");
 
 	const marker = join(root, "retry-ready");
 	const retryWorkflow = WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "api-retry",
 		name: "API Retry",
 		allowedTriggers: ["manual"],
@@ -397,8 +397,10 @@ try {
 			{
 				id: "work",
 				name: "Work",
-				type: "script",
-				script: `test -f '${marker}' && printf '{"complete":true}'`,
+				type: "exec",
+				command: "sh",
+				json: true,
+				args: ["-c", `test -f '${marker}' && printf '{"complete":true}'`],
 			},
 		],
 	});

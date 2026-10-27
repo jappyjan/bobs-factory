@@ -23,6 +23,8 @@ import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/W
 import { preflightFactoryState } from "../../../../packages/edge-worker/dist/lifecycle/PreflightState.js";
 import { FactoryServer } from "../../../../packages/edge-worker/test/fixtures/authenticated-factory.ts";
 
+import { displayAnswer, nodeDisplay } from "./node-display.mjs";
+
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const home = mkdtempSync(join(tmpdir(), "f1-desktop-lifecycle-"));
 const workspace = join(home, "repo");
@@ -30,6 +32,7 @@ mkdirSync(workspace);
 const workflow = validateWorkflows([
 	...defaultWorkflows,
 	{
+		engineVersion: "nodes-v1",
 		id: "lifecycle-fixture",
 		name: "Lifecycle fixture",
 		entry: "prepare",
@@ -41,19 +44,12 @@ const workflow = validateWorkflows([
 				prompt: "Mock fixture",
 				next: "clarify",
 			},
-			{
-				id: "clarify",
-				name: "Mock clarification",
-				type: "agent",
-				prompt: "Mock questions",
-				askQuestions: true,
-				next: "finish",
-			},
+			nodeDisplay("clarify", "Which color?", "finish"),
 			{
 				id: "finish",
 				name: "Mock completion",
-				type: "script",
-				script: "fixture",
+				type: "agent",
+				prompt: "fixture-finish",
 			},
 		],
 	},
@@ -71,16 +67,8 @@ const hooks = {
 			});
 			return { prepared: true };
 		}
-		return ctx.run.answers.length
-			? { questions: [], answer: ctx.run.answers.at(-1) }
-			: { questions: ["Which color?"] };
-	},
-	script: async () => {
 		finishes++;
 		return { done: true };
-	},
-	tool: async () => {
-		throw Error("No tools");
 	},
 };
 let release = await acquireInstanceLock(home),
@@ -111,15 +99,26 @@ const until = async (check) => {
 		await new Promise((r) => setTimeout(r, 10));
 	}
 };
+const durable = (key, value) => {
+	const copy = JSON.parse(JSON.stringify(value));
+	// A resumed node receives a new execution attempt; its retained inputs and
+	// native conversation/checkpoint are the state that must survive unchanged.
+	if (key === "checkpoint" && copy.active) delete copy.active.attemptId;
+	return copy;
+};
 try {
-	await until(() => runtime.get(run.id).status === "waiting");
+	await until(
+		() =>
+			runtime.get(run.id).status === "waiting" &&
+			runtime.get(run.id).viewDecision,
+	);
 	const before = runtime.get(run.id);
 	const captured = {
 		id: before.id,
-		questions: structuredClone(before.questions),
-		outputs: structuredClone(before.outputs),
-		history: structuredClone(before.history),
-		checkpoint: structuredClone(before.checkpoint),
+		viewDecision: JSON.parse(JSON.stringify(before.viewDecision)),
+		outputs: JSON.parse(JSON.stringify(before.outputs)),
+		history: JSON.parse(JSON.stringify(before.history)),
+		checkpoint: durable("checkpoint", before.checkpoint),
 	};
 	await assert.rejects(acquireInstanceLock(home), /already owned/);
 	assert.equal(workerOwner(home).pid, process.pid);
@@ -166,11 +165,11 @@ try {
 	);
 	const restoredRuntime = new WorkflowRuntime(restored, hooks);
 	for (const [key, value] of Object.entries(captured))
-		assert.deepEqual(structuredClone(restoredRuntime.get(run.id)[key]), value);
+		assert.deepEqual(durable(key, restoredRuntime.get(run.id)[key]), value);
 	await restoredRuntime.shutdown();
 	assert.equal(
 		calls,
-		2,
+		1,
 		"preflight and snapshot inspection must never execute workflow work",
 	);
 	release();
@@ -179,8 +178,8 @@ try {
 	runtime.resumeAll();
 	await until(() => runtime.get(run.id).status === "waiting");
 	for (const [key, value] of Object.entries(captured))
-		assert.deepEqual(structuredClone(runtime.get(run.id)[key]), value);
-	assert.equal(calls, 2, "completed preparation/clarification must not rerun");
+		assert.deepEqual(durable(key, runtime.get(run.id)[key]), value);
+	assert.equal(calls, 1, "completed preparation must not rerun");
 	server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -193,8 +192,11 @@ try {
 		url: `/api/runs/${run.id}`,
 	});
 	assert.equal(result.statusCode, 200);
-	assert.deepEqual(result.json().questions, ["Which color?"]);
-	runtime.answer(run.id, "Blue");
+	assert.equal(
+		result.json().viewDecision.documentDigest,
+		captured.viewDecision.documentDigest,
+	);
+	await runtime.answerView(run.id, displayAnswer(runtime.get(run.id), "Blue"));
 	await until(() => runtime.get(run.id).status === "completed");
 	assert.equal(finishes, 1);
 	await runtime.flush(run.id);

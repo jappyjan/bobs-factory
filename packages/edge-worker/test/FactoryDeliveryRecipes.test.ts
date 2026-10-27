@@ -798,6 +798,9 @@ it("merge wait timeout explains the provider blocker without recycling approval"
 	expect(f.merge).not.toHaveBeenCalled();
 	f.state.providerMergeability = "CLEAN";
 	f.state.blockers = [];
+	// Only the first wait tests expiry. Give recovery enough time for its real
+	// checkpoint/provider read under full-suite load instead of expiring again.
+	f.run.workflow.steps.find((s) => s.id === "merge-wait")!.timeout = 10000;
 	await answer(f.runtime, f.run, "continue");
 	await pending;
 	await done(f.run);

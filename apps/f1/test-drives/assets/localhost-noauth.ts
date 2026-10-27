@@ -323,14 +323,17 @@ try {
 		"IPv6 project onboarding mutation completes without authentication (prepared-tool stubs only)",
 	);
 	const recipe = {
+		engineVersion: "nodes-v1",
 		id: "local-access",
 		name: "Local access",
 		steps: [
 			{
 				id: "run",
 				name: "Fixture script",
-				type: "script",
-				script: "printf '{\"local\":true}\\n'",
+				type: "exec",
+				command: "sh",
+				json: true,
+				args: ["-c", "printf '{\"local\":true}\\n'"],
 			},
 		],
 	};
@@ -357,7 +360,7 @@ try {
 		await new Promise((done) => setTimeout(done, 100));
 	const run = runtime.get(launch.value.id);
 	assert.equal(run.status, "completed", JSON.stringify(run));
-	assert.equal(run.outputs.run.local, true);
+	assert.equal(run.outputs.run.json.local, true);
 	assert.equal((await request(`/api/runs/${run.id}`)).status, 200);
 	check(
 		"noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run",
@@ -484,7 +487,7 @@ try {
 		i++
 	)
 		await new Promise((done) => setTimeout(done, 100));
-	assert.equal(runtime.get(remoteLaunch.value.id).outputs.run.local, true);
+	assert.equal(runtime.get(remoteLaunch.value.id).outputs.run.json.local, true);
 	assert.equal(
 		(await tlsRequest("/api/auth/keys", "GET", undefined, enrolled.cookie))
 			.value.length,

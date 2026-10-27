@@ -10,16 +10,19 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { FactoryServer } from "../../../../packages/edge-worker/dist/factory/FactoryServer.js";
-import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
 import { LaunchAdmission } from "../../../../packages/edge-worker/dist/factory/LaunchAdmission.js";
 import { OperatorGrants } from "../../../../packages/edge-worker/dist/factory/OperatorGrants.js";
+import { WorkflowSchema } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { UpdateManager } from "../../../../packages/edge-worker/dist/updates/UpdateManager.js";
 import { f1AgentHandlers } from "../../dist/src/MockAgentRunner.js";
+
+import { nodeDisplay } from "./node-display.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const home = mkdtempSync(join(tmpdir(), "f1-update-maintenance-"));
@@ -31,8 +34,6 @@ process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 process.env.BOBS_FACTORY_API_KEY = "synthetic-f1-mcp-check";
 const seedRuntime = new WorkflowRuntime(home, {
 	agent: async () => ({}),
-	script: async () => ({}),
-	tool: async () => ({}),
 });
 const waiting = seedRuntime.create({
 	id: "retained-wait",
@@ -45,31 +46,26 @@ const waiting = seedRuntime.create({
 		workflowId: "fixture",
 		at: new Date().toISOString(),
 	},
-	workflow: {
+	workflow: WorkflowSchema.parse({
+		engineVersion: "nodes-v1",
 		id: "fixture",
 		name: "Fixture",
 		allowedTriggers: ["manual"],
-		steps: [
-			{
-				id: "question",
-				name: "Question",
-				type: "agent",
-				prompt: "Mock",
-				askQuestions: true,
-				next: "end",
-			},
-		],
-	},
+		steps: [nodeDisplay("question", "Retained question", "end")],
+	}),
 });
-waiting.status = "waiting";
-waiting.questions = ["Retained question"];
-waiting.questionBatchId = "retained-batch";
-waiting.checkpoint = {
-	step: "question",
-	agent: { runner: "codex", sessionId: "mock-retained-native-session" },
+void seedRuntime.launch(waiting);
+for (let attempts = 0; !waiting.viewDecision && attempts < 500; attempts++)
+	await new Promise((resolve) => setTimeout(resolve, 10));
+assert.equal(waiting.status, "waiting");
+assert.ok(waiting.viewDecision?.documentDigest);
+// Synthetic native ID: only retention is asserted; no native session executes.
+waiting.checkpoint.agent = {
+	runner: "codex",
+	sessionId: "mock-retained-native-session",
 };
 waiting.sessionSnapshot = { id: waiting.id };
-seedRuntime.save(waiting);
+await seedRuntime.save(waiting);
 await seedRuntime.shutdown();
 const manager = new UpdateManager(home);
 manager.configure({}, 0);
@@ -140,11 +136,17 @@ const initialReceipts = readFileSync(
 	join(home, "factory", "ticket-deliveries.json"),
 	"utf8",
 );
+const listener = createServer();
+await new Promise((resolve) => listener.listen(0, "127.0.0.1", resolve));
+const fixturePort = listener.address().port;
+await new Promise((resolve, reject) =>
+	listener.close((error) => (error ? reject(error) : resolve())),
+);
 const worker = new EdgeWorker({
 	platform: "cli",
 	factoryHome: home,
 	repositories: [],
-	serverPort: 0,
+	serverPort: fixturePort,
 	serverHost: "127.0.0.1",
 	handlers: f1AgentHandlers("mock"),
 });
@@ -203,7 +205,6 @@ try {
 		});
 	for (const name of [
 		"stop_run",
-		"answer_run",
 		"resume_run",
 		"retry_run",
 		"steer_run",
@@ -562,155 +563,102 @@ else result={};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result
 	try {
 		runtime.hooks.execution = async () => undefined;
 		runtime.hooks.prepare = async () => {};
-		for (const tool of ["ci", "merge", "handoff"]) {
+		for (const kind of ["read", "wait"]) {
 			let entered = false,
-				pending = true,
-				submissions = 0,
 				finishProvider;
 			const providerHold = new Promise((resolve) => {
 				finishProvider = resolve;
 			});
-			const url = "https://github.com/fixture/repository/pull/1";
-			const tools = new FactoryTools({
-				postComment: async () => {
-					throw new Error("No external fixture comments");
-				},
-				command: async (_context, exe, args) => {
-					if (exe === "git") return args[0] === "rev-parse" ? "head" : "";
-					const request = JSON.parse(args[0]);
-					if (request.path.endsWith("/merge")) {
-						submissions++;
-						entered = true;
-						await providerHold;
-						return JSON.stringify({ merged: true });
-					}
-					if (/\/pulls\/1$/.test(request.path))
-						return JSON.stringify({
-							html_url: url,
-							number: 1,
-							title: "Fixture",
-							node_id: "PR_fixture",
-							state: "open",
-							draft: false,
-							head: {
-								ref: "feature",
-								sha: "head",
-								repo: { full_name: "fixture/repository" },
-							},
-							base: {
-								ref: "main",
-								sha: "base",
-								repo: { full_name: "fixture/repository" },
-							},
-						});
-					if (request.path !== "graphql") return "[]";
-					if (tool !== "merge") {
-						entered = true;
-						await providerHold;
-					}
-					return JSON.stringify({
-						data: {
-							repository: {
-								squashMergeAllowed: true,
-								mergeCommitAllowed: true,
-								rebaseMergeAllowed: true,
-								pullRequest: {
-									id: "PR_fixture",
-									url,
-									headRefOid: "head",
-									baseRefOid: "base",
-									baseRefName: "main",
-									baseRef: { name: "main", target: { oid: "base" } },
-									state: tool === "merge" && !pending ? "MERGED" : "OPEN",
-									isDraft: false,
-									isCrossRepository: false,
-									isMergeQueueEnabled: false,
-									isInMergeQueue: false,
-									mergeable:
-										tool === "merge"
-											? "MERGEABLE"
-											: pending
-												? "UNKNOWN"
-												: "CONFLICTING",
-									mergeStateStatus: "CLEAN",
-									reviewDecision: "APPROVED",
-									reviewThreads: { nodes: [], pageInfo: {} },
-									comments: { nodes: [], pageInfo: {} },
-									reviews: { nodes: [], pageInfo: {} },
-									statusCheckRollup: {
-										contexts: {
-											nodes: [
-												{
-													name: "fixture",
-													status: "COMPLETED",
-													conclusion: "SUCCESS",
-												},
-											],
-											pageInfo: {},
-										},
-									},
-								},
-							},
-						},
-					});
+			let completions = 0;
+			runtime.hooks.ticketIO = async () => ({
+				read: async () => {
+					entered = true;
+					await providerHold;
+					return { id: "1", ready: true };
 				},
 			});
-			runtime.hooks.tool = (context) => tools.tool(context);
+			runtime.hooks.agent = async () => {
+				completions++;
+				return { done: true };
+			};
+			const read = {
+				id: "read",
+				name: "Controlled ticket read",
+				type: "ticket",
+				op: "read",
+				reference: {
+					provider: "taskbot",
+					server: "taskbot",
+					instance: "https://taskbot.example",
+					project: "fixture",
+					id: 1,
+					url: "https://taskbot.example/p/fixture/t/1",
+				},
+			};
 			const run = runtime.create({
-				id: `passive-${tool}`,
-				title: `Passive ${tool}`,
+				id: `passive-${kind}`,
+				title: `Passive ${kind}`,
 				repositoryId: "fixture",
 				workspace: home,
-				input: "Controlled passive polling",
+				input: "Controlled in-flight IO",
 				triggerOrigin: { type: "manual", workflowId: "fixture", at: "" },
-				workflow: {
+				workflow: WorkflowSchema.parse({
+					engineVersion: "nodes-v1",
 					id: "fixture",
 					name: "Fixture",
 					allowedTriggers: ["manual"],
 					steps: [
+						kind === "read"
+							? { ...read, id: "poll", next: "finish" }
+							: {
+									id: "poll",
+									name: "Wait",
+									type: "wait",
+									body: read,
+									interval: 10,
+									timeout: 30000,
+									until: { path: "/output/ready", equals: true },
+									next: "finish",
+								},
 						{
-							id: "poll",
-							name: "Poll",
-							type: "tool",
-							tool,
+							id: "finish",
+							name: "Finish",
+							type: "agent",
+							prompt: "Controlled completion",
 							next: "end",
-							branches: [{ when: { path: "fix", equals: true }, next: "end" }],
 						},
 					],
-				},
+				}),
 			});
-			run.outputs = { "draft-pr": { url }, ci: { headSha: "head" } };
-			run.humanDecisions = [
-				{ decision: "approve", headSha: "head", reviewId: "retained", at: "" },
-			];
 			const executing = runtime.launch(run);
 			try {
-				await until(() => entered);
-				transaction(`passive-${tool}`);
-				await drain.begin(`passive-${tool}`);
+				await until(() => {
+					assert.notEqual(run.status, "failed", run.error);
+					return entered;
+				});
+				transaction(`passive-${kind}`);
+				await drain.begin(`passive-${kind}`);
 				assert.equal((await inspectPollDrain()).idle, false);
 				assert.equal((await worker.runnerSlots.snapshot()).active, 0);
 				finishProvider();
-				await until(() => !runtime.hasExecutingWork());
 				await executing;
+				await until(() => !runtime.hasExecutingWork());
 				assert.equal((await inspectPollDrain()).idle, true);
 				assert.equal(run.status, "running");
 				assert.equal(run.error, undefined);
-				assert.equal(run.checkpoint.current, "poll");
-				assert.equal(run.humanDecisions[0].reviewId, "retained");
-				assert.equal(run.history.length, 0);
-				pending = false;
+				assert.equal(run.checkpoint.current, "finish");
+				assert.equal(run.history.length, 1);
+				assert.equal(completions, 0);
+				const retained = JSON.stringify(run.outputs.poll);
 				finish();
-				await drain.end(`passive-${tool}`);
+				await drain.end(`passive-${kind}`);
 				await until(
 					() => run.status === "completed" && !runtime.hasExecutingWork(),
 				);
-				if (tool === "merge") {
-					assert.equal(submissions, 1);
-					assert.equal(run.outputs.poll.merged, true);
-				} else assert.equal(run.outputs.poll.fix, true);
+				assert.equal(completions, 1);
+				assert.equal(JSON.stringify(run.outputs.poll), retained);
 				receipts.push(
-					`passive ${tool} settles its current request, drains with zero agent slots, retains checkpoint/approval and resumes through fresh provider evidence`,
+					`node ${kind} drains its in-flight provider request with zero agent slots, retains the output/checkpoint and completes once after release`,
 				);
 			} finally {
 				finishProvider();

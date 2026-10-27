@@ -6,6 +6,9 @@ export default defineConfig({
 		globals: true,
 		environment: "node",
 		setupFiles: ["./test/setup.ts"],
+		// Runtime drives persist checkpoints and fan out internally. Bound file-level
+		// concurrency so disk contention does not exhaust their real-time deadlines.
+		maxWorkers: 2,
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "json", "html"],

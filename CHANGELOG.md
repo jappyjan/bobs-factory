@@ -42,6 +42,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Restore nightly validation after the node-engine cutover: use current Factory, Takeover and Improve drives and retain human decisions, native checkpoints and storage cleanup checks in the updated fixtures. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+
 - Takeovers pass Bob's assessment of the existing PR and branch to clarify, planning and the reviewers again, so they continue the earlier work instead of saying it's missing. ([#197](https://github.com/jappyjan/bobs-factory/pull/197))
 - Fresh Takeovers no longer fail at clarify on their first pass: earlier scope decisions that haven't been produced yet aren't reported as lost records, so Bob asks you instead of giving up. ([#196](https://github.com/jappyjan/bobs-factory/pull/196))
 - Codex runs using an identity profile can now use MCP servers signed in with OAuth (for example Taskbot), instead of failing with "Auth required". ([#195](https://github.com/jappyjan/bobs-factory/pull/195))
