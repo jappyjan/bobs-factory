@@ -58,7 +58,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
-- Restore the exact pre-#214 v2 run projection and pin its historical receipt hash. Keep catalog reconciliation in memory, retain the saved default for preservation checks, and commit reconciled settings only on explicit edits. Verify old/unfixed/fixed receipts on a clone of the real drain snapshot. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173))
+- Restore the exact pre-#214 v2 run projection and pin its historical receipt hash. Keep catalog reconciliation in memory, retain the saved default for preservation checks, and commit reconciled settings only on explicit edits. Verify old/unfixed/fixed receipts on a clone of the real drain snapshot. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173), [#220](https://github.com/jappyjan/bobs-factory/pull/220))
 
 - Keep complete desktop upgrade/rollback validation compatible with node-based recipes, retaining real waiting decisions, native checkpoints, worker identity and recovery checks; audit maintained release fixtures for removed step shapes and routes. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#217](https://github.com/jappyjan/bobs-factory/pull/217))
 
