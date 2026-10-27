@@ -35,15 +35,20 @@ export function extractFailures(text) {
 		}
 		failures.push({ header, body: body.join("\n").trimEnd() });
 	};
+	// node:test prints details only in its closing "failing tests:" section; the
+	// inline "✖" lines carry no assertion text.
+	const summaryStart = lines.findIndex((line) =>
+		/^\s*(✖\s+)?failing tests:?\s*$/i.test(line),
+	);
 	for (let index = 0; index < lines.length; index++) {
 		const vitest = /^\s*FAIL\s+(\S.*)$/.exec(lines[index]);
 		if (vitest) {
 			add(vitest[1].trim(), index + 1);
 			continue;
 		}
+		if (summaryStart >= 0 && index <= summaryStart) continue;
 		const nodeTest = /^\s*✖\s+(.+?)(?: \([\d.]+ms\))?$/.exec(lines[index]);
-		if (nodeTest && !/^failing tests:?$/i.test(nodeTest[1]))
-			add(nodeTest[1].trim(), index + 1);
+		if (nodeTest) add(nodeTest[1].trim(), index + 1);
 	}
 	return failures;
 }
