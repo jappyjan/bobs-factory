@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- Allow the release publish job 90 minutes so a slow prepared-release download cannot cancel it mid-publication. (Taskbot #175)
+
 - Gate release candidates on a passed `CI / Validate` run for the exact frozen commit (wait for a running CI, dispatch one when none exists, fail on red) and run only release-specific checks in the release build (`release-checks.yml`); the evidence records the CI run. Binary and checks artifacts no longer carry `run_attempt`, so "Re-run failed jobs" works, and a full rerun re-derives the frozen candidate instead of failing to restore it. (Taskbot #175)
 
 - Shard CI into parallel jobs (workspace, six balanced edge-worker shards, release scripts) with per-step timeouts, failing-test summaries in the job log and step summary, and kept logs; stop `setup-tests` waiting on `needrestart`, cache the pnpm store and tool packages, and split the 7-minute Factory composition test. Make trial launcher tests use probed free ports. ([#221](https://github.com/jappyjan/bobs-factory/pull/221))

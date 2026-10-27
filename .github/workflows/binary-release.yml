@@ -125,7 +125,9 @@ jobs:
     needs: [resolve, prepare]
     if: needs.resolve.outputs.publish == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Downloading the prepared release alone took 25 min on a slow day (run
+    # 40558759720); a 30 min limit cancelled the job mid-publication.
+    timeout-minutes: 90
     # All release mutations across versions/channels share this repository lock.
     concurrency:
       group: bobs-factory-repository-publication
