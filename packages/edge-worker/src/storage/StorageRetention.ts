@@ -134,7 +134,11 @@ export class StorageRetention {
 		if (this.abort.signal.aborted) this.abort = new AbortController();
 		if (!this.watcher) {
 			this.watcher = watch(this.store.directory, (_event, name) => {
-				if (name === "inventory-revision.json") this.requestReconciliation();
+				if (
+					name === "inventory-revision.json" ||
+					name === "update-completed.json"
+				)
+					this.requestReconciliation();
 			});
 			this.watcher.on("error", () => this.requestReconciliation());
 			this.watcher.unref();

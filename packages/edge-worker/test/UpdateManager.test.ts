@@ -1,4 +1,11 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -70,6 +77,104 @@ function fixture(value = candidate) {
 	const manager = new UpdateManager(home, source, lifecycle, installed);
 	return { home, manager, source, lifecycle, calls };
 }
+it.each([
+	"preflight",
+	"snapshot",
+] as const)("cancels a throwing %s and releases operation ownership in the live supervisor", async (step) => {
+	const { home, manager, lifecycle } = fixture();
+	manager.configure({ channel: "nightly" }, 0);
+	await manager.check();
+	await manager.stage();
+	vi.mocked(lifecycle[step]).mockRejectedValueOnce(
+		Object.assign(new Error("ENOSPC: no space left on device"), {
+			code: "ENOSPC",
+		}),
+	);
+	await manager.reconcile();
+	expect(new UpdateManager(home).status().transaction).toMatchObject({
+		phase: "cancelled",
+		switchStarted: false,
+		error: "ENOSPC: no space left on device",
+		release: { outcome: "cancelled", status: "acknowledged" },
+	});
+	expect(manager.status().error).toBe("ENOSPC: no space left on device");
+	expect(lifecycle.stop).not.toHaveBeenCalled();
+	expect(lifecycle.releaseMaintenance).toHaveBeenCalledOnce();
+	expect(existsSync(join(home, "updates", "operation.lock"))).toBe(false);
+	expect(
+		readdirSync(join(home, "updates")).filter((name) =>
+			name.startsWith("operation-reserve-"),
+		),
+	).toEqual([]);
+	// Same process can inspect/check and explicitly retry; no dead-owner recovery.
+	await manager.check();
+	manager.requestInstall(
+		candidateKey(candidate),
+		manager.status().revision,
+		true,
+	);
+	await manager.reconcile();
+	expect(manager.status().transaction?.phase).toBe("succeeded");
+});
+
+it.each([
+	"preflight",
+	"snapshot",
+] as const)("records %s failure and frees its lock when the volume also refuses journal/guard writes", async (step) => {
+	const { default: fs } = await import("node:fs");
+	const { syncBuiltinESMExports } = await import("node:module");
+	const { home, manager, lifecycle } = fixture();
+	manager.configure({ channel: "nightly" }, 0);
+	await manager.check();
+	await manager.stage();
+	const write = fs.writeFileSync,
+		symlink = fs.symlinkSync,
+		remove = fs.rmSync;
+	let exhausted = false;
+	const enospc = () =>
+		Object.assign(new Error("ENOSPC: volume exhausted"), { code: "ENOSPC" });
+	fs.writeFileSync = ((...args) => {
+		if (exhausted) throw enospc();
+		return write(...args);
+	}) as typeof write;
+	fs.symlinkSync = ((...args) => {
+		if (exhausted) throw enospc();
+		return symlink(...args);
+	}) as typeof symlink;
+	fs.rmSync = ((path, options) => {
+		let released = 0;
+		try {
+			released = fs.lstatSync(path).size;
+		} catch {}
+		remove(path, options);
+		if (released >= 1024 * 1024) exhausted = false;
+	}) as typeof remove;
+	syncBuiltinESMExports();
+	vi.mocked(lifecycle[step]).mockImplementationOnce(async () => {
+		exhausted = true;
+		throw enospc();
+	});
+	try {
+		await manager.reconcile();
+		expect(exhausted).toBe(false);
+		expect(manager.status().transaction).toMatchObject({
+			phase: "cancelled",
+			error: "ENOSPC: volume exhausted",
+			release: { outcome: "cancelled", status: "acknowledged" },
+		});
+		expect(existsSync(join(home, "updates", "operation.lock"))).toBe(false);
+		expect(existsSync(join(home, "updates", "operation.lock.reclaim"))).toBe(
+			false,
+		);
+		await manager.check();
+	} finally {
+		fs.writeFileSync = write;
+		fs.symlinkSync = symlink;
+		fs.rmSync = remove;
+		syncBuiltinESMExports();
+	}
+});
+
 it("keeps ownership blocking visible across status/check and preserves consent until verified reconciliation", async () => {
 	const { home, manager, lifecycle } = fixture({
 		...candidate,

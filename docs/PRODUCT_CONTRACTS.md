@@ -339,6 +339,16 @@ Defaults are automatic startup/daily reconciliation, two verified usable rollbac
 (minimum one), seven-day disposable artifacts, thirty-day delivered worktrees and
 a five-GiB warning threshold. Preservation overrides age, count and disk pressure.
 
+Owned runtime updates retain the last successful rollback snapshot plus live
+transaction references. A later successful update makes earlier proven completed
+owned snapshots disposable and notifies Storage after releasing operation ownership.
+Historical snapshot election also completes existing enrollment records, while
+current rollback and in-flight snapshots cannot be elected disposable. Copying
+checks available space against owned bytes plus a margin; a reserved journal budget
+keeps copy failures visible and releases update ownership. Agent-home tooling links
+are preserved verbatim in snapshots/restore and omitted from preflight; transient
+sockets/FIFOs there are skipped. Other owned-state link/special-file refusals remain.
+
 Cleanup uses process-start-aware exclusion, durable use before provider execution,
 fresh accepted-provider delivery checks, complete owner/reference checks and safe
 Git removal. Symlinked owned roots, changed identity, unique ignored files, native

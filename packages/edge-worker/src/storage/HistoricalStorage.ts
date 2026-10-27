@@ -14,7 +14,10 @@ import {
 	verifyStorageIntegrity,
 	writeStorageIntegrity,
 } from "bobs-factory-core";
-import { UpdateTransactionSchema } from "../updates/UpdateManager.js";
+import {
+	UpdateStateSchema,
+	UpdateTransactionSchema,
+} from "../updates/UpdateManager.js";
 
 interface HistoricalCandidate {
 	id: string;
@@ -270,6 +273,21 @@ export class HistoricalStorage {
 					const state = (await readStorageJson(
 						join(this.store.home, "updates", "state.json"),
 					)) as { transaction?: Record<string, any> } | undefined;
+					const current = state ? UpdateStateSchema.parse(state) : undefined;
+					if (
+						candidate.category === "snapshot" &&
+						(current?.transaction?.snapshot === candidate.path ||
+							current?.rollbackSnapshot?.path === candidate.path ||
+							(current?.transaction?.id === input.operation &&
+								!(
+									["succeeded", "rolled-back", "cancelled"].includes(
+										current.transaction.phase,
+									) && current.transaction.release?.status === "acknowledged"
+								)))
+					)
+						throw new Error(
+							"Snapshot is still required by the latest completed or in-flight update",
+						);
 					const transaction =
 						state?.transaction?.id === input.operation
 							? state.transaction
@@ -300,7 +318,18 @@ export class HistoricalStorage {
 							: "..";
 					const owns =
 						candidate.category === "snapshot"
-							? transaction.snapshot === candidate.path
+							? transaction.snapshot === candidate.path ||
+								(candidate.recordId !== undefined &&
+									candidate.operation === transaction.id &&
+									candidate.path ===
+										join(
+											this.store.home,
+											"updates",
+											"snapshots",
+											transaction.id,
+										) &&
+									(await this.store.record(candidate.recordId)).producer ===
+										"OwnedUpdateLifecycle")
 							: candidate.category === "staging"
 								? suffix !== ".." &&
 									!suffix.startsWith(`..${sep}`) &&
@@ -346,6 +375,11 @@ export class HistoricalStorage {
 						`transaction:${input.operation}`,
 					];
 					record.verifiedAt = new Date().toISOString();
+					if (!copiedState) {
+						record.completedAt ??= record.verifiedAt;
+						record.reconciledAt = record.verifiedAt;
+						if (record.category === "snapshot") record.rollback = "disposable";
+					}
 					record.historicalElection = {
 						preview: preview.id,
 						at: new Date().toISOString(),
