@@ -115,6 +115,10 @@ export class StorageRetention {
 	private running?: Promise<void>;
 	private stopped = false;
 	private requested = false;
+	// External wake-ups since start; a sweep that began before the latest one may
+	// have evaluated records before they changed, so it must be repeated.
+	private wakeups = 0;
+	private sweepWakeups?: number;
 	private watcher?: FSWatcher;
 	private abort = new AbortController();
 	constructor(
@@ -160,6 +164,12 @@ export class StorageRetention {
 		);
 	}
 	requestReconciliation() {
+		if (this.stopped) return;
+		this.wakeups++;
+		this.queueReconciliation();
+	}
+	/** Continue or repeat work without recording a new external wake-up. */
+	private queueReconciliation() {
 		if (this.stopped) return;
 		const alreadyRequested = this.requested;
 		this.requested = true;
@@ -320,6 +330,10 @@ export class StorageRetention {
 			previous.revision === policy.revision
 				? previous.offset
 				: 0;
+		// A sweep resumed from a saved cursor was started by an earlier pass whose
+		// view of the records already behind the cursor may be stale.
+		if (offset === 0) this.sweepWakeups = this.wakeups;
+		else this.sweepWakeups ??= -1;
 		const preview: StoragePreview = {
 			id: randomUUID(),
 			policyRevision: policy.revision,
@@ -457,6 +471,13 @@ export class StorageRetention {
 			}
 			preview.complete = offset === rollbackIndex.count;
 			preview.deferred = !preview.complete;
+			if (preview.complete && this.sweepWakeups !== this.wakeups) {
+				// A wake-up arrived during this sweep; sweep again from the start so
+				// records changed behind the cursor are not left for the next interval.
+				// Only a started coordinator owns automatic passes.
+				this.sweepWakeups = undefined;
+				if (this.watcher) this.queueReconciliation();
+			}
 			await publishStorageJson(
 				join(this.store.directory, "continuation.json"),
 				{
@@ -782,6 +803,6 @@ export class StorageRetention {
 			};
 			await this.perform(preview, selected, outcome);
 		}
-		if (preview.deferred) this.requestReconciliation();
+		if (preview.deferred) this.queueReconciliation();
 	}
 }

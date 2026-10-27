@@ -5,6 +5,16 @@ runs:
   steps:
     - name: Install pinned pnpm
       uses: pnpm/action-setup@v6
+    - name: Locate the pnpm store
+      id: store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+    - name: Restore the pnpm store
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
     - name: Install locked dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --strict-peer-dependencies

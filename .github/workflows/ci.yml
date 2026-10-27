@@ -5,12 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Release builds dispatch CI for a main commit that has none (for example a
+  # squash commit whose message carries [skip ci]).
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || (github.event_name == 'workflow_dispatch' && format('dispatch-{0}', github.run_id)) || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,14 +38,48 @@ jobs:
           args: -color
 
   test:
-    name: Build and test (Node 24.x)
+    name: Test (${{ matrix.name }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: workspace packages and apps
+            slug: workspace
+            command: pnpm -r --filter '!bobs-factory-edge-worker' test:run
+          - name: edge-worker 1/6
+            slug: edge-worker-1
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 1 6 packages/edge-worker)
+          - name: edge-worker 2/6
+            slug: edge-worker-2
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 2 6 packages/edge-worker)
+          - name: edge-worker 3/6
+            slug: edge-worker-3
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 3 6 packages/edge-worker)
+          - name: edge-worker 4/6
+            slug: edge-worker-4
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 4 6 packages/edge-worker)
+          - name: edge-worker 5/6
+            slug: edge-worker-5
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 5 6 packages/edge-worker)
+          - name: edge-worker 6/6
+            slug: edge-worker-6
+            command: pnpm --filter bobs-factory-edge-worker exec vitest run $(node scripts/ci/shard-tests.mjs 6 6 packages/edge-worker)
+          - name: release scripts
+            slug: release-scripts
+            command: pnpm --filter bobs-factory-desktop exec bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test --test-reporter=spec scripts/tests/*.test.mjs
+    env:
+      SHARD_NAME: ${{ matrix.name }}
+      SHARD_COMMAND: ${{ matrix.command }}
+      SHARD_SLUG: ${{ matrix.slug }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-tests
+      - name: Set up tests
+        uses: ./.github/actions/setup-tests
+        timeout-minutes: 8
       - name: Create test environment
         run: |
           cat > .env << EOF
@@ -55,7 +92,33 @@ jobs:
       # Each TypeScript build checks its types before emitting on the supported Node 24 runtime.
       - name: Build workspace packages and dashboard
         run: pnpm build
-      - name: Run workspace tests
-        run: pnpm -r test:run
-      - name: Verify installation and release safeguards
-        run: node --test scripts/tests/*.test.mjs
+        timeout-minutes: 8
+      - name: Run tests (${{ matrix.name }})
+        run: node scripts/ci/run-shard.mjs --name "$SHARD_NAME" --log "$RUNNER_TEMP/test-logs/$SHARD_SLUG.log" -- bash -c "$SHARD_COMMAND"
+      - name: Keep the full shard log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-logs-${{ matrix.slug }}
+          path: ${{ runner.temp }}/test-logs/
+          retention-days: 7
+          overwrite: true
+          if-no-files-found: ignore
+
+  # One stable check for the whole workflow: every shard and lint must succeed.
+  validate:
+    name: Build and test (Node 24.x)
+    needs: [lint, test]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every job
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module -e '
+            const jobs = Object.entries(JSON.parse(process.env.RESULTS));
+            for (const [name, job] of jobs) console.log(name + ": " + job.result);
+            if (jobs.some(([, job]) => job.result !== "success")) process.exit(1);
+          '

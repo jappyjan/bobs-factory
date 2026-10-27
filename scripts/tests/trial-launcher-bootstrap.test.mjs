@@ -4,9 +4,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
+import { freePortPair, retryWhileOccupied } from "./free-port.mjs";
 import { trialBootstrapFixture } from "./trial-bootstrap-fixture.mjs";
-
-const port = 52000 + (process.pid % 10000);
 
 function launch(f, args = [], release) {
 	if (release)
@@ -31,6 +30,19 @@ function launch(f, args = [], release) {
 	return { child, closed, output: () => output };
 }
 
+// Launches to completion on a probed free port; another process taking the port
+// between probe and launch is retried on a new one.
+async function launchToExit(f, args, release) {
+	const { result } = await retryWhileOccupied(
+		async (port) => {
+			const run = launch(f, [...args, "--port", String(port)], release);
+			return { run, result: await run.closed };
+		},
+		({ run }) => /is occupied/.test(run.output()),
+	);
+	return result;
+}
+
 async function waitFor(check, label, timeoutMs = 2500) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
@@ -51,7 +63,7 @@ test("explicit stable channel reaches the unsigned bootstrap and rejects beta", 
 			"--version",
 			"1.0.0-beta",
 			"--port",
-			String(port),
+			String(await freePortPair()),
 			"--no-open",
 		]);
 		const result = await run.closed;
@@ -74,8 +86,7 @@ test("unbound default selection retains the authenticated beta fallback", {
 }, async () => {
 	const f = trialBootstrapFixture("1.0.0-beta");
 	try {
-		const run = launch(f, ["--port", String(port + 4), "--no-open"]);
-		const result = await run.closed;
+		const { run, result } = await launchToExit(f, ["--no-open"]);
 		assert.equal(result.code, 0, run.output());
 		assert.match(run.output(), /verified beta/);
 		assert.match(run.output(), /runtime-1\.0\.0-beta/);
@@ -93,8 +104,7 @@ for (const release of [
 	}, async () => {
 		const f = trialBootstrapFixture(release.version);
 		try {
-			const run = launch(f, ["--port", String(port + 1), "--no-open"], release);
-			const result = await run.closed;
+			const { run, result } = await launchToExit(f, ["--no-open"], release);
 			assert.equal(result.code, 0, run.output());
 			assert.match(
 				run.output(),
@@ -121,7 +131,7 @@ test("TERM during bootstrap download stops its owned process group before cleanu
 	const f = trialBootstrapFixture("1.0.0", { slowCurl: true });
 	let run;
 	try {
-		run = launch(f, ["--port", String(port + 2), "--no-open"]);
+		run = launch(f, ["--port", String(await freePortPair()), "--no-open"]);
 		await waitFor(() => existsSync(f.curlPid), "controlled curl child");
 		const curlPid = Number(readFileSync(f.curlPid, "utf8"));
 		run.child.kill("SIGTERM");
@@ -176,7 +186,7 @@ test("npm exits after TERM reaches a packed launcher during bootstrap download",
 				"--",
 				"bobs-factory-trial",
 				"--port",
-				String(port + 3),
+				String(await freePortPair()),
 				"--no-open",
 			],
 			{ env: f.env, stdio: ["ignore", "pipe", "pipe"] },

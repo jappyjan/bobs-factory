@@ -457,3 +457,60 @@ it("resumes a real filesystem inventory after crossing the 1000-entry slice boun
 		await coordinator.stop();
 	}
 });
+
+it("covers records that became eligible behind a resumed sweep after a mid-sweep wake-up", async () => {
+	const { coordinator } = await fixture();
+	const behind = await artifact(coordinator, 100, "staging");
+	const slow = await artifact(coordinator, 101, "staging");
+	for (const record of [behind, slow])
+		await coordinator.store.revise(record.id, (value) => {
+			value.completedAt = "2020-01-01T00:00:00.000Z";
+		});
+	let behindHeld = true,
+		slowObservations = 0;
+	let slowEntered!: () => void, releaseSlow!: () => void;
+	const entered = new Promise<void>((resolve) => {
+			slowEntered = resolve;
+		}),
+		gate = new Promise<void>((resolve) => {
+			releaseSlow = resolve;
+		});
+	const removed: string[] = [];
+	coordinator.adapters.staging = {
+		observe: async (record) => {
+			if (record.id === slow.id) {
+				// The first slice of the later record stays incomplete, so the sweep
+				// resumes at it while the earlier record has already been evaluated.
+				if (slowObservations++ === 0) {
+					slowEntered();
+					await gate;
+					return { record, complete: false, protection: [] };
+				}
+				return { record, complete: true, protection: ["pinned"] };
+			}
+			return {
+				record,
+				complete: true,
+				protection: behindHeld ? ["held"] : [],
+				filesystemEntries: 0,
+			};
+		},
+		remove: async (record) => {
+			removed.push(record.id);
+			await rm(record.path, { recursive: true });
+		},
+	};
+	await coordinator.store.configure(
+		{ enabled: true },
+		(await coordinator.store.policy()).revision,
+	);
+	await coordinator.start();
+	await entered;
+	// The earlier record was evaluated as held; now it becomes disposable and the
+	// producer wakes the coordinator while the sweep is still in progress.
+	behindHeld = false;
+	coordinator.requestReconciliation();
+	releaseSlow();
+	await expect.poll(() => removed, { timeout: 10000 }).toEqual([behind.id]);
+	await coordinator.stop();
+});

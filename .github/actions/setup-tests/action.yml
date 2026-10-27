@@ -11,11 +11,45 @@ runs:
       with:
         bun-version: '1.4.2'
     - uses: ./.github/actions/install-dependencies
+    - name: Restore downloaded test tool packages
+      uses: actions/cache@v6
+      with:
+        path: ~/apt-archives
+        key: apt-debs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.github/actions/setup-tests/action.yml') }}
     - name: Install video, sandbox and release test tools
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends -y apparmor-profiles bubblewrap ffmpeg jq
+        set -euo pipefail
+        # needrestart (a dpkg hook on the runner image) restarts services such as
+        # php-fpm after the install and can block for 90 s or more. Test tools never
+        # need a service restarted; sudo drops exported variables, so pass them through env.
+        apt_get() {
+          sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::ForceIPv4=true "$@"
+        }
+        mkdir -p "$HOME/apt-archives"
+        sudo cp -n "$HOME"/apt-archives/*.deb /var/cache/apt/archives/ 2> /dev/null || true
+        apt_get update -qq
+        # A stalled mirror connection can hang for minutes while a retry completes in
+        # seconds (apt resumes partial downloads): bound each attempt and retry.
+        for attempt in 1 2 3 4 5 6; do
+          if timeout 60 sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::ForceIPv4=true install --no-install-recommends -y \
+            -o APT::Keep-Downloaded-Packages=true apparmor-profiles bubblewrap ffmpeg jq; then
+            break
+          fi
+          [ "$attempt" = 6 ] && { echo 'Installing test tools failed six times' >&2; exit 1; }
+          echo "::warning::Installing test tools timed out or failed (attempt $attempt); retrying"
+          sudo dpkg --configure -a || true
+          if [ "$attempt" = 2 ]; then
+            # The runner's regional mirror can be unreachable for the whole job.
+            echo '::warning::Falling back to the canonical Ubuntu archive'
+            sudo sed -i 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' /etc/apt/sources.list.d/ubuntu.sources || true
+            apt_get update -qq || true
+          fi
+        done
+        sudo cp -n /var/cache/apt/archives/*.deb "$HOME/apt-archives/" 2> /dev/null || true
+        sudo chown -R "$(id -u):$(id -g)" "$HOME/apt-archives"
     - name: Verify Linux Exec sandbox prerequisites
       shell: bash
       run: |
