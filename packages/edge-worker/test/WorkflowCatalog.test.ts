@@ -516,3 +516,75 @@ it("forks every bundled callable/root recipe except Simple with an independent r
 		).not.toBe(bundled.steps);
 	}
 });
+
+it("preserves disabled stored legacy tool graphs while saving current recipes and defaults", async () => {
+	const { runtime, home, path } = fixture();
+	const state = runtime.catalog.read();
+	const legacy = {
+		id: "legacy-tool-fork",
+		name: "Historical fork",
+		labels: [],
+		description: "Retained verbatim",
+		steps: [
+			{ id: "old", name: "Old tool", type: "tool", tool: "retired-tool" },
+		],
+		oldExtension: { evidence: "preserve" },
+	};
+	runtime.importWorkflows({
+		...state,
+		locals: [legacy],
+		order: [...state.order, legacy.id],
+	});
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => create(runtime),
+		stop: (id) => runtime.stop(id),
+	});
+	try {
+		const workflow = structuredClone(
+			runtime.listWorkflows().find((w) => w.id === "v2-review-loop")!,
+		);
+		const role = workflowRoles(workflow.steps)[0]!;
+		role.step.model = "gpt-6-sol";
+		const patch = await server.app.inject({
+			method: "PATCH",
+			url: "/api/workflows",
+			headers: { "x-factory-request": "1" },
+			payload: { workflows: [workflow] },
+		});
+		expect(patch.statusCode, patch.body).toBe(200);
+		expect(
+			runtime.catalog.read().preferences[workflow.id]![role.role]!.model,
+		).toBe("gpt-6-sol");
+		const savedDefault = await server.app.inject({
+			method: "PUT",
+			url: "/api/workflows/default",
+			headers: { "x-factory-request": "1" },
+			payload: { defaultWorkflow: "factory" },
+		});
+		expect(savedDefault.statusCode, savedDefault.body).toBe(200);
+		expect(runtime.getDefaultWorkflow()).toBe("factory");
+		expect(runtime.catalog.metadata(legacy.id).enabled).toBe(false);
+		expect(new WorkflowCatalog(join(home, "factory")).read().locals).toEqual([
+			legacy,
+		]);
+		const bytes = readFileSync(path, "utf8");
+		const current = runtime.listWorkflows();
+		expect(() =>
+			runtime.catalog.save(
+				current.map((w) => (w.id === legacy.id ? { ...w, name: "Edited" } : w)),
+			),
+		).toThrow("Unknown node type: tool");
+		expect(() =>
+			runtime.catalog.save([...current, { ...legacy, id: "new-legacy" }]),
+		).toThrow("Unknown node type: tool");
+		expect(() => runtime.catalog.save([...current, legacy])).toThrow(
+			"Duplicate workflow",
+		);
+		expect(readFileSync(path, "utf8")).toBe(bytes);
+	} finally {
+		await server.stop();
+	}
+});

@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Component, type ReactNode, useEffect, useMemo, useState } from "react";
-import { api, artifactsOf, friendly, screenshotUrl } from "./client";
-import { LazyImage } from "./media";
+import { api, artifactsOf, friendly } from "./client";
 import { useRestorableState } from "./restoration";
 import { Button, External, Markdown, Modal, useToast } from "./ui";
 export function artifactType(value: unknown) {
@@ -29,7 +28,7 @@ export function ArtifactCard({
 }: {
 	artifact: any;
 	run: any;
-	onOpen: (name: string, image?: number) => void;
+	onOpen: (name: string) => void;
 }) {
 	const kind = artifactType(artifact.value);
 	return (
@@ -104,14 +103,7 @@ export function Structure({
 		</dl>
 	);
 }
-export function RenderArtifact({
-	v,
-}: {
-	v: any;
-	name: string;
-	run: any;
-	onImage: (i: number) => void;
-}) {
+export function RenderArtifact({ v }: { v: any; name: string; run: any }) {
 	return typeof v === "string" ? (
 		<Markdown>{v}</Markdown>
 	) : (
@@ -125,9 +117,9 @@ export function Inspector({
 	onChange,
 }: {
 	run: any;
-	selected: { name: string; image?: number } | undefined;
+	selected: { name: string } | undefined;
 	onClose: () => void;
-	onChange: (name: string, image?: number) => void;
+	onChange: (name: string) => void;
 }) {
 	const toast = useToast(),
 		cache = useQueryClient(),
@@ -185,27 +177,15 @@ export function Inspector({
 					gcTime: 300000,
 				});
 		}
-		if (selected.image !== undefined) {
-			const next = selected.image + 1;
-			if (v?.screenshots?.[next]) {
-				const image = new Image();
-				image.src = screenshotUrl(run, next, selected.name);
-			}
-		}
-	}, [selected, index, run, artifacts, cache, v?.screenshots]);
+	}, [selected, index, run, artifacts, cache]);
 
 	const move = (delta: number) => {
 		if (!selected) return;
-		if (selected.image !== undefined) {
-			const length = v?.screenshots?.length ?? 0;
-			if (length)
-				onChange(selected.name, (selected.image + delta + length) % length);
-		} else if (artifacts.length)
+		if (artifacts.length)
 			onChange(
 				artifacts[(index + delta + artifacts.length) % artifacts.length]!.name,
 			);
 	};
-	const shot = v?.screenshots?.[selected?.image ?? -1];
 	return (
 		<Modal
 			open={Boolean(selected)}
@@ -226,11 +206,6 @@ export function Inspector({
 				if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
 					event.preventDefault();
 					move(event.key === "ArrowLeft" ? -1 : 1);
-				}
-				if (event.key === "Escape" && selected?.image !== undefined) {
-					event.preventDefault();
-					event.stopPropagation();
-					onChange(selected.name);
 				}
 			}}
 		>
@@ -278,10 +253,7 @@ export function Inspector({
 					</Button>
 				</div>
 			</div>
-			<div
-				className="inspector-body"
-				key={`${selected?.name}/${selected?.image ?? "all"}/${raw}`}
-			>
+			<div className="inspector-body" key={`${selected?.name}/${raw}`}>
 				{full.isLoading ? (
 					<p role="status">
 						Loading {Math.ceil((artifact?.value as any)?.size / 1024)} KB…
@@ -290,44 +262,9 @@ export function Inspector({
 					<p role="alert">{full.error.message}</p>
 				) : raw ? (
 					<pre>{JSON.stringify(v, null, 2)}</pre>
-				) : shot ? (
-					<div className="lightbox">
-						<LazyImage
-							src={screenshotUrl(run, selected!.image!, selected!.name)}
-							alt={shot.caption}
-						/>
-						<h3>{shot.caption}</h3>
-						<p className="muted">
-							{shot.area} · {shot.state}
-						</p>
-						<div className="actions">
-							<Button variant="secondary" onClick={() => move(-1)}>
-								‹ Prev
-							</Button>
-							<span>
-								{selected!.image! + 1} of {v.screenshots.length}
-							</span>
-							<Button variant="secondary" onClick={() => move(1)}>
-								Next ›
-							</Button>
-							<Button variant="ghost" onClick={() => onChange(selected!.name)}>
-								All screenshots
-							</Button>
-							<External
-								href={`${location.origin}${screenshotUrl(run, selected!.image!, selected!.name)}`}
-							>
-								Open original ↗
-							</External>
-						</div>
-					</div>
 				) : (
 					<ArtifactBoundary key={selected!.name} value={v}>
-						<RenderArtifact
-							name={selected!.name}
-							v={v}
-							run={run}
-							onImage={(i) => onChange(selected!.name, i)}
-						/>
+						<RenderArtifact name={selected!.name} v={v} run={run} />
 					</ArtifactBoundary>
 				)}
 			</div>

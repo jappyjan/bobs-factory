@@ -26,6 +26,10 @@ import {
 import { OwnedUpdateLifecycle } from "../../apps/cli/dist/src/services/OwnedUpdateLifecycle.js";
 import { FactoryClient } from "../../apps/cli/dist/src/tui/client.js";
 import { desktopExecutable } from "../../apps/desktop/src/local-runtime.mjs";
+import {
+	preservedCheckpoint,
+	questionStep,
+} from "../../apps/desktop/test/display-fixture.mjs";
 import { defaultWorkflows } from "../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { requestFactoryTerminalSession } from "../../packages/edge-worker/dist/factory/FactoryAuthOperator.js";
 import { validateWorkflows } from "../../packages/edge-worker/dist/factory/Workflow.js";
@@ -527,15 +531,15 @@ try {
 		{
 			id: "unsigned-update-preservation",
 			name: "Controlled native update preservation",
-			entry: "question",
+			engineVersion: "nodes-v1",
 			steps: [
 				{
-					id: "question",
-					name: "Ask once",
+					id: "prepare",
+					name: "Retained native checkpoint",
 					type: "agent",
 					prompt: "Mock only",
-					askQuestions: true,
 				},
+				questionStep("question", "Choose a color"),
 			],
 		},
 	]).at(-1);
@@ -548,13 +552,7 @@ try {
 				runner: "codex",
 				cwd: repo,
 			});
-			return { questions: ["Choose a color"] };
-		},
-		script: async () => {
-			throw Error("Unexpected script");
-		},
-		tool: async () => {
-			throw Error("Unexpected tool");
+			return { prepared: true };
 		},
 	});
 	const run = runtime.create({
@@ -575,6 +573,7 @@ try {
 		"waiting fixture did not persist",
 	);
 	assert.equal(mockCalls, 1);
+	assert(run.viewDecision, "Update fixture must wait at a Display node");
 	const sentinel = join(repo, "accepted-evidence.txt");
 	writeFileSync(sentinel, "retained worktree evidence");
 	const hostNative = join(process.env.HOME, ".codex");
@@ -807,12 +806,17 @@ try {
 			"workflowDefinitions",
 			"checkpoint",
 			"outputs",
-			"questions",
-			"questionBatchId",
-			"answers",
-			"reviewGate",
+			"viewDecision",
+			"viewRecords",
+			"viewDisplays",
 		])
-			assert.deepEqual(next[key], persisted[key], `preserve ${key}`);
+			assert.deepEqual(
+				key === "checkpoint" ? preservedCheckpoint(next[key]) : next[key],
+				key === "checkpoint"
+					? preservedCheckpoint(persisted[key])
+					: persisted[key],
+				`preserve ${key}`,
+			);
 		assert.equal(
 			readFileSync(authMarker, "utf8"),
 			"TEST ONLY credential boundary",
@@ -1231,6 +1235,39 @@ try {
 			// Real Homebrew/DEB/AUR/Nix/AppImage install trials are separate native gates.
 		},
 	);
+	await check(
+		"retained Display question accepts a current authenticated response after updates",
+		async () => {
+			const current = JSON.parse(
+				readFileSync(
+					join(nativeHome, "factory/runs", `${run.id}.json`),
+					"utf8",
+				),
+			);
+			assert.equal(current.status, "waiting");
+			const view = current.viewDecision;
+			assert(view, "Update fixture must retain an actionable Display decision");
+			const response = await api.post(`/api/runs/${run.id}/view-answer`, {
+				batchId: view.id,
+				digest: view.digest,
+				documentDigest: view.documentDigest,
+				accepted: true,
+				values: { color: "Blue" },
+			});
+			assert.deepEqual(response.output.values, { color: "Blue" });
+			await until(
+				() =>
+					JSON.parse(
+						readFileSync(
+							join(nativeHome, "factory/runs", `${run.id}.json`),
+							"utf8",
+						),
+					).status === "completed",
+				"Display response did not complete preserved run",
+			);
+		},
+	);
+
 	assert(
 		f.requests.every((r) => !r.authorization),
 		"No fixture release request may carry provider credentials",

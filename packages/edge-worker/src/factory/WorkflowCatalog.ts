@@ -721,8 +721,35 @@ export class WorkflowCatalog {
 	): Workflow[] {
 		// New authored graphs are modern even when every optional setting is absent.
 		// Existing unversioned recipes retain their explicit legacy load boundary.
-		const incoming = z.array(WorkflowSchema).parse(value);
-		const proposed = validateWorkflows(incoming);
+		const legacy = this.state.locals.filter(
+			(workflow) => workflow.engineVersion !== "nodes-v1",
+		);
+		const retainedLegacy = new Set<Workflow>();
+		const proposed = z
+			.array(z.unknown())
+			.min(1)
+			.max(200)
+			.parse(value)
+			.map((item) => {
+				const stored = legacy.find((workflow) =>
+					isDeepStrictEqual(workflow, item),
+				);
+				if (!stored) return WorkflowSchema.parse(item);
+				const copy = structuredClone(stored);
+				retainedLegacy.add(copy);
+				return copy;
+			});
+		// Historical graphs are read-only: only an exact stored copy bypasses the
+		// current node schema. New or edited graphs still require full validation.
+		validateWorkflows(
+			proposed.filter((workflow) => !retainedLegacy.has(workflow)),
+		);
+		const ids = new Set<string>();
+		for (const workflow of proposed) {
+			if (ids.has(workflow.id))
+				throw new Error(`Duplicate workflow: ${workflow.id}`);
+			ids.add(workflow.id);
+		}
 		const next = structuredClone(this.state);
 		next.locals = [];
 		next.defaultWorkflow = defaultWorkflow;

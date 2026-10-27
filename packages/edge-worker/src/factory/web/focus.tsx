@@ -236,7 +236,7 @@ export function FocusCard({
 	summary: any;
 	config: any;
 	full?: boolean;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 	onSettled: () => void;
 	settling?: boolean;
 	onSkip?: () => void;

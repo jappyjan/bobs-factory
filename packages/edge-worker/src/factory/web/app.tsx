@@ -411,7 +411,7 @@ function Today({
 }: {
 	runs: any[];
 	config: any;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 }) {
 	const settle = useSettle(),
 		navigate = useNavigate(),
@@ -786,7 +786,7 @@ function RunPage({
 }: {
 	runs: any[];
 	config: any;
-	onInspect: (run: any, name: string, image?: number) => void;
+	onInspect: (run: any, name: string) => void;
 }) {
 	const { id } = useParams(),
 		query = useRun(id),
@@ -1009,7 +1009,7 @@ function RunPage({
 							key={artifact.name}
 							artifact={artifact}
 							run={run}
-							onOpen={(name, image) => onInspect(run, name, image)}
+							onOpen={(name) => onInspect(run, name)}
 						/>
 					))}
 				</div>
@@ -1094,7 +1094,7 @@ function RunPage({
 											<ArtifactCard
 												artifact={artifact}
 												run={run}
-												onOpen={(name, image) => onInspect(run, name, image)}
+												onOpen={(name) => onInspect(run, name)}
 											/>
 										)}
 										<RunConversation
@@ -1137,7 +1137,7 @@ function App() {
 		navigate = useNavigate(),
 		[shortcuts, setShortcuts] = useState(false),
 		[inspection, setInspection] = useRestorableState<
-			{ runId: string; name: string; image?: number } | undefined
+			{ runId: string; name: string } | undefined
 		>("inspector/selection", undefined);
 	const inspectionRun = useRun(inspection?.runId);
 
@@ -1207,8 +1207,8 @@ function App() {
 			history.scrollRestoration = previous;
 		};
 	}, []);
-	const inspect = (run: any, name: string, image?: number) =>
-		setInspection({ runId: run.id, name, image });
+	const inspect = (run: any, name: string) =>
+		setInspection({ runId: run.id, name });
 	return (
 		<>
 			<a className="skip-link" href="#main-content">
@@ -1302,9 +1302,7 @@ function App() {
 					run={inspectionRun.data}
 					selected={inspection}
 					onClose={() => setInspection(undefined)}
-					onChange={(name, image) =>
-						setInspection({ ...inspection, name, image })
-					}
+					onChange={(name) => setInspection({ runId: inspection.runId, name })}
 				/>
 			)}
 		</>

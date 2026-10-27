@@ -38,7 +38,6 @@ import {
 	usePwa,
 	versionMismatch,
 } from "./pwa";
-import { roleOutput } from "./run-output";
 
 export {
 	active,
@@ -751,18 +750,4 @@ export function artifactsOf(
 			value,
 			title: name,
 		}));
-}
-export function screenshotUrl(run: any, index: number, artifact = "capture") {
-	const value =
-		artifact === "capture"
-			? roleOutput(run, "capture")
-			: run.outputs?.[artifact];
-	const shot = value?.screenshots?.[index];
-	const version =
-		shot?.imageSha256 ??
-		value?.__artifactHash ??
-		shot?.path ??
-		value?.revision ??
-		"";
-	return `/api/runs/${encodeURIComponent(run.id)}/screenshots/${index}?artifact=${encodeURIComponent(artifact)}&v=${encodeURIComponent(version)}`;
 }

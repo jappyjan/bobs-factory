@@ -223,7 +223,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Remove the retired Factory engine and specialized review screens. Recipes now use the generic node catalog and Display; old graphs remain readable and blocked from execution, while graphless Simple sessions continue normally. Document every node and its capabilities. ([Taskbot #169](https://taskbot.apps.janjaap.de/p/bobs-factory/t/169), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#214](https://github.com/jappyjan/bobs-factory/pull/214))
+- Remove the retired Factory engine and specialized review screens. Recipes now use the generic node catalog and Display; old graphs remain readable and blocked from execution, while graphless Simple sessions continue normally. Document every node and its capabilities. Preserve unchanged disabled legacy forks when saving current recipes or defaults. ([Taskbot #169](https://taskbot.apps.janjaap.de/p/bobs-factory/t/169), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#214](https://github.com/jappyjan/bobs-factory/pull/214))
 
 - Factory and Takeover now run through reusable node recipes with explicit review, delivery and approval loops. Runs created by the older recipe engine must be restarted after upgrading; their history stays readable. Existing Simple conversations continue normally. After a mixed delivery is merged, external replanning stays separate from the completed repository work. Legacy local forks are disabled and must be forked again from the current bundled recipe. ([Taskbot #169](https://taskbot.apps.janjaap.de/p/bobs-factory/t/169), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#213](https://github.com/jappyjan/bobs-factory/pull/213))
 
