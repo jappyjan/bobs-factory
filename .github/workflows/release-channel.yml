@@ -125,14 +125,13 @@ jobs:
       - name: Validate localhost access and remote API-key lifecycle
         timeout-minutes: 2
         run: bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
-      - name: Validate mocked delivery, architecture and impact recovery
-        timeout-minutes: 5
+      - name: Validate mocked node delivery, architecture and impact recovery
+        timeout-minutes: 30
         run: |
-          pnpm --filter bobs-factory-core exec tsx "$PWD/apps/f1/test-drives/assets/linear-publication-101.ts" > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
-          BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
-          bun run apps/f1/test-drives/assets/architecture-approval-continuation.mjs > "$RUNNER_TEMP/nightly-checks/architecture-continuation.log" 2>&1
-          bun run apps/f1/test-drives/assets/impact-feedback-recovery.mjs > "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
-          bun run apps/f1/test-drives/assets/workflow-stall-recovery.mjs >> "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
+          pnpm --filter bobs-factory-edge-worker exec vitest run test/TicketTracking.test.ts test/LinearActivitySink.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
+          pnpm --filter bobs-factory-edge-worker exec vitest run test/V2PlanningRecipes.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
+          pnpm --filter bobs-factory-edge-worker exec vitest run test/FactoryV2Composition.test.ts test/FactoryDeliveryRecipes.test.ts test/TakeoverIntakeRecipe.test.ts test/ImproveRecipe.test.ts test/ImproveBoundaryComposition.test.ts test/SimpleRecipe.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/architecture-continuation.log" 2>&1
+          pnpm --filter bobs-factory-edge-worker exec vitest run test/V2QaApproval.test.ts test/V2ReviewRecipe.test.ts test/NodeGuaranteesF1.test.ts --maxWorkers=2 > "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
           bun run apps/f1/test-drives/assets/api-responsiveness.ts > "$RUNNER_TEMP/nightly-checks/api-responsiveness.log" 2>&1
       - name: Record only completed current checks
         run: |

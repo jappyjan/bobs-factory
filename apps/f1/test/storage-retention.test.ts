@@ -148,9 +148,8 @@ it("keeps native continuation and durable ownership after a terminal issue event
 				try {
 					const { readdir } = await import("node:fs/promises");
 					return (
-						(await readdir(join(storage.directory, "terminal-observations")))
-							.length > 0
-					);
+						await readdir(join(storage.directory, "terminal-observations"))
+					).some((name) => name.endsWith(".json"));
 				} catch {
 					return false;
 				}
@@ -160,7 +159,9 @@ it("keeps native continuation and durable ownership after a terminal issue event
 		nativeRunPath = join(
 			storage.directory,
 			"terminal-observations",
-			(await readdir(join(storage.directory, "terminal-observations")))[0]!,
+			(await readdir(join(storage.directory, "terminal-observations"))).find(
+				(name) => name.endsWith(".json"),
+			)!,
 		);
 		nativeSessionId = JSON.parse(await readFile(nativeRunPath, "utf8"))
 			.nativeSessionIds.claude;
@@ -192,7 +193,7 @@ it.each([
 	"nested",
 	"grouped",
 	"takeover",
-])("releases reviewed delivered %s work through startup reconciliation while retaining Resume work and cross-run evidence", async (route) => {
+])("releases controlled node-delivered %s work through startup reconciliation while retaining Resume work and cross-run evidence", async (route) => {
 	const { GitService } = await import(
 		"../../../packages/edge-worker/src/GitService.js"
 	);
@@ -291,50 +292,72 @@ it.each([
 	const resumable = await service.createGitWorktree(issue("resumable"), [
 		configured,
 	]);
-	const nested = validateWorkflows([
+	// Controlled delivery isolates storage reconciliation from the stock recipe's
+	// planning/review protocol (covered by the composition F1 suite). Run the real
+	// Merge node so release authority comes from its stamped receipt.
+	const delivery = (id: string) => ({
+		engineVersion: "nodes-v1",
+		id,
+		name: `Controlled ${id}`,
+		allowedTriggers: ["manual", "workflow", "ticket-assignment"],
+		steps: [
+			{
+				id: "merge",
+				name: "Confirm merge",
+				type: "merge",
+				method: "squash",
+				requests: configurations.map((config) => ({
+					repositoryId: config.id,
+					url: `${config.githubUrl}/pull/1`,
+					headSha: head,
+				})),
+				next: "end",
+			},
+		],
+	});
+	const definitions = validateWorkflows([
 		...defaultWorkflows,
+		delivery("storage-delivery"),
+		delivery("storage-takeover"),
 		{
+			engineVersion: "nodes-v1",
 			id: "storage-parent",
-			name: "Nested stock Factory",
+			name: "Nested controlled delivery",
 			allowedTriggers: ["manual"],
 			steps: [
 				{
 					id: "child",
-					name: "Stock child",
+					name: "Child",
 					type: "workflow",
-					workflow: "factory",
+					workflow: "storage-delivery",
 					next: "end",
 				},
 			],
 		},
-	]).at(-1)!;
-	const definitions = [...defaultWorkflows, nested];
-	const workflow =
-		route === "nested"
-			? nested
-			: defaultWorkflows.find(
-					(value) =>
-						value.id === (route === "takeover" ? "takeover" : "factory"),
-				)!;
+	]);
+	const workflow = definitions.find(
+		(value) =>
+			value.id ===
+			(route === "nested"
+				? "storage-parent"
+				: route === "takeover"
+					? "storage-takeover"
+					: "storage-delivery"),
+	)!;
 	const createRuntime = () =>
 		new WorkflowRuntime(home, {
 			agent: async () => {
-				throw new Error(
-					"Fixture must start from its retained reviewed checkpoint",
-				);
+				throw new Error("Delivery fixture permits no inference");
 			},
-			script: async () => ({}),
-			tool: async (context) =>
-				context.step.tool === "merge"
-					? {
-							merged: true,
-							url: "https://github.com/f1-fixture/storage/pull/1",
-							headSha: head,
-						}
-					: {
-							headSha: head,
-							url: "https://github.com/f1-fixture/storage/pull/1",
-						},
+			ioGitProvider: async () =>
+				({
+					view: async (url: string) => ({
+						url,
+						state: "MERGED",
+						headRefOid: head,
+						mergeCommitSha: head,
+					}),
+				}) as any,
 		});
 	let runtime = createRuntime();
 	const create = (id: string, workspace: string) =>
@@ -358,191 +381,45 @@ it.each([
 	let stopped = create("resumable-run", resumable.path);
 	stopped.issueId = "resumable";
 	runtime.stop(stopped.id);
-	if (route === "grouped")
-		run.repositories = configurations.map((config) => ({
-			repositoryId: config.id,
-			name: config.name,
-			repositoryPath: config.repositoryPath,
-			baseBranch: "main",
-			workspace: join(delivered.path, config.name),
-			gitProvider: {
-				type: "github",
-				host: "github.com",
-				owner: "f1-fixture",
-				repository: "storage",
-				url: config.githubUrl,
-			},
-		})) as typeof run.repositories;
-	// A retained, already reviewed stock graph resumes inside its Merge call.
-	// All previous review records are synthetic; the stock graph is unchanged.
-	const callPrefix = route === "nested" ? "child/" : "";
-	const impactKey = `${callPrefix}review/assess-impact`;
-	const checksKey = `${callPrefix}review/impact-checks`;
-	const guideKey = `${callPrefix}approval/guide`;
-	const terminal = { current: "merge", visits: {} };
-	const merge = {
-		current: "merge",
-		visits: { merge: 1 },
-		active: { phase: "executing" as const, children: [terminal] },
-	};
-	run.checkpoint =
-		route === "nested"
-			? {
-					current: "child",
-					visits: { child: 1 },
-					active: { phase: "executing", children: [merge] },
-				}
-			: merge;
-	run.reviewRounds = [
-		{
-			schemaVersion: 1,
-			round: 1,
-			key:
-				route === "nested"
-					? "child/review/specialist-review"
-					: "review/specialist-review",
-			inventory: { schemaVersion: 1, requirements: [] },
-			headSha: head,
-			baseSha: head,
-			historyLength: 0,
-			reviewers: [],
-			context: {
-				workspace: run.workspace,
-				repositories: run.repositories,
-				outputs: {
-					"assess-impact": {
-						snapshot: {
-							schemaVersion: 1,
-							digest: "retained-impact-fixture",
-							key:
-								route === "nested"
-									? "child/review/specialist-review"
-									: "review/specialist-review",
-							repositories: [
-								{
-									repositoryId: configured.id,
-									workspace: run.repositories?.[0]?.workspace ?? run.workspace,
-									headSha: head,
-									files: [],
-								},
-							],
-						},
-					},
-					review: { summary: "Retained independent review" },
-				},
-			},
+	run.repositories = configurations.map((config) => ({
+		id: config.id,
+		name: config.name,
+		repositoryPath: config.repositoryPath,
+		baseBranch: "main",
+		workspace:
+			route === "grouped" ? join(delivered.path, config.name) : delivered.path,
+		githubUrl: config.githubUrl,
+	}));
+	// Retained non-execution data must survive chunk eviction and cleanup. Only
+	// the actual Merge receipt below can establish delivery authority.
+	for (let index = 0; index < 8; index++)
+		run.history.push({
+			step: "retained",
 			at: new Date().toISOString(),
-		},
-	] as typeof run.reviewRounds;
-	run.roleRevisions = {
-		[guideKey]: {
-			headSha: head,
-			dirty: false,
-			historyLength: 0,
-			at: new Date().toISOString(),
-		},
-	};
-	run.outputs[impactKey] = {
+			output: { note: `accepted-${index}` },
+		});
+	run.outputs.accepted = { summary: "Retained accepted result" };
+	const impact = {
 		snapshot: {
-			schemaVersion: 1,
-			digest: "retained-impact-fixture",
-			key:
-				route === "nested"
-					? "child/review/specialist-review"
-					: "review/specialist-review",
 			repositories: [
 				{
 					repositoryId: configured.id,
-					workspace: run.repositories?.[0]?.workspace ?? run.workspace,
+					workspace: delivered.path,
 					headSha: head,
 					files: [],
 				},
 			],
 		},
 	};
-	const impact = run.outputs[impactKey] as {
-		at?: string;
-		snapshot: unknown;
-		checkResults?: unknown[];
-	};
-	impact.at = new Date().toISOString();
-	impact.checkResults = [
-		{
-			id: "build",
-			exitCode: 0,
-			evidence: `> build ${run.workspace}\nBuild completed successfully`,
-		},
-	];
-	run.impactDecisions = [structuredClone(impact)] as typeof run.impactDecisions;
-	(
-		run.reviewRounds[0]!.context as { outputs: Record<string, unknown> }
-	).outputs["assess-impact"] = structuredClone(impact);
-
-	run.history.push({
-		step: impactKey,
-		output: run.outputs[impactKey],
-		at: new Date().toISOString(),
-	});
 	const checkOutput = {
-		questions: [],
-		checks: structuredClone(impact.checkResults),
+		checks: [
+			{
+				id: "build",
+				exitCode: 0,
+				evidence: `> build ${delivered.path}\nBuild completed successfully`,
+			},
+		],
 	};
-	run.outputs[checksKey] = checkOutput;
-	run.history.push({
-		step:
-			route === "nested"
-				? "child/review/impact-checks"
-				: "review/impact-checks",
-		output: structuredClone(checkOutput),
-		at: new Date().toISOString(),
-	});
-	const frozen = run.reviewRounds[0]!.context as {
-		outputs: Record<string, unknown>;
-		history?: unknown[];
-	};
-	frozen.outputs["impact-checks"] = structuredClone(checkOutput);
-	frozen.history = [
-		{
-			step:
-				route === "nested"
-					? "child/review/impact-checks"
-					: "review/impact-checks",
-			output: structuredClone(checkOutput),
-			at: new Date().toISOString(),
-		},
-	];
-
-	// More than four one-entry pages must evict and recreate restored history.
-	for (let index = 0; index < 6; index++) {
-		run.history.push({
-			step: index % 2 === 0 ? impactKey : checksKey,
-			output: structuredClone(index % 2 === 0 ? impact : checkOutput),
-			at: new Date().toISOString(),
-		});
-	}
-
-	run.outputs[guideKey] = {
-		title: "Retained reviewed delivery",
-		summary: "Independent historical guide",
-	};
-	run.humanDecisions = [
-		{
-			decision: "approve",
-			reviewId: "simulated-fixture-approval",
-			headSha: head,
-			url: "https://github.com/f1-fixture/storage/pull/1",
-			repositories:
-				route === "grouped"
-					? configurations.map((config) => ({
-							repositoryId: config.id,
-							name: config.name,
-							headSha: head,
-							url: `${config.githubUrl}/pull/1`,
-						}))
-					: undefined,
-			at: new Date().toISOString(),
-		},
-	];
 	await runtime.launch(run);
 	expect(run.status, run.error).toBe("completed");
 	await runtime.save(run);
@@ -759,10 +636,16 @@ it.each([
 		);
 		const retained = snapshots.load<{
 			outputs: { finish: { done: boolean } };
-			humanDecisions: { headSha: string }[];
+			history: {
+				step: string;
+				guarantee?: { revisions: Record<string, { headSha: string }> };
+			}[];
 		}>(join(home, "factory", "runs", `${run.id}.json`)).value;
 		expect(retained.outputs).toEqual(expectedOutputs);
-		expect(retained.humanDecisions[0]?.headSha).toBe(head);
+		expect(
+			retained.history.find((receipt) => receipt.step.endsWith("merge"))
+				?.guarantee?.revisions[configured.id]?.headSha,
+		).toBe(head);
 		await expect
 			.poll(async () =>
 				(await retention.status()).outcome?.results.some(
@@ -1209,6 +1092,7 @@ it("resumes saved native progress through the runtime while cleanup sees durable
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "resume-fixture",
 			name: "Resume fixture",
 			steps: [

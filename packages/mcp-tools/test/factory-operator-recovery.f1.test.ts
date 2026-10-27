@@ -111,6 +111,7 @@ it("F1: repairs missing Taskbot transport entirely through compiled stdio MCP, p
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
 		{
+			engineVersion: "nodes-v1",
 			id: "operator-fixture",
 			name: "Operator fixture",
 			steps: [

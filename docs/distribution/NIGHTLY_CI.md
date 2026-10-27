@@ -12,6 +12,17 @@ then the existing desktop matrix using those same native artifacts, plus current
 unit/integration tests and owned mocked delivery workflows. It does not rebuild
 another native matrix for desktop.
 
+The current workflow checks exercise `nodes-v1`: Factory repository, external
+and mixed delivery, Takeover, Improve and Simple; planning/check-in decisions;
+review stalls, cold restart, QA and approval carry; generic freshness and durable
+effects; and ticket/activity delivery. The maintained localhost, API responsiveness,
+desktop lifecycle and update-maintenance fixtures use Display/Exec/read-only IO
+nodes. Old architecture/publication/stall scripts remain historical evidence and
+are not executed against the removed engine. Receipt log names stay compatible
+with evidence intake; their contents identify the current suites and assertions.
+These are mocked/scripted runtime and API checks, not live provider or physical
+desktop acceptance.
+
 Only candidate freezing is serialized. Native builds, desktop packaging and
 checks for different frozen candidates may overlap, so a stuck older runner
 cannot hold the preparation queue indefinitely. Publication still holds the
