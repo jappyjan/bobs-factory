@@ -8,6 +8,7 @@ import {
 	openSync,
 	readFileSync,
 	renameSync,
+	rmSync,
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
@@ -16,6 +17,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import {
 	factoryRuntimeIdentity,
 	publishStorageJson,
+	readStorageJson,
 	StorageRetentionStore,
 } from "bobs-factory-core";
 import { z } from "zod";
@@ -133,6 +135,10 @@ const StateSchema = z.object({
 		})
 		.optional(),
 	transaction: TransactionSchema.optional(),
+	// Retain the last successful rollback even while a newer attempt drains/fails.
+	rollbackSnapshot: z
+		.object({ transactionId: z.string(), path: z.string() })
+		.optional(),
 	badCandidates: z.array(z.string()),
 	nextCheckAt: z.number(),
 	failures: z.number().int(),
@@ -539,15 +545,60 @@ export class UpdateManager {
 		return this.status();
 	}
 	private async operation<T>(
-		work: () => Promise<T>,
+		work: (releaseFailureReserve: () => void) => Promise<T>,
 		recover = false,
 	): Promise<T> {
-		this.read();
+		const state = this.read();
 		mkdirSync(this.directory, { recursive: true, mode: 0o700 });
-		return new UpdateOperationLock(join(this.directory, "operation.lock")).run(
-			work,
-			recover,
-		);
+		// Allocate before taking operation.lock. A full volume must still permit
+		// terminal state writes, maintenance release and the lock's release guard.
+		const reserve = join(this.directory, `operation-reserve-${randomUUID()}`);
+		const releaseFailureReserve = () => rmSync(reserve, { force: true });
+		try {
+			writeFileSync(
+				reserve,
+				Buffer.alloc(
+					Math.max(1024 * 1024, Buffer.byteLength(JSON.stringify(state)) * 3),
+				),
+				{
+					flag: "wx",
+					mode: 0o600,
+					flush: true,
+				},
+			);
+			const result = await new UpdateOperationLock(
+				join(this.directory, "operation.lock"),
+			).run(async () => {
+				try {
+					return await work(releaseFailureReserve);
+				} finally {
+					releaseFailureReserve();
+				}
+			}, recover);
+			const completed = this.read().transaction;
+			if (
+				completed?.phase === "succeeded" &&
+				completed.release?.status === "acknowledged" &&
+				(completed.id !== state.transaction?.id ||
+					state.transaction?.release?.status !== "acknowledged")
+			) {
+				// Wake the worker's coordinator after operation.lock is released;
+				// inventory notifications during the copy may race with that lock.
+				try {
+					await publishStorageJson(
+						join(this.home, "storage-retention", "update-completed.json"),
+						{ transactionId: completed.id, at: now() },
+					);
+				} catch (error) {
+					console.error(
+						`Update snapshot cleanup notification deferred: ${(error as Error).message}`,
+					);
+				}
+			}
+			return result;
+		} finally {
+			releaseFailureReserve();
+		}
 	}
 	async stage() {
 		return this.operation(async () => {
@@ -630,12 +681,33 @@ export class UpdateManager {
 					throw new Error("Maintenance transaction changed");
 				state.transaction.phase = state.transaction.release!.outcome;
 				state.transaction.release!.status = "acknowledged";
+				if (
+					state.transaction.phase === "succeeded" &&
+					state.transaction.snapshot
+				)
+					state.rollbackSnapshot = {
+						transactionId,
+						path: state.transaction.snapshot,
+					};
 			});
+		} catch (error) {
+			this.phase("recovery-required", {
+				error: `Maintenance release failed: ${(error as Error).message}`,
+			});
+			throw error;
+		}
+		// Retention publication is independent of maintenance acknowledgment. A
+		// failed cleanup must never turn a healthy installed update into recovery.
+		try {
 			const retention = new StorageRetentionStore(this.home);
 			const count = await retention.inventoryCount();
 			for (let offset = 0; offset < count; offset += 100) {
 				for (const id of await retention.inventoryPage(offset)) {
 					const artifact = await retention.record(id);
+					const receipt = (await readStorageJson(
+						join(retention.directory, "receipts", `${id}.json`),
+					)) as { phase?: string } | undefined;
+					if (receipt?.phase === "completed") continue;
 					if (
 						artifact.operation === transactionId &&
 						artifact.category === "snapshot"
@@ -643,13 +715,40 @@ export class UpdateManager {
 						await retention.revise(id, (record) => {
 							record.reconciledAt = new Date().toISOString();
 						});
+					else if (
+						transaction.release!.outcome === "succeeded" &&
+						artifact.category === "snapshot" &&
+						artifact.producer === "OwnedUpdateLifecycle" &&
+						/^[\w-]{1,100}$/.test(artifact.operation) &&
+						artifact.root === join(retention.home, "updates", "snapshots") &&
+						artifact.path === join(artifact.root, artifact.operation) &&
+						artifact.rollback !== "disposable" &&
+						artifact.operation !== transactionId
+					) {
+						const previous = UpdateTransactionSchema.safeParse(
+							await readStorageJson(
+								join(this.directory, "history", `${artifact.operation}.json`),
+							),
+						);
+						if (
+							previous.success &&
+							previous.data.id === artifact.operation &&
+							terminal(previous.data) &&
+							previous.data.snapshot === artifact.path &&
+							artifact.verifiedAt &&
+							artifact.completedAt
+						)
+							await retention.revise(id, (record) => {
+								record.rollback = "disposable";
+								record.reconciledAt = now();
+							});
+					}
 				}
 			}
 		} catch (error) {
-			this.phase("recovery-required", {
-				error: `Maintenance release failed: ${(error as Error).message}`,
-			});
-			throw error;
+			console.error(
+				`Update snapshot retention deferred: ${(error as Error).message}`,
+			);
 		}
 	}
 	async reconcile() {
@@ -659,7 +758,7 @@ export class UpdateManager {
 				"Activation needs the owned lifecycle supervisor. Checkout/Nix/external installations must use their owner; no executable was switched.",
 			);
 		const lifecycle = this.lifecycle;
-		return this.operation(async () => {
+		return this.operation(async (releaseFailureReserve) => {
 			const state = this.read();
 			if (!terminal(state.transaction))
 				throw new Error(
@@ -691,6 +790,14 @@ export class UpdateManager {
 			this.change((current) => {
 				if (!this.authorized(current, transaction.candidate))
 					throw new Error("Update policy changed");
+				if (
+					current.transaction?.phase === "succeeded" &&
+					current.transaction.snapshot
+				)
+					current.rollbackSnapshot = {
+						transactionId: current.transaction.id,
+						path: current.transaction.snapshot,
+					};
 				current.transaction = transaction;
 			});
 			let maintenance = false;
@@ -727,6 +834,7 @@ export class UpdateManager {
 					eligible();
 					this.phase("snapshot");
 					const snapshot = await lifecycle.snapshot(transaction.id);
+					this.phase("snapshot", { snapshot });
 					eligible();
 					// This short write is the atomic authorization boundary. A policy mutation
 					// can occur during any preceding await, but never slip between authorization
@@ -756,6 +864,7 @@ export class UpdateManager {
 					});
 				}
 			} catch (error) {
+				releaseFailureReserve();
 				const current = this.read().transaction!;
 				const message = (error as Error).message;
 				if (current.phase === "draining" && !maintenance) {
@@ -799,6 +908,7 @@ export class UpdateManager {
 					}
 				}
 			} finally {
+				releaseFailureReserve();
 				if (maintenance) {
 					try {
 						await this.releaseMaintenance(transaction.id);

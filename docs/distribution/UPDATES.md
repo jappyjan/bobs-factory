@@ -95,6 +95,21 @@ it does not forcibly stop a busy worker.
    and only compatible bounded Factory state. On rollback or maintenance failure,
    keep a durable recovery-required transaction and suppression for inspection.
 
+Before either state copy, the supervisor estimates the copied roots without
+following links and requires their size plus a margin (at least 64 MiB or 10%).
+Insufficient space gives a visible cancellation with Settings → Storage guidance.
+A small journal reserve allows copy failures such as ENOSPC to record cancellation
+and release maintenance and operation ownership while the supervisor stays alive.
+An uncertain maintenance release still requires recovery.
+
+Evidence links and links beneath
+`factory/execution-private/<run>/jobs/<job>/<runner>/home/` are preserved as exact
+link records in snapshots and rollback, and omitted from preflight. Runtime sockets
+and FIFOs in those isolated agent homes are skipped. Links and special files
+elsewhere in copied owned state are refused; targets are never followed.
+Superseded snapshots are reclaimed through [Storage retention](../factory/storage-retention.md),
+while the last successful rollback and unresolved update references remain protected.
+
 Protected supervisor hooks are `POST /api/updates/maintenance` with
 `{transactionId, action: "begin" | "end"}` and `GET /api/updates/drain`.
 The transaction must match persisted updater state. Drain returns idle/busy,

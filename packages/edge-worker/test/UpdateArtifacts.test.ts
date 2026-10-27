@@ -12,10 +12,16 @@ import { join } from "node:path";
 import {
 	StorageRetentionStore,
 	writeStorageIntegrity,
+	writeStorageRollbackProof,
 } from "bobs-factory-core";
 import { afterEach, expect, it } from "vitest";
 import { HistoricalStorage } from "../src/storage/HistoricalStorage.js";
+import { StorageRetention } from "../src/storage/StorageRetention.js";
 import { UpdateArtifacts } from "../src/storage/UpdateArtifacts.js";
+import {
+	UpdateManager,
+	type UpdateTransaction,
+} from "../src/updates/UpdateManager.js";
 
 const homes: string[] = [];
 afterEach(async () => {
@@ -390,4 +396,211 @@ it("retains both detached changed content and a concurrent replacement on verifi
 		syncBuiltinESMExports();
 		await adapter.close();
 	}
+});
+
+function completedSnapshot(home: string, id: string): UpdateTransaction {
+	const candidate = {
+		version: "1.0.1",
+		commit: "b".repeat(40),
+		channel: "stable" as const,
+		target: "linux-x64" as const,
+		manifestSha256: "b".repeat(64),
+		publishedAt: "2026-10-01T00:00:00.000Z",
+	};
+	return {
+		id,
+		candidate,
+		staged: {
+			candidate,
+			executable: join(home, "installed", "new"),
+			previousExecutable: join(home, "installed", "old"),
+		},
+		previous: { version: "1.0.0", commit: "a".repeat(40), target: "linux-x64" },
+		snapshot: join(home, "updates", "snapshots", id),
+		revision: 0,
+		phase: "succeeded",
+		switchStarted: true,
+		startedAt: candidate.publishedAt,
+		release: {
+			transactionId: id,
+			outcome: "succeeded",
+			status: "acknowledged",
+		},
+	};
+}
+it.each([
+	"unregistered",
+	"registered",
+	"interrupted",
+])("Storage removes an elected %s historical snapshot and preserves the latest rollback", async (mode) => {
+	const { home, store, historical } = await fixture();
+	const root = join(home, "updates", "snapshots");
+	const old = completedSnapshot(home, "old"),
+		latest = completedSnapshot(home, "latest");
+	for (const transaction of [old, latest]) {
+		await mkdir(transaction.snapshot!, { recursive: true });
+		await writeFile(
+			join(transaction.snapshot!, "lifecycle-receipt.json"),
+			"{}",
+		);
+		await writeFile(join(transaction.snapshot!, "saved-state"), transaction.id);
+	}
+	if (mode !== "unregistered")
+		await store.register({
+			category: "snapshot",
+			rollback: "usable",
+			path: old.snapshot!,
+			root,
+			producer: "OwnedUpdateLifecycle",
+			operation: old.id,
+			dependencies: [],
+			evidence: [],
+		});
+	if (mode === "interrupted") {
+		old.phase = "cancelled";
+		old.switchStarted = false;
+		old.release!.outcome = "cancelled";
+		delete old.snapshot;
+	}
+	await mkdir(join(home, "updates", "history"));
+	await writeFile(
+		join(home, "updates", "history", "old.json"),
+		JSON.stringify(old),
+	);
+	await writeFile(
+		join(home, "updates", "state.json"),
+		JSON.stringify({
+			...new UpdateManager(home).status(),
+			transaction: latest,
+			rollbackSnapshot: { transactionId: latest.id, path: latest.snapshot },
+		}),
+	);
+	const current = await store.register({
+		category: "snapshot",
+		rollback: "usable",
+		path: latest.snapshot!,
+		root,
+		producer: "OwnedUpdateLifecycle",
+		operation: latest.id,
+		dependencies: [],
+		evidence: [],
+		completedAt: latest.startedAt,
+		verifiedAt: latest.startedAt,
+	});
+	const integrity = await writeStorageIntegrity(
+		current.path,
+		join(store.directory, "proofs", `${current.id}.ndjson`),
+	);
+	const runtime = join(home, "rollback-runtime");
+	await mkdir(runtime);
+	await writeFile(join(runtime, "bobs-factory"), "rollback executable", {
+		mode: 0o755,
+	});
+	const runtimeProof = await writeStorageRollbackProof(
+		home,
+		current.id,
+		join(runtime, "bobs-factory"),
+	);
+	await store.revise(current.id, (record) => {
+		record.evidence = [`integrity:${integrity}`, runtimeProof];
+	});
+	const preview = await historical.preview();
+	const candidate = preview.candidates.find(
+		(value) => value.path === join(root, "old"),
+	)!;
+	const elected = await historical.classify({
+		previewId: preview.id,
+		candidateId: candidate.id,
+		category: "snapshot",
+		operation: old.id,
+		contentsVerifiedDisposable: true,
+	});
+	expect(elected).toMatchObject({ rollback: "disposable", dependencies: [] });
+	expect(elected.completedAt).toBeTruthy();
+	expect(elected.verifiedAt).toBeTruthy();
+	expect(elected.reconciledAt).toBeTruthy();
+	const protectedPreview = await historical.preview();
+	await expect(
+		historical.classify({
+			previewId: protectedPreview.id,
+			candidateId: protectedPreview.candidates.find(
+				(value) => value.path === current.path,
+			)!.id,
+			category: "snapshot",
+			operation: latest.id,
+			contentsVerifiedDisposable: true,
+		}),
+	).rejects.toThrow("still required");
+	await store.revise(current.id, (record) => {
+		record.reconciledAt = latest.startedAt;
+	});
+	const adapter = new UpdateArtifacts(home);
+	const coordinator = new StorageRetention(home, { snapshot: adapter });
+	try {
+		let preview = await coordinator.preview();
+		for (
+			let slice = 0;
+			!preview.candidates.some((item) => item.record.id === elected.id) &&
+			slice < 20;
+			slice++
+		)
+			preview = await coordinator.preview();
+		expect(
+			preview.candidates.find((item) => item.record.id === elected.id)
+				?.eligible,
+		).toBe(true);
+		await coordinator.execute(preview.id, [elected.id]);
+		await expect
+			.poll(async () => (await coordinator.status()).outcome?.completedAt)
+			.toBeTruthy();
+		expect((await coordinator.status()).outcome?.results).toMatchObject([
+			{ id: elected.id, phase: "completed" },
+		]);
+		await expect(
+			readFile(join(root, "old", "saved-state")),
+		).rejects.toMatchObject({ code: "ENOENT" });
+		expect(await readFile(join(current.path, "saved-state"), "utf8")).toBe(
+			"latest",
+		);
+	} finally {
+		await coordinator.stop();
+		await historical.close();
+	}
+});
+
+it("refuses historical election of an in-flight snapshot before its path is published", async () => {
+	const { home, store, historical } = await fixture();
+	const transaction = completedSnapshot(home, "in-flight");
+	const path = transaction.snapshot!,
+		root = join(home, "updates", "snapshots");
+	await mkdir(path, { recursive: true });
+	await store.register({
+		category: "snapshot",
+		rollback: "usable",
+		path,
+		root,
+		producer: "OwnedUpdateLifecycle",
+		operation: transaction.id,
+		dependencies: [],
+		evidence: [],
+	});
+	transaction.phase = "snapshot";
+	transaction.switchStarted = false;
+	delete transaction.snapshot;
+	delete transaction.release;
+	await writeFile(
+		join(home, "updates", "state.json"),
+		JSON.stringify({ ...new UpdateManager(home).status(), transaction }),
+	);
+	const preview = await historical.preview();
+	await expect(
+		historical.classify({
+			previewId: preview.id,
+			candidateId: preview.candidates.find((value) => value.path === path)!.id,
+			category: "snapshot",
+			operation: transaction.id,
+			contentsVerifiedDisposable: true,
+		}),
+	).rejects.toThrow("still required");
+	await historical.close();
 });

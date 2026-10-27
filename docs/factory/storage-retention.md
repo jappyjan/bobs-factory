@@ -19,6 +19,15 @@ saved-state snapshots.
 | Reconciled recovery and migration preparation | Seven days; unresolved recovery, source/native/external backups remain protected |
 | Delivered worktrees | Thirty days after verified durable completion, with exact delivery and every owner's release proved |
 
+The owned runtime updater keeps the last successful transaction's snapshot and
+any snapshot referenced by an in-flight or unresolved transaction. After a new
+successful update, it marks earlier completed, proven owned snapshots disposable
+and wakes automatic reconciliation after releasing the update lock. These
+superseded copies do not count as usable rollbacks. Cleanup still requires an
+independently verified usable rollback, enabled automation (or explicit cleanup),
+complete ownership proofs and no live references. Other usable snapshots retain
+the configured count policy.
+
 Preservation wins over every age and count. Pending updates, failed unreconciled
 transactions, current/previous executable links, retained rollback dependencies,
 unknown ownership and unreadable state retain their data. Protected data can exceed

@@ -679,6 +679,12 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		await mkdtemp(join(tmpdir(), "f1-storage-updates-")),
 	);
 	homes.push(home);
+	const { symlink, readlink } = await import("node:fs/promises");
+	const jobHomeRelative = "factory/execution-private/run/jobs/job/codex/home";
+	const toolLink = join(jobHomeRelative, "corepack");
+	const toolTarget = "../lib/node_modules/corepack/dist/corepack.js";
+	await mkdir(join(home, jobHomeRelative), { recursive: true });
+	await symlink(toolTarget, join(home, toolLink));
 	const store = new StorageRetentionStore(home);
 	await store.configure({ enabled: false }, 0);
 	const previousExecutable = join(home, "installed", "bobs-factory");
@@ -780,6 +786,24 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		acquireMaintenance: async () => {},
 		isIdle: async () => true,
 		preflight: async () => {
+			const rollback = manager.status().rollbackSnapshot;
+			if (rollback) {
+				const records = await Promise.all(
+					(await store.inventoryPage(0)).map((id) => store.record(id)),
+				);
+				const retained = records.find(
+					(record) => record.path === rollback.path,
+				)!;
+				const adapter = new UpdateArtifacts(home);
+				try {
+					expect(
+						(await adapter.observe(retained, new AbortController().signal))
+							.protection,
+					).toContain("Retained update reference in updates/state.json");
+				} finally {
+					await adapter.close();
+				}
+			}
 			const root = join(home, "updates", "preparation"),
 				path = join(root, `cycle-${cycle}`);
 			await mkdir(path, { recursive: true });
@@ -793,6 +817,9 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 				evidence: [],
 			});
 			await copyUpdateStateForRetention(home, path, "preflight");
+			await expect(lstat(join(path, toolLink))).rejects.toMatchObject({
+				code: "ENOENT",
+			});
 			expect(await readFile(join(path, "factory/runs/run.json"), "utf8")).toBe(
 				sentinels["factory/runs/run.json"],
 			);
@@ -818,12 +845,13 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 				rollback: "usable",
 				path,
 				root,
-				producer: "F1 scripted lifecycle",
+				producer: "OwnedUpdateLifecycle",
 				operation: id,
 				dependencies: [],
 				evidence: [],
 			});
 			await copyUpdateStateForRetention(home, path, "snapshot");
+			expect(await readlink(join(path, toolLink))).toBe(toolTarget);
 			await writeFile(
 				join(path, "lifecycle-receipt.json"),
 				'{"fixture":"preserved"}',
@@ -863,7 +891,10 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		rollback: async (transaction: { snapshot?: string }) => {
 			if (!transaction.snapshot) throw new Error("No rollback snapshot");
 			workers--;
+			// Real rollback moves failure-era owned roots away before restoring.
+			await rm(join(home, jobHomeRelative), { recursive: true });
 			await copyUpdateStateForRetention(transaction.snapshot, home, "snapshot");
+			expect(await readlink(join(home, toolLink))).toBe(toolTarget);
 			workers++;
 			rollbackCalls++;
 		},
@@ -897,6 +928,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 	await store.revise(unused.id, (value) => {
 		value.evidence = [`integrity:${unusedIntegrity}`];
 	});
+	await store.configure({ enabled: true }, (await store.policy()).revision);
 	for (cycle = 1; cycle <= 5; cycle++) {
 		await manager.check();
 		if (cycle === 1) {
@@ -934,7 +966,41 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			candidateKey(state.pending!.candidate),
 			state.revision,
 		);
-		await manager.reconcile();
+		const automaticArtifacts = new UpdateArtifacts(home);
+		const automatic = new StorageRetention(home, {
+			snapshot: automaticArtifacts,
+			staging: automaticArtifacts,
+			preparation: automaticArtifacts,
+		});
+		await automatic.start();
+		try {
+			await manager.reconcile();
+			await expect
+				.poll(
+					async () => {
+						const names = await readdir(join(home, "updates", "snapshots"));
+						const outcome = (await automatic.status()).outcome;
+						// Wait for the deletion receipt, including private quarantine removal,
+						// before stopping the coordinator; cancellation restores detached data.
+						return (
+							names.length === 1 &&
+							!names[0]!.startsWith(".") &&
+							!!outcome?.completedAt &&
+							!outcome.error &&
+							outcome.results.every((result) => result.phase === "completed")
+						);
+					},
+					{ timeout: 10000 },
+				)
+				.toBe(true);
+		} catch (error) {
+			console.error(
+				JSON.stringify({ cycle, automatic: await automatic.status() }),
+			);
+			throw error;
+		} finally {
+			await automatic.stop();
+		}
 		expect(manager.status().transaction?.phase).toBe("succeeded");
 		expect(workers).toBe(1);
 		manager = new UpdateManager(home, source, lifecycle);
@@ -980,7 +1046,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			firstSnapshotBytes = snapshotBytes;
 			firstPreparationBytes = preparationBytes;
 		}
-		expect(snapshotBytes).toBe(firstSnapshotBytes * Math.min(cycle, 2));
+		expect(snapshotBytes).toBe(firstSnapshotBytes);
 		expect(preparationBytes).toBe(firstPreparationBytes * cycle);
 		measurements.push({ cycle, snapshotBytes, preparationBytes });
 	}
