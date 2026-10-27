@@ -70,6 +70,34 @@ function fixture(value = candidate) {
 	const manager = new UpdateManager(home, source, lifecycle, installed);
 	return { home, manager, source, lifecycle, calls };
 }
+it("keeps ownership blocking visible across status/check and preserves consent until verified reconciliation", async () => {
+	const { home, manager, lifecycle } = fixture({
+		...candidate,
+		channel: "stable",
+	});
+	await manager.check();
+	await manager.stage();
+	const before = manager.requestInstall(
+		candidateKey({ ...candidate, channel: "stable" }),
+		manager.status().revision,
+	);
+	manager.reportWorkerOwnership(
+		"Worker ownership record is missing; the worker may still be running.",
+	);
+	await manager.check();
+	expect(new UpdateManager(home).status().blocked).toEqual(
+		manager.status().blocked,
+	);
+	expect((await manager.tick()).blocked?.code).toBe("worker-ownership");
+	await manager.reconcile();
+	expect(lifecycle.acquireMaintenance).not.toHaveBeenCalled();
+	expect(manager.status().pending?.consentRevision).toBe(before.revision);
+	expect(manager.status().revision).toBe(before.revision);
+	manager.reportWorkerOwnership();
+	await manager.tick();
+	expect(manager.status().blocked).toBeUndefined();
+	expect(manager.status().transaction?.phase).toBe("succeeded");
+});
 it("persists per-channel choices, defaults, pin and pause independently per home", () => {
 	const { home, manager } = fixture();
 	expect(manager.status().effectivePolicy).toBe("manual");

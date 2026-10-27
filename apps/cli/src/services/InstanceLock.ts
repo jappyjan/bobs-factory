@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { type ChildProcess, execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
 	lstatSync,
@@ -63,6 +63,60 @@ export function ownerAlive(owner: WorkerOwner) {
 		if ((error as { status?: number }).status === 1) return false;
 		throw error;
 	}
+}
+/** A mismatched start time is unverifiable ownership, not evidence of exit. */
+export function ownerProcessExited(owner: WorkerOwner) {
+	try {
+		execFileSync("/bin/ps", ["-p", String(owner.pid), "-o", "lstart="], {
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		return false;
+	} catch (error) {
+		if ((error as { status?: number }).status === 1) return true;
+		throw error;
+	}
+}
+/** Reuse the start-time and OS executable checks before trusting a live worker. */
+export function workerIdentityMatches(
+	owner: WorkerOwner,
+	home: string,
+	executable: string,
+	port: number,
+) {
+	if (
+		owner.home !== canonicalHome(home) ||
+		owner.dashboardPort !== port ||
+		owner.executable !== realpathSync(executable) ||
+		!ownerAlive(owner)
+	)
+		return false;
+	const command =
+		process.platform === "linux"
+			? `/proc/${owner.pid}/exe`
+			: execFileSync("/bin/ps", ["-p", String(owner.pid), "-o", "comm="], {
+					encoding: "utf8",
+				}).trim();
+	return realpathSync(command) === owner.executable && ownerAlive(owner);
+}
+/** Caller retains its own previously verified child's record and holds the lifecycle guard. */
+export function reconcileChildWorkerOwner(
+	home: string,
+	child: ChildProcess,
+	owner: WorkerOwner,
+	executable: string,
+	port: number,
+) {
+	if (
+		workerOwner(home) ||
+		child.pid !== owner.pid ||
+		child.exitCode !== null ||
+		child.signalCode !== null ||
+		!workerIdentityMatches(owner, home, executable, port)
+	)
+		return false;
+	// Exclusive publication cannot overwrite a newly acquired record.
+	symlinkSync(JSON.stringify(owner), join(home, "runtime", "worker.lock"));
+	return true;
 }
 /** Scan inside the process only: never log process environments or credentials. */
 function descendants(nonce: string) {

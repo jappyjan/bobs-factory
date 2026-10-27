@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { type ChildProcess, execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	cpSync,
@@ -35,6 +35,10 @@ import {
 import {
 	acquireInstanceLock,
 	ownerAlive,
+	ownerProcessExited,
+	reconcileChildWorkerOwner,
+	type WorkerOwner,
+	workerIdentityMatches,
 	workerOwner,
 } from "./InstanceLock.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
@@ -68,6 +72,7 @@ interface Owner {
 }
 /** External owner adapter. Never replace a running worker from its own process. */
 export class OwnedUpdateLifecycle {
+	private childWorker?: { child: ChildProcess; owner: WorkerOwner };
 	private transactionId?: string;
 	private preservation?: Drain;
 	private staged?: LifecycleStaged;
@@ -133,6 +138,26 @@ export class OwnedUpdateLifecycle {
 	get runtimeLink() {
 		return this.owner.executable;
 	}
+	/** Never adopt a discovered process or replace an invalid/conflicting record.
+	 * Only this adapter's still-live, previously verified child can regain its lock. */
+	async reconcileChildOwnership() {
+		const retained = this.childWorker;
+		if (!retained) return false;
+		const release = await lifecycleGuard(this.home);
+		try {
+			if (workerOwner(this.home)) return false;
+			this.assertMayStart();
+			return reconcileChildWorkerOwner(
+				this.home,
+				retained.child,
+				retained.owner,
+				this.owner.executable,
+				Number(new URL(this.client.origin).port),
+			);
+		} finally {
+			release();
+		}
+	}
 	private fence() {
 		return join(this.home, "runtime", "update-owner.json");
 	}
@@ -160,6 +185,10 @@ export class OwnedUpdateLifecycle {
 		await this.beginMaintenance(transactionId);
 	}
 	private admitMaintenance(transactionId: string) {
+		if (this.transactionId !== transactionId) {
+			this.preservation = undefined;
+			this.staged = undefined;
+		}
 		if (existsSync(this.fence())) {
 			const saved = JSON.parse(readFileSync(this.fence(), "utf8"));
 			if (saved.transactionId !== transactionId)
@@ -562,6 +591,16 @@ export class OwnedUpdateLifecycle {
 						throw new Error("Another worker acquired ownership during launch");
 					if (ownerAlive(current)) {
 						await this.readyRuntime();
+						if (
+							current.owner === "desktop" &&
+							workerIdentityMatches(
+								current,
+								this.home,
+								this.owner.executable,
+								Number(new URL(this.client.origin).port),
+							)
+						)
+							this.childWorker = { child, owner: current };
 						return;
 					}
 				}
@@ -580,7 +619,17 @@ export class OwnedUpdateLifecycle {
 		)
 			return;
 		const current = workerOwner(this.home);
-		if (current && ownerAlive(current)) return;
+		// Absence is not proof of exit: an unrecorded worker may still be running.
+		if (!current || ownerAlive(current)) return;
+		if (
+			current.owner !== "desktop" ||
+			current.executable !== realpathSync(this.owner.executable) ||
+			current.dashboardPort !== Number(new URL(this.client.origin).port) ||
+			!ownerProcessExited(current)
+		)
+			throw new Error(
+				"Desktop crash ownership cannot be verified; replacement blocked",
+			);
 		const marker = process.env.BOBS_FACTORY_WORKER_ID;
 		try {
 			const release = await acquireInstanceLock(this.home);

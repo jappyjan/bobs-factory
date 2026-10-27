@@ -138,6 +138,13 @@ const StateSchema = z.object({
 	failures: z.number().int(),
 	lastCheckedAt: z.string().optional(),
 	error: z.string().optional(),
+	blocked: z
+		.object({
+			code: z.literal("worker-ownership"),
+			reason: z.string(),
+			remedy: z.string(),
+		})
+		.optional(),
 });
 export const UpdateStateSchema = StateSchema;
 export type UpdateState = z.infer<typeof StateSchema>;
@@ -351,6 +358,23 @@ export class UpdateManager {
 			activationSupported: Boolean(this.lifecycle),
 			operationOwner: this.operationOwner(),
 		};
+	}
+	/** Supervisor observation is separate from candidate errors and consent revisions. */
+	reportWorkerOwnership(reason?: string) {
+		const blocked = reason
+			? {
+					code: "worker-ownership" as const,
+					reason,
+					remedy:
+						"Use the desktop “Stop local Factory” action, then reopen local Factory and retry the update. If Stop cannot verify the worker, reconcile ownership with the installation owner first; do not remove locks or start a replacement.",
+				}
+			: undefined;
+		this.change(
+			(state) => {
+				state.blocked = blocked;
+			},
+			(state) => JSON.stringify(state.blocked) !== JSON.stringify(blocked),
+		);
 	}
 	private operationOwner() {
 		const file = join(this.directory, "operation.lock");
@@ -629,6 +653,7 @@ export class UpdateManager {
 		}
 	}
 	async reconcile() {
+		if (this.read().blocked) return this.status();
 		if (!this.lifecycle)
 			throw new Error(
 				"Activation needs the owned lifecycle supervisor. Checkout/Nix/external installations must use their owner; no executable was switched.",
@@ -844,6 +869,7 @@ export class UpdateManager {
 	/** Supervisor timer: 15-minute release checks, capped exponential offline
 	 * backoff; pending candidates coalesce to the current validated channel target. */
 	async tick() {
+		if (this.read().blocked) return this.status();
 		if (Date.now() >= this.read().nextCheckAt) await this.check();
 		const state = this.read();
 		if (state.pending && this.authorized(state, state.pending.candidate)) {

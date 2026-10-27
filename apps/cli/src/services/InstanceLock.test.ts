@@ -1,11 +1,93 @@
 import { type ChildProcess, fork } from "node:child_process";
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	lstatSync,
+	mkdtempSync,
+	readlinkSync,
+	rmSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
+import { reconcileChildWorkerOwner, workerOwner } from "./InstanceLock.js";
 
 const modulePath = fileURLToPath(new URL("./InstanceLock.ts", import.meta.url));
+it("restores only its verified live child and never overwrites a conflicting record", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-child-owner-"));
+	const script = join(home, "worker.mjs");
+	writeFileSync(
+		script,
+		`const {acquireInstanceLock}=await import(process.argv[2]);const release=await acquireInstanceLock(process.argv[3]);process.send({pid:process.pid});process.on('message',()=>{release();process.exit(0);});`,
+	);
+	const { child } = await launch(script, home);
+	try {
+		const owner = workerOwner(home)!;
+		const lock = join(home, "runtime", "worker.lock");
+		const saved = readlinkSync(lock);
+		unlinkSync(lock);
+		for (const changed of [
+			{ ...owner, pid: process.pid },
+			{ ...owner, processStamp: "unverified start" },
+			{ ...owner, executable: "/wrong-executable" },
+			{ ...owner, home: `${home}/other` },
+			{ ...owner, dashboardPort: owner.dashboardPort + 1 },
+		]) {
+			expect(
+				reconcileChildWorkerOwner(
+					home,
+					child,
+					changed,
+					process.execPath,
+					owner.dashboardPort,
+				),
+			).toBe(false);
+			expect(() => lstatSync(lock)).toThrow();
+		}
+		expect(
+			reconcileChildWorkerOwner(
+				home,
+				child,
+				owner,
+				process.execPath,
+				owner.dashboardPort,
+			),
+		).toBe(true);
+		expect(readlinkSync(lock)).toBe(saved);
+		expect(
+			reconcileChildWorkerOwner(
+				home,
+				child,
+				owner,
+				process.execPath,
+				owner.dashboardPort,
+			),
+		).toBe(false);
+		expect(readlinkSync(lock)).toBe(saved);
+		const done = new Promise((resolve) => child.once("exit", resolve));
+		child.send("stop");
+		await done;
+		expect(
+			reconcileChildWorkerOwner(
+				home,
+				child,
+				owner,
+				process.execPath,
+				owner.dashboardPort,
+			),
+		).toBe(false);
+		expect(() => lstatSync(lock)).toThrow();
+	} finally {
+		if (child.exitCode === null && child.signalCode === null) {
+			const done = new Promise((resolve) => child.once("exit", resolve));
+			child.kill("SIGKILL");
+			await done;
+		}
+		rmSync(home, { recursive: true, force: true });
+	}
+}, 15000);
 function launch(
 	script: string,
 	home: string,

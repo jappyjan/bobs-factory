@@ -205,7 +205,9 @@ export function UpdateSettings() {
 						{status.pending.staged ? "Verified and staged" : "Download pending"}{" "}
 						·{" "}
 						{status.pending.consentRevision === status.revision
-							? "Install requested; active work will drain before activation"
+							? status.blocked
+								? "Install requested; blocked until worker ownership is verified"
+								: "Install requested; active work will drain before activation"
 							: "Awaiting effective policy / Install"}
 					</p>
 					<Button
@@ -217,7 +219,9 @@ export function UpdateSettings() {
 					</Button>
 					<Button
 						requiresConnection
-						disabled={action.isPending || settings.paused}
+						disabled={
+							action.isPending || settings.paused || Boolean(status.blocked)
+						}
 						onClick={() =>
 							void perform("/api/updates/install", {
 								revision: status.revision,
@@ -230,7 +234,9 @@ export function UpdateSettings() {
 					{status.badCandidates.includes(keyOf(status)) && (
 						<Button
 							requiresConnection
-							disabled={action.isPending || settings.paused}
+							disabled={
+								action.isPending || settings.paused || Boolean(status.blocked)
+							}
 							onClick={() =>
 								void perform("/api/updates/retry", {
 									revision: status.revision,
@@ -248,6 +254,12 @@ export function UpdateSettings() {
 					Last operation: {status.transaction.phase} ·{" "}
 					{status.transaction.error ?? status.transaction.startedAt}
 				</p>
+			)}
+			{status.blocked && (
+				<div role="alert">
+					<p>Update blocked: {status.blocked.reason}</p>
+					<p>{status.blocked.remedy}</p>
+				</div>
 			)}
 			{status.error && <p role="alert">{status.error}</p>}
 			{action.error && <p role="alert">{action.error.message}</p>}

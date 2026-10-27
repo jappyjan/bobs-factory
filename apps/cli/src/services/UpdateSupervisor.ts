@@ -1,9 +1,11 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { PublishedUpdateSource, UpdateManager } from "bobs-factory-edge-worker";
 import {
 	acquireRuntimeOperation,
 	ownerAlive,
+	ownerProcessExited,
+	workerIdentityMatches,
 	workerOwner,
 } from "./InstanceLock.js";
 import { OwnedUpdateLifecycle } from "./OwnedUpdateLifecycle.js";
@@ -16,71 +18,82 @@ export async function runUpdateSupervisor(
 	const release = await acquireRuntimeOperation(home, "update-supervisor.lock");
 	let stopping = false;
 	const drainAbort = new AbortController();
-	process.once("SIGTERM", () => {
+	const onStop = () => {
 		stopping = true;
 		drainAbort.abort();
-	});
-	process.once("SIGINT", () => {
-		stopping = true;
-		drainAbort.abort();
-	});
+	};
+	process.once("SIGTERM", onStop);
+	process.once("SIGINT", onStop);
+	let lifecycle: OwnedUpdateLifecycle | undefined;
 	let lastStatus: ReturnType<UpdateManager["status"]> | undefined;
 	let crashRestarts = 0;
 	try {
 		do {
-			const lifecycle = new OwnedUpdateLifecycle(home, port, drainAbort.signal);
-			const executable = lifecycle.runtimeLink;
-			const identity = JSON.parse(
-				readFileSync(
-					join(
-						(await import("node:path")).dirname(realpathSync(executable)),
-						"build.json",
-					),
-					"utf8",
-				),
-			);
-			const source = new PublishedUpdateSource(
-				join(home, "updates"),
-				realpathSync(executable),
-				identity.target,
-			);
-			const manager = new UpdateManager(home, source, lifecycle, identity);
+			let manager = new UpdateManager(home);
 			const service = new ServiceLifecycle(home).record();
 			if (service && service.desired === "stopped") break;
 			if (existsSync(join(home, "runtime", "desktop-stopped.json"))) break;
-			const owner = workerOwner(home);
-			if (owner && ownerAlive(owner)) {
-				const transaction = manager.status().transaction;
-				try {
-					if (
-						transaction &&
-						((
-							transaction as typeof transaction & {
-								release?: { status: string };
-							}
-						).release?.status !== "acknowledged" ||
-							!["succeeded", "rolled-back", "cancelled"].includes(
-								transaction.phase,
-							))
-					)
-						await manager.recover("operation owner stopped");
-					else await manager.tick();
-				} catch (error) {
-					console.error(`Update supervisor: ${(error as Error).message}`);
+			try {
+				let owner = workerOwner(home);
+				if (!owner && (await lifecycle?.reconcileChildOwnership()))
+					owner = workerOwner(home);
+				if (!owner)
+					throw new Error(
+						"Worker ownership record is missing; the worker may still be running.",
+					);
+				lifecycle ??= new OwnedUpdateLifecycle(home, port, drainAbort.signal);
+				const executable = lifecycle.runtimeLink;
+				if (!ownerAlive(owner)) {
+					if (!ownerProcessExited(owner))
+						throw new Error(
+							"Worker process start time cannot be verified; the PID is still live.",
+						);
+					manager.reportWorkerOwnership(
+						"Recorded worker is no longer live; waiting for verified owner recovery.",
+					);
+					if (existsSync(join(home, "runtime", "update-owner.json"))) {
+						throw new Error(
+							"Interrupted update worker ownership cannot be verified; recovery remains blocked.",
+						);
+					} else if (!service && crashRestarts < 3) {
+						crashRestarts++;
+						await lifecycle.restartCrashedDesktop();
+					}
+				} else {
+					if (!workerIdentityMatches(owner, home, executable, port))
+						throw new Error(
+							"Worker PID, process start time, executable, home or port cannot be verified.",
+						);
+					const identity = JSON.parse(
+						readFileSync(
+							join(dirname(realpathSync(executable)), "build.json"),
+							"utf8",
+						),
+					);
+					const source = new PublishedUpdateSource(
+						join(home, "updates"),
+						realpathSync(executable),
+						identity.target,
+					);
+					manager = new UpdateManager(home, source, lifecycle, identity);
+					manager.reportWorkerOwnership();
+					const transaction = manager.status().transaction;
+					try {
+						if (
+							transaction &&
+							(transaction.release?.status !== "acknowledged" ||
+								!["succeeded", "rolled-back", "cancelled"].includes(
+									transaction.phase,
+								))
+						)
+							await manager.recover("operation owner stopped");
+						else await manager.tick();
+					} catch (error) {
+						console.error(`Update supervisor: ${(error as Error).message}`);
+					}
 				}
-			} else if (existsSync(join(home, "runtime", "update-owner.json"))) {
-				try {
-					await manager.recover("operation owner stopped");
-				} catch (error) {
-					console.error(`Update recovery: ${(error as Error).message}`);
-				}
-			} else if (!service && crashRestarts < 3) {
-				crashRestarts++;
-				try {
-					await lifecycle.restartCrashedDesktop();
-				} catch (error) {
-					console.error(`Desktop crash restart: ${(error as Error).message}`);
-				}
+			} catch (error) {
+				manager.reportWorkerOwnership((error as Error).message);
 			}
 			lastStatus = manager.status();
 			if (!once && !stopping)
@@ -89,6 +102,8 @@ export async function runUpdateSupervisor(
 		} while (!once && !stopping);
 		return lastStatus;
 	} finally {
+		process.removeListener("SIGTERM", onStop);
+		process.removeListener("SIGINT", onStop);
 		release();
 	}
 }
