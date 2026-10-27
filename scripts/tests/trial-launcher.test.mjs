@@ -15,13 +15,13 @@ import { join } from "node:path";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { freePortPair, retryWhileOccupied } from "./free-port.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const launcher = join(
 	root,
 	"distribution/npm/bobs-factory-trial/bin/bobs-factory-trial.mjs",
 );
-const trialPort = 46000 + (process.pid % 9000);
 const binary = process.env.BOBS_FACTORY_TRIAL_SMOKE_BINARY;
 function fixture() {
 	const work = mkdtempSync(join(tmpdir(), "factory-trial-test-"));
@@ -140,29 +140,43 @@ for (const noOpen of [false, true])
 				}),
 			)[0];
 			// npm executes the actual packed entry point. Registry auth is never needed.
-			current = child(
-				"npm",
-				[
-					"exec",
-					"--offline",
-					"--yes",
-					"--cache",
-					join(f.work, "npm-cache"),
-					"--package",
-					join(f.work, pack.filename),
-					"--",
-					"bobs-factory-trial",
-					"--port",
-					String(trialPort),
-					...(noOpen ? ["--no-open"] : []),
-				],
-				f.env,
+			const launch = async (port) => {
+				const run = child(
+					"npm",
+					[
+						"exec",
+						"--offline",
+						"--yes",
+						"--cache",
+						join(f.work, "npm-cache"),
+						"--package",
+						join(f.work, pack.filename),
+						"--",
+						"bobs-factory-trial",
+						"--port",
+						String(port),
+						...(noOpen ? ["--no-open"] : []),
+					],
+					f.env,
+				);
+				current = run;
+				let exitedEarly = false;
+				await waitFor(() => {
+					if (run.process.exitCode !== null) {
+						exitedEarly = true;
+						return true;
+					}
+					return existsSync(join(f.lock, "owner.json"));
+				}, "launcher lock");
+				return { run, exitedEarly };
+			};
+			const started = await retryWhileOccupied(
+				launch,
+				(attempt) =>
+					attempt.exitedEarly && /is occupied/.test(attempt.run.output()),
 			);
-			await waitFor(() => {
-				if (current.process.exitCode !== null)
-					throw new Error(current.output());
-				return existsSync(join(f.lock, "owner.json"));
-			}, "launcher lock");
+			if (started.result.exitedEarly) throw new Error(current.output());
+			const trialPort = started.port;
 			try {
 				await waitFor(
 					async () => {
@@ -189,7 +203,7 @@ for (const noOpen of [false, true])
 			else assert.equal(existsSync(f.browser), false);
 			const competing = child(
 				process.execPath,
-				[launcher, "--port", String(trialPort + 2)],
+				[launcher, "--port", String(await freePortPair())],
 				f.env,
 			);
 			assert.notEqual(await competing.exited, 0);
@@ -242,13 +256,14 @@ for (const noOpen of [false, true])
 test("occupied port rejects launch and leaves no stale lock", async () => {
 	const f = fixture();
 	const server = createServer();
+	const occupiedPort = await freePortPair();
 	await new Promise((resolve) =>
-		server.listen(trialPort + 4, "127.0.0.1", resolve),
+		server.listen(occupiedPort, "127.0.0.1", resolve),
 	);
 	try {
 		const current = child(
 			process.execPath,
-			[launcher, "--port", String(trialPort + 4)],
+			[launcher, "--port", String(occupiedPort)],
 			f.env,
 		);
 		assert.notEqual(await current.exited, 0);

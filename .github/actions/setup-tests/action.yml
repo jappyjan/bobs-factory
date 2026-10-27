@@ -11,11 +11,28 @@ runs:
       with:
         bun-version: '1.4.2'
     - uses: ./.github/actions/install-dependencies
+    - name: Restore downloaded test tool packages
+      uses: actions/cache@v6
+      with:
+        path: ~/apt-archives
+        key: apt-debs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.github/actions/setup-tests/action.yml') }}
     - name: Install video, sandbox and release test tools
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends -y apparmor-profiles bubblewrap ffmpeg jq
+        set -euo pipefail
+        export DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1
+        # The runner image ships services (for example php-fpm) whose restart on a
+        # library upgrade can hang for minutes. Test tools never need a service
+        # started, so refuse every service action during the install.
+        printf '#!/bin/sh\nexit 101\n' | sudo tee /usr/sbin/policy-rc.d > /dev/null
+        sudo chmod +x /usr/sbin/policy-rc.d
+        trap 'sudo rm -f /usr/sbin/policy-rc.d' EXIT
+        mkdir -p "$HOME/apt-archives"
+        sudo cp -n "$HOME"/apt-archives/*.deb /var/cache/apt/archives/ 2> /dev/null || true
+        sudo apt-get update -qq
+        sudo apt-get install --no-install-recommends -y -o APT::Keep-Downloaded-Packages=true apparmor-profiles bubblewrap ffmpeg jq
+        sudo cp -n /var/cache/apt/archives/*.deb "$HOME/apt-archives/" 2> /dev/null || true
+        sudo chown -R "$(id -u):$(id -g)" "$HOME/apt-archives"
     - name: Verify Linux Exec sandbox prerequisites
       shell: bash
       run: |
