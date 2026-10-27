@@ -25,20 +25,20 @@ runs:
         # need a service restarted; sudo drops exported variables, so pass them through env.
         apt_get() {
           sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
-            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 "$@"
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::ForceIPv4=true "$@"
         }
         mkdir -p "$HOME/apt-archives"
         sudo cp -n "$HOME"/apt-archives/*.deb /var/cache/apt/archives/ 2> /dev/null || true
         apt_get update -qq
         # A stalled mirror connection can hang for minutes while a retry completes in
         # seconds (apt resumes partial downloads): bound each attempt and retry.
-        for attempt in 1 2 3 4; do
-          if timeout 90 sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
-            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install --no-install-recommends -y \
+        for attempt in 1 2 3 4 5 6; do
+          if timeout 60 sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
+            apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::ForceIPv4=true install --no-install-recommends -y \
             -o APT::Keep-Downloaded-Packages=true apparmor-profiles bubblewrap ffmpeg jq; then
             break
           fi
-          [ "$attempt" = 4 ] && { echo 'Installing test tools failed four times' >&2; exit 1; }
+          [ "$attempt" = 6 ] && { echo 'Installing test tools failed six times' >&2; exit 1; }
           echo "::warning::Installing test tools timed out or failed (attempt $attempt); retrying"
           sudo dpkg --configure -a || true
         done
