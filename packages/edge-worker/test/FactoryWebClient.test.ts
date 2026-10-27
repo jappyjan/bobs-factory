@@ -548,7 +548,7 @@ it.each([
 		),
 	);
 	try {
-		await action(cache).mutate({ path: "/api/runs/run/answer" });
+		await action(cache).mutate({ path: "/api/runs/run/view-answer" });
 		for (const key of [
 			["run", "run"],
 			["run", "run", "focus"],

@@ -149,7 +149,7 @@ it("keeps explanation progress and completion separate from the blocked role rev
 	const explanation: ExecutionContext = {
 		...ctx,
 		stepKey: `${ctx.stepKey}/question-explanation`,
-		step: { ...ctx.step, id: "question-explanation", askQuestions: true },
+		step: { ...ctx.step, id: "question-explanation" },
 	};
 	const explanationProgress = await roleProgress(explanation);
 	expect(explanationProgress.previousRevision).toBeUndefined();

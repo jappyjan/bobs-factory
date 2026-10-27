@@ -222,7 +222,7 @@ it("precaches only a complete verified shell and ignores runtime data and mutati
 		"/api/runs",
 		"/api/events",
 		"/api/runs/r/artifacts/x",
-		"/api/runs/r/screenshots/0",
+		"/api/runs/r/view-screenshots/0?v=hash",
 		"/api/runs/r/activity/entries/0",
 		"/unknown",
 		`${script}?v=x`,
