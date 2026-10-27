@@ -98,7 +98,9 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # Stopgap: a slow Ubuntu apt mirror can take ~25 min to install ffmpeg in
+    # setup-tests. #175 caches the tools and restores a tighter bound.
+    timeout-minutes: 90
     env:
       F1_AGENT_MODE: mock
       F1_TESTED_COMMIT: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
