@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Keep complete desktop upgrade/rollback validation compatible with node-based recipes, retaining real waiting decisions, native checkpoints, worker identity and recovery checks; audit maintained release fixtures for removed step shapes and routes. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170))
+- Keep complete desktop upgrade/rollback validation compatible with node-based recipes, retaining real waiting decisions, native checkpoints, worker identity and recovery checks; audit maintained release fixtures for removed step shapes and routes. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#217](https://github.com/jappyjan/bobs-factory/pull/217))
 
 - Restore native CLI startup speed after the node-engine cutover by warming bundled schema validation without one child process per schema. Give native launcher checks a cold-start margin and include startup errors. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#216](https://github.com/jappyjan/bobs-factory/pull/216))
 
