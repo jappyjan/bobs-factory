@@ -58,7 +58,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
-- Port active release F1 fixtures and storage/operator recovery tests to nodes-v1 Display, Exec, read-only IO and stamped Merge receipts. Select published terminal-observation files, preserve current-node recovery semantics and run the maintained planning, approval and composition suites in nightly evidence checks. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+- Port active release F1 fixtures and storage/operator recovery tests to nodes-v1 Display, Exec, read-only IO and stamped Merge receipts. Select published terminal-observation files, preserve current-node recovery semantics and run the maintained planning, approval and composition suites in nightly evidence checks. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#215](https://github.com/jappyjan/bobs-factory/pull/215))
 
 - Stamp repository effect receipts after execution so Git commit/push and PR ensure can support fresh bound approvals. Preserve Snapshot commits and explicit binding checks, recheck inherited evidence before retry/restart dispatch until an effect identity is recorded, avoid empty-input stamps during retry backoff, and document default repository observations and inputs-only logic scopes. ([Taskbot #158](https://taskbot.apps.janjaap.de/p/bobs-factory/t/158), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#207](https://github.com/jappyjan/bobs-factory/pull/207))
 
