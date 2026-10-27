@@ -58,7 +58,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
-- Compile trusted bundled schema constants through the existing strict engine to warm the content-keyed cache; retain isolated compilation for authored schemas and isolated output validation. Use 30-second native dashboard readiness and a 60-second enclosing test budget, with immediate child-exit reporting. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170))
+- Compile trusted bundled schema constants through the existing strict engine to warm the content-keyed cache; retain isolated compilation for authored schemas and isolated output validation. Use 30-second native dashboard readiness and a 60-second enclosing test budget, with immediate child-exit reporting. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#216](https://github.com/jappyjan/bobs-factory/pull/216))
 
 - Install and probe Bubblewrap before Linux workspace and nightly tests so Exec sandbox validation can run with enforcement enabled. Allow 30 minutes for the maintained nightly node drives on Linux. ([#215](https://github.com/jappyjan/bobs-factory/pull/215))
 

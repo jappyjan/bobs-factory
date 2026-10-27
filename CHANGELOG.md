@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Restore native CLI startup speed after the node-engine cutover by warming bundled schema validation without one child process per schema. Give native launcher checks a cold-start margin and include startup errors. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170))
+- Restore native CLI startup speed after the node-engine cutover by warming bundled schema validation without one child process per schema. Give native launcher checks a cold-start margin and include startup errors. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), [#216](https://github.com/jappyjan/bobs-factory/pull/216))
 
 - Restore nightly validation after the node-engine cutover: use current Factory, Takeover and Improve drives and retain human decisions, native checkpoints and storage cleanup checks in the updated fixtures. ([Taskbot #170](https://taskbot.apps.janjaap.de/p/bobs-factory/t/170), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#215](https://github.com/jappyjan/bobs-factory/pull/215))
 
