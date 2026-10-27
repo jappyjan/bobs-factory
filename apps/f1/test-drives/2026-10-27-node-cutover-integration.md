@@ -38,6 +38,11 @@ original identities; the nightly no longer executes deleted engine imports.
   the edge-worker suite now caps file-level concurrency at two. No assertions or
   product deadlines are removed. The full package command is rerun after these
   fixes; CI remains required before merge.
+- The first complete Linux CI run passed 215 edge-worker files but failed two
+  Exec files because `bwrap` was absent (`spawn bwrap ENOENT`). Shared workspace
+  setup now installs Bubblewrap and probes the actual namespace/bind invocation
+  before testing. Sandbox enforcement and its assertions remain enabled. The
+  nightly drive budget is 30 minutes to accommodate observed Linux disk timings.
 
 ## Completed maintained scripted drives
 

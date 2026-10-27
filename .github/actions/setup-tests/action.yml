@@ -11,8 +11,13 @@ runs:
       with:
         bun-version: '1.4.2'
     - uses: ./.github/actions/install-dependencies
-    - name: Install video and release test tools
+    - name: Install video, sandbox and release test tools
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install --no-install-recommends -y ffmpeg jq
+        sudo apt-get install --no-install-recommends -y bubblewrap ffmpeg jq
+    - name: Verify Linux Exec sandbox prerequisites
+      shell: bash
+      run: |
+        bwrap --version
+        bwrap --die-with-parent --unshare-pid --unshare-net --ro-bind / / --dev /dev --proc /proc -- /bin/true
