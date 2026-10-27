@@ -41,6 +41,12 @@ runs:
           [ "$attempt" = 6 ] && { echo 'Installing test tools failed six times' >&2; exit 1; }
           echo "::warning::Installing test tools timed out or failed (attempt $attempt); retrying"
           sudo dpkg --configure -a || true
+          if [ "$attempt" = 2 ]; then
+            # The runner's regional mirror can be unreachable for the whole job.
+            echo '::warning::Falling back to the canonical Ubuntu archive'
+            sudo sed -i 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' /etc/apt/sources.list.d/ubuntu.sources || true
+            apt_get update -qq || true
+          fi
         done
         sudo cp -n /var/cache/apt/archives/*.deb "$HOME/apt-archives/" 2> /dev/null || true
         sudo chown -R "$(id -u):$(id -g)" "$HOME/apt-archives"
