@@ -9,6 +9,7 @@ import {
 import { join } from "node:path";
 import type { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
 import type { CapacitySnapshot, MachineCapacity } from "../MachineCapacity.js";
+import { preservationV2Workflow } from "./PreservationV2Workflow.js";
 import { UpdateManager } from "./UpdateManager.js";
 
 // This projection is frozen: older installed supervisors compare against it.
@@ -107,7 +108,8 @@ export class UpdateDrain {
 				return {
 					id: run.id,
 					workspace: run.workspace,
-					workflow: run.workflow,
+					// The old running worker held graphs after its schema parse.
+					workflow: preservationV2Workflow(run.workflow),
 					workflowDefinitions: run.workflowDefinitions,
 					checkpoint: run.checkpoint,
 					outputs: run.outputs,
