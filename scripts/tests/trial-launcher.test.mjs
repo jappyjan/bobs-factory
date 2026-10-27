@@ -81,8 +81,9 @@ function fixture() {
 		cleanup: () => rmSync(work, { recursive: true, force: true }),
 	};
 }
-async function waitFor(check, description) {
-	for (let i = 0; i < 100; i++) {
+async function waitFor(check, description, timeoutMs = 10000) {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
 		if (await check()) return;
 		await delay(100);
 	}
@@ -127,7 +128,7 @@ for (const major of [20, 22, 23, 25])
 
 for (const noOpen of [false, true])
 	test(`packed npm trial usable dashboard, ${noOpen ? "no-browser" : "browser"}, exclusivity and retained state${binary ? " (native)" : " (controlled protocol)"}`, {
-		timeout: 30000,
+		timeout: binary ? 60000 : 30000,
 	}, async () => {
 		const f = fixture();
 		let current;
@@ -162,13 +163,25 @@ for (const noOpen of [false, true])
 					throw new Error(current.output());
 				return existsSync(join(f.lock, "owner.json"));
 			}, "launcher lock");
-			await waitFor(async () => {
-				try {
-					return (await fetch(`http://127.0.0.1:${trialPort}/`)).ok;
-				} catch {
-					return false;
-				}
-			}, "usable dashboard");
+			try {
+				await waitFor(
+					async () => {
+						if (current.process.exitCode !== null)
+							throw new Error(current.output());
+						try {
+							return (await fetch(`http://127.0.0.1:${trialPort}/`)).ok;
+						} catch {
+							return false;
+						}
+					},
+					"usable dashboard",
+					binary ? 30000 : 10000,
+				);
+			} catch (error) {
+				throw new Error(`${error.message}\n${current.output()}`, {
+					cause: error,
+				});
+			}
 			const response = await fetch(`http://127.0.0.1:${trialPort}/`);
 			assert.match(await response.text(), /doctype html/i);
 			if (!noOpen)

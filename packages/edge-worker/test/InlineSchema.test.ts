@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
 	compileInlineSchema,
+	compileTrustedInlineSchemaSync,
 	inlineSchemaPreflight,
 } from "../src/factory/InlineSchema.js";
 import { executeInlineSchemaJob } from "../src/factory/InlineSchemaEngine.js";
@@ -10,6 +11,19 @@ import { OutputValidationError } from "../src/factory/OutputValidation.js";
 const step = (schema: Record<string, unknown>) => ({
 	id: "custom-result",
 	output: { schema },
+});
+it("retains schema and output checks after warming bundled schema compilation", async () => {
+	const schema: Record<string, unknown> = { type: "string", minLength: 3 };
+	expect(compileTrustedInlineSchemaSync(schema)).toEqual([]);
+	await expect(parseStepOutputAsync(step(schema), "no")).rejects.toBeInstanceOf(
+		OutputValidationError,
+	);
+	schema.type = "invalid-type";
+	expect((await compileInlineSchema(schema)).length).toBeGreaterThan(0);
+	expect(
+		compileTrustedInlineSchemaSync({ type: "object", unknownKeyword: true })
+			.length,
+	).toBeGreaterThan(0);
 });
 it("rejects recursive local references and unsafe property/value patterns before save", async () => {
 	for (const schema of [
