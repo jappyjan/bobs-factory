@@ -89,9 +89,8 @@ const settleWithUnresolvedTransaction = async (home: string) => {
 		},
 		{
 			acquireMaintenance: async () => {},
-			isIdle: async () => true,
-			preflight: async () => ({ stateCompatible: true as const }),
-			snapshot: async () => "/snapshot",
+			isIdle: async () => ({ idle: true as const }),
+			prepare: async () => ({ migration: null }),
 			stop: async () => {},
 			activate: async () => {},
 			start: async () => {},

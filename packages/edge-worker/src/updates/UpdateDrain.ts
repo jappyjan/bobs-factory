@@ -2,13 +2,16 @@ import { createHash } from "node:crypto";
 import {
 	existsSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { factoryRuntimeIdentity, readStateFormat } from "bobs-factory-core";
 import type { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
 import type { CapacitySnapshot, MachineCapacity } from "../MachineCapacity.js";
+import { baselineFromSummary, type DataSummary } from "./DataSummary.js";
 import { preservationV2Workflow } from "./PreservationV2Workflow.js";
 import { UpdateManager } from "./UpdateManager.js";
 
@@ -60,6 +63,93 @@ export class UpdateDrain {
 					.transaction;
 		}
 		return new UpdateManager(this.home).status().transaction;
+	}
+	/** Identity-level view of what this worker loaded; see {@link DataSummary}. */
+	dataSummary(): DataSummary {
+		const ids = (values: Iterable<string>) => [...values].sort();
+		const runIds = ids(this.runtime.runs.keys());
+		const loaded = new Set(runIds);
+		// Recipes saved by the user. Bundled ones belong to the candidate's code and
+		// may be removed or renamed by a newer build.
+		const workflowIds = ids(
+			this.runtime.catalog.read().locals.map((workflow) => workflow.id),
+		);
+		const native = this.nativeSessions() as {
+			sessions?: Array<{ id?: unknown }>;
+		};
+		const sessionIds = ids(
+			(native?.sessions ?? [])
+				.map((session) => session.id)
+				.filter((id): id is string => typeof id === "string"),
+		);
+		const loadErrors: DataSummary["loadErrors"] = [];
+		try {
+			for (const name of readdirSync(join(this.home, "factory", "runs")))
+				if (name.endsWith(".json") && !loaded.has(name.slice(0, -5)))
+					loadErrors.push({
+						kind: "run",
+						id: name.slice(0, -5),
+						message: "run file was not loaded",
+					});
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+		}
+		return {
+			runtime: {
+				version: factoryRuntimeIdentity.version,
+				commit: factoryRuntimeIdentity.commit,
+				target: factoryRuntimeIdentity.target,
+			},
+			stateFormat: readStateFormat(this.home),
+			runs: { count: runIds.length, ids: runIds },
+			workflows: { count: workflowIds.length, ids: workflowIds },
+			sessions: { count: sessionIds.length, ids: sessionIds },
+			loadErrors,
+		};
+	}
+	/** Fingerprint a v2 supervisor captured before it copied the home. Echoing it
+	 * keeps the v2 health rule ("the data you captured still loads") without the
+	 * byte-exact comparison that any token refresh breaks. Only while that exact
+	 * transaction is in flight and this worker loaded everything it recorded. */
+	private echo(summarize: () => DataSummary) {
+		try {
+			const fence = join(this.home, "runtime", "update-owner.json");
+			if (!existsSync(fence)) return;
+			const owner = JSON.parse(readFileSync(fence, "utf8")) as {
+				transactionId?: string;
+				preservation?: {
+					preservationContract?: string;
+					preservedStateSha256?: string;
+					runIds?: string[];
+				};
+			};
+			const saved = owner.preservation;
+			if (
+				saved?.preservationContract !== preservationContract ||
+				typeof saved.preservedStateSha256 !== "string"
+			)
+				return;
+			const transaction = new UpdateManager(this.home).status().transaction;
+			if (
+				!transaction ||
+				transaction.id !== owner.transactionId ||
+				["succeeded", "rolled-back", "cancelled"].includes(transaction.phase)
+			)
+				return;
+			const summary = summarize();
+			const have = new Set(summary.runs.ids);
+			if (
+				summary.loadErrors.length ||
+				(saved.runIds ?? []).some((id) => !have.has(id))
+			)
+				return;
+			return {
+				preservationContract: saved.preservationContract,
+				preservedStateSha256: saved.preservedStateSha256,
+			};
+		} catch {
+			return;
+		}
 	}
 	async begin(transactionId: string) {
 		const transaction = this.persistedTransaction(transactionId);
@@ -125,7 +215,7 @@ export class UpdateDrain {
 				};
 			})
 			.sort((a, b) => a.id.localeCompare(b.id));
-		return {
+		const receipt = {
 			preservationContract,
 			preservedStateSha256: createHash("sha256")
 				.update(
@@ -145,15 +235,23 @@ export class UpdateDrain {
 				.digest("hex"),
 			runIds: records.map((record) => record.id),
 		};
+		const echoed = this.echo(() => this.dataSummary());
+		return echoed ? { ...receipt, ...echoed } : receipt;
 	}
-	async inspect() {
+	/** `light` is for supervisors that compare identities, not bytes: it skips
+	 * the whole-state digest and reports the data baseline instead. */
+	async inspect(light = false) {
+		const evidence = () =>
+			light
+				? { baseline: baselineFromSummary(this.dataSummary()) }
+				: this.receipt();
 		if (!this.active())
 			throw new Error("Freeze intake before inspecting update drain");
 		if (this.busy() || this.intake.size)
 			return {
 				idle: false,
 				reason: "Accepted work is still executing",
-				...this.receipt(),
+				...evidence(),
 			};
 		let capacity: CapacitySnapshot;
 		try {
@@ -164,7 +262,7 @@ export class UpdateDrain {
 			return {
 				idle: false,
 				reason: (error as Error).message,
-				...this.receipt(),
+				...evidence(),
 			};
 		}
 		// No more capacity leases can be admitted once this returns. In-process
@@ -182,7 +280,7 @@ export class UpdateDrain {
 				queued: capacity.queued,
 				error: capacity.error,
 			},
-			...this.receipt(),
+			...evidence(),
 		};
 	}
 	async end(transactionId: string) {

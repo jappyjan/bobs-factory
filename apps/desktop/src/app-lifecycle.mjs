@@ -197,6 +197,16 @@ export class DesktopAppLifecycle {
 			? (await this.client.get("/api/updates/drain")).idle
 			: true;
 	}
+	/** One step for the shared UpdateManager: verify the staged app, then record
+	 * the switch (a ~1 KB file, not data). Runs before maintenance begins, so it
+	 * reads the worker the same way acquireMaintenance will. */
+	async prepare(staged, _installed, id) {
+		await this.preflight(staged);
+		this.worker = existsSync(this.fence)
+			? read(this.fence).worker
+			: this.services.workerOwner(this.home);
+		return { record: await this.snapshot(id) };
+	}
 	async preflight(staged) {
 		this.assertOwner();
 		if (staged.previousExecutable !== this.install)

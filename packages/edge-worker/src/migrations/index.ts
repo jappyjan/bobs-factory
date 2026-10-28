@@ -24,6 +24,7 @@ export {
 	ensureStateFormat,
 	planMigrations,
 	restoreMigrationBackup,
+	restoreMigrationBackupFor,
 	stateFormatReport,
 	UPDATE_TRANSACTION_ENV,
 	validateMigrationRegistry,

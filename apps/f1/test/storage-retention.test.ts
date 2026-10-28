@@ -900,7 +900,17 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		},
 		releaseMaintenance: async () => {},
 	};
-	let manager = new UpdateManager(home, source, lifecycle, {
+	// This scripted owner still plays the legacy copy-based supervisor: the updater
+	// itself no longer copies, but the retention engine must keep handling the
+	// snapshots such a supervisor leaves behind.
+	const legacyOwner = {
+		...lifecycle,
+		prepare: async (_staged: unknown, _installed: unknown, id: string) => {
+			await lifecycle.preflight();
+			return { record: await lifecycle.snapshot(id) };
+		},
+	};
+	let manager = new UpdateManager(home, source, legacyOwner, {
 		version: "1.0.0",
 		commit: "0".repeat(40),
 		target: "linux-x64",
@@ -1003,7 +1013,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		}
 		expect(manager.status().transaction?.phase).toBe("succeeded");
 		expect(workers).toBe(1);
-		manager = new UpdateManager(home, source, lifecycle);
+		manager = new UpdateManager(home, source, legacyOwner);
 		const updates = new UpdateArtifacts(home),
 			retention = new StorageRetention(home, {
 				snapshot: updates,

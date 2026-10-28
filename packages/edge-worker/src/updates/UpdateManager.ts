@@ -9,7 +9,6 @@ import {
 	readFileSync,
 	renameSync,
 	rmSync,
-	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
@@ -22,6 +21,16 @@ import {
 } from "bobs-factory-core";
 import { z } from "zod";
 import { compareReleaseVersions } from "../../../../scripts/lib/binary-release.mjs";
+import { commitBackup } from "../migrations/MigrationBackup.js";
+import type { DataBaseline } from "./DataSummary.js";
+import { acquireStateLock, StateLockBusyError } from "./StateLock.js";
+import {
+	type JournalIo,
+	type JournalStep,
+	MAX_FAILED_ATTEMPTS,
+	stepAtLeast,
+	UpdateJournal,
+} from "./UpdateJournal.js";
 import { UpdateOperationLock } from "./UpdateOperationLock.js";
 
 export const UpdateSettingsSchema = z
@@ -173,27 +182,78 @@ export interface UpdateSource {
 	): Promise<UpdateCandidate | undefined>;
 	stage(candidate: UpdateCandidate): Promise<StagedUpdate>;
 }
+/** What `prepare` decided before any worker is touched. */
+export interface PreparePlan {
+	/** Opaque path stored as `transaction.snapshot`; the desktop shell keeps its switch record there. */
+	record?: string;
+	/** Pre-created links, so switching and rolling back are renames that allocate nothing. */
+	links?: { next: string; prev: string };
+	/** Set when the candidate's data format differs; its worker migrates at startup. */
+	migration?: { from: number; to: number } | null;
+}
+export interface HealthExpectation {
+	transactionId: string;
+	/** What the previous worker had loaded at idle time. */
+	baseline?: DataBaseline | null;
+	migration?: { from: number; to: number } | null;
+}
+export type IdleObservation =
+	| boolean
+	| { idle: boolean; baseline?: DataBaseline };
+/** Not the candidate's fault (data format, disk): the candidate is not marked bad. */
+export class UpdateRejectedError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "UpdateRejectedError";
+	}
+}
+/** Disk-full style failures say nothing about the candidate. */
+export function isEnvironmentalError(error: unknown, depth = 0): boolean {
+	const value = error as
+		| { code?: unknown; name?: unknown; message?: unknown; cause?: unknown }
+		| undefined;
+	if (!value || depth > 3) return false;
+	if (value.code === "ENOSPC" || value.code === "EDQUOT") return true;
+	if (
+		value.name === "InsufficientSpaceError" ||
+		value.name === "UpdateRejectedError"
+	)
+		return true;
+	if (
+		/\b(ENOSPC|EDQUOT)\b|no space left|disk quota exceeded/i.test(
+			String(value.message ?? ""),
+		)
+	)
+		return true;
+	return isEnvironmentalError(value.cause, depth + 1);
+}
 /** Runs in the lifecycle supervisor, never in the worker being replaced.
  * Every method must be idempotent for the persisted transaction. Maintenance freezes
  * all intake and suppresses old-runtime auto-restart. isIdle includes descendant leases.
- * rollback must confirm failed replacement exit before starting the previous worker;
- * snapshots/restore are restricted to compatible Factory-owned state, never native stores.
+ * prepare verifies and pre-creates; it must not copy state. rollback must confirm failed
+ * replacement exit before starting the previous worker. The data stays in place: only a
+ * migration backup bound to the transaction is ever restored, never native stores.
  */
 export interface UpdateLifecycle {
 	/** Allows an owner supervisor to stop waiting without switching runtimes. */
 	signal?: AbortSignal;
 	acquireMaintenance(transactionId: string): Promise<void>;
-	isIdle(): Promise<boolean>;
-	preflight(
+	isIdle(): Promise<IdleObservation>;
+	prepare(
 		staged: StagedUpdate,
 		installed: InstalledUpdate,
-	): Promise<{ stateCompatible: true }>;
-	snapshot(transactionId: string): Promise<string>;
+		transactionId: string,
+	): Promise<PreparePlan>;
 	stop(): Promise<void>;
 	activate(staged: StagedUpdate): Promise<void>;
 	start(): Promise<void>;
-	health(candidate: UpdateCandidate): Promise<void>;
-	rollback(transaction: UpdateTransaction): Promise<void>;
+	health(candidate: UpdateCandidate, expect?: HealthExpectation): Promise<void>;
+	rollback(
+		transaction: UpdateTransaction,
+		expect?: HealthExpectation,
+	): Promise<void>;
+	/** Remove what `prepare` pre-created once the transaction is over. */
+	discard?(transactionId: string): Promise<void> | void;
 	releaseMaintenance(transactionId: string): Promise<void>;
 }
 export function effectiveUpdatePolicy(settings: UpdateSettings) {
@@ -211,7 +271,7 @@ export function candidateKey(candidate: UpdateCandidate) {
 		candidate.manifestSha256,
 	].join(":");
 }
-class UpdateStateLockBusyError extends Error {}
+const UpdateStateLockBusyError = StateLockBusyError;
 
 const now = () => new Date().toISOString();
 const terminal = (transaction?: UpdateTransaction) =>
@@ -224,17 +284,27 @@ const terminal = (transaction?: UpdateTransaction) =>
  * recover() requires explicit operator confirmation, then verifies stale ownership
  * under an exclusive reclaim guard. Legacy live PID-only records fail closed.
  */
+export interface UpdateManagerOptions {
+	/** Test seams: fail the journal's writes like a full volume. */
+	journalIo?: JournalIo;
+	/** Called after each journal step is durable; throwing simulates process death. */
+	afterStep?: (step: JournalStep, transactionId: string) => void;
+}
 export class UpdateManager {
 	readonly directory: string;
 	readonly file: string;
+	private readonly journal: UpdateJournal;
+	private crashed = false;
 	constructor(
 		readonly home: string,
 		private readonly source?: UpdateSource,
 		private readonly lifecycle?: UpdateLifecycle,
 		private readonly initial: InstalledUpdate = factoryRuntimeIdentity,
+		private readonly options: UpdateManagerOptions = {},
 	) {
 		this.directory = join(resolve(home), "updates");
 		this.file = join(this.directory, "state.json");
+		this.journal = new UpdateJournal(this.directory, options.journalIo);
 	}
 	private read(): UpdateState {
 		if (
@@ -264,16 +334,8 @@ export class UpdateManager {
 		shouldWrite: (state: UpdateState) => boolean = () => true,
 	): T | undefined {
 		mkdirSync(this.directory, { recursive: true, mode: 0o700 });
-		const lock = join(this.directory, "state.lock");
 		this.read();
-		try {
-			writeFileSync(lock, String(process.pid), { flag: "wx", mode: 0o600 });
-		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-			throw new UpdateStateLockBusyError(
-				"Update settings are being saved; retry. Inspect a retained state.lock after interruption.",
-			);
-		}
+		const releaseLock = acquireStateLock(join(this.directory, "state.lock"));
 		try {
 			const state = this.read();
 			if (!shouldWrite(state)) return;
@@ -296,7 +358,7 @@ export class UpdateManager {
 			}
 			return result;
 		} finally {
-			unlinkSync(lock);
+			releaseLock();
 		}
 	}
 	private get recoveryFile() {
@@ -775,8 +837,8 @@ export class UpdateManager {
 				(completed.id !== state.transaction?.id ||
 					state.transaction?.release?.status !== "acknowledged")
 			) {
-				// Wake the worker's coordinator after operation.lock is released;
-				// inventory notifications during the copy may race with that lock.
+				// Legacy: wakes the storage coordinator for snapshots that older
+				// supervisors registered. This updater creates none.
 				try {
 					await publishStorageJson(
 						join(this.home, "storage-retention", "update-completed.json"),
@@ -792,6 +854,23 @@ export class UpdateManager {
 		} finally {
 			releaseFailureReserve();
 		}
+	}
+	/** Environmental failures never mark a candidate bad, but a candidate that
+	 * keeps interrupting or failing the same way eventually does. */
+	private noteFailure(candidate: UpdateCandidate): boolean {
+		try {
+			return (
+				this.journal.recordFailure(candidateKey(candidate)) >=
+				MAX_FAILED_ATTEMPTS
+			);
+		} catch {
+			return false;
+		}
+	}
+	private markBad(state: UpdateState, candidate: UpdateCandidate) {
+		state.badCandidates = [
+			...new Set([...state.badCandidates, candidateKey(candidate)]),
+		];
 	}
 	async stage() {
 		return this.operation(async () => {
@@ -821,14 +900,17 @@ export class UpdateManager {
 					}
 				});
 			} catch (error) {
+				// A full disk says nothing about the release: keep it, retry later.
+				const environmental = isEnvironmentalError(error);
+				if (environmental)
+					try {
+						this.journal.recordFailure(
+							`stage:${candidateKey(before.pending.candidate)}`,
+						);
+					} catch {}
 				this.change((state) => {
 					state.error = (error as Error).message;
-					state.badCandidates = [
-						...new Set([
-							...state.badCandidates,
-							candidateKey(before.pending!.candidate),
-						]),
-					];
+					if (!environmental) this.markBad(state, before.pending!.candidate);
 				});
 				throw error;
 			}
@@ -853,6 +935,47 @@ export class UpdateManager {
 				outcome: outcome.data,
 				status: "pending",
 			};
+	}
+	/** Persist the step (always before the side effect it names, except `healthy`). */
+	private reach(id: string, step: JournalStep, baseline?: DataBaseline) {
+		this.journal.step(id, step, (journal) => {
+			if (baseline) journal.baseline = baseline;
+		});
+		try {
+			this.options.afterStep?.(step, id);
+		} catch (error) {
+			this.crashed = true;
+			throw error;
+		}
+	}
+	/** The commit point is the journal; `state.json` is repaired from it. */
+	private commit(transaction: UpdateTransaction) {
+		this.change((current) => {
+			current.installed = transaction.candidate;
+			current.transaction!.phase = "succeeded";
+			this.prepareRelease(current.transaction!);
+			delete current.pending;
+			delete current.error;
+		});
+		try {
+			commitBackup(this.home, transaction.id);
+		} catch (error) {
+			console.error(
+				`Migration backup commit deferred: ${(error as Error).message}`,
+			);
+		}
+		try {
+			this.journal.clearFailures(candidateKey(transaction.candidate));
+		} catch {}
+	}
+	private async discard(transactionId: string) {
+		try {
+			await this.lifecycle?.discard?.(transactionId);
+		} catch (error) {
+			console.error(
+				`Update link cleanup deferred: ${(error as Error).message}`,
+			);
+		}
 	}
 	private async releaseMaintenance(transactionId: string) {
 		// Persist before the external call, including migration of legacy terminal
@@ -889,6 +1012,15 @@ export class UpdateManager {
 			});
 			throw error;
 		}
+		try {
+			this.journal.remove(transactionId);
+		} catch {}
+		await this.reconcileLegacySnapshots(transaction);
+	}
+	/** Legacy: snapshots registered by older supervisors become disposable once a
+	 * later update succeeds. This updater registers none; PR d removes this. */
+	private async reconcileLegacySnapshots(transaction: UpdateTransaction) {
+		const transactionId = transaction.id;
 		// Retention publication is independent of maintenance acknowledgment. A
 		// failed cleanup must never turn a healthy installed update into recovery.
 		try {
@@ -897,20 +1029,17 @@ export class UpdateManager {
 			for (let offset = 0; offset < count; offset += 100) {
 				for (const id of await retention.inventoryPage(offset)) {
 					const artifact = await retention.record(id);
+					if (artifact.category !== "snapshot") continue;
 					const receipt = (await readStorageJson(
 						join(retention.directory, "receipts", `${id}.json`),
 					)) as { phase?: string } | undefined;
 					if (receipt?.phase === "completed") continue;
-					if (
-						artifact.operation === transactionId &&
-						artifact.category === "snapshot"
-					)
+					if (artifact.operation === transactionId)
 						await retention.revise(id, (record) => {
 							record.reconciledAt = new Date().toISOString();
 						});
 					else if (
 						transaction.release!.outcome === "succeeded" &&
-						artifact.category === "snapshot" &&
 						artifact.producer === "OwnedUpdateLifecycle" &&
 						/^[\w-]{1,100}$/.test(artifact.operation) &&
 						artifact.root === join(retention.home, "updates", "snapshots") &&
@@ -993,106 +1122,144 @@ export class UpdateManager {
 					};
 				current.transaction = transaction;
 			});
+			const identity = (value: InstalledUpdate) => ({
+				version: value.version,
+				commit: value.commit,
+				target: value.target,
+			});
+			this.journal.create({
+				id: transaction.id,
+				candidateKey: candidateKey(transaction.candidate),
+				plan: {
+					candidate: identity(transaction.candidate),
+					previous: identity(transaction.previous),
+				},
+				baseline: null,
+			});
+			this.options.afterStep?.("claimed", transaction.id);
 			let maintenance = false;
+			let acquiring = false;
+			let baseline: DataBaseline | null = null;
+			let migration: PreparePlan["migration"] = null;
 			try {
-				await lifecycle.acquireMaintenance(transaction.id);
-				maintenance = true;
-				{
-					const eligible = () => {
-						if (
-							lifecycle.signal?.aborted ||
-							!this.authorized(this.read(), transaction.candidate)
-						)
-							throw new Error(
-								"Update activation cancelled by current policy/candidate.",
-							);
-					};
-					// Keep admission closed across busy observations. Releasing it
-					// between checks lets an unending queue refill every freed slot.
-					while (true) {
-						eligible();
-						if (await lifecycle.isIdle()) break;
-						await delay(1000);
-					}
-					eligible();
-					this.phase("preflight");
-					const preflight = await lifecycle.preflight(
-						transaction.staged,
-						transaction.previous,
-					);
-					if (preflight.stateCompatible !== true)
+				const eligible = () => {
+					if (
+						lifecycle.signal?.aborted ||
+						!this.authorized(this.read(), transaction.candidate)
+					)
 						throw new Error(
-							"Candidate state compatibility is not established.",
+							"Update activation cancelled by current policy/candidate.",
 						);
+				};
+				eligible();
+				// Verify and pre-create everything while the old worker still serves.
+				// A rejected candidate or a full disk costs nothing.
+				const plan = await lifecycle.prepare(
+					transaction.staged,
+					transaction.previous,
+					transaction.id,
+				);
+				migration = plan.migration ?? null;
+				this.journal.update(transaction.id, (journal) => {
+					journal.plan.nextLink = plan.links?.next;
+					journal.plan.prevLink = plan.links?.prev;
+					journal.plan.migration = migration;
+				});
+				if (plan.record) this.phase("draining", { snapshot: plan.record });
+				eligible();
+				acquiring = true;
+				await lifecycle.acquireMaintenance(transaction.id);
+				acquiring = false;
+				maintenance = true;
+				this.reach(transaction.id, "maintenance");
+				// Keep admission closed across busy observations. Releasing it
+				// between checks lets an unending queue refill every freed slot.
+				while (true) {
 					eligible();
-					this.phase("snapshot");
-					const snapshot = await lifecycle.snapshot(transaction.id);
-					this.phase("snapshot", { snapshot });
-					eligible();
-					// This short write is the atomic authorization boundary. A policy mutation
-					// can occur during any preceding await, but never slip between authorization
-					// and committing the stopping phase.
-					this.change((current) => {
-						if (!this.authorized(current, transaction.candidate))
-							throw new Error(
-								"Update activation cancelled by current policy/candidate.",
-							);
-						current.transaction!.snapshot = snapshot;
-						current.transaction!.phase = "stopping";
-						current.transaction!.switchStarted = true;
-					});
-					await lifecycle.stop();
-					this.phase("activating");
-					await lifecycle.activate(transaction.staged);
-					this.phase("starting");
-					await lifecycle.start();
-					this.phase("health");
-					await lifecycle.health(transaction.candidate);
-					this.change((current) => {
-						current.installed = transaction.candidate;
-						current.transaction!.phase = "succeeded";
-						this.prepareRelease(current.transaction!);
-						delete current.pending;
-						delete current.error;
-					});
+					const observed = await lifecycle.isIdle();
+					const idle = typeof observed === "boolean" ? observed : observed.idle;
+					if (idle) {
+						if (typeof observed !== "boolean" && observed.baseline)
+							baseline = observed.baseline;
+						break;
+					}
+					await delay(1000);
 				}
+				eligible();
+				this.reach(transaction.id, "drained", baseline ?? undefined);
+				// This short write is the atomic authorization boundary. A policy mutation
+				// can occur during any preceding await, but never slip between authorization
+				// and committing the stopping phase.
+				this.change((current) => {
+					if (!this.authorized(current, transaction.candidate))
+						throw new Error(
+							"Update activation cancelled by current policy/candidate.",
+						);
+					current.transaction!.phase = "stopping";
+					current.transaction!.switchStarted = true;
+				});
+				this.reach(transaction.id, "stopped");
+				await lifecycle.stop();
+				this.phase("activating");
+				this.reach(transaction.id, "switched");
+				await lifecycle.activate(transaction.staged);
+				this.phase("starting");
+				this.reach(transaction.id, "started");
+				await lifecycle.start();
+				this.phase("health");
+				await lifecycle.health(transaction.candidate, {
+					transactionId: transaction.id,
+					baseline,
+					migration,
+				});
+				this.reach(transaction.id, "healthy");
+				this.reach(transaction.id, "committed");
+				this.commit(transaction);
+				await this.discard(transaction.id);
 			} catch (error) {
+				// A simulated or real process death runs nothing further.
+				if (this.crashed) throw error;
 				releaseFailureReserve();
 				const current = this.read().transaction!;
 				const message = (error as Error).message;
-				if (current.phase === "draining" && !maintenance) {
+				const environmental = isEnvironmentalError(error);
+				const cancelled = message.startsWith("Update activation cancelled");
+				if (acquiring && !maintenance) {
 					this.phase("recovery-required", {
 						error: `Maintenance acquisition outcome uncertain: ${message}`,
 					});
 				} else if (!current.switchStarted) {
+					const exhausted =
+						environmental && this.noteFailure(transaction.candidate);
 					this.phase("cancelled", { error: message });
 					this.change((value) => {
 						value.error = message;
-						if (!message.startsWith("Update activation cancelled"))
-							value.badCandidates = [
-								...new Set([
-									...value.badCandidates,
-									candidateKey(transaction.candidate),
-								]),
-							];
+						if (!cancelled && (!environmental || exhausted))
+							this.markBad(value, transaction.candidate);
 					});
+					await this.discard(transaction.id);
 				} else {
 					this.phase("rollback", { error: message });
+					this.journal.update(transaction.id, (journal) => {
+						journal.intent = "rollback";
+					});
 					try {
-						await lifecycle.rollback(this.read().transaction!);
+						await lifecycle.rollback(this.read().transaction!, {
+							transactionId: transaction.id,
+							baseline,
+						});
+						const exhausted =
+							environmental && this.noteFailure(transaction.candidate);
 						this.change((value) => {
 							value.installed = transaction.previous;
 							value.transaction!.phase = "rolled-back";
 							this.prepareRelease(value.transaction!);
-							value.badCandidates = [
-								...new Set([
-									...value.badCandidates,
-									candidateKey(transaction.candidate),
-								]),
-							];
+							if (!environmental || exhausted)
+								this.markBad(value, transaction.candidate);
 							value.error = message;
 							if (value.pending) delete value.pending.consentRevision;
 						});
+						await this.discard(transaction.id);
 					} catch (rollbackError) {
 						this.phase("recovery-required", {
 							error: `${message}; rollback failed: ${(rollbackError as Error).message}`,
@@ -1102,7 +1269,7 @@ export class UpdateManager {
 				}
 			} finally {
 				releaseFailureReserve();
-				if (maintenance) {
+				if (maintenance && !this.crashed) {
 					try {
 						await this.releaseMaintenance(transaction.id);
 					} catch (error) {
@@ -1110,13 +1277,29 @@ export class UpdateManager {
 							error: `Maintenance release failed: ${(error as Error).message}`,
 						});
 					}
+				} else if (!maintenance && !this.crashed) {
+					// Rejected while still serving: intake was never frozen, nothing to release.
+					const ended = this.read().transaction;
+					if (
+						ended?.id === transaction.id &&
+						ended.release?.status === "pending" &&
+						ended.phase === ended.release.outcome
+					) {
+						this.change((value) => {
+							value.transaction!.release!.status = "acknowledged";
+						});
+						try {
+							this.journal.remove(transaction.id);
+						} catch {}
+					}
 				}
 			}
 			return this.status();
 		});
 	}
-	/** Caller must stop the recorded operation owner first. Retains transaction;
-	 * interrupted switches always roll back, never blindly retry an activation. */
+	/** Caller must stop the recorded operation owner first. Retains the transaction.
+	 * One rule: anything the journal does not show as committed rolls back (or, if
+	 * nothing destructive had started, is cancelled); the retry is a new transaction. */
 	async recover(confirm: string) {
 		if (confirm !== "operation owner stopped")
 			throw new Error(
@@ -1124,8 +1307,22 @@ export class UpdateManager {
 			);
 		if (!this.lifecycle)
 			throw new Error("Recovery needs the owned lifecycle supervisor.");
+		const lifecycle = this.lifecycle;
 		return this.operation(async () => {
 			const transaction = this.read().transaction;
+			const journal = transaction && this.journal.read(transaction.id);
+			if (transaction && journal && stepAtLeast(journal.step, "committed")) {
+				// The journal says committed: repair state.json and the backup, then release.
+				if (transaction.phase !== "succeeded" || !transaction.release)
+					this.commit(transaction);
+				else
+					try {
+						commitBackup(this.home, transaction.id);
+					} catch {}
+				await this.discard(transaction.id);
+				await this.releaseMaintenance(transaction.id);
+				return this.status();
+			}
 			if (
 				transaction &&
 				(transaction.release?.status === "pending" ||
@@ -1136,25 +1333,37 @@ export class UpdateManager {
 				return this.status();
 			}
 			if (!terminal(transaction)) {
-				await this.lifecycle!.acquireMaintenance(transaction!.id);
-				if (!transaction!.switchStarted)
+				await lifecycle.acquireMaintenance(transaction!.id);
+				// Without a journal (a transaction written by an older supervisor) the
+				// persisted authorization boundary is the best evidence there is.
+				const destructive = journal
+					? stepAtLeast(journal.step, "stopped")
+					: transaction!.switchStarted;
+				const exhausted = this.noteFailure(transaction!.candidate);
+				if (!destructive) {
 					this.phase("cancelled", {
 						error: "Interrupted before switching; previous runtime retained.",
 					});
-				else {
+					if (exhausted)
+						this.change((state) => this.markBad(state, transaction!.candidate));
+				} else {
 					this.phase("rollback");
 					try {
-						await this.lifecycle!.rollback(transaction!);
+						await lifecycle.rollback(transaction!, {
+							transactionId: transaction!.id,
+							baseline: journal?.baseline,
+						});
+						const untouched = journal && !stepAtLeast(journal.step, "switched");
 						this.change((state) => {
 							state.installed = transaction!.previous;
-							state.transaction!.phase = "rolled-back";
+							state.transaction!.phase = untouched
+								? "cancelled"
+								: "rolled-back";
+							if (untouched)
+								state.transaction!.error =
+									"Interrupted before switching; previous runtime retained.";
 							this.prepareRelease(state.transaction!);
-							state.badCandidates = [
-								...new Set([
-									...state.badCandidates,
-									candidateKey(transaction!.candidate),
-								]),
-							];
+							if (exhausted) this.markBad(state, transaction!.candidate);
 							if (state.pending) delete state.pending.consentRevision;
 						});
 					} catch (error) {
@@ -1164,6 +1373,7 @@ export class UpdateManager {
 						throw error;
 					}
 				}
+				await this.discard(transaction!.id);
 				await this.releaseMaintenance(transaction!.id);
 			}
 			return this.status();
@@ -1177,8 +1387,15 @@ export class UpdateManager {
 		if (Date.now() >= this.read().nextCheckAt) await this.check();
 		const state = this.read();
 		if (state.pending && this.authorized(state, state.pending.candidate)) {
-			if (!state.pending.staged) await this.stage();
-			if (this.lifecycle) await this.reconcile();
+			const key = candidateKey(state.pending.candidate);
+			if (!state.pending.staged) {
+				if (this.journal.notBefore(`stage:${key}`) > Date.now())
+					return this.status();
+				await this.stage();
+			}
+			// A candidate that was interrupted or hit a full disk waits before retrying.
+			if (this.lifecycle && this.journal.notBefore(key) <= Date.now())
+				await this.reconcile();
 		}
 		return this.status();
 	}

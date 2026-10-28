@@ -93,9 +93,18 @@ export {
 	DEFAULT_BLOCK_MESSAGE,
 	UserAccessControl,
 } from "./UserAccessControl.js";
+export {
+	baselineFromSummary,
+	type DataBaseline,
+	type DataSummary,
+	dataRegression,
+} from "./updates/DataSummary.js";
 export { PublishedUpdateSource } from "./updates/PublishedUpdateSource.js";
 export type {
+	HealthExpectation,
+	IdleObservation,
 	InstalledUpdate,
+	PreparePlan,
 	StagedUpdate,
 	UpdateCandidate,
 	UpdateLifecycle,
@@ -108,7 +117,9 @@ export type {
 export {
 	candidateKey,
 	effectiveUpdatePolicy,
+	isEnvironmentalError,
 	UpdateManager,
+	UpdateRejectedError,
 } from "./updates/UpdateManager.js";
 export { WorktreeIncludeService } from "./WorktreeIncludeService.js";
 export { ZulipChatAdapter } from "./ZulipChatAdapter.js";

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { connect } from "node:net";
 import { dirname, join } from "node:path";
 import { PublishedUpdateSource, UpdateManager } from "bobs-factory-edge-worker";
 import {
@@ -12,6 +13,20 @@ import {
 import { OwnedUpdateLifecycle } from "./OwnedUpdateLifecycle.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
 
+const portInUse = (port: number) =>
+	new Promise<boolean>((resolve) => {
+		const socket = connect({ host: "localhost", port });
+		// Close the probe connection: an open client socket keeps the answering
+		// server (and a test's `server.close()`) from ever finishing.
+		const done = (inUse: boolean) => {
+			socket.destroy();
+			resolve(inUse);
+		};
+		socket.setTimeout(1000);
+		socket.once("connect", () => done(true));
+		socket.once("timeout", () => done(true));
+		socket.once("error", () => done(false));
+	});
 const settled = (
 	transaction: ReturnType<UpdateManager["status"]>["transaction"],
 ) =>
@@ -45,73 +60,106 @@ export async function runUpdateSupervisor(
 				let owner = workerOwner(home);
 				if (!owner && (await lifecycle?.reconcileChildOwnership()))
 					owner = workerOwner(home);
-				if (!owner)
-					throw new Error(
-						"Worker ownership record is missing; the worker may still be running.",
-					);
-				lifecycle ??= new OwnedUpdateLifecycle(home, port, drainAbort.signal);
-				const executable = lifecycle.runtimeLink;
-				if (!ownerAlive(owner)) {
-					if (!ownerProcessExited(owner))
-						throw new Error(
-							"Worker process start time cannot be verified; the PID is still live.",
-						);
-					manager.reportWorkerOwnership(
-						"Recorded worker is no longer live; waiting for verified owner recovery.",
-					);
-					if (existsSync(join(home, "runtime", "update-owner.json"))) {
-						throw new Error(
-							"Interrupted update worker ownership cannot be verified; recovery remains blocked.",
-						);
-					} else if (!service && crashRestarts < 3) {
-						crashRestarts++;
-						await lifecycle.restartCrashedDesktop();
-					}
-				} else if (!workerIdentityMatches(owner, home, executable, port)) {
-					// A verified process of this home runs another build than the runtime
-					// link names (a manual install moved the link, or this supervisor is
-					// older/newer than the worker). That is normal skew, not an ownership
-					// failure: leave the worker alone until it restarts onto the link.
-					// Mid-transaction it stays an error.
-					if (
-						!settled(manager.status().transaction) ||
-						!ownerProcessVerified(owner, home, port)
-					)
-						throw new Error(
-							"Worker PID, process start time, executable, home or port cannot be verified.",
-						);
+				// A supervisor that died after the old worker stopped and before the
+				// candidate held worker.lock leaves an open transaction and no live
+				// owner. That is the journal's job, not an ownership failure. A live
+				// PID that cannot be verified, or something answering on the port,
+				// still blocks.
+				const interrupted = manager.status();
+				if (
+					!settled(interrupted.transaction) &&
+					!interrupted.recovery &&
+					(owner
+						? !ownerAlive(owner) && ownerProcessExited(owner)
+						: !(await portInUse(port)))
+				) {
+					lifecycle ??= new OwnedUpdateLifecycle(home, port, drainAbort.signal);
 					manager.reportWorkerOwnership();
-				} else {
-					const identity = JSON.parse(
-						readFileSync(
-							join(dirname(realpathSync(executable)), "build.json"),
-							"utf8",
-						),
-					);
-					const source = new PublishedUpdateSource(
-						join(home, "updates"),
-						realpathSync(executable),
-						identity.target,
-					);
-					manager = new UpdateManager(home, source, lifecycle, identity);
-					manager.reportWorkerOwnership();
-					const { transaction, recovery } = manager.status();
+					manager = new UpdateManager(home, undefined, lifecycle);
 					try {
-						// A deliberate installation that differs from the unresolved
-						// transaction is not rolled back; the operator resolves it with
-						// `update recover --adopt-installed`.
-						if (!recovery) {
-							if (settled(transaction)) await manager.tick();
-							else await manager.recover("operation owner stopped");
-						}
+						await manager.recover("operation owner stopped");
 					} catch (error) {
 						console.error(`Update supervisor: ${(error as Error).message}`);
 					}
+				} else {
+					if (!owner)
+						throw new Error(
+							"Worker ownership record is missing; the worker may still be running.",
+						);
+					lifecycle ??= new OwnedUpdateLifecycle(home, port, drainAbort.signal);
+					const executable = lifecycle.runtimeLink;
+					if (!ownerAlive(owner)) {
+						if (!ownerProcessExited(owner))
+							throw new Error(
+								"Worker process start time cannot be verified; the PID is still live.",
+							);
+						manager.reportWorkerOwnership(
+							"Recorded worker is no longer live; waiting for verified owner recovery.",
+						);
+						if (existsSync(join(home, "runtime", "update-owner.json"))) {
+							throw new Error(
+								"Interrupted update worker ownership cannot be verified; recovery remains blocked.",
+							);
+						} else if (!service && crashRestarts < 3) {
+							crashRestarts++;
+							await lifecycle.restartCrashedDesktop();
+						}
+					} else if (!workerIdentityMatches(owner, home, executable, port)) {
+						// A verified process of this home runs another build than the runtime
+						// link names (a manual install moved the link, or this supervisor is
+						// older/newer than the worker). That is normal skew, not an ownership
+						// failure: leave the worker alone until it restarts onto the link.
+						// Mid-transaction it stays an error.
+						if (
+							!settled(manager.status().transaction) ||
+							!ownerProcessVerified(owner, home, port)
+						)
+							throw new Error(
+								"Worker PID, process start time, executable, home or port cannot be verified.",
+							);
+						manager.reportWorkerOwnership();
+					} else {
+						const identity = JSON.parse(
+							readFileSync(
+								join(dirname(realpathSync(executable)), "build.json"),
+								"utf8",
+							),
+						);
+						const source = new PublishedUpdateSource(
+							join(home, "updates"),
+							realpathSync(executable),
+							identity.target,
+						);
+						manager = new UpdateManager(home, source, lifecycle, identity);
+						manager.reportWorkerOwnership();
+						const { transaction, recovery } = manager.status();
+						try {
+							// A deliberate installation that differs from the unresolved
+							// transaction is not rolled back; the operator resolves it with
+							// `update recover --adopt-installed`.
+							if (!recovery) {
+								if (settled(transaction)) await manager.tick();
+								else await manager.recover("operation owner stopped");
+							}
+						} catch (error) {
+							console.error(`Update supervisor: ${(error as Error).message}`);
+						}
+					}
 				}
 			} catch (error) {
-				manager.reportWorkerOwnership((error as Error).message);
+				// Recording the problem needs a write too; on a full disk that must
+				// not end the loop that is waiting for space to come back.
+				try {
+					manager.reportWorkerOwnership((error as Error).message);
+				} catch (reportError) {
+					console.error(`Update supervisor: ${(reportError as Error).message}`);
+				}
 			}
-			lastStatus = manager.status();
+			try {
+				lastStatus = manager.status();
+			} catch (error) {
+				console.error(`Update supervisor: ${(error as Error).message}`);
+			}
 			if (!once && !stopping)
 				for (let n = 0; n < 100 && !stopping; n++)
 					await new Promise((resolve) => setTimeout(resolve, 100));
@@ -120,6 +168,10 @@ export async function runUpdateSupervisor(
 	} finally {
 		process.removeListener("SIGTERM", onStop);
 		process.removeListener("SIGINT", onStop);
-		release();
+		try {
+			release();
+		} catch (error) {
+			console.error(`Update supervisor: ${(error as Error).message}`);
+		}
 	}
 }

@@ -1,31 +1,36 @@
 import { type ChildProcess, execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-	cpSync,
 	existsSync,
 	lstatSync,
 	mkdirSync,
-	mkdtempSync,
+	readdirSync,
 	readFileSync,
 	realpathSync,
 	renameSync,
 	rmSync,
+	statfsSync,
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { promisify } from "node:util";
+import { readStateFormat } from "bobs-factory-core";
 import {
-	publishStorageJson,
-	readStorageJson,
-	reconcileStorageCopy,
-	StorageRetentionStore,
-	storageDigest,
-	writeStorageIntegrity,
-	writeStorageRollbackProof,
-} from "bobs-factory-core";
-import { requestFactoryTerminalSession } from "bobs-factory-edge-worker";
-import { FactoryClient } from "../tui/client.js";
+	backupSlot,
+	type DataBaseline,
+	type DataSummary,
+	dataRegression,
+	type HealthExpectation,
+	InsufficientSpaceError,
+	type PreparePlan,
+	readManifest,
+	requestFactoryTerminalSession,
+	restoreMigrationBackupFor,
+	UPDATE_TRANSACTION_ENV,
+	UpdateRejectedError,
+} from "bobs-factory-edge-worker";
+import { FactoryClient, FactoryRequestError } from "../tui/client.js";
 import { desktopStopped, lifecycleGuard } from "./DesktopLifecycle.js";
 import {
 	assertInstallationProof,
@@ -42,7 +47,6 @@ import {
 	workerOwner,
 } from "./InstanceLock.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
-import { copyUpdateStateForRetention as copyUpdateState } from "./UpdateStateSnapshot.js";
 
 const runFile = promisify(execFile);
 export interface LifecycleCandidate {
@@ -60,12 +64,20 @@ export interface LifecycleTransaction {
 	staged: LifecycleStaged;
 	snapshot?: string;
 }
+/** `GET /api/updates/drain`: `baseline` from this build's workers, `runIds` from v2 workers. */
 interface Drain {
 	idle: boolean;
-	preservationContract?: string;
-	preservedStateSha256: string;
-	runIds: string[];
+	baseline?: DataBaseline;
+	runIds?: string[];
 }
+interface FormatProbe {
+	writes: number;
+	migratesFrom: number;
+	plan?: Array<{ estimateBytes?: number }>;
+}
+const HEALTH_WINDOW_MS = 120_000;
+const MIGRATION_EXTENSION_MS = 10 * 60_000;
+const MIN_FREE_MARGIN = 64 * 1024 * 1024;
 interface Owner {
 	kind: "service" | "desktop";
 	executable: string;
@@ -74,7 +86,8 @@ interface Owner {
 export class OwnedUpdateLifecycle {
 	private childWorker?: { child: ChildProcess; owner: WorkerOwner };
 	private transactionId?: string;
-	private preservation?: Drain;
+	/** An idle observation was already recorded for this transaction. */
+	private drained = false;
 	private staged?: LifecycleStaged;
 	private readonly manager: ServiceLifecycle;
 	private readonly client: FactoryClient;
@@ -186,22 +199,23 @@ export class OwnedUpdateLifecycle {
 	}
 	private admitMaintenance(transactionId: string) {
 		if (this.transactionId !== transactionId) {
-			this.preservation = undefined;
+			this.drained = false;
 			this.staged = undefined;
 		}
 		if (existsSync(this.fence())) {
 			const saved = JSON.parse(readFileSync(this.fence(), "utf8"));
 			if (saved.transactionId !== transactionId)
 				throw new Error("Another update owns lifecycle suppression");
-			this.preservation = saved.preservation;
+			// A v2 supervisor's fence records its idle receipt as `preservation`.
+			this.drained = Boolean(saved.drained || saved.preservation);
 		}
 		this.transactionId = transactionId;
-		this.save({ transactionId, preservation: this.preservation });
+		this.save({ transactionId, drained: this.drained || undefined });
 	}
 	private async beginMaintenance(transactionId: string) {
 		const current = workerOwner(this.home);
 		if (!current || !ownerAlive(current)) {
-			if (!this.preservation) {
+			if (!this.drained) {
 				const transaction = JSON.parse(
 					readFileSync(join(this.home, "updates", "state.json"), "utf8"),
 				).transaction;
@@ -212,7 +226,7 @@ export class OwnedUpdateLifecycle {
 						realpathSync(transaction.staged.previousExecutable)
 				)
 					throw new Error(
-						"Interrupted switch lacks a durable preservation receipt",
+						"Interrupted switch lacks a durable idle observation",
 					);
 			}
 			const marker = process.env.BOBS_FACTORY_WORKER_ID;
@@ -223,8 +237,8 @@ export class OwnedUpdateLifecycle {
 				if (marker === undefined) delete process.env.BOBS_FACTORY_WORKER_ID;
 				else process.env.BOBS_FACTORY_WORKER_ID = marker;
 			}
-			if (this.preservation) return;
-			if (this.owner.kind === "desktop") await this.start();
+			if (this.drained) return;
+			if (this.owner.kind === "desktop") await this.start(false);
 			else {
 				for (let attempt = 0; attempt < 150; attempt++) {
 					const live = workerOwner(this.home);
@@ -238,18 +252,74 @@ export class OwnedUpdateLifecycle {
 			action: "begin",
 		});
 	}
-	async isIdle() {
-		const receipt = await this.client.get<Drain>("/api/updates/drain");
-		if (receipt.idle) {
-			this.preservation = receipt;
-			this.save({ transactionId: this.transactionId, preservation: receipt });
+	/** Run ids a v2 worker reports plus the run files on disk: both describe
+	 * what the worker being replaced has loaded. */
+	private legacyBaseline(runIds: string[] = []): DataBaseline {
+		const ids = new Set(runIds);
+		try {
+			for (const name of readdirSync(join(this.home, "factory", "runs")))
+				if (name.endsWith(".json")) ids.add(name.slice(0, -5));
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 		}
-		return receipt.idle;
+		return { runIds: [...ids].sort() };
 	}
-	private copyOwned(destination: string, purpose: "preflight" | "snapshot") {
-		return copyUpdateState(this.home, destination, purpose, this.signal);
+	async isIdle() {
+		// `light` skips the whole-state digest; older workers ignore it and send runIds.
+		const receipt = await this.client.get<Drain>("/api/updates/drain?light=1");
+		if (!receipt.idle) return { idle: false };
+		this.drained = true;
+		this.save({ transactionId: this.transactionId, drained: true });
+		return {
+			idle: true,
+			baseline: receipt.baseline ?? this.legacyBaseline(receipt.runIds),
+		};
 	}
-	async preflight(staged: LifecycleStaged, installed: { version: string }) {
+	/** Ask the candidate which data format it writes. Read-only. A build from
+	 * before the framework has no such command and writes format 1. */
+	private async probeFormat(executable: string): Promise<FormatProbe> {
+		try {
+			const { stdout } = await runFile(
+				executable,
+				["--home", this.home, "--no-open", "service", "format", "--json"],
+				{ timeout: 30000, env: { PATH: process.env.PATH, HOME: this.home } },
+			);
+			const probe = JSON.parse(stdout) as FormatProbe;
+			if (
+				!Number.isInteger(probe.writes) ||
+				!Number.isInteger(probe.migratesFrom)
+			)
+				throw new Error("Candidate returned an unrecognised format report");
+			return probe;
+		} catch (error) {
+			const text = `${(error as { stderr?: string }).stderr ?? ""} ${(error as Error).message}`;
+			if (/unknown command|too many arguments/i.test(text))
+				return { writes: 1, migratesFrom: 1 };
+			throw error;
+		}
+	}
+	private linkPath(kind: "next" | "prev", transactionId: string) {
+		return `${this.owner.executable}.${kind}-${transactionId}`;
+	}
+	/** Links of abandoned transactions: only one update runs at a time. */
+	private sweepLinks(keep: string) {
+		const directory = dirname(this.owner.executable);
+		const name = basename(this.owner.executable);
+		for (const entry of readdirSync(directory))
+			if (
+				(entry.startsWith(`${name}.next-`) ||
+					entry.startsWith(`${name}.prev-`)) &&
+				!entry.endsWith(`-${keep}`)
+			)
+				rmSync(join(directory, entry), { force: true });
+	}
+	/** Verify and pre-create while the old worker still serves: no copies, so a
+	 * rejected candidate or a full disk costs nothing. */
+	async prepare(
+		staged: LifecycleStaged,
+		installed: { version: string },
+		transactionId: string,
+	): Promise<PreparePlan> {
 		if (
 			staged.candidate.version.split(".")[0] !== installed.version.split(".")[0]
 		)
@@ -275,129 +345,50 @@ export class OwnedUpdateLifecycle {
 			metadata.executable.size !== bytes.length
 		)
 			throw new Error("Staged runtime identity/integrity mismatch");
-		const preparationRoot = join(this.home, "updates", "preparation");
-		mkdirSync(preparationRoot, { recursive: true, mode: 0o700 });
-		const isolated = mkdtempSync(join(preparationRoot, "preflight-"));
-		const retention = new StorageRetentionStore(this.home);
-		const preparation = await retention.register({
-			category: "preparation",
-			path: isolated,
-			root: preparationRoot,
-			producer: "OwnedUpdateLifecycle",
-			operation: this.transactionId ?? staged.candidate.commit,
-			dependencies: [],
-			evidence: [],
-		});
-		// Failed or interrupted preparation remains unverified and retained.
-		await this.copyOwned(isolated, "preflight");
-		const { stdout } = await runFile(
-			executable,
-			["--home", isolated, "--no-open", "service", "validate-state"],
-			{ timeout: 30000, env: { PATH: process.env.PATH, HOME: isolated } },
-		);
-		const result = JSON.parse(stdout);
-		if (result.stateCompatible !== true)
-			throw new Error("Candidate state preflight failed");
-		if (result.preservationContract !== this.preservation?.preservationContract)
-			throw new Error(
-				"Update preservation contract changed; use an owner-managed stopped-worker upgrade for this boundary. The running worker has not been replaced.",
+		const probe = await this.probeFormat(executable);
+		const onDisk = readStateFormat(this.home);
+		if (probe.writes < onDisk || onDisk < probe.migratesFrom)
+			throw new UpdateRejectedError(
+				probe.writes < onDisk
+					? `Candidate understands data format ${probe.writes}; yours is ${onDisk}.`
+					: `Candidate migrates data from format ${probe.migratesFrom}; yours is ${onDisk}. Update through an intermediate version first.`,
 			);
-		if (
-			JSON.stringify(result.runIds) !==
-			JSON.stringify(this.preservation?.runIds)
-		)
-			throw new Error("Preflight lost preserved workflow identities");
-		const integrity = await writeStorageIntegrity(
-			isolated,
-			join(retention.directory, "proofs", `${preparation.id}.ndjson`),
-		);
-		await retention.revise(preparation.id, (record) => {
-			record.evidence = [`integrity:${integrity}`];
-			record.completedAt =
-				record.verifiedAt =
-				record.reconciledAt =
-					new Date().toISOString();
-		});
-		// Preflight may rewrite state. Only byte-proven copies acquire an
-		// authoritative replacement; changed preparation remains independently held.
-		try {
-			await reconcileStorageCopy(retention, preparation.id);
-		} catch {
-			/* Keep its original retention proof. */
-		}
-		this.staged = { ...staged, executable, previousExecutable: previous };
-		return { stateCompatible: true as const };
-	}
-	async snapshot(transactionId: string) {
-		if (transactionId !== this.transactionId || !this.preservation)
-			throw new Error("Verified idle receipt required before snapshot");
-		const path = join(this.home, "updates", "snapshots", transactionId);
-		if (existsSync(path))
-			throw new Error(
-				"Snapshot already exists: recover the persisted transaction",
+		const migration =
+			onDisk < probe.writes ? { from: onDisk, to: probe.writes } : null;
+		if (migration) {
+			const estimate = (probe.plan ?? []).reduce(
+				(sum, step) => sum + (step.estimateBytes ?? 0),
+				0,
 			);
-		mkdirSync(path, { recursive: true, mode: 0o700 });
-		const retention = new StorageRetentionStore(this.home);
-		const artifact = await retention.register({
-			category: "snapshot",
-			rollback: "usable",
-			path,
-			root: join(this.home, "updates", "snapshots"),
-			producer: "OwnedUpdateLifecycle",
-			operation: transactionId,
-			dependencies: [],
-			evidence: [],
-		});
-		// A retained snapshot also retains the runtime it can roll back to.
-		let target = dirname(
-			this.staged?.previousExecutable ?? this.owner.executable,
-		);
-		while (target !== dirname(target)) {
-			const indexed = (await readStorageJson(
-				join(
-					retention.directory,
-					"path-records",
-					`${storageDigest(target)}.json`,
-				),
-			)) as { id: string } | undefined;
-			if (indexed) {
-				await publishStorageJson(
-					join(
-						retention.directory,
-						"dependencies",
-						indexed.id,
-						`${artifact.id}.json`,
-					),
-					{ ownerId: artifact.id },
-				);
-				break;
-			}
-			target = dirname(target);
+			const needed =
+				estimate + Math.max(MIN_FREE_MARGIN, Math.ceil(estimate * 0.1));
+			const stats = statfsSync(this.home);
+			const free = stats.bavail * stats.bsize;
+			if (free < needed) throw new InsufficientSpaceError(needed, free);
 		}
-		await this.copyOwned(path, "snapshot");
-		writeFileSync(
-			join(path, "lifecycle-receipt.json"),
-			JSON.stringify(this.preservation),
-			{ mode: 0o600 },
-		);
-		const integrity = await writeStorageIntegrity(
-			path,
-			join(retention.directory, "proofs", `${artifact.id}.ndjson`),
-		);
-		const runtimeProof = await writeStorageRollbackProof(
+		assertInstallationProof(
 			this.home,
-			artifact.id,
-			this.staged?.previousExecutable ?? this.owner.executable,
+			this.owner.executable,
+			this.installationOwner,
 		);
-		await retention.revise(artifact.id, (record) => {
-			record.completedAt = record.verifiedAt = new Date().toISOString();
-			record.evidence = [
-				runtimeProof,
-				`integrity:${integrity}`,
-				this.staged?.previousExecutable ?? this.owner.executable,
-			];
-		});
-		return path;
+		this.sweepLinks(transactionId);
+		// Switching and rolling back become renames of these links: no allocation.
+		const links = {
+			next: this.linkPath("next", transactionId),
+			prev: this.linkPath("prev", transactionId),
+		};
+		rmSync(links.next, { force: true });
+		rmSync(links.prev, { force: true });
+		symlinkSync(executable, links.next);
+		symlinkSync(previous, links.prev);
+		this.transactionId = transactionId;
+		this.staged = { ...staged, executable, previousExecutable: previous };
+		return { links, migration };
+	}
+	/** Remove the links `prepare` created once the transaction is over. */
+	discard(transactionId: string) {
+		rmSync(this.linkPath("next", transactionId), { force: true });
+		rmSync(this.linkPath("prev", transactionId), { force: true });
 	}
 	private async stopDesktopOwner() {
 		const expected = workerOwner(this.home);
@@ -434,17 +425,14 @@ export class OwnedUpdateLifecycle {
 	}
 	async stop() {
 		if (!this.transactionId) throw new Error("Maintenance required");
-		const fresh = await this.client.get<Drain>("/api/updates/drain");
-		if (
-			!fresh.idle ||
-			fresh.preservationContract !== this.preservation?.preservationContract ||
-			fresh.preservedStateSha256 !== this.preservation?.preservedStateSha256
-		)
-			throw new Error("Idle/preserved state changed before stop");
+		// Still idle? Background writes are allowed; accepted work is not.
+		const fresh = await this.client.get<Drain>("/api/updates/drain?light=1");
+		if (!fresh.idle) throw new Error("Idle state changed before stop");
 		if (this.owner.kind === "service") await this.manager.action("maintenance");
 		else await this.stopDesktopOwner();
 	}
-	private switchLink(executable: string) {
+	/** Rename a pre-created link over the runtime link (allocation-free). */
+	private switchLink(kind: "next" | "prev", executable: string) {
 		assertInstallationProof(
 			this.home,
 			this.owner.executable,
@@ -452,14 +440,22 @@ export class OwnedUpdateLifecycle {
 		);
 		if (workerOwner(this.home))
 			throw new Error("Existing worker ownership blocks runtime activation");
-		const next = `${this.owner.executable}.next-${this.transactionId}`;
+		const pre = this.linkPath(kind, this.transactionId!);
+		if (realpathSync(this.owner.executable) === executable) {
+			rmSync(pre, { force: true });
+			return;
+		}
 		try {
-			symlinkSync(executable, next);
-			renameSync(next, this.owner.executable);
+			if (
+				!lstatSync(pre, { throwIfNoEntry: false }) ||
+				realpathSync(pre) !== executable
+			) {
+				rmSync(pre, { force: true });
+				symlinkSync(executable, pre);
+			}
+			renameSync(pre, this.owner.executable);
 		} catch (error) {
-			try {
-				rmSync(next);
-			} catch {}
+			rmSync(pre, { force: true });
 			throw error;
 		}
 	}
@@ -468,8 +464,28 @@ export class OwnedUpdateLifecycle {
 			!this.staged ||
 			this.staged.executable !== realpathSync(staged.executable)
 		)
-			throw new Error("Candidate not preflighted");
-		this.switchLink(this.staged.executable);
+			throw new Error("Candidate not prepared");
+		this.switchLink("next", this.staged.executable);
+	}
+	/** Slow migrations keep the worker from answering. Extend the wait while a
+	 * backup bound to this transaction shows one is in progress, up to a cap. */
+	private waitWindow(baseMs: number) {
+		const begun = Date.now();
+		return () => {
+			const now = Date.now();
+			if (now < begun + baseMs) return false;
+			try {
+				const manifest = readManifest(backupSlot(this.home));
+				if (
+					manifest &&
+					manifest.transactionId === this.transactionId &&
+					["backing-up", "ready", "applying"].includes(manifest.status) &&
+					now < begun + baseMs + MIGRATION_EXTENSION_MS
+				)
+					return false;
+			} catch {}
+			return true;
+		};
 	}
 	private async readyRuntime() {
 		const expected = JSON.parse(
@@ -484,8 +500,8 @@ export class OwnedUpdateLifecycle {
 			requestSession: requestFactoryTerminalSession,
 			requestTimeoutMs: 1000,
 		});
-		const deadline = Date.now() + 30000;
-		while (Date.now() < deadline) {
+		const expired = this.waitWindow(30000);
+		while (!expired()) {
 			try {
 				const { runtime } = await readiness.get<{
 					runtime: LifecycleCandidate;
@@ -516,7 +532,9 @@ export class OwnedUpdateLifecycle {
 				"Deliberate Stop intent blocks automatic startup/recovery",
 			);
 	}
-	async start() {
+	/** `bind` hands the transaction to the worker so a migration at startup is
+	 * backed up for exactly this transaction. Starting the previous worker never binds. */
+	async start(bind = true) {
 		const release = await lifecycleGuard(this.home);
 		try {
 			this.assertMayStart();
@@ -525,12 +543,12 @@ export class OwnedUpdateLifecycle {
 				this.owner.executable,
 				this.installationOwner,
 			);
-			await this.startOwned();
+			await this.startOwned(bind);
 		} finally {
 			release();
 		}
 	}
-	private async startOwned() {
+	private async startOwned(bind: boolean) {
 		if (this.owner.kind === "service") {
 			await this.manager.resume();
 			for (let attempt = 0; attempt < 300; attempt++) {
@@ -570,7 +588,13 @@ export class OwnedUpdateLifecycle {
 					detached: true,
 					cwd: this.home,
 					stdio: ["ignore", log, log],
-					env: { ...process.env, BOBS_FACTORY_DESKTOP_OWNER: "1" },
+					env: {
+						...process.env,
+						BOBS_FACTORY_DESKTOP_OWNER: "1",
+						...(bind && this.transactionId
+							? { [UPDATE_TRANSACTION_ENV]: this.transactionId }
+							: {}),
+					},
 				},
 			);
 			(await import("node:fs")).closeSync(log);
@@ -638,49 +662,76 @@ export class OwnedUpdateLifecycle {
 			if (marker === undefined) delete process.env.BOBS_FACTORY_WORKER_ID;
 			else process.env.BOBS_FACTORY_WORKER_ID = marker;
 		}
-		await this.start();
+		await this.start(false);
 	}
 
-	async health(candidate: LifecycleCandidate) {
+	/** Identity of what loaded, never bytes: a token refresh or recipe
+	 * re-serialization during the window cannot fail an update. */
+	private async dataFailure(
+		expect: HealthExpectation | undefined,
+	): Promise<string | undefined> {
+		let summary: DataSummary | undefined;
+		try {
+			summary = await this.client.get<DataSummary>("/api/updates/data");
+		} catch (error) {
+			if (!(error instanceof FactoryRequestError) || error.status !== 404)
+				throw error;
+		}
+		if (!summary) {
+			// A v2 worker (rollback target) has no data endpoint; its drain receipt
+			// still lists the run ids it loaded.
+			const receipt = await this.client.get<Drain>("/api/updates/drain");
+			const have = new Set(receipt.runIds ?? []);
+			const missing = (expect?.baseline?.runIds ?? []).filter(
+				(id) => !have.has(id),
+			);
+			return missing.length
+				? `Runs missing after update: ${missing.slice(0, 5).join(", ")}`
+				: undefined;
+		}
+		const regression = dataRegression(summary, expect?.baseline);
+		if (regression) return regression;
+		if (expect?.migration && summary.stateFormat !== expect.migration.to)
+			return `Data format ${summary.stateFormat} loaded; expected ${expect.migration.to}`;
+		return undefined;
+	}
+	async health(candidate: LifecycleCandidate, expect?: HealthExpectation) {
 		let failure = "Runtime did not respond";
-		for (let attempt = 0; attempt < 100; attempt++) {
+		const expired = this.waitWindow(HEALTH_WINDOW_MS);
+		while (true) {
 			try {
 				const identity = await this.client.get<{ runtime: LifecycleCandidate }>(
 					"/api/version",
 				);
-				const receipt = await this.client.get<Drain>("/api/updates/drain");
 				const owner = workerOwner(this.home);
-				const preservedState =
-					receipt.preservationContract ===
-						this.preservation?.preservationContract &&
-					receipt.preservedStateSha256 ===
-						this.preservation?.preservedStateSha256;
-				if (
+				const liveOwner = Boolean(
+					owner &&
+						ownerAlive(owner) &&
+						owner.executable === realpathSync(this.owner.executable),
+				);
+				const identical =
 					identity.runtime.version === candidate.version &&
 					identity.runtime.commit === candidate.commit &&
-					identity.runtime.target === candidate.target &&
-					owner &&
-					ownerAlive(owner) &&
-					preservedState
-				)
-					return;
-				failure = `Observed ${identity.runtime.version}/${identity.runtime.commit}/${identity.runtime.target}; liveOwner=${Boolean(owner && ownerAlive(owner))}; preservedState=${preservedState}; preservationContract=${receipt.preservationContract ?? "legacy"}/${this.preservation?.preservationContract ?? "legacy"}`;
+					identity.runtime.target === candidate.target;
+				const data =
+					identical && liveOwner ? await this.dataFailure(expect) : undefined;
+				if (identical && liveOwner && !data) return;
+				failure = `Observed ${identity.runtime.version}/${identity.runtime.commit}/${identity.runtime.target}; liveOwner=${liveOwner}${data ? `; ${data}` : ""}`;
 			} catch (error) {
 				failure = (error as Error).message;
 			}
+			if (expired()) break;
 			await new Promise((resolve) => setTimeout(resolve, 200));
 		}
 		throw new Error(
-			`Replacement failed exact runtime/preserved-state health check: ${failure}`,
+			`Replacement failed exact runtime/data health check: ${failure}`,
 		);
 	}
-	async rollback(transaction: LifecycleTransaction) {
-		if (
-			!transaction.snapshot ||
-			resolve(transaction.snapshot) !==
-				join(resolve(this.home), "updates", "snapshots", transaction.id)
-		)
-			throw new Error("Rollback snapshot ownership mismatch");
+	async rollback(
+		transaction: LifecycleTransaction,
+		expect?: HealthExpectation,
+	) {
+		this.transactionId = transaction.id;
 		// Suppression stays active. Stop only the failed replacement, never a new external owner.
 		if (workerOwner(this.home)) {
 			if (this.owner.kind === "service")
@@ -689,44 +740,14 @@ export class OwnedUpdateLifecycle {
 		}
 		if (workerOwner(this.home))
 			throw new Error("Replacement exit not confirmed");
-		// Restore only bounded Factory-owned state after replacement exit. Keep
-		// actual native stores outside this home, current auth, updates and runtime.
-		const retained = join(
-			this.home,
-			"updates",
-			"recovery-retained",
-			transaction.id,
+		// The data stays where it is. Only a migration this transaction started
+		// has files to put back, and they go back by rename from its own backup.
+		restoreMigrationBackupFor(this.home, transaction.id);
+		this.switchLink(
+			"prev",
+			realpathSync(transaction.staged.previousExecutable),
 		);
-		mkdirSync(retained, { recursive: true, mode: 0o700 });
-		const retention = new StorageRetentionStore(this.home);
-		const recovery = await retention.register({
-			category: "recovery",
-			path: retained,
-			root: join(this.home, "updates", "recovery-retained"),
-			producer: "OwnedUpdateLifecycle",
-			operation: transaction.id,
-			dependencies: [
-				"Failure-era state needs explicit reconciliation with current authoritative state",
-			],
-			evidence: [],
-		});
-		for (const name of ["config.json", "state", "factory"]) {
-			const current = join(this.home, name),
-				backup = join(transaction.snapshot, name);
-			if (existsSync(join(retained, name)))
-				throw new Error(
-					"Interrupted rollback requires reconciliation of retained state",
-				);
-			if (existsSync(current)) renameSync(current, join(retained, name));
-			if (existsSync(backup))
-				cpSync(backup, current, { recursive: true, verbatimSymlinks: true });
-			if (name === "factory" && existsSync(join(retained, name, "auth"))) {
-				mkdirSync(current, { recursive: true, mode: 0o700 });
-				renameSync(join(retained, name, "auth"), join(current, "auth"));
-			}
-		}
-		this.switchLink(realpathSync(transaction.staged.previousExecutable));
-		await this.start();
+		await this.start(false);
 		const old = JSON.parse(
 			readFileSync(
 				join(
@@ -736,15 +757,7 @@ export class OwnedUpdateLifecycle {
 				"utf8",
 			),
 		);
-		await this.health(old);
-		const recoveryIntegrity = await writeStorageIntegrity(
-			retained,
-			join(retention.directory, "proofs", `${recovery.id}.ndjson`),
-		);
-		await retention.revise(recovery.id, (record) => {
-			record.completedAt = record.verifiedAt = new Date().toISOString();
-			record.evidence = [`integrity:${recoveryIntegrity}`];
-		});
+		await this.health(old, expect);
 	}
 	async releaseMaintenance(transactionId: string) {
 		if (!this.transactionId) {
@@ -772,7 +785,7 @@ export class OwnedUpdateLifecycle {
 			const saved = JSON.parse(readFileSync(this.fence(), "utf8"));
 			if (saved.transactionId !== transactionId)
 				throw new Error("Another lifecycle owns maintenance");
-			this.preservation = saved.preservation;
+			this.drained = Boolean(saved.drained || saved.preservation);
 		} else if (!existsSync(join(this.home, "updates", "maintenance.json")))
 			return;
 		const current = workerOwner(this.home);
@@ -786,7 +799,7 @@ export class OwnedUpdateLifecycle {
 					? transaction.candidate
 					: transaction.previous;
 			await this.acquireMaintenance(transactionId);
-			await this.start();
+			await this.start(false);
 			await this.health(expected);
 		}
 		await this.client.post("/api/updates/maintenance", {
