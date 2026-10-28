@@ -14,6 +14,7 @@ import { type FsOps, realFs, writeAtomicVia } from "./fsOps.js";
 import {
 	assertTouchAllowed,
 	backupSlot,
+	beginRestore,
 	commitBackup,
 	createBackup,
 	isUnresolved,
@@ -115,8 +116,8 @@ export function stateFormatReport(
 
 /**
  * Put the pre-migration files back by rename and, if the format file already
- * advanced, move it back first so a crash in between re-migrates instead of
- * leaving new-format markers over old files.
+ * advanced, move it back first. A completed restore leaves the old files, the
+ * old format marker and a `restored` slot.
  */
 export function restoreMigrationBackup(
 	home: string,
@@ -124,7 +125,9 @@ export function restoreMigrationBackup(
 ) {
 	const fs = options.fs ?? realFs;
 	const slot = backupSlot(home);
-	const manifest = readManifest(slot, fs);
+	// `restoring` lands first: from here on a crash finishes the restore on
+	// the next start instead of resuming the migration over half-restored files.
+	const manifest = beginRestore(slot, { fs, now: options.now?.() });
 	if (!manifest) return;
 	const record = readStateFormatRecord(home);
 	if (
@@ -167,9 +170,21 @@ export async function ensureStateFormat(
 		commit: factoryRuntimeIdentity.commit,
 	};
 	const write = (path: string, text: string) => writeAtomicVia(fs, path, text);
+	const slot = backupSlot(home);
+	// A restore that was interrupted always finishes first, whatever the
+	// transaction; the guard below then sees a clean old state.
+	if (readManifest(slot, fs)?.status === "restoring") {
+		try {
+			restoreMigrationBackup(home, { fs, now });
+		} catch (error) {
+			throw refuse(
+				`An interrupted migration restore could not be finished: ${(error as Error).message}`,
+				error,
+			);
+		}
+	}
 	const record = readStateFormatRecord(home);
 	const onDisk = record?.format ?? 1;
-	const slot = backupSlot(home);
 
 	switch (compareStateFormat(onDisk, support)) {
 		case "too-new":

@@ -19,6 +19,7 @@ export type BackupStatus =
 	| "ready"
 	| "applying"
 	| "applied"
+	| "restoring"
 	| "committed"
 	| "restored";
 
@@ -46,7 +47,12 @@ export interface BackupManifest {
 export const BACKUP_CAP_BYTES = 1024 ** 3;
 export const BACKUP_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 const MIN_FREE_MARGIN = 64 * 1024 * 1024;
-const UNRESOLVED: BackupStatus[] = ["ready", "applying", "applied"];
+const UNRESOLVED: BackupStatus[] = [
+	"ready",
+	"applying",
+	"applied",
+	"restoring",
+];
 
 export class InsufficientSpaceError extends Error {
 	constructor(needed: number, free: number) {
@@ -71,9 +77,13 @@ export class BackupTooLargeError extends Error {
 }
 
 export class UnresolvedBackupError extends Error {
-	constructor(readonly manifest: BackupManifest) {
+	constructor(
+		readonly manifest: BackupManifest,
+		detail?: string,
+	) {
 		super(
-			`An unresolved migration backup exists (status ${manifest.status}, transaction ${manifest.transactionId ?? "none"}). Run "bobs-factory update restore-backup" to restore the pre-migration files, or "bobs-factory update discard-backup" to keep the current files.`,
+			detail ??
+				`An unresolved migration backup exists (status ${manifest.status}, transaction ${manifest.transactionId ?? "none"}). Run "bobs-factory update restore-backup" to restore the pre-migration files, or "bobs-factory update discard-backup" to keep the current files.`,
 		);
 		this.name = "UnresolvedBackupError";
 	}
@@ -285,10 +295,27 @@ export function createBackup(options: CreateBackupOptions): BackupManifest {
 	}
 }
 
+/** `applied`/`applying` → `restoring`, durably, before the first file moves. */
+export function beginRestore(
+	slot: string,
+	options: { fs?: FsOps; now?: Date } = {},
+): BackupManifest | undefined {
+	const manifest = readManifest(slot, options.fs);
+	if (!manifest || NOTHING_TO_RESTORE.includes(manifest.status))
+		return manifest;
+	return manifest.status === "restoring"
+		? manifest
+		: setBackupStatus(slot, "restoring", options);
+}
+
+const NOTHING_TO_RESTORE: BackupStatus[] = ["backing-up", "ready", "restored"];
+
 /**
  * Put every backed-up file back by rename (no byte copy, no extra space) and
- * unlink files that did not exist before. Idempotent: the files still present
- * in the slot are exactly what is left to do, so a crash mid-restore re-runs.
+ * unlink files that did not exist before. The slot is marked `restoring`
+ * before the first rename, and a file already gone from the slot counts as
+ * restored only if the live file still has the recorded hash, so a crash
+ * mid-restore re-runs to the same result and never guesses.
  */
 export function restoreBackup(
 	slot: string,
@@ -296,13 +323,13 @@ export function restoreBackup(
 	options: { fs?: FsOps; now?: Date } = {},
 ): BackupManifest | undefined {
 	const fs = options.fs ?? realFs;
-	const manifest = readManifest(slot, fs);
+	const manifest = beginRestore(slot, { fs, now: options.now });
 	if (!manifest) {
 		fs.removeTree(slot);
 		return;
 	}
 	// Before `applying` nothing live changed; there is nothing to put back.
-	if (manifest.status !== "backing-up" && manifest.status !== "ready") {
+	if (!NOTHING_TO_RESTORE.includes(manifest.status)) {
 		for (const file of manifest.files) {
 			const live = livePath(home, file.rel);
 			if (file.state === "absent") {
@@ -314,12 +341,26 @@ export function restoreBackup(
 				continue;
 			}
 			const saved = filePath(slot, file.rel);
-			if (fs.size(saved) === undefined) continue;
+			if (fs.size(saved) === undefined) {
+				if (
+					fs.size(live) === undefined ||
+					createHash("sha256").update(fs.readFile(live)).digest("hex") !==
+						file.sha256
+				)
+					throw new UnresolvedBackupError(
+						manifest,
+						`Cannot finish restoring the migration backup: ${file.rel} is no longer in the backup and the live file does not match what was saved. Nothing else was changed. Put the right copy of ${file.rel} back and re-run, or run "bobs-factory update discard-backup" to keep the current files.`,
+					);
+				continue;
+			}
 			fs.mkdirp(dirname(live));
 			fs.rename(saved, live);
 		}
 	}
-	const restored = setBackupStatus(slot, "restored", { fs, now: options.now });
+	const restored =
+		manifest.status === "restored"
+			? manifest
+			: setBackupStatus(slot, "restored", { fs, now: options.now });
 	fs.removeTree(slot);
 	return restored;
 }

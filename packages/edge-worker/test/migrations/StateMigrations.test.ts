@@ -430,6 +430,99 @@ describe("restore and prune", () => {
 		expect(existsSync(backupSlot(home))).toBe(false);
 	});
 
+	/** A migrated home whose restore died after `n` writes. Undefined when it completed. */
+	const crashedRestore = async (n: number, transactionId: string | null) => {
+		const home = newHome();
+		const before = treeHash(home);
+		await run(home, { transactionId });
+		try {
+			restoreMigrationBackup(home, { fs: faultFs({ crashAfter: n }).fs });
+		} catch {
+			return { home, before };
+		}
+	};
+
+	it("finishes an interrupted restore on a plain restart, whatever the crash point", async () => {
+		const reference = newHome();
+		await run(reference, { transactionId: "tx" });
+		const migrated = treeHash(reference);
+		const stayOnOld = { writes: 1, migratesFrom: 1 };
+		let resumed = 0;
+		for (const transactionId of ["tx", null]) {
+			for (let n = 0; n < 200; n++) {
+				const crashed = await crashedRestore(n, transactionId);
+				if (!crashed) {
+					expect(n).toBeGreaterThan(5);
+					break;
+				}
+				const { home, before } = crashed;
+				const label = `crash after ${n} restore writes (${transactionId})`;
+				if (!["applied", "committed"].includes(slotOf(home)?.status ?? "")) {
+					resumed++;
+					await ensureStateFormat(home, {
+						support: stayOnOld,
+						migrations: [],
+						transactionId,
+					});
+					expect(treeHash(home), label).toBe(before);
+					expect(formatOf(home), label).toBe(1);
+					const status = slotOf(home)?.status;
+					expect(status === undefined || status === "restored", label).toBe(
+						true,
+					);
+				} else {
+					// The restore never began: the home is still the complete migration.
+					expect(formatOf(home), label).toBe(2);
+				}
+			}
+		}
+		expect(resumed).toBeGreaterThan(5);
+
+		// The same restart on a build that migrates re-runs apply from a clean old state.
+		for (let n = 0; n < 200; n++) {
+			const crashed = await crashedRestore(n, "tx");
+			if (!crashed) break;
+			await run(crashed.home, { transactionId: "tx" });
+			expect(treeHash(crashed.home), `crash after ${n} writes`).toBe(migrated);
+			expect(formatOf(crashed.home)).toBe(2);
+		}
+	});
+
+	it("stops with recovery steps when a live file changed during a resumed restore", async () => {
+		let n = 0;
+		let crashed: Awaited<ReturnType<typeof crashedRestore>>;
+		let consumed: string | undefined;
+		for (; n < 200; n++) {
+			crashed = await crashedRestore(n, "tx");
+			if (!crashed) throw new Error("restore never crashed mid-way");
+			const manifest = slotOf(crashed.home);
+			if (manifest?.status !== "restoring") continue;
+			consumed = manifest.files.find(
+				(file) =>
+					file.state === "cloned" &&
+					!existsSync(join(backupSlot(crashed!.home), "files", file.rel)),
+			)?.rel;
+			if (consumed) break;
+		}
+		expect(consumed).toBeDefined();
+		const { home } = crashed!;
+		writeFileSync(join(home, consumed!), "edited by someone");
+		const treeBefore = treeHash(home);
+		const slotBefore = listTree(backupSlot(home));
+		const formatBefore = formatOf(home);
+		const error = await run(home, { transactionId: "tx" }).catch((e) => e);
+		expect(error).toBeInstanceOf(StateFormatError);
+		expect((error as StateFormatError).cause).toBeInstanceOf(
+			UnresolvedBackupError,
+		);
+		expect((error as Error).message).toContain(consumed);
+		expect((error as Error).message).toContain("discard-backup");
+		expect(treeHash(home)).toBe(treeBefore);
+		expect(listTree(backupSlot(home))).toEqual(slotBefore);
+		expect(formatOf(home)).toBe(formatBefore);
+		expect(slotOf(home)?.status).toBe("restoring");
+	});
+
 	it("prunes a committed slot at the first start after it, or after 14 days", async () => {
 		const home = newHome();
 		await run(home);
