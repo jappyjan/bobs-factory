@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { retainAppHelper } from "./app-helper-files.mjs";
 import { processStamp, read, save } from "./app-lifecycle.mjs";
@@ -27,7 +27,10 @@ export async function appUpdates({
 	// settings remain the operator's choice across app/channel changes.
 	if (!existsSync(manager.file) && identity.channel === "nightly")
 		manager.configure({ channel: "nightly" }, 0);
-	await manager.observeInstalled(identity);
+	await manager.observeInstalled(identity, {
+		adoptHint:
+			"To keep the installed app and close that update, use “Keep the installed app” in the desktop app’s update settings.",
+	});
 	const options = {
 		home,
 		install,
@@ -124,6 +127,25 @@ export async function appUpdates({
 				manager.requestInstall(input, revision, action === "retry");
 				if (!s.pending?.staged) await manager.stage();
 				await helper();
+			} else if (action === "adopt-installed") {
+				if (busy || manager.status().operationOwner)
+					throw Error(
+						"An app helper owns the operation; wait or inspect recovery",
+					);
+				// The shell updater holds no worker maintenance; only its fence remains.
+				await manager.adoptInstalled(identity, {
+					release: async (transactionId) => {
+						const fence = join(home, "runtime", "update-owner.json");
+						if (
+							existsSync(fence) &&
+							read(fence).transactionId === transactionId &&
+							read(fence).product === "bobs-factory-desktop"
+						) {
+							rmSync(fence);
+							rmSync(join(directory, "quit.json"), { force: true });
+						}
+					},
+				});
 			} else if (action === "recover") await helper(true);
 			else throw Error("Unknown app update action");
 			return this.status();

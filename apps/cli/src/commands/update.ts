@@ -1,5 +1,6 @@
-import { resolve } from "node:path";
-import { resolvePath } from "bobs-factory-core";
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { factoryRuntimeIdentity, resolvePath } from "bobs-factory-core";
 import {
 	backupSlot,
 	candidateKey,
@@ -12,6 +13,7 @@ import {
 } from "bobs-factory-edge-worker";
 import type { Command } from "commander";
 import { ownerAlive, workerOwner } from "../services/InstanceLock.js";
+import { OwnedUpdateLifecycle } from "../services/OwnedUpdateLifecycle.js";
 import { FactoryClient } from "../tui/client.js";
 
 /** Filesystem-authorized offline settings/status, authenticated running-instance
@@ -124,6 +126,57 @@ export function addUpdateCommands(program: Command) {
 				candidate: candidateKey(state.pending.candidate),
 				revision: state.revision,
 			});
+		});
+	update
+		.command("recover")
+		.description(
+			"Resolve an update paused because a different build than the update expects is installed",
+		)
+		.option(
+			"--adopt-installed",
+			"Keep the installed build as the truth and close the interrupted update",
+		)
+		.option("--yes", "Confirm; without it nothing is changed")
+		.action(async (options: { adoptInstalled?: boolean; yes?: boolean }) => {
+			if (!options.adoptInstalled)
+				throw new Error("Choose --adopt-installed to resolve the notice.");
+			const { recovery } = manager().status();
+			if (!recovery) {
+				output({ adopted: false, reason: "No unexpected runtime to adopt." });
+				return;
+			}
+			if (!options.yes)
+				throw new Error(
+					`${recovery.steps.join("\n")}\nRe-run with --yes to adopt the installed build.`,
+				);
+			let lifecycle: OwnedUpdateLifecycle | undefined;
+			try {
+				lifecycle = new OwnedUpdateLifecycle(
+					home(),
+					Number(program.opts().port),
+				);
+			} catch {
+				// Foreground/external install: no owned supervisor lifecycle to ask.
+			}
+			// Without a lifecycle, end maintenance best-effort and drop the fence.
+			const release = async (transactionId: string) => {
+				await client()
+					.post("/api/updates/maintenance", { transactionId, action: "end" })
+					.catch(() => undefined);
+				const fence = join(home(), "runtime", "update-owner.json");
+				if (
+					existsSync(fence) &&
+					JSON.parse(readFileSync(fence, "utf8")).transactionId ===
+						transactionId
+				)
+					rmSync(fence);
+			};
+			output(
+				await new UpdateManager(home(), undefined, lifecycle).adoptInstalled(
+					factoryRuntimeIdentity,
+					{ release },
+				),
+			);
 		});
 	const backupCommand = (
 		name: "restore-backup" | "discard-backup",

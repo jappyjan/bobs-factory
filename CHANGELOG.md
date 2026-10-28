@@ -42,6 +42,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Installing a newer Bob's Factory by hand (a new app or archive over your existing data) now just starts. Update history, update settings and the pin/pause choices are kept, the change is recorded in the update history, and a newer app now brings its bundled runtime along instead of continuing on the old one. Update problems show what's installed versus what the update expects, with the exact command to resolve it (`bobs-factory update recover --adopt-installed --yes`), instead of the local Factory failing to connect. When the local Factory can't start, the launcher shows its last output right away. A leftover older update helper is replaced once the new build is running. ([Taskbot #176](https://taskbot.apps.janjaap.de/p/bobs-factory/t/176), supersedes [#133](https://taskbot.apps.janjaap.de/p/bobs-factory/t/133))
 - Security: update zod, fastify, express (body-parser, qs), Electron and the Cursor SDK, and refresh fast-uri and undici, so `pnpm audit` reports no advisories. ([Taskbot #152](https://taskbot.apps.janjaap.de/p/bobs-factory/t/152))
 
 - The run launcher shows the agent, model and reasoning choice only for Simple. Other recipes keep configuring agents per step, and the launcher no longer sends per-run model or reasoning overrides for them. ([Taskbot #155](https://taskbot.apps.janjaap.de/p/bobs-factory/t/155))
