@@ -16,11 +16,16 @@ import { ServiceLifecycle } from "./ServiceLifecycle.js";
 const portInUse = (port: number) =>
 	new Promise<boolean>((resolve) => {
 		const socket = connect({ host: "localhost", port });
+		// Close the probe connection: an open client socket keeps the answering
+		// server (and a test's `server.close()`) from ever finishing.
+		const done = (inUse: boolean) => {
+			socket.destroy();
+			resolve(inUse);
+		};
 		socket.setTimeout(1000);
-		socket.once("connect", () => resolve(true));
-		socket.once("timeout", () => resolve(true));
-		socket.once("error", () => resolve(false));
-		socket.once("close", () => socket.destroy());
+		socket.once("connect", () => done(true));
+		socket.once("timeout", () => done(true));
+		socket.once("error", () => done(false));
 	});
 const settled = (
 	transaction: ReturnType<UpdateManager["status"]>["transaction"],
