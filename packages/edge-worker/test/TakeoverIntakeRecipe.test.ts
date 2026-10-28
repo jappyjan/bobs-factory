@@ -63,6 +63,9 @@ function fixture(
 	options: {
 		advancedBase?: boolean;
 		missingBase?: boolean;
+		/** Ticket without a PR or branch: the worktree is a fresh checkout of the base. */
+		fresh?: boolean;
+		baseBranch?: string;
 		source?: string;
 	} = {},
 ) {
@@ -91,6 +94,7 @@ function fixture(
 	const head = git("rev-parse", "HEAD");
 	// An explicit PR base must win even if the configured tracking ref has moved.
 	if (mode !== "ticket") git("update-ref", "refs/remotes/origin/main", head);
+	if (options.fresh) git("checkout", "main");
 	if (options.advancedBase) {
 		const upstream = join(home, "state", "upstream");
 		mkdirSync(join(home, "state"));
@@ -158,24 +162,35 @@ function fixture(
 		expect(reads.existingWork).toMatchObject({
 			diff: {
 				repositories: [
-					{
-						id: "fixture",
-						head,
-						base: branchPoint,
-						target: head,
-						files: ["work.ts"],
-						stats: {
-							filesChanged: 1,
-							additions: 1,
-							deletions: 0,
-							binaryFiles: 0,
-						},
-					},
+					options.fresh
+						? {
+								id: "fixture",
+								head: branchPoint,
+								base: branchPoint,
+								target: branchPoint,
+								files: [],
+								commitsAhead: 0,
+							}
+						: {
+								id: "fixture",
+								head,
+								base: branchPoint,
+								target: head,
+								files: ["work.ts"],
+								stats: {
+									filesChanged: 1,
+									additions: 1,
+									deletions: 0,
+									binaryFiles: 0,
+								},
+							},
 				],
 			},
 			status: {
 				repositories: [
-					{ id: "fixture", head, branch: "existing", dirty: false },
+					options.fresh
+						? { id: "fixture", head: branchPoint, branch: "main", dirty: false }
+						: { id: "fixture", head, branch: "existing", dirty: false },
 				],
 			},
 			fields: {
@@ -187,6 +202,7 @@ function fixture(
 			expect((reads.existingWork as any).ticket).toEqual(ticket);
 		if (mode !== "ticket")
 			expect((reads.existingWork as any).pr.repositories[0]).toMatchObject(pr);
+		else expect((reads.existingWork as any).pr).toBeNull();
 		return parseStepOutputAsync(context.step, structuredClone(assessment));
 	});
 	const runtime = new WorkflowRuntime(join(home, "state"), {
@@ -235,7 +251,7 @@ function fixture(
 				name: "Fixture",
 				repositoryPath: home,
 				workspace: home,
-				baseBranch: "main",
+				baseBranch: options.baseBranch ?? "main",
 				[provider === "github" ? "githubUrl" : "gitlabUrl"]: url.split(
 					provider === "github" ? "/pull/" : "/-/merge_requests/",
 				)[0],
@@ -311,6 +327,27 @@ describe("v2-takeover-intake", () => {
 			requirements: assessment.requirements,
 			plan: assessment.plan,
 		});
+	});
+	it("treats a ticket with no PR or branch as no existing work", async () => {
+		const f = fixture("github", "ticket", { fresh: true });
+		await f.runtime.launch(f.run);
+		expect(f.run.status, f.run.error).toBe("completed");
+		expect(f.agent).toHaveBeenCalledOnce();
+		expect(f.readPr).not.toHaveBeenCalled();
+		expect(f.run.outputs.result).toEqual({
+			requirements: assessment.requirements,
+			plan: assessment.plan,
+		});
+	});
+	it("still fails intake when the base cannot be resolved or fetched", async () => {
+		const f = fixture("github", "ticket", {
+			fresh: true,
+			baseBranch: "deleted-ticket-branch",
+		});
+		await f.runtime.launch(f.run);
+		expect(f.run.status).toBe("failed");
+		expect(f.run.error).toContain("git exited");
+		expect(f.agent).not.toHaveBeenCalled();
 	});
 	it("reads an explicit launch request even when an originating ticket is present", async () => {
 		const f = fixture("github", "combined");
