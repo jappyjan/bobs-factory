@@ -9,7 +9,10 @@ export {
 	effectiveUpdatePolicy,
 	UpdateManager,
 } from "../../../packages/edge-worker/src/updates/UpdateManager.js";
-export { validateReleaseManifest } from "../../../scripts/lib/binary-release.mjs";
+export {
+	compareReleaseVersions,
+	validateReleaseManifest,
+} from "../../../scripts/lib/binary-release.mjs";
 export {
 	discoverReleases,
 	githubClient,

@@ -76,17 +76,16 @@ export function ownerProcessExited(owner: WorkerOwner) {
 		throw error;
 	}
 }
-/** Reuse the start-time and OS executable checks before trusting a live worker. */
-export function workerIdentityMatches(
+/** The process is alive (same start stamp), belongs to this home/port, and its OS
+ * executable is the one it recorded. Says nothing about which runtime the link names. */
+export function ownerProcessVerified(
 	owner: WorkerOwner,
 	home: string,
-	executable: string,
-	port: number,
+	port?: number,
 ) {
 	if (
 		owner.home !== canonicalHome(home) ||
-		owner.dashboardPort !== port ||
-		owner.executable !== realpathSync(executable) ||
+		(port !== undefined && owner.dashboardPort !== port) ||
 		!ownerAlive(owner)
 	)
 		return false;
@@ -97,6 +96,23 @@ export function workerIdentityMatches(
 					encoding: "utf8",
 				}).trim();
 	return realpathSync(command) === owner.executable && ownerAlive(owner);
+}
+/** Reuse the start-time and OS executable checks before trusting a live worker. */
+export function workerIdentityMatches(
+	owner: WorkerOwner,
+	home: string,
+	executable: string,
+	port: number,
+) {
+	return (
+		owner.executable === realpathSync(executable) &&
+		ownerProcessVerified(owner, home, port)
+	);
+}
+/** A runtime-level lock such as update-supervisor.lock. */
+export function runtimeOperationOwner(home: string, name: string) {
+	home = canonicalHome(home);
+	return readOwner(join(home, "runtime", name), home);
 }
 /** Caller retains its own previously verified child's record and holds the lifecycle guard. */
 export function reconcileChildWorkerOwner(

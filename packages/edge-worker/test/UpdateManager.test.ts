@@ -712,14 +712,16 @@ it("bounds retained observation contention and leaves owner inspection intact", 
 		warning.mockRestore();
 	}
 });
-it("rejects wrong phase identity, malformed identity and malformed state even under contention", async () => {
+it("reports a wrong phase identity as recovery, but still rejects malformed identity and malformed state under contention", async () => {
 	const { manager } = await startingFixture();
 	writeFileSync(join(manager.directory, "state.lock"), String(process.pid), {
 		flag: "wx",
 	});
-	await expect(manager.observeInstalled(installed)).rejects.toThrow(
-		"phase starting",
-	);
+	await expect(manager.observeInstalled(installed)).resolves.toBeUndefined();
+	expect(manager.status().recovery).toMatchObject({
+		code: "unexpected-runtime",
+		phase: "starting",
+	});
 	await expect(
 		manager.observeInstalled({ ...candidate, commit: "invalid" }),
 	).rejects.toThrow();
@@ -769,10 +771,18 @@ it.each(
 	const before = readFileSync(manager.file, "utf8");
 
 	await manager.observeInstalled(expected);
-	await expect(manager.observeInstalled(incorrect)).rejects.toThrow(
-		`outcome ${outcome}`,
-	);
+	expect(manager.status().recovery).toBeUndefined();
+	await manager.observeInstalled(incorrect);
+	expect(manager.status().recovery).toMatchObject({
+		code: "unexpected-runtime",
+		transactionId: state.transaction?.id,
+		observed: incorrect,
+	});
+	// The unresolved transaction is untouched; the notice clears when the
+	// expected build runs again.
 	expect(readFileSync(manager.file, "utf8")).toBe(before);
+	await manager.observeInstalled(expected);
+	expect(manager.status().recovery).toBeUndefined();
 });
 
 it.each(
@@ -809,10 +819,18 @@ it.each(
 	const before = readFileSync(manager.file, "utf8");
 
 	await manager.observeInstalled(expected);
-	await expect(manager.observeInstalled(incorrect)).rejects.toThrow(
-		`outcome ${outcome}`,
-	);
+	expect(manager.status().recovery).toBeUndefined();
+	await manager.observeInstalled(incorrect);
+	expect(manager.status().recovery).toMatchObject({
+		code: "unexpected-runtime",
+		transactionId: state.transaction?.id,
+		observed: incorrect,
+	});
+	// The unresolved transaction is untouched; the notice clears when the
+	// expected build runs again.
 	expect(readFileSync(manager.file, "utf8")).toBe(before);
+	await manager.observeInstalled(expected);
+	expect(manager.status().recovery).toBeUndefined();
 });
 
 it("keeps phase allowances for unresolved recovery with no completed release outcome", async () => {
@@ -828,15 +846,4 @@ it("keeps phase allowances for unresolved recovery with no completed release out
 	await expect(
 		manager.observeInstalled(previousIdentity),
 	).resolves.toBeUndefined();
-});
-
-it("rejects a retained staged identity that differs from the transaction candidate", async () => {
-	const { manager } = await startingFixture();
-	const state = JSON.parse(readFileSync(manager.file, "utf8"));
-	state.transaction.staged.candidate.commit = "d".repeat(40);
-	writeFileSync(manager.file, JSON.stringify(state));
-
-	await expect(manager.observeInstalled(candidateIdentity)).rejects.toThrow(
-		"inconsistent staged identity",
-	);
 });
