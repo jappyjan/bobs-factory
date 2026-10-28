@@ -117,7 +117,9 @@ export async function retireOutdatedSupervisor(
 	if (!verified(owner, home)) return "unverified";
 	if (owner.owner !== "desktop") return "externally-managed";
 	(options.kill ?? process.kill)(owner.pid, "SIGTERM");
-	const deadline = Date.now() + (options.waitMs ?? 20_000);
+	// SIGTERM is delivered; a supervisor mid-tick (e.g. a staged download) exits
+	// only after that tick, so wait long enough that a replacement always follows.
+	const deadline = Date.now() + (options.waitMs ?? 10 * 60_000);
 	while (ownerAlive(owner)) {
 		if (Date.now() >= deadline) return "still-running";
 		await new Promise((resolve) => setTimeout(resolve, 100));
