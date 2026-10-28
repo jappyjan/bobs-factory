@@ -544,6 +544,47 @@ describe("GitService", () => {
 			expect(result.path).toBe("/home/user/.bobs-factory/worktrees/ENG-97");
 			expect(result.isGitWorktree).toBe(false);
 		});
+
+		it.each([
+			["missing everywhere", false],
+			["present on the remote", true],
+		])("reports the base actually used for a requested base that is %s", async (_name, onRemote) => {
+			const repository = makeRepository();
+			const commands: string[] = [];
+			mockExecSync.mockImplementation((cmd: any) => {
+				const cmdStr = String(cmd);
+				commands.push(cmdStr);
+				if (cmdStr === "git rev-parse --git-dir") return Buffer.from(".git\n");
+				if (cmdStr === "git worktree list --porcelain") return "";
+				if (cmdStr.includes("git rev-parse --verify"))
+					throw new Error("fatal: Needed a single revision");
+				if (cmdStr.includes('git ls-remote --heads origin "ticket-branch"'))
+					return Buffer.from(
+						onRemote ? "abc123\trefs/heads/ticket-branch\n" : "",
+					);
+				return Buffer.from("");
+			});
+
+			const result = await gitService.createGitWorktree(
+				makeIssue(),
+				[repository],
+				{ baseBranchOverrides: new Map([[repository.id, "ticket-branch"]]) },
+			);
+
+			expect(result.isGitWorktree).toBe(true);
+			expect(result.resolvedBaseBranches?.[repository.id]).toMatchObject(
+				onRemote
+					? { branch: "ticket-branch", source: "commit-ish" }
+					: { branch: repository.baseBranch, source: "default" },
+			);
+			expect(
+				commands.some((c) =>
+					c.includes(
+						`"origin/${onRemote ? "ticket-branch" : repository.baseBranch}"`,
+					),
+				),
+			).toBe(true);
+		});
 	});
 
 	describe("createGitWorktree - repo setup hook discovery", () => {

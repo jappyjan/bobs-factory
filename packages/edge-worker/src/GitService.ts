@@ -929,7 +929,7 @@ export class GitService {
 
 			// Determine base branch early (commit-ish > graphite > parent > default)
 			// This runs before worktree existence checks so all return paths have the resolution
-			const resolution = await this.determineBaseBranch(
+			let resolution = await this.determineBaseBranch(
 				issue,
 				repository,
 				baseBranchOverride,
@@ -1126,6 +1126,13 @@ export class GitService {
 							this.logger.info(
 								`Base branch '${baseBranch}' not found locally, falling back to remote ${repository.baseBranch} (tracking ${repository.baseBranch})`,
 							);
+							// The worktree is based on the default branch, so report that one:
+							// a nonexistent base must not reach diffs or delivery.
+							resolution = {
+								branch: repository.baseBranch,
+								source: "default",
+								detail: `'${baseBranch}' not found`,
+							};
 							const defaultRemoteBranch = `origin/${repository.baseBranch}`;
 							worktreeCmd = `git worktree add --track -b "${branchName}" "${workspacePath}" "${defaultRemoteBranch}"`;
 						}
