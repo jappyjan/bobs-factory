@@ -67,6 +67,9 @@ export async function shellCheckpoint(
 		await new Promise((resolve) => setTimeout(resolve, 10));
 	}
 	assert.equal(run.status, "waiting", run.error);
+	// Debounced activity saves may still be queued once the gate opens; callers
+	// compare the record byte-for-byte, so let them land first.
+	await runtime.flush(run.id);
 	assert.ok(
 		run.viewDecision?.documentDigest,
 		"A real Display must await an answer",
