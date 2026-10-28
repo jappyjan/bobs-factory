@@ -1,4 +1,4 @@
-import type { IIssueTrackerService, Issue } from "bobs-factory-core";
+import type { Comment, IIssueTrackerService, Issue } from "bobs-factory-core";
 
 /** Snapshot every comment page so later roles don't depend on a live ticket read. */
 export async function issueSnapshot(
@@ -8,6 +8,9 @@ export async function issueSnapshot(
 	purpose?: "tracking",
 ): Promise<unknown> {
 	const comments: unknown[] = [];
+	// Each lazy `comment.user` is a separate Linear request on a paced queue, so
+	// resolve each distinct author once instead of once per comment.
+	const authors = new Map<string, Promise<Awaited<Comment["user"]>>>();
 	const cursors = new Set<string>();
 	let after: string | undefined;
 	do {
@@ -19,7 +22,15 @@ export async function issueSnapshot(
 			? await tracker.fetchComments(issue.id, options)
 			: await issue.comments(options);
 		for (const comment of page.nodes) {
-			const user = purpose === "tracking" ? undefined : await comment.user;
+			let user: Awaited<Comment["user"]>;
+			if (purpose !== "tracking") {
+				const id = comment.userId;
+				if (!id) user = await comment.user;
+				else {
+					if (!authors.has(id)) authors.set(id, Promise.resolve(comment.user));
+					user = await authors.get(id);
+				}
+			}
 			comments.push({
 				id: comment.id,
 				body: comment.body,

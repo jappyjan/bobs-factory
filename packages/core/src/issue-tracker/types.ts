@@ -114,11 +114,12 @@ export type Issue = Pick<
  */
 export type Comment = Pick<
 	LinearSDK.Comment,
-	// Properties (4)
+	// Properties (5)
 	| "id"
 	| "body"
 	| "createdAt"
 	| "updatedAt"
+	| "userId"
 	// Async getters (3)
 	| "user"
 	| "parent"
