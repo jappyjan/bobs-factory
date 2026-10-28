@@ -74,3 +74,6 @@ CLAUDE.local.md
 /apps/desktop/desktop-identity.json
 
 /apps/desktop/electron-licenses/
+
+# Husky runtime helpers, regenerated on install
+.husky/_/
