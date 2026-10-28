@@ -55,7 +55,7 @@ it("guards storage mutations, rejects stale previews and persists instance polic
 					headers,
 					payload: {
 						revision: policy.revision,
-						policy: { ...policy, snapshotCount: 3 },
+						policy: { ...policy, intervalHours: 3 },
 					},
 				})
 			).statusCode,
@@ -71,7 +71,7 @@ it("guards storage mutations, rejects stale previews and persists instance polic
 			).statusCode,
 		).toBeGreaterThanOrEqual(400);
 		expect(
-			(await new StorageRetention(home, {}).store.policy()).snapshotCount,
+			(await new StorageRetention(home, {}).store.policy()).intervalHours,
 		).toBe(3);
 		expect(
 			(

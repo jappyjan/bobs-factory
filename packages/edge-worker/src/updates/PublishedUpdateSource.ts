@@ -8,12 +8,8 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { promisify } from "node:util";
-import {
-	StorageRetentionStore,
-	writeStorageIntegrity,
-} from "bobs-factory-core";
 import {
 	discoverReleases,
 	githubClient,
@@ -90,16 +86,6 @@ export class PublishedUpdateSource implements UpdateSource {
 		const stagingRoot = join(this.directory, "staging");
 		mkdirSync(stagingRoot, { recursive: true, mode: 0o700 });
 		const work = mkdtempSync(join(stagingRoot, "stage-"));
-		const retention = new StorageRetentionStore(dirname(this.directory));
-		const ownedArtifact = await retention.register({
-			category: "staging",
-			path: work,
-			root: stagingRoot,
-			producer: "PublishedUpdateSource",
-			operation: candidate.manifestSha256,
-			dependencies: [],
-			evidence: [],
-		});
 		const asset = (name: string, size: number, hash: string): ReleaseAsset => {
 			const entry = verified.release.assets.find(
 				(entry) => entry.name === name,
@@ -181,17 +167,6 @@ export class PublishedUpdateSource implements UpdateSource {
 			rmSync(probeHome, { recursive: true, force: true });
 		}
 
-		const integrity = await writeStorageIntegrity(
-			work,
-			join(retention.directory, "proofs", `${ownedArtifact.id}.ndjson`),
-		);
-		await retention.revise(ownedArtifact.id, (record) => {
-			record.completedAt =
-				record.verifiedAt =
-				record.reconciledAt =
-					new Date().toISOString();
-			record.evidence = [`integrity:${integrity}`, candidate.manifestSha256];
-		});
 		return {
 			candidate,
 			executable,

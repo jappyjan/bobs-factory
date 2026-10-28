@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { closeSync, existsSync, openSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { UpdateManager } from "bobs-factory-edge-worker";
+import { cleanupLegacyUpdates, UpdateManager } from "bobs-factory-edge-worker";
 import {
 	ownerAlive,
 	ownerProcessVerified,
@@ -146,4 +146,27 @@ export function scheduleSupervisorRetirement(home: string, port: number) {
 		}
 	};
 	setTimeout(attempt, 1_000).unref();
+}
+
+/** Removes the copies and records the copy-based updater left behind. While a
+ * v2 supervisor's update is still unresolved nothing is touched, so retry until
+ * its transaction is acknowledged. A crash resumes on the next start. */
+export function scheduleLegacyCleanup(home: string) {
+	let attempts = 0;
+	const attempt = async () => {
+		try {
+			const result = await cleanupLegacyUpdates(home);
+			if (result.status === "deferred" && ++attempts < 240)
+				setTimeout(attempt, 30_000).unref();
+			else if (result.removed.length || result.droppedRecords)
+				console.log(
+					`Removed ${result.removed.length} leftover update copies and ${result.droppedRecords} retention records.`,
+				);
+		} catch (error) {
+			console.warn(
+				`Leftover update copies remain: ${(error as Error).message}`,
+			);
+		}
+	};
+	setTimeout(attempt, 2_000).unref();
 }

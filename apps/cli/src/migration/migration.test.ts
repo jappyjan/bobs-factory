@@ -899,8 +899,8 @@ it("automatically expires reconciled migration state while recovery and cleanup 
 	const { StorageRetention } = await import(
 		"../../../../packages/edge-worker/src/storage/StorageRetention.js"
 	);
-	const { UpdateArtifacts } = await import(
-		"../../../../packages/edge-worker/src/storage/UpdateArtifacts.js"
+	const { MigrationArtifacts } = await import(
+		"../../../../packages/edge-worker/src/storage/MigrationArtifacts.js"
 	);
 	const store = new StorageRetentionStore(destination);
 	const record = await store.record((await store.inventoryPage(0))[0]!);
@@ -911,7 +911,7 @@ it("automatically expires reconciled migration state while recovery and cleanup 
 	);
 	const coordinator = new StorageRetention(
 		destination,
-		{ migration: new UpdateArtifacts(destination) },
+		{ migration: new MigrationArtifacts(destination) },
 		() => Date.now() + 8 * 86400000,
 	);
 	try {
@@ -1119,12 +1119,12 @@ it.each([
 	const { StorageRetention } = await import(
 		"../../../../packages/edge-worker/src/storage/StorageRetention.js"
 	);
-	const { UpdateArtifacts } = await import(
-		"../../../../packages/edge-worker/src/storage/UpdateArtifacts.js"
+	const { MigrationArtifacts } = await import(
+		"../../../../packages/edge-worker/src/storage/MigrationArtifacts.js"
 	);
 	const coordinator = new StorageRetention(
 		destination,
-		{ migration: new UpdateArtifacts(destination) },
+		{ migration: new MigrationArtifacts(destination) },
 		() => Date.now() + 8 * 86_400_000,
 	);
 	try {

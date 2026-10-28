@@ -25,7 +25,7 @@ no active run or native conversation is silently upgraded. See
 | Linear publication | shared presenter, activity sinks, queued delivery | Routine progress and role outcomes use `thought`; native lifecycle/input activities retain their types and automatic threaded comments; explicit documentation uses comments | Present legacy queued records before sending; retain raw evidence locally |
 | Change impact and evidence reuse | Accepted workflow role, Factory/Takeover scheduler, review/QA and delivery gates | [`impact-v1`](factory/impact-decisions.md); original receipts plus explicit reuse links; configurable repeat limit; separate approval continuation | New stock definitions opt in. Saved/custom recipes and accepted run snapshots retain conservative graphs; custom workflows opt in explicitly with configured inventory/fanout associations |
 | Agent context | Declared reads, private context MCP snapshots and native review baselines | [Outputs-first new-run handoffs](factory/context-memory.md), bounded nested v2 views, immutable evidence references and runtime-enforced current-run transcript role/range and cumulative byte/page capabilities | Saved-copy/new-run adoption; retain active definitions, raw receipts, native conversations and credential stores. Native checks remain authoritative; diagnostic exceptions and bounded operate-authorized extensions never approve delivery |
-| Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory`; version 5 session manifests, immutable chunks and lazy run payloads | Preserve IDs, receipts, gates, accepted definitions and legacy document backups; commit referenced chunks before manifests; move/restore complete homes with their chunks |
+| Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory`; version 5 session manifests, immutable chunks and lazy run payloads; `<home>/state-format.json` data-format contract (`format`, `minReader`, `applied`; missing = format 1) | Preserve IDs, receipts, gates, accepted definitions and legacy document backups; commit referenced chunks before manifests; move/restore complete homes with their chunks. A build refuses (exit 78, nothing touched) data newer than it writes; older data is migrated before anything is served, only by declared, idempotent migrations that back up just the files they touch (`updates/migration-backup`, restore by rename). Until builds from before this contract are gone, migrations must stay additive (`minReader` 1) |
 | For each composition | Recipe schema/runtime, builder/simulator and activity | [Generic durable `foreach`](factory/foreach.md), stable keyed item frames, bounded dispatch, explicit failure summaries and lexical call inputs | Opt in in new/edited recipes; accepted collections, frozen definitions, original receipts and native conversations remain retained. No arbitrary exactly-once side-effect guarantee |
 | Run diagnostics | Existing attempt provenance, admission/resource boundaries, context MCP and declarative run views | [Bounded timing observations](factory/diagnostics.md), execution/wait unions, unknown gaps, recent provenance/reuse and UTF-8 retrieval counters | Add an observation window without rewriting accepted graphs or historical evidence; restart/offline/legacy time and missing usage remain unknown; diagnostics grant no execution or approval authority |
 | Convergence budgets | Accepted root recipe, WorkflowRuntime, EdgeWorker and existing impact/evidence validators | [Durable semantic progress](factory/convergence.md), bounded explicit Continue, retained native identities and separate infrastructure/schema budgets | New saved recipe copy/new run opt-in; frozen definitions and custom visit grants remain unchanged; incomplete history starts a labelled observation window |
@@ -41,7 +41,7 @@ no active run or native conversation is silently upgraded. See
 | Distribution | build, CI, installer, metadata | frozen stable/nightly/beta candidates; stable uses an explicitly selected validated nightly promotion source, beta uses manually selected exact version on main, four-target archives, unsigned schema-2 manifest + candidate-bound SHA-256/size inventory | Stage replacement separately from mutable state; immutable schema-1 beta requires additive reviewed inventory attestation |
 | Source transport | publisher, prepared-release validation and offline recovery | hash-bound ordered 1 GiB chunks reconstructing the exact full source archive when it exceeds GitHub asset limits | Keep local source/evidence monolith and unchanged semantic intake; preserve genuine single-file and schema-1 beta inventories; new tooling requires a new reviewed candidate identity |
 | Release discovery | installer, Pages, Nix, runtime and desktop updaters | stable/default (inventoried beta fallback only without an explicit channel), explicit stable/nightly, exact version; GitHub HTTPS and SHA-256/size inventory | Preserve exact manifest bytes; no independent publisher signature claim |
-| Instance updates | authenticated dashboard, CLI, external owned supervisor | `<factoryHome>/updates/state.json`, per-channel overrides, pause/pin and durable restart receipts; `factory-preservation-v2` hashes saved catalog bytes separately from bundled code | Preserve settings across entry points; snapshot only compatible Factory-owned state; native stores and Factory authentication stay outside rollback; reject mismatched preservation contracts before stopping, with an owner-managed stopped-worker upgrade for the legacy boundary |
+| Instance updates | authenticated dashboard, CLI, external owned supervisor | `<factoryHome>/updates/state.json`, per-channel overrides, pause/pin; step journal in `updates/journal`; health from `GET /api/updates/data` (identities loaded, never byte hashes) | An update swaps the runtime link and does not copy the home (megabytes of free space, not gigabytes). Switch and rollback are renames of pre-created `next`/`prev` links; anything not committed rolls back on a plain restart; ENOSPC and cancellation never blame a candidate. A manual install over a retained home is recorded, not rejected; an update interrupted by one is resolved with `update recover --adopt-installed`. Native stores and Factory authentication are never touched. The v2 receipt contract (`factory-preservation-v2`, `service validate-state`, schema-1 `state.json`) stays for older supervisors until a later release; leftover copies of the earlier updater are removed automatically |
 | Desktop shell updates | local installed Electron launcher, external app helper | `<factoryHome>/desktop/updates/state.json`, shared policy/consent rules, hash-bound complete-app ownership receipt and health journal | Replace only the verified user-owned app; retain old UI; fence the local worker without restarting it; selected remote instances keep their own update settings |
 | Publication | release workflows, publisher | repository-wide lock; retained asset/approval digests and recovery receipts; ordering against complete published provider history | Publication disabled until explicit rollout activation; stable approval binds exact unsigned bytes; rejected releases cannot hide provider history |
 | External wire protocol | upstream HTTP adapters / MCP contexts | `X-Cyrus-Team-Id`, `X-Cyrus-Config-Capabilities`, `x-cyrus-mcp-context-id` | Retain ASCII protocol names; no hosted enrollment |
@@ -332,35 +332,30 @@ establish that a particular signing key is unlocked.
 ## Storage retention
 
 Settings → Storage and the protected `bobs-factory storage` service commands share
-one per-instance coordinator. Versioned policy, producer ownership, identity-bound
-historical elections, workspace reservations and compact deletion receipts live in
+one per-instance coordinator. Versioned policy, producer ownership, workspace
+reservations and compact deletion receipts live in
 `<factoryHome>/storage-retention`, outside frozen workflows and state snapshots.
-Defaults are automatic startup/daily reconciliation, two verified usable rollbacks
-(minimum one), seven-day disposable artifacts, thirty-day delivered worktrees and
-a five-GiB warning threshold. Preservation overrides age, count and disk pressure.
+Defaults are automatic startup/daily reconciliation, seven-day reconciled migration
+copies, thirty-day delivered worktrees and a five-GiB warning threshold.
+Preservation overrides age and disk pressure.
 
-Owned runtime updates retain the last successful rollback snapshot plus live
-transaction references. A later successful update makes earlier proven completed
-owned snapshots disposable and notifies Storage after releasing operation ownership.
-Historical snapshot election also completes existing enrollment records, while
-current rollback and in-flight snapshots cannot be elected disposable. Copying
-checks available space against owned bytes plus a margin; a reserved journal budget
-keeps copy failures visible and releases update ownership. Agent-home tooling links
-are preserved verbatim in snapshots/restore and omitted from preflight; transient
-sockets/FIFOs there are skipped. Other owned-state link/special-file refusals remain.
+The updater creates no copies. Staged runtimes are removed by reference after an
+update (the live, `next`, `prev` and transaction executables are always kept), and
+the snapshot, preparation and recovery directories and records left by the earlier
+copying updater are removed once at worker start, never while an update is
+unresolved and never when they hold a linked or running runtime. Their old
+retention records still load and are dropped by that cleanup.
 
 Cleanup uses process-start-aware exclusion, durable use before provider execution,
 fresh accepted-provider delivery checks, complete owner/reference checks and safe
 Git removal. Symlinked owned roots, changed identity, unique ignored files, native
 continuation uncertainty and protected group members retain data. Ticket closure
 only requests reconciliation; the legacy deletion API defers to Storage. Artifact
-manifest verification and usage scans yield with continuation. Cleanup verifies
-rollback runtimes, scans dependencies across every retained run and evidence link,
+manifest verification and usage scans yield with continuation. Cleanup scans dependencies across every retained run and evidence link,
 and detaches verified artifacts into private quarantine before removal. Completed
 workflow role-session identities and review history alone do not retain a delivered
 workspace; Simple conversations and unfinished native checkpoints still do.
-Historical preparation/recovery elections require exact current-state comparisons;
-new committed migration preparation enrolls only reconciled state/factory copies
+New committed migration preparation enrolls only reconciled state/factory copies
 under shared claims, keeping source/native/external backups protected. Interrupted
 enrollment resumes on migration retry after validating and completing its saved
 ownership publication intent, record, path index, inventory page and count. Changed
@@ -369,9 +364,8 @@ Runtime-owned workspace identities and exact saved command receipts remain
 historical only at configured workflow locations associated with the owning run.
 Inspection validates each loaded record during traversal, so restored paged
 history preserves these semantics without requiring stable cached object identities.
-Copied snapshot digests, copied receipts in arbitrary outputs and descendant file
-references still protect their content. Historical
-run dependencies and every grouped parent entry are checked before removal;
+Copied receipts in arbitrary outputs and descendant file
+references still protect their content. Run dependencies and every grouped parent entry are checked before removal;
 concurrent replacement files survive failed leaf verification. Failed or uncertain
 hooks need explicit verified idempotent retry. Receipts and original evidence stay
 retained. Apparent bytes and observed volume free-space changes remain separate.

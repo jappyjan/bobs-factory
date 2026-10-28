@@ -1,21 +1,12 @@
 // F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/desktop-service-lifecycle.mjs
 import assert from "node:assert/strict";
-import {
-	cpSync,
-	lstatSync,
-	mkdirSync,
-	mkdtempSync,
-	readlinkSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	acquireInstanceLock,
 	workerOwner,
 } from "../../../../apps/cli/src/services/InstanceLock.ts";
-import { copyUpdateState } from "../../../../apps/cli/src/services/UpdateStateSnapshot.ts";
 import { JsonSnapshotStore } from "../../../../packages/core/dist/JsonSnapshotStore.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
@@ -145,33 +136,9 @@ try {
 	const linkedTool = join(evidence, "expired-tool"),
 		target = join(home, "expired-external-tool");
 	symlinkSync(target, linkedTool);
-	const preflight = mkdtempSync(join(tmpdir(), "f1-update-preflight-"));
-	const snapshot = mkdtempSync(join(tmpdir(), "f1-update-snapshot-"));
-	copyUpdateState(home, preflight, "preflight");
-	copyUpdateState(home, snapshot, "snapshot");
-	assert.deepEqual(preflightFactoryState(preflight).runIds, [run.id]);
-	assert.throws(() =>
-		lstatSync(join(preflight, "factory/evidence", run.id, "expired-tool")),
-	);
-	assert.equal(
-		readlinkSync(join(snapshot, "factory/evidence", run.id, "expired-tool")),
-		target,
-	);
-	const restored = mkdtempSync(join(tmpdir(), "f1-update-restored-"));
-	cpSync(snapshot, restored, { recursive: true, verbatimSymlinks: true });
-	assert.equal(
-		readlinkSync(join(restored, "factory/evidence", run.id, "expired-tool")),
-		target,
-	);
-	const restoredRuntime = new WorkflowRuntime(restored, hooks);
-	for (const [key, value] of Object.entries(captured))
-		assert.deepEqual(durable(key, restoredRuntime.get(run.id)[key]), value);
-	await restoredRuntime.shutdown();
-	assert.equal(
-		calls,
-		1,
-		"preflight and snapshot inspection must never execute workflow work",
-	);
+	// The v2 supervisor's validate-state probe reads the home without running work.
+	assert.deepEqual(preflightFactoryState(home).runIds, [run.id]);
+	assert.equal(calls, 1, "state validation must never execute workflow work");
 	release();
 	release = await acquireInstanceLock(home);
 	runtime = new WorkflowRuntime(home, hooks);

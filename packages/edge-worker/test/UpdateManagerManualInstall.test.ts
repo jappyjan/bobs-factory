@@ -9,6 +9,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import {
+	backupSlot,
+	createBackup,
+	readManifest,
+	setBackupStatus,
+} from "../src/migrations/MigrationBackup.js";
+import {
 	type InstalledUpdate,
 	type UpdateCandidate,
 	type UpdateLifecycle,
@@ -301,6 +307,56 @@ it("adopt: an installed build that equals the candidate completes the update", a
 		release: { outcome: "succeeded", status: "acknowledged" },
 	});
 	expect(status.recovery).toBeUndefined();
+});
+
+/** The data migration the candidate ran for the interrupted transaction. */
+function applyBackup(home: string, transactionId: string) {
+	writeFileSync(join(home, "config.json"), "{}");
+	createBackup({
+		home,
+		transactionId,
+		migrationIds: ["0002-fixture"],
+		fromFormat: 1,
+		toFormat: 2,
+		touches: [{ owner: "0002-fixture", spec: { file: "config.json" } }],
+	});
+	setBackupStatus(backupSlot(home), "applying");
+	setBackupStatus(backupSlot(home), "applied");
+}
+
+it("adopt: an installed candidate commits the migration backup bound to the transaction", async () => {
+	const { home, manager } = await inProgress("stopping");
+	applyBackup(home, manager.status().transaction!.id);
+	await manager.observeInstalled(candidateIdentity);
+
+	const status = await manager.adoptInstalled(candidateIdentity);
+
+	expect(status.migrationBackup).toMatchObject({ status: "committed" });
+	expect(readManifest(backupSlot(home))?.status).toBe("committed");
+});
+
+it("adopt: another installed build leaves the bound migration backup restorable and says how to resolve it", async () => {
+	const { home, manager } = await inProgress("health");
+	applyBackup(home, manager.status().transaction!.id);
+	await manager.observeInstalled(manual);
+
+	const status = await manager.adoptInstalled(manual);
+
+	expect(status.migrationBackup?.status).toBe("applied");
+	expect(status.migrationBackup?.note).toContain("update restore-backup");
+	expect(status.migrationBackup?.note).toContain("update discard-backup");
+	expect(readManifest(backupSlot(home))?.status).toBe("applied");
+});
+
+it("adopt: a backup bound to a different transaction is not touched or reported", async () => {
+	const { home, manager } = await inProgress("health");
+	applyBackup(home, "another-transaction");
+	await manager.observeInstalled(manual);
+
+	const status = await manager.adoptInstalled(manual);
+
+	expect(status.migrationBackup).toBeUndefined();
+	expect(readManifest(backupSlot(home))?.status).toBe("applied");
 });
 
 it("adopt without a lifecycle (shell updater) releases through the supplied callback", async () => {

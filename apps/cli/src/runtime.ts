@@ -23,7 +23,10 @@ import {
 } from "./onboarding.js";
 import { runtimeAgentSettings } from "./runtime-settings.js";
 import { acquireInstanceLock } from "./services/InstanceLock.js";
-import { scheduleSupervisorRetirement } from "./services/LegacyUpdateAdoption.js";
+import {
+	scheduleLegacyCleanup,
+	scheduleSupervisorRetirement,
+} from "./services/LegacyUpdateAdoption.js";
 import { assertServiceLaunch } from "./services/ServiceLifecycle.js";
 
 export async function launchFactory(values: {
@@ -166,6 +169,7 @@ export async function launchFactory(values: {
 	pruneBackup(home, {
 		processStartedAt: new Date(Date.now() - process.uptime() * 1000),
 	});
+	scheduleLegacyCleanup(home);
 	if (factoryRuntimeIdentity.packaged && process.env.BOBS_FACTORY_DESKTOP_OWNER)
 		scheduleSupervisorRetirement(home, port);
 	if (repository && selected)
