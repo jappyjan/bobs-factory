@@ -52,6 +52,22 @@ async function waitFor(check, label, timeoutMs = 2500) {
 	throw new Error(`Timed out waiting for ${label}`);
 }
 
+async function waitForProcessExit(pid, label, timeoutMs = 10000) {
+	const deadline = Date.now() + timeoutMs;
+	for (;;) {
+		try {
+			process.kill(pid, 0);
+		} catch (error) {
+			if (error.code === "ESRCH") return;
+			throw error;
+		}
+		if (Date.now() >= deadline) {
+			throw new Error(`${label} (pid ${pid}) still alive after ${timeoutMs}ms`);
+		}
+		await delay(25);
+	}
+}
+
 test("explicit stable channel reaches the unsigned bootstrap and rejects beta", {
 	timeout: 30000,
 }, async () => {
@@ -144,7 +160,7 @@ test("TERM during bootstrap download stops its owned process group before cleanu
 			}),
 		]);
 		assert.equal(result.code, 143, run.output());
-		assert.throws(() => process.kill(curlPid, 0), { code: "ESRCH" });
+		await waitForProcessExit(curlPid, "controlled curl child");
 		assert.equal(
 			existsSync(join(f.home, ".bobs-factory-trial/.launcher-lock")),
 			false,
@@ -217,7 +233,7 @@ test("npm exits after TERM reaches a packed launcher during bootstrap download",
 			}),
 		]);
 		assert.equal(result.code, 143, output);
-		assert.throws(() => process.kill(curlPid, 0), { code: "ESRCH" });
+		await waitForProcessExit(curlPid, "controlled curl child");
 		assert.equal(
 			existsSync(join(f.home, ".bobs-factory-trial/.launcher-lock")),
 			false,
