@@ -14,9 +14,6 @@ const bytes = (value: number | undefined) => {
 	return `${power ? (value / 1024 ** power).toFixed(2) : value} ${["B", "KiB", "MiB", "GiB"][power]}`;
 };
 const categoryNames = {
-	staging: "Staged updates",
-	preparation: "Preparation copies",
-	recovery: "Reconciled recovery copies",
 	migration: "Migration preparation",
 	worktree: "Completed delivered worktrees",
 };
@@ -35,10 +32,6 @@ export function StorageSettings() {
 	const [idempotentTeardown, setIdempotentTeardown] = useFormState<boolean>(
 		String(status?.preview?.id),
 		false,
-	);
-	const [operation, setOperation] = useFormState<string>(
-		String(status?.historicalPreview?.id),
-		"",
 	);
 	const [selected, setSelected] = useFormState<string[]>(
 		String(status?.preview?.id),
@@ -83,31 +76,7 @@ export function StorageSettings() {
 					/>{" "}
 					Automatic cleanup
 				</label>
-				<label>
-					Verified rollback snapshots to keep
-					<input
-						type="number"
-						min="1"
-						max="100"
-						value={policy.snapshotCount}
-						onChange={(event) =>
-							setDraft({ ...policy, snapshotCount: Number(event.target.value) })
-						}
-					/>
-				</label>
-				<p>
-					The newest verified rollback is always protected. Excess snapshots can
-					be eligible immediately; protected dependencies stay retained.
-				</p>
-				{(
-					[
-						"staging",
-						"preparation",
-						"recovery",
-						"migration",
-						"worktree",
-					] as const
-				).map((category) => (
+				{(["migration", "worktree"] as const).map((category) => (
 					<label key={category}>
 						{categoryNames[category]} retention (days)
 						<input
@@ -240,64 +209,6 @@ export function StorageSettings() {
 					>
 						Clean selected directories
 					</Button>
-				</>
-			)}
-			<h3>Historical directories</h3>
-			<p>
-				Names alone never establish ownership. Classification requires a
-				producer proof or an exact verified copy of current Factory state, plus
-				your explicit election that the selected contents are disposable.
-				Classification still applies ordinary retention and preservation checks.
-			</p>
-			<Button
-				disabled={action.isPending}
-				onClick={() =>
-					void perform("/api/storage/historical/preview").catch(() => {})
-				}
-			>
-				Inspect historical directories
-			</Button>
-			{status.historicalPreview && (
-				<>
-					<p>
-						{status.historicalPreview.complete
-							? "Historical scan complete"
-							: "Historical scan incomplete; inspect again for the next slice"}
-					</p>
-					<label>
-						Originating operation ID
-						<input
-							value={operation}
-							onChange={(event) => setOperation(event.target.value)}
-						/>
-					</label>
-					<ul>
-						{status.historicalPreview.candidates.map((candidate) => (
-							<li key={candidate.id}>
-								<strong>{candidate.path}</strong> · Category:{" "}
-								{candidate.category}
-								<p>
-									{candidate.ownershipEvidence} {candidate.reconciliationProof}.{" "}
-									{candidate.dependencies.join("; ")}
-								</p>
-								<Button
-									disabled={action.isPending || !operation}
-									onClick={() =>
-										void perform("/api/storage/classify", {
-											previewId: status.historicalPreview!.id,
-											candidateId: candidate.id,
-											category: candidate.category,
-											operation,
-											contentsVerifiedDisposable: true,
-										}).catch(() => {})
-									}
-								>
-									I verified disposable Bob-owned contents: classify this exact
-									directory
-								</Button>
-							</li>
-						))}
-					</ul>
 				</>
 			)}
 			<h3>Last cleanup attempt</h3>

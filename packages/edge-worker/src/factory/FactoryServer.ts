@@ -2,10 +2,7 @@ import { createHash } from "node:crypto";
 
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
-import {
-	factoryRuntimeIdentity,
-	StorageCategorySchema,
-} from "bobs-factory-core";
+import { factoryRuntimeIdentity } from "bobs-factory-core";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { MachineCapacity } from "../MachineCapacity.js";
@@ -496,22 +493,6 @@ export class FactoryServer {
 				return result;
 			});
 			this.app.post("/api/storage/preview", () => storage.preview());
-			this.app.post("/api/storage/historical/preview", () =>
-				storage.historical.preview(),
-			);
-			this.app.post("/api/storage/classify", (request) => {
-				const body = z
-					.object({
-						previewId: z.string().uuid(),
-						candidateId: z.string().regex(/^[a-f0-9]{64}$/),
-						category: StorageCategorySchema,
-						operation: z.string().min(1).max(100),
-						contentsVerifiedDisposable: z.literal(true),
-					})
-					.strict()
-					.parse(request.body);
-				return storage.historical.classify(body);
-			});
 			this.app.post("/api/storage/execute", async (request, reply) => {
 				const body = z
 					.object({

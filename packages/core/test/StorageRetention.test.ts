@@ -41,23 +41,24 @@ afterEach(async () => {
 	);
 });
 describe("storage records", () => {
-	it("retains safe defaults and rejects a policy with no rollback", () => {
+	it("retains safe defaults and reads policies saved with rollback-snapshot settings", () => {
 		expect(StoragePolicySchema.parse({})).toEqual({
 			version: 1,
 			revision: 0,
 			enabled: true,
 			intervalHours: 24,
-			snapshotCount: 2,
-			ages: {
-				staging: 7,
-				preparation: 7,
-				recovery: 7,
-				migration: 7,
-				worktree: 30,
-			},
+			ages: { migration: 7, worktree: 30 },
 			lowDiskBytes: 5 * 1024 ** 3,
 		});
-		expect(() => StoragePolicySchema.parse({ snapshotCount: 0 })).toThrow();
+		expect(
+			StoragePolicySchema.parse({
+				snapshotCount: 4,
+				ages: { staging: 3, preparation: 3, recovery: 3, worktree: 9 },
+			}),
+		).toEqual(
+			StoragePolicySchema.parse({ ages: { migration: 7, worktree: 9 } }),
+		);
+		expect(() => StoragePolicySchema.parse({ unknown: 1 })).toThrow();
 	});
 	it("saves private durable ownership and revision guards across restarts", async () => {
 		const { store, home, path, root } = await fixture();

@@ -35,23 +35,3 @@ it("submits exact preview identities through the protected instance service", as
 		idempotentTeardown: true,
 	});
 });
-it("requires an explicit disposable-content election for classification", async () => {
-	const post = vi.spyOn(FactoryClient.prototype, "post").mockResolvedValue({});
-	await expect(
-		program().parseAsync([
-			"node",
-			"fixture",
-			"storage",
-			"classify",
-			"--preview",
-			"preview",
-			"--candidate",
-			"candidate",
-			"--category",
-			"staging",
-			"--operation",
-			"transaction",
-		]),
-	).rejects.toThrow("verified-disposable-contents");
-	expect(post).not.toHaveBeenCalled();
-});

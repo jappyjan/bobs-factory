@@ -40,41 +40,6 @@ export function addStorageCommands(program: Command) {
 			);
 		});
 	storage
-		.command("historical-preview")
-		.action(async () =>
-			output(await client().post("/api/storage/historical/preview")),
-		);
-	storage
-		.command("classify")
-		.requiredOption("--preview <id>", "Exact historical preview ID")
-		.requiredOption("--candidate <id>", "Exact directory identity")
-		.requiredOption("--category <category>", "Previewed retention category")
-		.requiredOption(
-			"--operation <id>",
-			"Retained originating update transaction",
-		)
-		.requiredOption(
-			"--verified-disposable-contents",
-			"Explicitly elect this exact directory after verifying it contains disposable Bob-owned data",
-		)
-		.action(
-			async (options: {
-				preview: string;
-				candidate: string;
-				category: string;
-				operation: string;
-			}) =>
-				output(
-					await client().post("/api/storage/classify", {
-						previewId: options.preview,
-						candidateId: options.candidate,
-						category: options.category,
-						operation: options.operation,
-						contentsVerifiedDisposable: true,
-					}),
-				),
-		);
-	storage
 		.command("clean")
 		.requiredOption("--preview <id>", "Exact preview ID")
 		.requiredOption("--ids <ids>", "Comma-separated selected candidate IDs")

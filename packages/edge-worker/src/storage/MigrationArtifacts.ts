@@ -7,14 +7,7 @@ import {
 	rmdirSync,
 	unlinkSync,
 } from "node:fs";
-import {
-	lstat,
-	mkdir,
-	opendir,
-	readFile,
-	readlink,
-	rename,
-} from "node:fs/promises";
+import { lstat, mkdir, opendir, readlink, rename } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { setImmediate as yieldToIO } from "node:timers/promises";
@@ -26,16 +19,14 @@ import {
 	StorageRetentionStore,
 	type StorageVerificationSlice,
 	sameStorageIdentity,
-	storageDigest,
 	storageIdentity,
 	storageIntegrityVerification,
 	verifyStorageIntegrity,
 } from "bobs-factory-core";
-import { UpdateStateSchema } from "../updates/UpdateManager.js";
 import type { StorageAdapter, StorageObservation } from "./StorageRetention.js";
 
-/** Fresh update references include terminal transaction state: history is never erased to free a target. */
-export class UpdateArtifacts implements StorageAdapter {
+/** Removes verified, reconciled copies enrolled by the Cyrus-to-Bob's migration. */
+export class MigrationArtifacts implements StorageAdapter {
 	private readonly verifications = new Map<
 		string,
 		AsyncGenerator<
@@ -83,135 +74,6 @@ export class UpdateArtifacts implements StorageAdapter {
 			if ((error as NodeJS.ErrnoException).code !== "ENOENT")
 				reasons.push("Recovery dependency inventory is unreadable");
 		}
-
-		const reference = (value: unknown): boolean => {
-			if (typeof value === "string") {
-				if (!value.startsWith("/")) return false;
-				const path = resolve(value),
-					suffix = relative(record.path, path);
-				return (
-					suffix === "" ||
-					(!suffix.startsWith(`..${sep}`) &&
-						suffix !== ".." &&
-						!suffix.startsWith("/"))
-				);
-			}
-			if (Array.isArray(value)) return value.some(reference);
-			return (
-				!!value &&
-				typeof value === "object" &&
-				Object.values(value).some(reference)
-			);
-		};
-		let referenceBudget = 16,
-			objectBudget = 1000;
-		const executableLinks = async (state: unknown): Promise<void> => {
-			if (!state || typeof state !== "object") return;
-			for (const [key, value] of Object.entries(state)) {
-				if (--objectBudget < 0) {
-					reasons.push("Executable dependency inventory is incomplete");
-					return;
-				}
-				if (
-					["executable", "previousExecutable", "runtimeLink"].includes(key) &&
-					typeof value === "string" &&
-					value.startsWith("/")
-				) {
-					let path = value;
-					for (let depth = 0; depth < 16; depth++) {
-						if (--referenceBudget < 0) {
-							reasons.push("Executable dependency inventory is incomplete");
-							return;
-						}
-						if (reference(path)) {
-							reasons.push("Current or previous executable dependency");
-							break;
-						}
-						try {
-							const stat = await lstat(path);
-							if (!stat.isSymbolicLink()) break;
-							path = resolve(dirname(path), await readlink(path));
-						} catch (error) {
-							if ((error as NodeJS.ErrnoException).code !== "ENOENT")
-								reasons.push("Executable dependency cannot be verified");
-							break;
-						}
-						if (depth === 15)
-							reasons.push("Executable link chain requires inspection");
-					}
-				} else if (value && typeof value === "object")
-					await executableLinks(value);
-			}
-		};
-		for (const name of [
-			"updates/state.json",
-			"updates/maintenance.json",
-			"runtime/update-owner.json",
-			"runtime/desktop-runtime.json",
-			"runtime/desktop-update.json",
-			"desktop/updates/state.json",
-			"desktop/updates/installation.json",
-			"desktop/updates/helper-request.json",
-			"runtime/service.json",
-		]) {
-			try {
-				const path = join(this.home, name),
-					stat = await lstat(path);
-				if (
-					!stat.isFile() ||
-					stat.isSymbolicLink() ||
-					stat.size > 4 * 1024 * 1024
-				)
-					throw new Error("Unverifiable state file");
-				const state: unknown = JSON.parse(await readFile(path, "utf8"));
-				if (
-					name === "updates/state.json" ||
-					name === "desktop/updates/state.json"
-				)
-					UpdateStateSchema.parse(state);
-				else if (
-					!state ||
-					Array.isArray(state) ||
-					typeof state !== "object" ||
-					!Object.keys(state).some((key) =>
-						[
-							"schema",
-							"schemaVersion",
-							"transactionId",
-							"executable",
-							"install",
-							"product",
-							"home",
-						].includes(key),
-					)
-				)
-					throw new Error("Unrecognized producer state");
-				if (reference(state))
-					reasons.push(`Retained update reference in ${name}`);
-				await executableLinks(state);
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ENOENT")
-					reasons.push(`Cannot verify ${name}; inspect update/recovery state`);
-			}
-		}
-		for (const name of [
-			"runtime/current",
-			"runtime/previous",
-			"runtime/desktop-current",
-			"runtime/desktop-previous",
-			"runtime/desktop-installed/bin/bobs-factory",
-		]) {
-			try {
-				const path = join(this.home, name),
-					target = resolve(path, "..", await readlink(path));
-				if (reference(target)) reasons.push(`Live executable link ${name}`);
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ENOENT")
-					reasons.push(`Cannot verify executable link ${name}`);
-			}
-		}
-		if (reference(process.execPath))
-			reasons.push("Currently executing runtime");
 		return reasons;
 	}
 	private async *verify(
@@ -224,75 +86,6 @@ export class UpdateArtifacts implements StorageAdapter {
 		void,
 		{ maxEntries?: number; deadline?: number } | undefined
 	> {
-		if (
-			record.category === "snapshot" &&
-			record.rollback === "usable" &&
-			!bounds.allowMissing
-		) {
-			const proof = (await readStorageJson(
-				join(
-					this.home,
-					"storage-retention",
-					"rollback-proofs",
-					`${record.id}.json`,
-				),
-			)) as
-				| {
-						root: string;
-						executable: string;
-						identity: StorageIdentity;
-						integrity: string;
-				  }
-				| undefined;
-			if (
-				!proof ||
-				!record.evidence.includes(`runtime-proof:${storageDigest(proof)}`) ||
-				!sameStorageIdentity(
-					proof.identity,
-					await storageIdentity(proof.root, dirname(proof.root)),
-				) ||
-				dirname(proof.executable) !== proof.root
-			)
-				throw new Error("Rollback runtime proof is unavailable");
-			const executable = await lstat(proof.executable);
-			if (
-				!executable.isFile() ||
-				executable.isSymbolicLink() ||
-				!(executable.mode & 0o111)
-			)
-				throw new Error("Rollback runtime is unavailable");
-			const runtime = storageIntegrityVerification(
-				proof.root,
-				join(
-					this.home,
-					"storage-retention",
-					"rollback-proofs",
-					`${record.id}.ndjson`,
-				),
-				proof.integrity,
-				signal,
-				{ ...bounds, rejectLinks: true },
-			);
-			try {
-				let next = await runtime.next();
-				while (!next.done) {
-					if (next.value.complete) {
-						bounds = {
-							...bounds,
-							maxEntries: Math.max(
-								1,
-								(bounds.maxEntries ?? 1000) - next.value.entries,
-							),
-						};
-						break;
-					}
-					bounds = (yield { ...next.value, complete: false }) ?? {};
-					next = await runtime.next(bounds);
-				}
-			} finally {
-				await runtime.return();
-			}
-		}
 		if (record.authoritativeReplacement) {
 			const replacement = record.authoritativeReplacement;
 			if (
@@ -350,16 +143,10 @@ export class UpdateArtifacts implements StorageAdapter {
 		bounds: { maxEntries?: number; deadline?: number } = {},
 	): Promise<StorageObservation> {
 		signal.throwIfAborted();
-		const allowed = [
-			join(this.home, "updates", "snapshots"),
-			join(this.home, "updates", "staging"),
-			join(this.home, "desktop", "updates", "staging"),
-			join(this.home, "updates", "preparation"),
-			join(this.home, "updates", "recovery-retained"),
-		].map((resolvePath) => resolve(resolvePath));
+		const allowed: string[] = [];
 		if (
 			record.category === "migration" &&
-			(record.historicalElection || record.producer === "applyMigration") &&
+			record.producer === "applyMigration" &&
 			record.authoritativeReplacement
 		) {
 			const observation = (await readStorageJson(
@@ -390,14 +177,10 @@ export class UpdateArtifacts implements StorageAdapter {
 			!allowed.includes(resolve(record.root)) ||
 			dirname(record.path) !== record.root
 		)
-			protection.push("Root is not an enrolled update artifact root");
-		if (
-			record.category === "migration" &&
-			!record.historicalElection &&
-			record.producer !== "applyMigration"
-		)
+			protection.push("Root is not an enrolled migration artifact root");
+		if (record.producer !== "applyMigration")
 			protection.push(
-				"Migration source and native backups require explicit verified election",
+				"Migration source and native backups are never removed automatically",
 			);
 		if (
 			!sameStorageIdentity(
@@ -415,17 +198,6 @@ export class UpdateArtifacts implements StorageAdapter {
 			sameStorageIdentity(previous.identity, record.identity);
 		let verification: StorageVerificationSlice | undefined;
 		try {
-			if (
-				record.category === "snapshot" &&
-				record.rollback !== "disposable" &&
-				!resuming
-			) {
-				const receipt = JSON.parse(
-					await readFile(join(record.path, "lifecycle-receipt.json"), "utf8"),
-				);
-				if (!record.verifiedAt || !receipt || typeof receipt !== "object")
-					throw new Error("No rollback receipt");
-			}
 			const integrity = record.evidence
 				.find((value) => value.startsWith("integrity:"))
 				?.slice(10);
@@ -465,9 +237,7 @@ export class UpdateArtifacts implements StorageAdapter {
 		} catch {
 			this.verifications.delete(record.id);
 			protection.push(
-				record.category === "snapshot"
-					? "Rollback verification failed"
-					: "Artifact content changed or complete ownership verification is unavailable",
+				"Artifact content changed or complete ownership verification is unavailable",
 			);
 		}
 
@@ -475,10 +245,6 @@ export class UpdateArtifacts implements StorageAdapter {
 			record,
 			protection,
 			complete: verification?.complete ?? protection.length > 0,
-			rollbackVerified:
-				record.category === "snapshot" &&
-				record.rollback === "usable" &&
-				!!verification?.complete,
 			apparentBytes: verification?.apparentBytes,
 			filesystemEntries: 100 + (verification?.entries ?? 0),
 			usageObservedAt: verification?.complete

@@ -144,16 +144,36 @@ bobs-factory --version
 
 The installer keeps immutable versions under `PREFIX/lib/bobs-factory/` and
 atomically switches `PREFIX/bin/bobs-factory`. It retains the prior version/link
-for manual recovery. State is never stored under the prefix. Stop intake, drain
-and stop workers/descendants before replacing the active executable. Verify one
-worker, preserved home/config and continuation after restart. To roll back, stop
-replacement consumers, point the executable link to the retained previous version
-and restore separately backed-up mutable state only if needed. Do not run old and
-new workers together. The [per-instance updater](UPDATES.md) implements hash-bound
-discovery, remembered stable/nightly policy and owned staged replacement with
-recovery. [User services](SERVICES.md) and [desktop app updates](DESKTOP.md)
-have separate lifecycle owners; rollout still requires genuine release evidence
-and actual functional validation.
+for manual recovery. State is never stored under the prefix.
+
+Manual replacement over a retained home needs no state editing:
+
+1. Stop intake, drain and stop the worker and its descendants (desktop: **Stop
+   local Factory**; service: stop its unit with `launchctl`/`systemctl`). Do not
+   run old and new workers together.
+2. Install the new build with the commands above, or drop the new desktop app
+   over the old one. Desktop installs keep the runtime link at
+   `~/.bobs-factory/runtime/desktop-installed/bin/bobs-factory`; if the new app
+   does not adopt its bundled runtime, point the link at the new executable:
+   `ln -sfn NEW_EXECUTABLE ~/.bobs-factory/runtime/desktop-installed/bin/bobs-factory`.
+3. Start it. The new build records itself as the installed build (an update that
+   was still in progress is reported with a single command to resolve it,
+   `bobs-factory update recover --adopt-installed`), migrates data only if its
+   data format is newer (backing up just the files that migration touches), and
+   removes leftover copies from the older updater. Settings, history and runs are
+   retained.
+4. Verify one worker, preserved home/config and continuation after restart.
+
+To go back, stop the workers, point the executable link at the retained previous
+version and start it. Data written in a newer format is refused by the older
+build (exit code 78); restore the pre-migration files with
+`bobs-factory update restore-backup --yes` first while the backup still exists
+(until the first start after the migration committed, or 14 days). The
+[per-instance updater](UPDATES.md) implements hash-bound discovery, remembered
+stable/nightly policy and owned staged replacement that swaps only the runtime
+link, with journaled crash recovery. [User services](SERVICES.md) and
+[desktop app updates](DESKTOP.md) have separate lifecycle owners; rollout still
+requires genuine release evidence and actual functional validation.
 
 Bootstrap installs also keep an ownership record under
 `PREFIX/lib/bobs-factory/records/`. It records the exact release channel, version,

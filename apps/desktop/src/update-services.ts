@@ -1,6 +1,3 @@
-export { writeStorageIntegrity } from "../../../packages/core/src/StorageIntegrity.js";
-export { StorageRetentionStore } from "../../../packages/core/src/StorageRetention.js";
-
 // Bundle only these shared primitives, never the worker or a provider runner.
 
 export { requestFactoryTerminalSession } from "../../../packages/edge-worker/src/factory/FactoryAuthOperator.js";

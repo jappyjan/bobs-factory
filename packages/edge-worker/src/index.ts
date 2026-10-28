@@ -99,6 +99,7 @@ export {
 	type DataSummary,
 	dataRegression,
 } from "./updates/DataSummary.js";
+export { cleanupLegacyUpdates } from "./updates/LegacyUpdateCleanup.js";
 export { PublishedUpdateSource } from "./updates/PublishedUpdateSource.js";
 export type {
 	HealthExpectation,

@@ -12,38 +12,30 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 import { OwnedResourceClaim } from "./OwnedResourceClaim.js";
 
-export const StorageCategorySchema = z.enum([
+export const StorageCategorySchema = z.enum(["migration", "worktree"]);
+export type StorageCategory = z.infer<typeof StorageCategorySchema>;
+/** Written by the copy-based updater and never produced any more. Records still
+ * load so the one-time cleanup can drop them; nothing else may act on them. */
+export const LegacyStorageCategorySchema = z.enum([
 	"snapshot",
 	"staging",
 	"preparation",
 	"recovery",
-	"migration",
-	"worktree",
 ]);
-export type StorageCategory = z.infer<typeof StorageCategorySchema>;
+export type LegacyStorageCategory = z.infer<typeof LegacyStorageCategorySchema>;
 const days = z.number().int().min(1).max(36500);
-export const StoragePolicySchema = z
+const StoragePolicyObjectSchema = z
 	.object({
 		version: z.literal(1).default(1),
 		revision: z.number().int().nonnegative().default(0),
 		enabled: z.boolean().default(true),
 		intervalHours: z.number().int().min(1).max(168).default(24),
-		snapshotCount: z.number().int().min(1).max(100).default(2),
 		ages: z
 			.object({
-				staging: days.default(7),
-				preparation: days.default(7),
-				recovery: days.default(7),
 				migration: days.default(7),
 				worktree: days.default(30),
 			})
-			.default({
-				staging: 7,
-				preparation: 7,
-				recovery: 7,
-				migration: 7,
-				worktree: 30,
-			}),
+			.default({ migration: 7, worktree: 30 }),
 		lowDiskBytes: z
 			.number()
 			.int()
@@ -52,7 +44,29 @@ export const StoragePolicySchema = z
 			.default(5 * 1024 ** 3),
 	})
 	.strict();
-export type StoragePolicy = z.infer<typeof StoragePolicySchema>;
+/** Policies saved by the copy-based updater carry rollback-snapshot settings; read and drop them. */
+export const StoragePolicySchema = z.preprocess((value) => {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+	const { snapshotCount: _snapshots, ...policy } = value as Record<
+		string,
+		unknown
+	>;
+	if (
+		policy.ages &&
+		typeof policy.ages === "object" &&
+		!Array.isArray(policy.ages)
+	) {
+		const {
+			staging: _staging,
+			preparation: _preparation,
+			recovery: _recovery,
+			...ages
+		} = policy.ages as Record<string, unknown>;
+		policy.ages = ages;
+	}
+	return policy;
+}, StoragePolicyObjectSchema);
+export type StoragePolicy = z.infer<typeof StoragePolicyObjectSchema>;
 export const StorageIdentitySchema = z
 	.object({
 		device: z.string(),
@@ -65,8 +79,9 @@ export const StorageRecordSchema = z
 	.object({
 		version: z.literal(1),
 		id: z.string().uuid(),
-		category: StorageCategorySchema,
-		rollback: z.enum(["usable", "disposable", "unknown"]).optional(),
+		category: z.union([StorageCategorySchema, LegacyStorageCategorySchema]),
+		/** Copy-updater fields: loaded for old records, never written. */
+		rollback: z.unknown().optional(),
 		path: z.string(),
 		root: z.string(),
 		identity: StorageIdentitySchema,
@@ -76,7 +91,7 @@ export const StorageRecordSchema = z
 		completedAt: z.string().datetime().optional(),
 		verifiedAt: z.string().datetime().optional(),
 		reconciledAt: z.string().datetime().optional(),
-		replacement: z.string().optional(),
+		replacement: z.unknown().optional(),
 		authoritativeReplacement: z
 			.object({
 				path: z.string(),
@@ -87,9 +102,7 @@ export const StorageRecordSchema = z
 			.optional(),
 		dependencies: z.array(z.string().max(1000)).max(1000),
 		evidence: z.array(z.string().max(1000)).max(100),
-		historicalElection: z
-			.object({ preview: z.string(), at: z.string().datetime() })
-			.optional(),
+		historicalElection: z.unknown().optional(),
 	})
 	.strict();
 export type StorageRecord = z.infer<typeof StorageRecordSchema>;

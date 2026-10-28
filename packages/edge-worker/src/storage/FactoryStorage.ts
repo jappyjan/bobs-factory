@@ -17,9 +17,9 @@ import type {
 	WorkflowRuntime,
 } from "../factory/WorkflowRuntime.js";
 import type { GitService } from "../GitService.js";
+import { MigrationArtifacts } from "./MigrationArtifacts.js";
 import { StorageRetention } from "./StorageRetention.js";
 import { StorageUsage } from "./StorageUsage.js";
-import { UpdateArtifacts } from "./UpdateArtifacts.js";
 import {
 	type RetainedWorkspaceProof,
 	WorktreeArtifacts,
@@ -538,13 +538,8 @@ export function factoryStorage(
 		process.env,
 		new StorageUsage(store.directory),
 	);
-	const updates = new UpdateArtifacts(home);
 	return new StorageRetention(home, {
-		snapshot: updates,
-		staging: updates,
-		preparation: updates,
-		recovery: updates,
-		migration: updates,
+		migration: new MigrationArtifacts(home),
 		worktree: worktrees,
 	});
 }

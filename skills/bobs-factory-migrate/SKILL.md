@@ -122,12 +122,23 @@ and preserves owned native-copy changes in `native-recovery`. It restores Git
 backlinks and external files explicitly selected in `restorePaths`. Reconcile
 other assistant-managed service/store changes before enabling the original
 consumer. Verify one active pool and one consumer. Retain backups until the user
-explicitly elects to remove them. For a later cleanup election, inspect
-Settings → Storage → Historical directories and follow the exact identity-bound
-classification procedure in [the storage runbook](../../docs/factory/storage-retention.md#historical-directories).
-Retain source/native/external backups while ownership or reconciliation is unproven;
-classification never overrides those checks or enrolls arbitrary external paths.
+explicitly elects to remove them. Only reconciled preparation copies of the
+migration are ever removed automatically (see
+[the storage runbook](../../docs/factory/storage-retention.md#migration-preparation-copies));
+retain source/native/external backups while ownership or reconciliation is unproven.
 Migration preparation observations do not authorize removing the containing backup.
+
+## Installing a newer build by hand
+
+Updating a Bob's Factory home that already exists (including one this skill
+migrated) never needs state editing. Stop the worker, install the new build over
+the retained home, start it. The new build records itself as the installed build,
+migrates data only if its data format is newer (backing up just the files that
+migration touches; restore with `bobs-factory update restore-backup --yes`),
+adopts an interrupted update with `bobs-factory update recover --adopt-installed`
+and removes copies left by the earlier updater. It refuses to start, changing
+nothing, on data written by a newer build (exit code 78). The procedure is in
+[manual replacement](../../docs/distribution/README.md#installation-and-manual-replacement).
 
 There is no old command alias, implicit old-home fallback or deprecation phase.
 Automatic updates, Windows, zrok2 (#39) and independent identity overlays (#57)

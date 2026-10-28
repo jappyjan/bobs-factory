@@ -14,23 +14,26 @@ saved-state snapshots.
 
 | Category | Default eligibility |
 | --- | --- |
-| Verified usable rollback snapshots | Keep the newest two at any age after verifying the installed rollback runtime and its complete integrity manifest. Unprotected overflow is eligible immediately. At least one rollback is mandatory. |
-| Unused staged updates and completed preparation | Seven days after verified durable completion and reconciliation |
-| Reconciled recovery and migration preparation | Seven days; unresolved recovery, source/native/external backups remain protected |
+| Reconciled migration preparation | Seven days after verified durable completion and reconciliation; source/native/external backups are never removed automatically |
 | Delivered worktrees | Thirty days after verified durable completion, with exact delivery and every owner's release proved |
 
-The owned runtime updater keeps the last successful transaction's snapshot and
-any snapshot referenced by an in-flight or unresolved transaction. After a new
-successful update, it marks earlier completed, proven owned snapshots disposable
-and wakes automatic reconciliation after releasing the update lock. These
-superseded copies do not count as usable rollbacks. Cleanup still requires an
-independently verified usable rollback, enabled automation (or explicit cleanup),
-complete ownership proofs and no live references. Other usable snapshots retain
-the configured count policy.
+The updater no longer copies your home, so it creates no snapshot, preparation or
+recovery directories. Staged runtimes are not retention records either: after an
+update the supervisor removes every staged directory that nothing refers to,
+keeping the live runtime and the previous one (the targets of the live, `next` and
+`prev` runtime links and the executables named by the current transaction).
+Copies left by the earlier copying updater (`updates/preparation`,
+`updates/snapshots`, `updates/recovery-retained`) and their retention records and
+integrity proofs are removed once, automatically, after the worker starts and the
+last update is acknowledged. Directories are renamed to `updates/.trash-*` first
+and deleted in the background; an interrupted deletion resumes on the next start,
+and paths already deleted by hand are simply forgotten. Nothing referenced by an
+unresolved update, or holding a linked or running runtime, is touched. Old records
+of those categories still load and are never acted on.
 
-Preservation wins over every age and count. Pending updates, failed unreconciled
-transactions, current/previous executable links, retained rollback dependencies,
-unknown ownership and unreadable state retain their data. Protected data can exceed
+Preservation wins over every age. Pending updates, failed unreconciled
+transactions, current/previous executable links, unknown ownership and unreadable
+state retain their data. Protected data can exceed
 the configured policy. The low-disk threshold defaults to five GiB per affected
 filesystem; it warns and requests ordinary reconciliation without relaxing checks.
 Disabling automation leaves previews and selected manual cleanup available.
@@ -89,39 +92,16 @@ bobs-factory --home HOME --port PORT storage policy --file policy.json --revisio
 Settings shows the same controls. Unsaved form edits and selections follow normal
 navigation, reload and configuration-change reset rules.
 
-## Historical directories
+## Migration preparation copies
 
-```sh
-bobs-factory --home HOME --port PORT storage historical-preview
-bobs-factory --home HOME --port PORT storage classify \
-  --preview PREVIEW_ID --candidate EXACT_ID --category staging \
-  --operation RETAINED_UPDATE_TRANSACTION_ID --verified-disposable-contents
-```
-
-Inspect the exact directory, ownership evidence, originating operation,
-reconciliation proof and dependencies first. The explicit election binds to its
-preview and filesystem identity. Staging and rollback classification require a retained
-completed, acknowledged
-producer transaction proving the exact path. Preparation and recovery can instead
-use an explicit operation label (for example `manual-copy`) when every selected
-file independently matches current authoritative Factory state. Mixed contents,
-authentication and symbolic links are refused. Recovery dependencies are released
-only after this comparison succeeds. It does not enroll
-arbitrary external paths or override normal eligibility. A historically elected
-snapshot is disposable data, not a newly certified usable rollback; it never
-replaces the mandatory retained rollback. Unproven lookalikes remain
-retained. Source/native/external migration backups keep their original retention
-requirement; a name or successful-looking journal cannot elect them implicitly.
-Migration observations expose only the `state` and `factory` directories inside
-the committed preparation copy. Their operation is the migration source digest.
-New migrations automatically register these narrow preparation directories under shared
-process-aware claims. Only copies reconciled against current authoritative state become
-eligible. An interrupted committed migration resumes registration, integrity verification
-and replacement reconciliation on retry, reusing only verified ownership records.
-Authoritative-state drift still refuses replay. Migration apply and restore share an owner, and recovery claims the same
-preparation directories as cleanup. Historical copies still require an explicit
-election, which rechecks the committed journal, exact directory identity and current
-authoritative files. Source, native and external backups remain outside cleanup.
+Cyrus-to-Bob's migration enrolls only the `state` and `factory` directories of its
+committed preparation copy, under shared process-aware claims. Only copies
+reconciled byte-for-byte against current authoritative state become eligible, after
+seven days. An interrupted committed migration resumes registration, integrity
+verification and replacement reconciliation on retry, reusing only verified
+ownership records; authoritative-state drift refuses replay. Source, native and
+external backups are never removed automatically, and there is no manual election
+of arbitrary directories.
 
 ## Failures and interruption
 
@@ -171,14 +151,9 @@ are shown as unavailable, and small measurements retain meaningful units.
 
 Cleanup preserves native credential/conversation stores, configuration, run IDs,
 accepted definitions and decisions, gates, historical evidence and all retained
-manifest chunks. It does not garbage-collect chunks or historical evidence. New
-snapshot copies exclude only identity-verified obsolete copies with a verified,
-durable replacement and released recovery dependencies. Old synchronous snapshot
-helpers remain available for retained validation scripts; production updates use
-the cancellable retention-aware copy.
+manifest chunks. It does not garbage-collect chunks or historical evidence.
 
-Consumed desktop staging whose installed bundle has moved, unclassified historical
-copies and failure-era recovery data can remain protected until their producer is
+Unreconciled migration copies can remain protected until their producer is
 reconciled. Native-provider continuation and native desktop platform behavior need
 appropriate platform validation; simulated-agent tests do not establish those
 provider/platform guarantees.

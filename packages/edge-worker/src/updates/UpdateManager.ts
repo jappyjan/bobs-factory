@@ -13,15 +13,15 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import {
-	factoryRuntimeIdentity,
-	publishStorageJson,
-	readStorageJson,
-	StorageRetentionStore,
-} from "bobs-factory-core";
+import { factoryRuntimeIdentity, publishStorageJson } from "bobs-factory-core";
 import { z } from "zod";
 import { compareReleaseVersions } from "../../../../scripts/lib/binary-release.mjs";
-import { commitBackup } from "../migrations/MigrationBackup.js";
+import {
+	backupSlot,
+	commitBackup,
+	readManifest,
+} from "../migrations/MigrationBackup.js";
+import { pruneStagedRuntimes } from "../storage/RuntimePruner.js";
 import type { DataBaseline } from "./DataSummary.js";
 import { acquireStateLock, StateLockBusyError } from "./StateLock.js";
 import {
@@ -144,10 +144,6 @@ const StateSchema = z.object({
 		})
 		.optional(),
 	transaction: TransactionSchema.optional(),
-	// Retain the last successful rollback even while a newer attempt drains/fails.
-	rollbackSnapshot: z
-		.object({ transactionId: z.string(), path: z.string() })
-		.optional(),
 	badCandidates: z.array(z.string()),
 	nextCheckAt: z.number(),
 	failures: z.number().int(),
@@ -360,6 +356,10 @@ export class UpdateManager {
 		} finally {
 			releaseLock();
 		}
+	}
+	/** Rewrites state.json through the current schema, dropping fields earlier builds wrote. */
+	compact() {
+		this.change(() => {});
 	}
 	private get recoveryFile() {
 		return join(this.directory, "recovery.json");
@@ -601,8 +601,29 @@ export class UpdateManager {
 				});
 			}
 			rmSync(this.recoveryFile, { force: true });
-			return this.status();
+			return {
+				...this.status(),
+				migrationBackup: this.adoptBackup(transaction.id, completes),
+			};
 		}, true);
+	}
+	/** A data migration bound to the adopted transaction: the installed candidate
+	 * already ran it (commit), otherwise it stays restorable for the operator. */
+	private adoptBackup(transactionId: string, completes: boolean) {
+		const manifest = readManifest(backupSlot(this.home));
+		if (!manifest || manifest.transactionId !== transactionId) return undefined;
+		if (completes) {
+			const committed = commitBackup(this.home, transactionId);
+			if (committed)
+				return {
+					status: committed.status,
+					note: "Committed with the adopted update.",
+				};
+		}
+		return {
+			status: manifest.status,
+			note: `The pre-migration backup (data format ${manifest.fromFormat} -> ${manifest.toFormat}) was kept. Restore it with "bobs-factory update restore-backup --yes" after stopping Bob's Factory, or keep the current data with "bobs-factory update discard-backup --yes".`,
+		};
 	}
 
 	status() {
@@ -830,26 +851,6 @@ export class UpdateManager {
 					releaseFailureReserve();
 				}
 			}, recover);
-			const completed = this.read().transaction;
-			if (
-				completed?.phase === "succeeded" &&
-				completed.release?.status === "acknowledged" &&
-				(completed.id !== state.transaction?.id ||
-					state.transaction?.release?.status !== "acknowledged")
-			) {
-				// Legacy: wakes the storage coordinator for snapshots that older
-				// supervisors registered. This updater creates none.
-				try {
-					await publishStorageJson(
-						join(this.home, "storage-retention", "update-completed.json"),
-						{ transactionId: completed.id, at: now() },
-					);
-				} catch (error) {
-					console.error(
-						`Update snapshot cleanup notification deferred: ${(error as Error).message}`,
-					);
-				}
-			}
 			return result;
 		} finally {
 			releaseFailureReserve();
@@ -997,14 +998,6 @@ export class UpdateManager {
 					throw new Error("Maintenance transaction changed");
 				state.transaction.phase = state.transaction.release!.outcome;
 				state.transaction.release!.status = "acknowledged";
-				if (
-					state.transaction.phase === "succeeded" &&
-					state.transaction.snapshot
-				)
-					state.rollbackSnapshot = {
-						transactionId,
-						path: state.transaction.snapshot,
-					};
 			});
 		} catch (error) {
 			this.phase("recovery-required", {
@@ -1015,61 +1008,12 @@ export class UpdateManager {
 		try {
 			this.journal.remove(transactionId);
 		} catch {}
-		await this.reconcileLegacySnapshots(transaction);
-	}
-	/** Legacy: snapshots registered by older supervisors become disposable once a
-	 * later update succeeds. This updater registers none; PR d removes this. */
-	private async reconcileLegacySnapshots(transaction: UpdateTransaction) {
-		const transactionId = transaction.id;
-		// Retention publication is independent of maintenance acknowledgment. A
-		// failed cleanup must never turn a healthy installed update into recovery.
+		// Only reference-free staged runtimes go; the live and previous runtime stay.
 		try {
-			const retention = new StorageRetentionStore(this.home);
-			const count = await retention.inventoryCount();
-			for (let offset = 0; offset < count; offset += 100) {
-				for (const id of await retention.inventoryPage(offset)) {
-					const artifact = await retention.record(id);
-					if (artifact.category !== "snapshot") continue;
-					const receipt = (await readStorageJson(
-						join(retention.directory, "receipts", `${id}.json`),
-					)) as { phase?: string } | undefined;
-					if (receipt?.phase === "completed") continue;
-					if (artifact.operation === transactionId)
-						await retention.revise(id, (record) => {
-							record.reconciledAt = new Date().toISOString();
-						});
-					else if (
-						transaction.release!.outcome === "succeeded" &&
-						artifact.producer === "OwnedUpdateLifecycle" &&
-						/^[\w-]{1,100}$/.test(artifact.operation) &&
-						artifact.root === join(retention.home, "updates", "snapshots") &&
-						artifact.path === join(artifact.root, artifact.operation) &&
-						artifact.rollback !== "disposable" &&
-						artifact.operation !== transactionId
-					) {
-						const previous = UpdateTransactionSchema.safeParse(
-							await readStorageJson(
-								join(this.directory, "history", `${artifact.operation}.json`),
-							),
-						);
-						if (
-							previous.success &&
-							previous.data.id === artifact.operation &&
-							terminal(previous.data) &&
-							previous.data.snapshot === artifact.path &&
-							artifact.verifiedAt &&
-							artifact.completedAt
-						)
-							await retention.revise(id, (record) => {
-								record.rollback = "disposable";
-								record.reconciledAt = now();
-							});
-					}
-				}
-			}
+			pruneStagedRuntimes(this.home, this.directory);
 		} catch (error) {
 			console.error(
-				`Update snapshot retention deferred: ${(error as Error).message}`,
+				`Staged runtime cleanup deferred: ${(error as Error).message}`,
 			);
 		}
 	}
@@ -1112,14 +1056,6 @@ export class UpdateManager {
 			this.change((current) => {
 				if (!this.authorized(current, transaction.candidate))
 					throw new Error("Update policy changed");
-				if (
-					current.transaction?.phase === "succeeded" &&
-					current.transaction.snapshot
-				)
-					current.rollbackSnapshot = {
-						transactionId: current.transaction.id,
-						path: current.transaction.snapshot,
-					};
 				current.transaction = transaction;
 			});
 			const identity = (value: InstalledUpdate) => ({

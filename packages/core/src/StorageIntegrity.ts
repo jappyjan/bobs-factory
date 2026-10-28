@@ -12,11 +12,9 @@ import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { setImmediate as yieldToIO } from "node:timers/promises";
 import {
-	publishStorageJson,
 	type StorageIdentity,
-	StorageRetentionStore,
+	type StorageRetentionStore,
 	sameStorageIdentity,
-	storageDigest,
 	storageIdentity,
 } from "./StorageRetention.js";
 
@@ -303,30 +301,6 @@ export async function verifyStorageIntegrity(
 		await yieldToIO();
 }
 
-/** Capture the complete installed runtime, including its build metadata and restoration dependencies. */
-export async function writeStorageRollbackProof(
-	home: string,
-	id: string,
-	executable: string,
-) {
-	const store = new StorageRetentionStore(home);
-	const root = dirname(executable);
-	const info = await lstat(executable);
-	if (!info.isFile() || info.isSymbolicLink() || !(info.mode & 0o111))
-		throw new Error("Rollback executable is not an installed executable file");
-	const identity = await storageIdentity(root, dirname(root));
-	const integrity = await writeStorageIntegrity(
-		root,
-		join(store.directory, "rollback-proofs", `${id}.ndjson`),
-	);
-	const proof = { root, executable, identity, integrity };
-	await publishStorageJson(
-		join(store.directory, "rollback-proofs", `${id}.json`),
-		proof,
-	);
-	return `runtime-proof:${storageDigest(proof)}`;
-}
-
 /** Only exact, independently verified copies of current Factory-owned state can
  * release a recovery dependency. Unknown files, credentials and links stay held. */
 export async function reconcileStorageCopy(
@@ -419,41 +393,4 @@ export async function reconcileStorageCopy(
 	return claimHeld
 		? reconcile()
 		: store.workspaceClaim(record.path).run(reconcile, true);
-}
-export async function verifyStorageReplacement(
-	store: StorageRetentionStore,
-	id: string,
-	signal?: AbortSignal,
-) {
-	const record = await store.record(id),
-		replacement = record.authoritativeReplacement;
-	if (!replacement || !record.reconciledAt || record.dependencies.length)
-		return false;
-	if (
-		!sameStorageIdentity(
-			record.identity,
-			await storageIdentity(record.path, record.root),
-		) ||
-		!sameStorageIdentity(
-			replacement.identity,
-			await storageIdentity(replacement.path, dirname(replacement.path)),
-		)
-	)
-		return false;
-	const manifest = join(store.directory, "proofs", `${id}.ndjson`);
-	await verifyStorageIntegrity(
-		record.path,
-		manifest,
-		replacement.integrity,
-		signal,
-	);
-	await verifyStorageIntegrity(
-		replacement.path,
-		manifest,
-		replacement.integrity,
-		signal,
-		false,
-		true,
-	);
-	return true;
 }

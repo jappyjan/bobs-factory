@@ -11,14 +11,9 @@ import {
 	type StorageRecord,
 	StorageRetentionStore,
 	sameStorageIdentity,
-	storageDigest,
 	storageIdentity,
 } from "bobs-factory-core";
 import { UpdateOperationLock } from "../updates/UpdateOperationLock.js";
-import {
-	type HistoricalPreview,
-	HistoricalStorage,
-} from "./HistoricalStorage.js";
 
 export interface StorageObservation {
 	record: StorageRecord;
@@ -27,7 +22,6 @@ export interface StorageObservation {
 	usageObservedAt?: string;
 	filesystemEntries?: number;
 	complete: boolean;
-	rollbackVerified?: boolean;
 }
 export interface StorageAdapter {
 	close?(): Promise<void>;
@@ -51,7 +45,6 @@ export interface StorageCandidate extends StorageObservation {
 export function evaluateStorageRetention(
 	observation: StorageObservation,
 	policy: StoragePolicy,
-	protectedSnapshots: ReadonlySet<string>,
 	now: number,
 ): StorageCandidate {
 	const { record } = observation;
@@ -64,18 +57,11 @@ export function evaluateStorageRetention(
 		);
 	if (record.dependencies.length)
 		reasons.push("Retained dependencies have not been released");
-	if (record.category === "snapshot") {
-		if (!protectedSnapshots.size)
-			reasons.push(
-				"At least one independently verified usable rollback must remain",
-			);
-		if (protectedSnapshots.has(record.id))
-			reasons.push("Protected verified rollback snapshot");
-	} else if (record.completedAt) {
-		if (
-			now - Date.parse(record.completedAt) <
-			policy.ages[record.category] * 86_400_000
-		)
+	if (record.completedAt) {
+		const age = (policy.ages as Record<string, number>)[record.category];
+		if (age === undefined)
+			reasons.push("This storage category is no longer produced");
+		else if (now - Date.parse(record.completedAt) < age * 86_400_000)
 			reasons.push("Retention period has not elapsed");
 	}
 	return { ...observation, eligible: reasons.length === 0, reasons };
@@ -110,7 +96,6 @@ export interface StorageOutcome {
 /** One coordinator owns all deletion. Inventories are observations, never deletion authority. */
 export class StorageRetention {
 	readonly store: StorageRetentionStore;
-	readonly historical: HistoricalStorage;
 	private timer?: ReturnType<typeof setTimeout>;
 	private running?: Promise<void>;
 	private stopped = false;
@@ -130,7 +115,6 @@ export class StorageRetention {
 	) {
 		this.store = new StorageRetentionStore(home);
 		this.home = this.store.home;
-		this.historical = new HistoricalStorage(this.store);
 	}
 	async start() {
 		await this.store.initialize();
@@ -138,11 +122,7 @@ export class StorageRetention {
 		if (this.abort.signal.aborted) this.abort = new AbortController();
 		if (!this.watcher) {
 			this.watcher = watch(this.store.directory, (_event, name) => {
-				if (
-					name === "inventory-revision.json" ||
-					name === "update-completed.json"
-				)
-					this.requestReconciliation();
+				if (name === "inventory-revision.json") this.requestReconciliation();
 			});
 			this.watcher.on("error", () => this.requestReconciliation());
 			this.watcher.unref();
@@ -156,7 +136,6 @@ export class StorageRetention {
 		this.watcher?.close();
 		this.watcher = undefined;
 		await this.running?.catch(() => {});
-		await this.historical.close();
 		await Promise.allSettled(
 			[...new Set(Object.values(this.adapters))].map((adapter) =>
 				adapter?.close?.(),
@@ -206,128 +185,18 @@ export class StorageRetention {
 		this.timer.unref();
 	}
 
-	/** Build the rollback set across bounded, restartable inventory slices. */
-	private async rollbacks(
-		policy: StoragePolicy,
-		deadline = performance.now() + 1000,
-	): Promise<{
-		ids: Set<string>;
-		complete: boolean;
-		count: number;
-		evaluated: number;
-		entries: number;
-	}> {
-		const generation = await this.store.inventoryRevision();
-		const count = await this.store.inventoryCount();
-		type Index = {
-			generation: number;
-			count: number;
-			revision: number;
-			offset: number;
-			newest: { id: string; completedAt: string }[];
-		};
-		const path = join(this.store.directory, "rollback-index.json");
-		const saved = (await readStorageJson(path)) as
-			| { index?: Index; checksum?: string; completedPreview?: boolean }
-			| undefined;
-		let index = saved?.index;
-		if (
-			!index ||
-			saved?.completedPreview ||
-			saved?.checksum !== storageDigest(JSON.stringify(index))
-		)
-			index = undefined;
-		if (
-			!index ||
-			index.count !== count ||
-			index.revision !== policy.revision ||
-			index.generation !== generation
-		)
-			index = {
-				generation,
-				count,
-				revision: policy.revision,
-				offset: 0,
-				newest: [],
-			};
-		const ids = await this.store.inventoryPage(
-			Math.floor(index.offset / 100) * 100,
-		);
-		let evaluated = 0,
-			entries = 0;
-		while (
-			index.offset < count &&
-			evaluated < 100 &&
-			entries < 900 &&
-			performance.now() < deadline
-		) {
-			this.abort.signal.throwIfAborted();
-			const id = ids[index.offset % 100];
-			if (!id)
-				throw new Error(
-					"Storage inventory index is incomplete; inspect registration receipts",
-				);
-			const record = await this.store.record(id);
-			if (
-				record.category === "snapshot" &&
-				record.rollback === "usable" &&
-				record.verifiedAt &&
-				record.completedAt &&
-				this.adapters.snapshot
-			) {
-				const receipt = (await readStorageJson(
-					join(this.store.directory, "receipts", `${record.id}.json`),
-				)) as { phase?: string } | undefined;
-				if (receipt?.phase === "completed" || receipt?.phase === "removing") {
-					index.offset++;
-					evaluated++;
-					if (index.offset % 100 === 0) break;
-					continue;
-				}
-				const observation = await this.adapters.snapshot.observe(
-					record,
-					this.abort.signal,
-					{ maxEntries: 1000 - entries, deadline },
-				);
-				entries += observation.filesystemEntries ?? 0;
-				if (!observation.complete) break;
-				if (observation.complete && observation.rollbackVerified === true) {
-					index.newest.push({ id, completedAt: record.completedAt });
-					index.newest.sort(
-						(a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt),
-					);
-					index.newest.splice(Math.max(1, policy.snapshotCount));
-				}
-			}
-			index.offset++;
-			evaluated++;
-			if (index.offset % 100 === 0) break;
-		}
-		if ((await this.store.inventoryRevision()) !== generation)
-			throw new Error("Storage producer state changed; refresh inventory");
-		await publishStorageJson(path, {
-			index,
-			checksum: storageDigest(JSON.stringify(index)),
-		});
-		return {
-			ids: new Set(index.newest.map((record) => record.id)),
-			complete: index.offset === count,
-			count,
-			evaluated,
-			entries,
-		};
-	}
 	async preview(): Promise<StoragePreview> {
 		await this.store.initialize();
 		const policy = await this.store.policy();
 		const deadline = performance.now() + 1000;
-		const rollbackIndex = await this.rollbacks(policy, deadline);
+		// Inventory publication in flight fails closed here, as it does for producers.
+		const generation = await this.store.inventoryRevision();
+		const count = await this.store.inventoryCount();
 		const previous = (await readStorageJson(
 			join(this.store.directory, "continuation.json"),
 		)) as { offset: number; count: number; revision: number } | undefined;
 		let offset =
-			previous?.count === rollbackIndex.count &&
-			previous.revision === policy.revision
+			previous?.count === count && previous.revision === policy.revision
 				? previous.offset
 				: 0;
 		// A sweep resumed from a saved cursor was started by an earlier pass whose
@@ -339,8 +208,8 @@ export class StorageRetention {
 			policyRevision: policy.revision,
 			createdAt: new Date(this.clock()).toISOString(),
 			candidates: [],
-			complete: rollbackIndex.complete,
-			deferred: !rollbackIndex.complete,
+			complete: false,
+			deferred: true,
 			volumes: [],
 		};
 		try {
@@ -358,14 +227,14 @@ export class StorageRetention {
 				error: String(error).slice(0, 500),
 			});
 		}
-		if (rollbackIndex.complete) {
-			let entries = rollbackIndex.entries;
+		{
+			let entries = 0;
 			const ids = await this.store.inventoryPage(
 				Math.floor(offset / 100) * 100,
 			);
 			while (
-				offset < rollbackIndex.count &&
-				preview.candidates.length < 100 - rollbackIndex.evaluated &&
+				offset < count &&
+				preview.candidates.length < 100 &&
 				entries < 900 &&
 				performance.now() < deadline
 			) {
@@ -438,12 +307,7 @@ export class StorageRetention {
 					observation.complete = true;
 				}
 				preview.candidates.push(
-					evaluateStorageRetention(
-						observation,
-						policy,
-						rollbackIndex.ids,
-						this.clock(),
-					),
+					evaluateStorageRetention(observation, policy, this.clock()),
 				);
 				if (
 					!preview.volumes.some(
@@ -469,7 +333,7 @@ export class StorageRetention {
 				offset++;
 				if (offset % 100 === 0) break;
 			}
-			preview.complete = offset === rollbackIndex.count;
+			preview.complete = offset === count;
 			preview.deferred = !preview.complete;
 			if (preview.complete && this.sweepWakeups !== this.wakeups) {
 				// A wake-up arrived during this sweep; sweep again from the start so
@@ -478,22 +342,16 @@ export class StorageRetention {
 				this.sweepWakeups = undefined;
 				if (this.watcher) this.queueReconciliation();
 			}
+			if ((await this.store.inventoryRevision()) !== generation)
+				throw new Error("Storage producer state changed; refresh inventory");
 			await publishStorageJson(
 				join(this.store.directory, "continuation.json"),
 				{
 					offset: preview.complete ? 0 : offset,
-					count: rollbackIndex.count,
+					count,
 					revision: policy.revision,
 				},
 			);
-		}
-		if (preview.complete) {
-			const path = join(this.store.directory, "rollback-index.json");
-			const index = await readStorageJson(path);
-			await publishStorageJson(path, {
-				...(index as object),
-				completedPreview: true,
-			});
 		}
 		await publishStorageJson(
 			join(this.store.directory, "preview.json"),
@@ -504,9 +362,6 @@ export class StorageRetention {
 	async status() {
 		return {
 			policy: await this.store.policy(),
-			historicalPreview: (await readStorageJson(
-				join(this.store.directory, "historical-preview.json"),
-			)) as HistoricalPreview | undefined,
 			preview: (await readStorageJson(
 				join(this.store.directory, "preview.json"),
 			)) as StoragePreview | undefined,
@@ -681,32 +536,9 @@ export class StorageRetention {
 										);
 									}
 									const fresh = await this.observeComplete(adapter, record);
-									let rollbackIndex = await this.rollbacks(policy);
-									while (!rollbackIndex.complete) {
-										await yieldToIO();
-										rollbackIndex = await this.rollbacks(policy);
-									}
-									for (const protectedId of rollbackIndex.ids) {
-										const protectedRecord =
-											await this.store.record(protectedId);
-										const verified = this.adapters.snapshot
-											? await this.observeComplete(
-													this.adapters.snapshot,
-													protectedRecord,
-												)
-											: undefined;
-										if (
-											!verified?.complete ||
-											verified.rollbackVerified !== true
-										)
-											throw new Error(
-												"Protected rollback changed; refresh inventory",
-											);
-									}
 									const candidate = evaluateStorageRetention(
 										fresh,
 										policy,
-										rollbackIndex.ids,
 										this.clock(),
 									);
 									if (!candidate.eligible)
