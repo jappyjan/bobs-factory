@@ -1,12 +1,17 @@
 import { resolve } from "node:path";
 import { resolvePath } from "bobs-factory-core";
 import {
+	backupSlot,
 	candidateKey,
+	discardBackup,
+	readManifest,
 	requestFactoryTerminalSession,
+	restoreMigrationBackup,
 	UpdateManager,
 	type UpdateSettingsPatch,
 } from "bobs-factory-edge-worker";
 import type { Command } from "commander";
+import { ownerAlive, workerOwner } from "../services/InstanceLock.js";
 import { FactoryClient } from "../tui/client.js";
 
 /** Filesystem-authorized offline settings/status, authenticated running-instance
@@ -120,4 +125,40 @@ export function addUpdateCommands(program: Command) {
 				revision: state.revision,
 			});
 		});
+	const backupCommand = (
+		name: "restore-backup" | "discard-backup",
+		description: string,
+		act: (home: string) => void,
+	) =>
+		update
+			.command(name)
+			.description(description)
+			.option("--yes", "Confirm; without it nothing is changed")
+			.action((options: { yes?: boolean }) => {
+				const manifest = readManifest(backupSlot(home()));
+				if (!manifest) throw new Error("There is no migration backup.");
+				const owner = workerOwner(home());
+				if (owner && ownerAlive(owner))
+					throw new Error(
+						`Stop the running Bob's Factory (PID ${owner.pid}) first.`,
+					);
+				if (!options.yes)
+					throw new Error(
+						`Migration backup is ${manifest.status} (data format ${manifest.fromFormat} -> ${manifest.toFormat}, ${manifest.files.length} files). Re-run with --yes to ${name === "restore-backup" ? "restore those files and the previous data format" : "delete it and keep the current files"}.`,
+					);
+				act(home());
+				output({
+					[name === "restore-backup" ? "restored" : "discarded"]: true,
+				});
+			});
+	backupCommand(
+		"restore-backup",
+		"Restore the files saved before the last data migration (worker must be stopped)",
+		(dir) => restoreMigrationBackup(dir),
+	);
+	backupCommand(
+		"discard-backup",
+		"Delete the saved pre-migration files and keep the current data (worker must be stopped)",
+		(dir) => discardBackup(dir),
+	);
 }

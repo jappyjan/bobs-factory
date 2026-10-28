@@ -225,6 +225,11 @@ it("reports an honest unknown source identity for a development runtime separate
 			packaged: false,
 		});
 		expect(typeof response.json().build).toBe("string");
+		expect(response.json().stateFormat).toEqual({
+			writes: 1,
+			migratesFrom: 1,
+			onDisk: 1,
+		});
 	} finally {
 		await runtime.shutdown();
 		await server.stop();

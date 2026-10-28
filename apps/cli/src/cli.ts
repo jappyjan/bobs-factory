@@ -3,6 +3,7 @@ import {
 	factoryVersion,
 	isPackagedExecutable,
 	resolvePath,
+	StateFormatError,
 	setGlobalErrorReporter,
 } from "bobs-factory-core";
 import {
@@ -275,6 +276,12 @@ addMigrationCommands(program);
 	try {
 		await program.parseAsync(process.argv);
 	} catch (error) {
+		if (error instanceof StateFormatError) {
+			// An expected refusal, not a crash: no stack, and an exit code service
+			// managers treat as permanent.
+			console.error(error.message);
+			process.exit(error.exitCode);
+		}
 		errorReporter.captureException(error, { tags: { phase: "bootstrap" } });
 		await errorReporter.flush(2000).catch(() => false);
 		console.error("Fatal error:", error);

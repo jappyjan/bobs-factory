@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- Add a state-format version (`state-format.json`, missing = format 1) and a migration framework: an ordered, empty-for-now registry, a context limited to each migration's declared `touches`, a single-slot reflink backup of only those files with rename-based restore and pruning, and a startup guard (`ensureStateFormat`, exit code 78 on refusal) that is the only place migrations run. `GET /api/version` reports `stateFormat`, hidden `service format --json` prints the plan, and `update restore-backup|discard-backup` resolve a leftover backup. No lifecycle change; shipped behaviour is writing `{format: 1}` at startup. (Taskbot #176, part a)
+
 - Make the trial launcher bootstrap tests poll for the controlled download process to exit instead of asserting it is gone immediately, fixing a flake on slow runners. (Taskbot #177)
 
 - Allow the release publish job 90 minutes so a slow prepared-release download cannot cancel it mid-publication. (Taskbot #175)

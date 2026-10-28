@@ -361,5 +361,6 @@ export {
 	factoryRuntimeIdentity,
 	type RuntimeIdentity,
 } from "./runtime-identity.js";
+export * from "./StateFormat.js";
 export * from "./StorageIntegrity.js";
 export * from "./StorageRetention.js";

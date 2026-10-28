@@ -63,6 +63,7 @@ export { GlobalSessionRegistry } from "./GlobalSessionRegistry.js";
 export { preflightFactoryState } from "./lifecycle/PreflightState.js";
 export type { McpConfigServiceDeps } from "./McpConfigService.js";
 export { McpConfigService } from "./McpConfigService.js";
+export * from "./migrations/index.js";
 export { RepositoryRouter } from "./RepositoryRouter.js";
 export type {
 	ChatRunnerConfigInput,
