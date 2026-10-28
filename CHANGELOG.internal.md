@@ -7,6 +7,7 @@ This changelog documents internal development changes, refactors, tooling update
 ### Added
 
 - Replace the dependency refresh review with one covering the #152 audit-advisory bumps (zod, fastify, fast-uri, express, undici, Electron, @cursor/sdk) so nightly source coverage stays valid; the review is automated preparation and awaits independent sign-off. (Taskbot #152)
+- Make the trial launcher bootstrap tests poll for the controlled download process to exit instead of asserting it is gone immediately, fixing a flake on slow runners. (Taskbot #177)
 
 - Allow the release publish job 90 minutes so a slow prepared-release download cannot cancel it mid-publication. (Taskbot #175)
 

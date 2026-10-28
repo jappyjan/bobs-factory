@@ -44,6 +44,7 @@ All notable changes to this project will be documented in this file.
 
 - Security: update zod, fastify, express (body-parser, qs), Electron and the Cursor SDK, and refresh fast-uri and undici, so `pnpm audit` reports no advisories. ([Taskbot #152](https://taskbot.apps.janjaap.de/p/bobs-factory/t/152))
 
+- The run launcher shows the agent, model and reasoning choice only for Simple. Other recipes keep configuring agents per step, and the launcher no longer sends per-run model or reasoning overrides for them. ([Taskbot #155](https://taskbot.apps.janjaap.de/p/bobs-factory/t/155))
 - Claude runs on an identity or tool profile no longer fail in projects that have a `.env` file. Claude Code doesn't load a project `.env`, so the file can't change its login.
 - Self-updates from an installation running before the node engine cutover no longer roll back at the preserved-state health check: the update receipt now reflects run recipes the way the previously running Factory held them in memory. ([Taskbot #173](https://taskbot.apps.janjaap.de/p/bobs-factory/t/173))
 

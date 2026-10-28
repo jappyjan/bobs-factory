@@ -27,6 +27,16 @@ const runners = ["claude", "codex", "gemini", "cursor", "opencode"];
 const DEFAULT = "__default__";
 const title = (value: string) => value[0]!.toUpperCase() + value.slice(1);
 
+/** Only Simple takes a per-run agent; other recipes own agent settings per step. */
+export const takesRunAgent = (workflowId: string | undefined) =>
+	workflowId === "simple";
+
+/** The per-run agent overrides a launch may carry for this recipe. */
+export const runAgentOverrides = (
+	workflowId: string | undefined,
+	settings: Record<string, any>,
+) => (takesRunAgent(workflowId) ? settings : {});
+
 /** A borderless pill that opens a single-choice menu. */
 function PillMenu({
 	label,
@@ -329,6 +339,9 @@ export function Composer({
 	const project = config.repositories.find((item: any) => item.id === repo);
 	const runner = settings.runner || config.defaultRunner;
 	const levels: string[] | undefined = config.reasoningLevels?.[runner];
+	// Chosen values are kept for Simple but never sent with another recipe.
+	const agentChoice = takesRunAgent(workflow?.id);
+	const runSettings = runAgentOverrides(workflow?.id, settings);
 	const fieldValue = (field: any) =>
 		values[field.name] ?? field.defaultValue ?? "";
 	const missing = fields.some(
@@ -346,7 +359,7 @@ export function Composer({
 		missing ||
 		uploads.blocked;
 	const customized =
-		["model", "modelVariant", "serviceTier"].some((key) => settings[key]) ||
+		["model", "modelVariant", "serviceTier"].some((key) => runSettings[key]) ||
 		Boolean(execution.identityProfile || execution.toolProfile);
 	const changeScope = (apply: () => void) => {
 		uploads.carryOver();
@@ -369,7 +382,7 @@ export function Composer({
 					inputs,
 					attachments: uploads.selection,
 					attachmentDraft: uploads.draft,
-					...settings,
+					...runSettings,
 					execution,
 				},
 			});
@@ -514,61 +527,65 @@ export function Composer({
 								"Choose recipe"
 							)}
 						</PillMenu>
-						<span className="launcher-divider" aria-hidden="true" />
-						<PillMenu
-							label="Agent"
-							icon={<SparkIcon />}
-							value={settings.runner ?? DEFAULT}
-							disabled={action.isPending}
-							onChange={(next) =>
-								setSettings({
-									...settings,
-									runner: next === DEFAULT ? undefined : next,
-									model: undefined,
-									reasoningEffort: undefined,
-									modelVariant: undefined,
-									serviceTier: undefined,
-								})
-							}
-							options={[
-								{
-									value: DEFAULT,
-									label: `Default (${title(config.defaultRunner)})`,
-									hint: "Uses each step's configured agent",
-								},
-								...runners.map((value) => ({ value, label: title(value) })),
-							]}
-						>
-							{settings.model || title(runner)}
-						</PillMenu>
-						{levels?.length ? (
-							<span className="launcher-reasoning">
+						{agentChoice && (
+							<>
 								<span className="launcher-divider" aria-hidden="true" />
 								<PillMenu
-									label="Reasoning"
-									icon={<BrainIcon />}
-									value={settings.reasoningEffort ?? DEFAULT}
+									label="Agent"
+									icon={<SparkIcon />}
+									value={settings.runner ?? DEFAULT}
 									disabled={action.isPending}
 									onChange={(next) =>
 										setSettings({
 											...settings,
-											reasoningEffort: next === DEFAULT ? undefined : next,
+											runner: next === DEFAULT ? undefined : next,
+											model: undefined,
+											reasoningEffort: undefined,
+											modelVariant: undefined,
+											serviceTier: undefined,
 										})
 									}
 									options={[
-										{ value: DEFAULT, label: "Model default" },
-										...levels.map((level) => ({
-											value: level,
-											label: title(level),
-										})),
+										{
+											value: DEFAULT,
+											label: `Default (${title(config.defaultRunner)})`,
+											hint: "Uses each step's configured agent",
+										},
+										...runners.map((value) => ({ value, label: title(value) })),
 									]}
 								>
-									{settings.reasoningEffort
-										? title(settings.reasoningEffort)
-										: "Default"}
+									{settings.model || title(runner)}
 								</PillMenu>
-							</span>
-						) : null}
+								{levels?.length ? (
+									<span className="launcher-reasoning">
+										<span className="launcher-divider" aria-hidden="true" />
+										<PillMenu
+											label="Reasoning"
+											icon={<BrainIcon />}
+											value={settings.reasoningEffort ?? DEFAULT}
+											disabled={action.isPending}
+											onChange={(next) =>
+												setSettings({
+													...settings,
+													reasoningEffort: next === DEFAULT ? undefined : next,
+												})
+											}
+											options={[
+												{ value: DEFAULT, label: "Model default" },
+												...levels.map((level) => ({
+													value: level,
+													label: title(level),
+												})),
+											]}
+										>
+											{settings.reasoningEffort
+												? title(settings.reasoningEffort)
+												: "Default"}
+										</PillMenu>
+									</span>
+								) : null}
+							</>
+						)}
 					</div>
 					<div className="launcher-actions">
 						<button
@@ -638,21 +655,23 @@ export function Composer({
 				description="Overrides for this run only. Recipes keep their saved defaults."
 			>
 				<div className="modal-body launcher-settings">
-					<AgentSettings
-						config={config}
-						value={settings}
-						onChange={setSettings}
-						label="Default"
-					/>
+					{agentChoice && (
+						<AgentSettings
+							config={config}
+							value={settings}
+							onChange={setSettings}
+							label="Default"
+						/>
+					)}
 					<ExecutionSelectors
 						key={inputContext}
 						config={config}
 						repositoryId={repo}
 						workflow={workflow?.id}
-						model={settings.model}
+						model={runSettings.model}
 						value={execution}
 						onChange={setExecution}
-						runner={settings.runner}
+						runner={runSettings.runner}
 					/>
 					<Button onClick={() => setSettingsOpen(false)}>Done</Button>
 				</div>
