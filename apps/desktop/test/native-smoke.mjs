@@ -147,6 +147,12 @@ void (async () => {
 			"../../../packages/edge-worker/dist/updates/UpdateManager.js"
 		);
 		class ConfirmationLifecycle extends OwnedUpdateLifecycle {
+			// prepare() now verifies the candidate before maintenance. This fixture's
+			// candidate is synthetic and is never activated, so skip its identity proof
+			// and reach the maintenance admission this menu race is about.
+			async prepare() {
+				return { migration: null };
+			}
 			async isIdle() {
 				await super.isIdle();
 				confirm({ response: 1 });
