@@ -216,15 +216,16 @@ const lifecycle = {
 		await drain.begin(id);
 	},
 	isIdle: async () => (await drain.inspect()).idle,
-	preflight: async () => ({ stateCompatible: true }),
-	snapshot: async (id) => {
+	// The real updater copies nothing; this fixture keeps its own copy of the
+	// runs so its scripted rollback can simulate a worker that lost data.
+	prepare: async (_staged, _installed, id) => {
 		snapshotReceipt = drain.receipt();
 		const path = join(home, "snapshots", id);
 		mkdirSync(path, { recursive: true });
 		cpSync(join(runtime.directory, "runs"), join(path, "runs"), {
 			recursive: true,
 		});
-		return path;
+		return { record: path };
 	},
 	stop: async () => {
 		calls.push("stop");
@@ -410,8 +411,12 @@ try {
 		(r) => r.phase === "queued",
 	);
 	busy = true;
-	const originalPreflight = lifecycle.preflight;
-	lifecycle.preflight = async () => {
+	// Prepare runs before maintenance now, so the policy race is raised from the
+	// first idle observation, while intake is still frozen.
+	const originalIsIdle = lifecycle.isIdle;
+	lifecycle.isIdle = async () => {
+		const idle = await originalIsIdle();
+		if (!idle) return idle;
 		const blocked = await server.app.inject({
 			method: "POST",
 			url: "/api/runs",
@@ -420,7 +425,7 @@ try {
 		});
 		assert.equal(blocked.statusCode, 503);
 		new UpdateManager(home).configure({ policy: "manual" }, 1);
-		return { stateCompatible: true };
+		return idle;
 	};
 	const draining = manager.reconcile();
 	await until(() => calls.includes("freeze"));
@@ -448,7 +453,7 @@ try {
 	await draining;
 	assert.ok(!calls.includes("stop"));
 	assert.equal(manager.status().transaction.phase, "cancelled");
-	lifecycle.preflight = originalPreflight;
+	lifecycle.isIdle = originalIsIdle;
 	await until(() => queuedRun.status === "completed");
 	assert.deepEqual([...stepCalls].sort(), [
 		"active-slot",

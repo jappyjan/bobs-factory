@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
@@ -233,6 +239,75 @@ it.each([
 		before.preservedStateSha256,
 	);
 });
+it("reports what the worker loaded by identity, and flags run files it did not load", async () => {
+	const f = setup();
+	const summary = f.drain.dataSummary();
+	expect(summary.runs.ids).toEqual(["waiting"]);
+	expect(summary.loadErrors).toEqual([]);
+	expect(summary.stateFormat).toBe(1);
+	// Recipes bundled with the build are the candidate's own, not user data.
+	expect(summary.workflows.ids).toEqual([]);
+	f.runtime.forkWorkflow("factory", "Local recipe");
+	expect(f.drain.dataSummary().workflows.count).toBeGreaterThan(0);
+	writeFileSync(join(f.home, "factory", "runs", "orphan.json"), "{}");
+	expect(f.drain.dataSummary().loadErrors).toEqual([
+		{ kind: "run", id: "orphan", message: "run file was not loaded" },
+	]);
+	// Light inspection carries the baseline and no whole-state digest.
+	await f.drain.begin("exact-transaction");
+	const light = await f.drain.inspect(true);
+	expect(light).toMatchObject({
+		idle: true,
+		baseline: { runIds: ["waiting"] },
+	});
+	expect(light).not.toHaveProperty("preservedStateSha256");
+	expect(await f.drain.inspect()).toHaveProperty("preservedStateSha256");
+});
+
+it("echoes a v2 supervisor's recorded baseline only while that exact transaction is in flight and the data loaded", async () => {
+	const f = setup();
+	const digest = "d".repeat(64);
+	const own = f.drain.receipt().preservedStateSha256;
+	const fence = join(f.home, "runtime", "update-owner.json");
+	const write = (value: unknown) => {
+		mkdirSync(join(f.home, "runtime"), { recursive: true });
+		writeFileSync(fence, JSON.stringify(value));
+	};
+	const v2 = (transactionId: string, runIds = ["waiting"]) => ({
+		transactionId,
+		preservation: {
+			preservationContract: "factory-preservation-v2",
+			preservedStateSha256: digest,
+			runIds,
+		},
+	});
+	// No fence, or a fence without a recorded baseline: this build's own digest.
+	expect(own).not.toBe(digest);
+	write({ transactionId: "exact-transaction" });
+	expect(f.drain.receipt().preservedStateSha256).toBe(own);
+	// The v2 baseline, for the in-flight transaction, is echoed.
+	write(v2("exact-transaction"));
+	expect(f.drain.receipt()).toMatchObject({
+		preservationContract: "factory-preservation-v2",
+		preservedStateSha256: digest,
+		runIds: ["waiting"],
+	});
+	// Another transaction's baseline is not.
+	write(v2("someone-else"));
+	expect(f.drain.receipt().preservedStateSha256).toBe(own);
+	// A run the v2 supervisor recorded that this worker lost is not echoed.
+	write(v2("exact-transaction", ["waiting", "lost"]));
+	expect(f.drain.receipt().preservedStateSha256).toBe(own);
+	// A run file that did not load is not echoed either.
+	write(v2("exact-transaction"));
+	writeFileSync(join(f.home, "factory", "runs", "orphan.json"), "{}");
+	expect(f.drain.receipt().preservedStateSha256).toBe(own);
+	rmSync(join(f.home, "factory", "runs", "orphan.json"));
+	// Once the transaction is over the echo stops.
+	f.finish();
+	expect(f.drain.receipt().preservedStateSha256).toBe(own);
+});
+
 it("preserves token-free integration input across restart and dispatches it once after release", async () => {
 	const f = setup();
 	const edge = integrationWorker(f.home);

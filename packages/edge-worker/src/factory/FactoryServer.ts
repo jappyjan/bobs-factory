@@ -581,10 +581,19 @@ export class FactoryServer {
 			await hooks.updateDrain[body.action](body.transactionId);
 			return { maintenance: hooks.updateDrain.active() };
 		});
-		this.app.get("/api/updates/drain", async () => {
+		this.app.get("/api/updates/drain", async (request) => {
 			if (!hooks.updateDrain)
 				throw new Error("Runtime drain hooks are unavailable");
-			return hooks.updateDrain.inspect();
+			// Older supervisors send no query and still get the whole-state receipt.
+			return hooks.updateDrain.inspect(
+				(request.query as { light?: string } | undefined)?.light === "1",
+			);
+		});
+		// What this worker loaded, by identity: the update health check reads it.
+		this.app.get("/api/updates/data", () => {
+			if (!hooks.updateDrain)
+				throw new Error("Runtime drain hooks are unavailable");
+			return hooks.updateDrain.dataSummary();
 		});
 		this.app.get("/api/auth/status", (request, reply) => {
 			const origin = originFor(request)!;

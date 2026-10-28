@@ -53,8 +53,7 @@ function fixture(value = candidate) {
 			calls.push("maintenance");
 		}),
 		isIdle: vi.fn(async () => true),
-		preflight: vi.fn(async () => ({ stateCompatible: true })),
-		snapshot: vi.fn(async () => "/isolated/snapshot"),
+		prepare: vi.fn(async () => ({})),
 		stop: vi.fn(async () => {
 			calls.push("stop");
 		}),
@@ -78,9 +77,8 @@ function fixture(value = candidate) {
 	return { home, manager, source, lifecycle, calls };
 }
 it.each([
-	"preflight",
-	"snapshot",
-] as const)("cancels a throwing %s and releases operation ownership in the live supervisor", async (step) => {
+	"prepare",
+] as const)("cancels a throwing %s before draining and releases operation ownership in the live supervisor", async (step) => {
 	const { home, manager, lifecycle } = fixture();
 	manager.configure({ channel: "nightly" }, 0);
 	await manager.check();
@@ -99,7 +97,10 @@ it.each([
 	});
 	expect(manager.status().error).toBe("ENOSPC: no space left on device");
 	expect(lifecycle.stop).not.toHaveBeenCalled();
-	expect(lifecycle.releaseMaintenance).toHaveBeenCalledOnce();
+	// Prepared before maintenance: a rejected candidate never froze intake, and a
+	// full disk is not the candidate's fault.
+	expect(lifecycle.acquireMaintenance).not.toHaveBeenCalled();
+	expect(manager.status().badCandidates).toEqual([]);
 	expect(existsSync(join(home, "updates", "operation.lock"))).toBe(false);
 	expect(
 		readdirSync(join(home, "updates")).filter((name) =>
@@ -118,8 +119,7 @@ it.each([
 });
 
 it.each([
-	"preflight",
-	"snapshot",
+	"prepare",
 ] as const)("records %s failure and frees its lock when the volume also refuses journal/guard writes", async (step) => {
 	const { default: fs } = await import("node:fs");
 	const { syncBuiltinESMExports } = await import("node:module");
@@ -349,17 +349,17 @@ it.each([
 	expect(manager.status().transaction?.phase).toBe("cancelled");
 	expect(manager.status().badCandidates).toEqual([]);
 });
-it("a second process policy save during preflight cancels queued automatic activation", async () => {
+it("a second process policy save during prepare cancels queued automatic activation", async () => {
 	const { home, manager, lifecycle, calls } = fixture();
 	manager.configure({ channel: "nightly" }, 0);
 	await manager.check();
 	await manager.stage();
-	vi.mocked(lifecycle.preflight).mockImplementation(async () => {
+	vi.mocked(lifecycle.prepare).mockImplementation(async () => {
 		new UpdateManager(home).configure({ policy: "manual" }, 1);
-		return { stateCompatible: true };
+		return {};
 	});
 	await manager.reconcile();
-	expect(calls).toEqual(["maintenance", "release"]);
+	expect(calls).toEqual([]);
 	expect(manager.status().transaction?.phase).toBe("cancelled");
 });
 it("consent cannot survive pin/pause/policy/channel changes or a newly coalesced candidate", async () => {
@@ -699,14 +699,15 @@ it("bounds retained observation contention and leaves owner inspection intact", 
 	manager.configure({}, 0);
 	const before = readFileSync(manager.file, "utf8");
 	const lock = join(manager.directory, "state.lock");
-	writeFileSync(lock, "2147483647", { flag: "wx" });
+	// A live holder is never stolen from, whatever format its lock is in.
+	writeFileSync(lock, String(process.pid), { flag: "wx" });
 	const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
 	try {
 		await manager.observeInstalled(candidate);
 		expect(warning).toHaveBeenCalledWith(
 			expect.stringContaining("Inspect a retained state.lock"),
 		);
-		expect(readFileSync(lock, "utf8")).toBe("2147483647");
+		expect(readFileSync(lock, "utf8")).toBe(String(process.pid));
 		expect(readFileSync(manager.file, "utf8")).toBe(before);
 	} finally {
 		warning.mockRestore();

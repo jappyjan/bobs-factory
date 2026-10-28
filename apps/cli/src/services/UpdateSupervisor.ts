@@ -93,9 +93,19 @@ export async function runUpdateSupervisor(
 					}
 				}
 			} catch (error) {
-				manager.reportWorkerOwnership((error as Error).message);
+				// Recording the problem needs a write too; on a full disk that must
+				// not end the loop that is waiting for space to come back.
+				try {
+					manager.reportWorkerOwnership((error as Error).message);
+				} catch (reportError) {
+					console.error(`Update supervisor: ${(reportError as Error).message}`);
+				}
 			}
-			lastStatus = manager.status();
+			try {
+				lastStatus = manager.status();
+			} catch (error) {
+				console.error(`Update supervisor: ${(error as Error).message}`);
+			}
 			if (!once && !stopping)
 				for (let n = 0; n < 100 && !stopping; n++)
 					await new Promise((resolve) => setTimeout(resolve, 100));
@@ -104,6 +114,10 @@ export async function runUpdateSupervisor(
 	} finally {
 		process.removeListener("SIGTERM", onStop);
 		process.removeListener("SIGINT", onStop);
-		release();
+		try {
+			release();
+		} catch (error) {
+			console.error(`Update supervisor: ${(error as Error).message}`);
+		}
 	}
 }

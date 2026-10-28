@@ -509,7 +509,9 @@ test("stable requires exact candidate Install; Quit is never consent, stale rece
 		writeFileSync(f.install, "external replacement");
 		await f.manager.reconcile();
 		assert.equal(f.events.length, 0);
-		assert.equal(f.manager.status().transaction.phase, "recovery-required");
+		// The ownership check now runs in prepare, before maintenance: a replaced app
+		// is refused without freezing intake, so there is nothing left to recover.
+		assert.equal(f.manager.status().transaction.phase, "cancelled");
 		assert.equal(
 			installationKind(join(f.w, "missing.AppImage"), "linux-arm64"),
 			"external",

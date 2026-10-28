@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	compareStateFormat,
@@ -30,13 +31,29 @@ import type { StateMigration } from "./types.js";
 
 export const UPDATE_TRANSACTION_ENV = "BOBS_FACTORY_UPDATE_TRANSACTION";
 
+/** A service-managed worker cannot be handed an environment variable, so the
+ * supervisor's fence names the update transaction that is starting it. */
+function fencedTransactionId(home: string): string | null {
+	try {
+		const fence = JSON.parse(
+			readFileSync(join(home, "runtime", "update-owner.json"), "utf8"),
+		) as { transactionId?: unknown; product?: unknown };
+		return typeof fence.transactionId === "string" &&
+			fence.product !== "bobs-factory-desktop"
+			? fence.transactionId
+			: null;
+	} catch {
+		return null;
+	}
+}
+
 export const currentStateFormatSupport = (): StateFormatSupport => ({
 	writes: STATE_FORMAT,
 	migratesFrom: STATE_FORMAT_MIN_MIGRATE,
 });
 
 export interface EnsureStateFormatOptions {
-	/** Bound into the backup. Defaults to `$BOBS_FACTORY_UPDATE_TRANSACTION`, else null. */
+	/** Bound into the backup. Defaults to `$BOBS_FACTORY_UPDATE_TRANSACTION`, else the update fence, else null. */
 	transactionId?: string | null;
 	support?: StateFormatSupport;
 	migrations?: readonly StateMigration[];
@@ -164,7 +181,7 @@ export async function ensureStateFormat(
 	const transactionId =
 		options.transactionId !== undefined
 			? options.transactionId
-			: process.env[UPDATE_TRANSACTION_ENV] || null;
+			: process.env[UPDATE_TRANSACTION_ENV] || fencedTransactionId(home);
 	const writtenBy = {
 		version: factoryRuntimeIdentity.version,
 		commit: factoryRuntimeIdentity.commit,
@@ -295,4 +312,24 @@ export async function ensureStateFormat(
 		);
 	}
 	return { onDisk: support.writes, migrated: true };
+}
+
+/**
+ * Rollback of a failed update: put the files back only when the slot belongs to
+ * this transaction (by rename, no copy). A committed or foreign slot stays.
+ */
+export function restoreMigrationBackupFor(
+	home: string,
+	transactionId: string,
+	options: { fs?: FsOps; now?: () => Date } = {},
+): boolean {
+	const manifest = readManifest(backupSlot(home), options.fs);
+	if (
+		manifest?.transactionId !== transactionId ||
+		manifest.status === "committed" ||
+		manifest.status === "restored"
+	)
+		return false;
+	restoreMigrationBackup(home, options);
+	return true;
 }

@@ -32,6 +32,10 @@ async function processStart(pid: number) {
 function missing(error: unknown) {
 	return (error as NodeJS.ErrnoException).code === "ENOENT";
 }
+function spaceExhausted(error: unknown) {
+	const code = (error as NodeJS.ErrnoException).code;
+	return code === "ENOSPC" || code === "EDQUOT";
+}
 function read(file: string) {
 	try {
 		return readFileSync(file, "utf8");
@@ -140,12 +144,28 @@ export class OwnedResourceClaim {
 		try {
 			return await work();
 		} finally {
+			await this.release(reclaim, owner);
+		}
+	}
+	/** Releasing must never strand the claim or fail the finished work. On a full
+	 * volume the guard link cannot be allocated; unlinking our own claim frees
+	 * space instead of needing any. */
+	private async release(reclaim: string, owner: string) {
+		try {
 			await guard(reclaim, owner, Date.now() + this.waitMs);
 			try {
 				if (read(this.file) === owner) unlinkSync(this.file);
 			} finally {
 				releaseGuard(reclaim, owner);
 			}
+		} catch (error) {
+			if (!spaceExhausted(error)) throw error;
+			try {
+				if (read(this.file) === owner) unlinkSync(this.file);
+			} catch {}
+			console.error(
+				`Releasing the ${this.label} claim without its guard: ${(error as Error).message}`,
+			);
 		}
 	}
 }
