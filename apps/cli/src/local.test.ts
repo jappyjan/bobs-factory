@@ -14,7 +14,11 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { launchLocal } from "./local.js";
 import { localRepository, savePrivateJson } from "./onboarding.js";
 
-vi.mock("bobs-factory-edge-worker", () => ({ EdgeWorker: vi.fn() }));
+vi.mock("bobs-factory-edge-worker", () => ({
+	EdgeWorker: vi.fn(),
+	ensureStateFormat: vi.fn(async () => {}),
+	pruneBackup: vi.fn(async () => {}),
+}));
 vi.mock("open", () => ({ default: vi.fn(async () => {}) }));
 beforeEach(() => {
 	vi.clearAllMocks();
