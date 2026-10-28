@@ -661,7 +661,11 @@ function compileSchemaSync(
 			"Inline JSON Schema compilation result expired; retry the save request",
 		];
 	const job = { schema, validate: false };
-	const result = trusted ? executeInlineSchemaJob(job) : executeSync(job);
+	// Bundled constants compile in-process; a cold, loaded runner must not turn
+	// the user-schema budget into a startup failure.
+	const result = trusted
+		? executeInlineSchemaJob(job, undefined, undefined, 30_000)
+		: executeSync(job);
 	remember(schema, result);
 	return result.schemaIssues;
 }
