@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- A restarted update supervisor now recovers an update killed after the old worker stopped but before the candidate held `worker.lock` (journal steps `stopped`, `switched`, `started`, with or without a stale lock): it runs the journal recovery instead of stopping at the missing-ownership error, still refusing when an unverifiable PID or a listener on the port may be a live worker. (Taskbot #176, part b)
+
 - Add a state-format version (`state-format.json`, missing = format 1) and a migration framework: an ordered, empty-for-now registry, a context limited to each migration's declared `touches`, a single-slot reflink backup of only those files with rename-based restore and pruning, and a startup guard (`ensureStateFormat`, exit code 78 on refusal) that is the only place migrations run. `GET /api/version` reports `stateFormat`, hidden `service format --json` prints the plan, and `update restore-backup|discard-backup` resolve a leftover backup. No lifecycle change; shipped behaviour is writing `{format: 1}` at startup. An interrupted restore is marked `restoring` first and finished automatically on the next plain start. (Taskbot #176, part a)
 
 - Replace the dependency refresh review with one covering the #152 audit-advisory bumps (zod, fastify, fast-uri, express, undici, Electron, @cursor/sdk) so nightly source coverage stays valid; the review is automated preparation and awaits independent sign-off. (Taskbot #152)
