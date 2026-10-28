@@ -9,6 +9,10 @@ import {
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { MachineCapacity } from "../MachineCapacity.js";
+import {
+	currentStateFormatSupport,
+	stateFormatReport,
+} from "../migrations/MigrationEngine.js";
 import type { StorageRetention } from "../storage/StorageRetention.js";
 import { PublishedUpdateSource } from "../updates/PublishedUpdateSource.js";
 import type { UpdateDrain } from "../updates/UpdateDrain.js";
@@ -18,7 +22,6 @@ import {
 } from "../updates/UpdateManager.js";
 import { activityMarkers, activityPage } from "./ActivityPage.js";
 import { reasoningLevels, serviceTierRunners } from "./AgentSettings.js";
-
 import { evaluateCheckAsync } from "./Check.js";
 import {
 	capacitySummary,
@@ -36,7 +39,6 @@ import {
 	PairingRateLimitError,
 } from "./FactoryAuth.js";
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
-
 import { factoryWebAssets } from "./FactoryWebAssets.js";
 import {
 	ViewAnswerSchema,
@@ -63,13 +65,11 @@ import {
 	localFactoryBrowserRequest,
 	localFactoryOrigin,
 } from "./LocalFactoryAccess.js";
-
 import { nodeRegistry } from "./nodes/index.js";
 import { transformOutput } from "./nodes/transform.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
-
 import { artifactOutputKey } from "./RunOutputRoles.js";
 import {
 	dashboardRun,
@@ -92,7 +92,6 @@ import {
 	resolveStepConfig,
 } from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
-
 import { registerVideoRoutes } from "./VideoServer.js";
 import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
 import { readViewScreenshot } from "./ViewAssets.js";
@@ -835,6 +834,13 @@ export class FactoryServer {
 			protocol: shell.protocol,
 			runtime: factoryRuntimeIdentity,
 			capabilities: ["desktop-app-maintenance-v1"],
+			stateFormat: (() => {
+				try {
+					return stateFormatReport(home);
+				} catch {
+					return { ...currentStateFormatSupport(), onDisk: null };
+				}
+			})(),
 		}));
 		this.app.get("/api/delivery-status", () => ({
 			workspaces: hooks.deliveryStatus?.() ?? [],

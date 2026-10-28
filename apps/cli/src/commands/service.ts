@@ -1,6 +1,12 @@
 import { resolve } from "node:path";
 import { isPackagedExecutable, resolvePath } from "bobs-factory-core";
-import { preflightFactoryState } from "bobs-factory-edge-worker";
+import {
+	currentStateFormatSupport,
+	describeMigrationPlan,
+	planMigrations,
+	preflightFactoryState,
+	stateFormatReport,
+} from "bobs-factory-edge-worker";
 import type { Command } from "commander";
 import { launchFactory } from "../runtime.js";
 import {
@@ -88,6 +94,24 @@ export function addServiceCommands(program: Command) {
 		.action(() =>
 			console.log(JSON.stringify(preflightFactoryState(lifecycle().home))),
 		);
+	service
+		.command("format", { hidden: true })
+		.description(
+			"Read-only: data format this build writes and the pending plan",
+		)
+		.option("--json", "JSON output (the only format)")
+		.action(async () => {
+			const home = lifecycle().home;
+			const report = stateFormatReport(home);
+			const plan =
+				report.onDisk < report.writes && report.onDisk >= report.migratesFrom
+					? await describeMigrationPlan(
+							home,
+							planMigrations(report.onDisk, currentStateFormatSupport()),
+						)
+					: [];
+			console.log(JSON.stringify({ contract: 1, ...report, plan }));
+		});
 	service.command("run", { hidden: true }).action(async () => {
 		const r = lifecycle().record();
 		if (!r || r.desired !== "running") return;

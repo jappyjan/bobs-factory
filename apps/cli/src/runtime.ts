@@ -7,7 +7,11 @@ import {
 	type RunnerType,
 	resolvePath,
 } from "bobs-factory-core";
-import { EdgeWorker } from "bobs-factory-edge-worker";
+import {
+	EdgeWorker,
+	ensureStateFormat,
+	pruneBackup,
+} from "bobs-factory-edge-worker";
 import open from "open";
 import {
 	installedCommand,
@@ -42,6 +46,13 @@ export async function launchFactory(values: {
 	process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
 	assertServiceLaunch(home);
 	const releaseOwnership = await acquireInstanceLock(home);
+	// Before any state is opened: refuse unknown data, or migrate it with a backup.
+	try {
+		await ensureStateFormat(home);
+	} catch (error) {
+		releaseOwnership();
+		throw error;
+	}
 	const config = loadLocalConfig(home);
 	const repository = values.repo
 		? localRepository(values.repo, home)
@@ -149,6 +160,10 @@ export async function launchFactory(values: {
 	};
 	worker.setConfigPath(configPath);
 	await worker.start();
+	// A migration backup is only needed until the next successful start.
+	pruneBackup(home, {
+		processStartedAt: new Date(Date.now() - process.uptime() * 1000),
+	});
 	if (repository && selected)
 		await onboarding.configure({
 			repositoryPath: repository.repositoryPath,
