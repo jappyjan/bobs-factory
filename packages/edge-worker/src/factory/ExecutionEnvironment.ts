@@ -102,8 +102,9 @@ function inspectProject(
 	// Source suppression is version-specific. Refuse sources whose auth/plugin discovery
 	// cannot be controlled, instead of interpreting arbitrary settings as safe.
 	// Codex reads `.env` only from CODEX_HOME (0.159.2+), so project `.env` files are inert.
+	// Claude Code (checked with 2.1.292) does not load a project `.env` into its process or tools.
 	const sources: Record<RunnerType, string[]> = {
-		claude: [".env"],
+		claude: [],
 		codex: [".codex/config.toml"],
 		gemini: [
 			".gemini/settings.json",
