@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- Replace the dependency refresh review with one covering the #152 audit-advisory bumps (zod, fastify, fast-uri, express, undici, Electron, @cursor/sdk) so nightly source coverage stays valid; the review is automated preparation and awaits independent sign-off. (Taskbot #152)
+
 - Allow the release publish job 90 minutes so a slow prepared-release download cannot cancel it mid-publication. (Taskbot #175)
 
 - Gate release candidates on a passed `CI / Validate` run for the exact frozen commit (wait for a running CI, dispatch one when none exists, fail on red) and run only release-specific checks in the release build (`release-checks.yml`); the evidence records the CI run. Binary and checks artifacts no longer carry `run_attempt`, so "Re-run failed jobs" works, and a full rerun re-derives the frozen candidate instead of failing to restore it. (Taskbot #175)
