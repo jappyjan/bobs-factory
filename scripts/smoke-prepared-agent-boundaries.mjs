@@ -58,10 +58,10 @@ writeFileSync(
 const assert = require('node:assert/strict');
 const { appendFileSync, readFileSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
-const agent = (id, options) => ({ agentId: id, close() { appendFileSync(join(options.local.cwd[0], 'closed'), id + '\\n'); } });
+const agent = (id, options) => ({ agentId: id, close() { appendFileSync(join(options.local.cwd, 'closed'), id + '\\n'); } });
 exports.Agent = {
-  async create(options) { const id = 'synthetic-native-session'; writeFileSync(join(options.local.cwd[0], 'session'), id); return agent(id, options); },
-  async resume(id, options) { assert.equal(readFileSync(join(options.local.cwd[0], 'session'), 'utf8'), id); writeFileSync(join(options.local.cwd[0], 'resumed'), id); return agent(id, options); }
+  async create(options) { const id = 'synthetic-native-session'; writeFileSync(join(options.local.cwd, 'session'), id); return agent(id, options); },
+  async resume(id, options) { assert.equal(readFileSync(join(options.local.cwd, 'session'), 'utf8'), id); writeFileSync(join(options.local.cwd, 'resumed'), id); return agent(id, options); }
 };
 `,
 );
