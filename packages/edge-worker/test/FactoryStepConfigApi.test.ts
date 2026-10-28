@@ -98,7 +98,7 @@ it("validates custom output schemas without allowing external references or unkn
 			],
 			[
 				{ verify: [{ check: "missing-check", path: "/" }] },
-				expect.stringContaining("Invalid input"),
+				expect.stringContaining("Invalid discriminator value"),
 			],
 			[
 				{ instructions: ["missing-instruction"] },

@@ -46,3 +46,20 @@ They are in `zod`, `fastify` and `fast-uri`, which ship, in the `express` and
 `body-parser` tooling, and in Electron and `undici`. They are newly published
 against versions already on main and are tracked separately. The Electron
 update needs a fresh native baseline.
+
+## 2026-10-28 update (Taskbot #152)
+
+The audit-advisory fixes change the lockfile, so the review was regenerated with
+`scripts/prepare-dependency-refresh-review.mjs` from commit `c34115ce` and now
+supersedes the text above (94 added or changed lockfile packages, 23 changed
+inputs). Shipped packages were measured by a darwin-arm64 binary build and grew
+by `zod@4.6.7`, `fastify@5.12.7` and `fast-uri@3.1.9`/`4.2.3` (26 shipped, 68
+tooling). `express`/`body-parser`/`qs`, `undici`, `electron@44.9.3` and
+`@cursor/sdk@1.2.0` with its platform packages are tooling: none are bundled
+(the build refuses `@cursor/*`). Electron's distribution licenses are derived from
+the installed package at desktop build time; no Electron version is pinned in the
+accepted baseline.
+
+The preparation was automated by the implementation agent and is not independent
+of the change. It needs an independent sign-off (or re-signing) before relying on
+it as a review claim. `pnpm audit` reports no advisories.
