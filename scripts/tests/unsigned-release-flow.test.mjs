@@ -167,11 +167,10 @@ test("unsigned publisher → discovery → prepared/offline chunks → updater p
 		const lifecycle = {
 			acquireMaintenance: async () => calls.push("maintenance"),
 			isIdle: async () => true,
-			preflight: async (staged) => {
+			prepare: async (staged) => {
 				assert.equal(staged.candidate.manifestSha256, candidate.manifestSha256);
-				return { stateCompatible: true };
+				return { migration: null };
 			},
-			snapshot: async () => "controlled-compatible-snapshot",
 			stop: async () => calls.push("stop"),
 			activate: async () => calls.push("activate"),
 			start: async () => calls.push("start"),
