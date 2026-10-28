@@ -163,6 +163,18 @@ const StateSchema = z.object({
 });
 export const UpdateStateSchema = StateSchema;
 export type UpdateState = z.infer<typeof StateSchema>;
+/** Persisted beside state.json (updates/recovery.json), never inside it: a v2
+ * supervisor rewrites state.json through a schema that strips unknown keys. */
+const RecoverySchema = z.object({
+	code: z.literal("unexpected-runtime"),
+	transactionId: z.string(),
+	phase: z.string(),
+	expected: z.array(InstalledSchema),
+	observed: InstalledSchema,
+	detectedAt: z.string(),
+	steps: z.array(z.string()),
+});
+export type UpdateRecovery = z.infer<typeof RecoverySchema>;
 export interface UpdateSource {
 	discover(
 		settings: UpdateSettings,
@@ -349,11 +361,116 @@ export class UpdateManager {
 			releaseLock();
 		}
 	}
-	/** Startup observation never owns a supervisor transaction. Only lock contention
-	 * is deferred; malformed state and unexpected runtime identities still fail startup.
-	 * The bounded wait is asynchronous so the legitimate writer can finish normally.
+	private get recoveryFile() {
+		return join(this.directory, "recovery.json");
+	}
+	private storedRecovery(): UpdateRecovery | undefined {
+		try {
+			return RecoverySchema.parse(
+				JSON.parse(readFileSync(this.recoveryFile, "utf8")),
+			);
+		} catch {
+			return undefined;
+		}
+	}
+	/** Only meaningful while the transaction it was recorded for is unresolved. */
+	private activeRecovery(state: UpdateState) {
+		const stored = this.storedRecovery();
+		return stored &&
+			!terminal(state.transaction) &&
+			state.transaction?.id === stored.transactionId
+			? stored
+			: undefined;
+	}
+	private writeJson(file: string, value: unknown) {
+		mkdirSync(join(file, ".."), { recursive: true, mode: 0o700 });
+		const temporary = `${file}.${randomUUID()}.tmp`;
+		writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, {
+			mode: 0o600,
+			flush: true,
+		});
+		renameSync(temporary, file);
+	}
+	/** Immutable audit of an identity change nobody asked the updater to make. */
+	private audit(kind: string, record: Record<string, unknown>) {
+		const at = now();
+		try {
+			this.writeJson(
+				join(
+					this.directory,
+					"history",
+					`${kind.split("-")[0]}-${at.replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}.json`,
+				),
+				{ kind, at, ...record },
+			);
+		} catch (error) {
+			console.warn(`Update audit record deferred: ${(error as Error).message}`);
+		}
+	}
+	private expectedInstalled(transaction: UpdateTransaction) {
+		const outcome = transaction.release?.outcome;
+		return outcome
+			? outcome === "succeeded"
+				? [transaction.candidate]
+				: [transaction.previous]
+			: ["starting", "health", "succeeded"].includes(transaction.phase)
+				? [transaction.candidate]
+				: ["activating", "recovery-required"].includes(transaction.phase)
+					? [transaction.previous, transaction.candidate]
+					: [transaction.previous];
+	}
+	private sameIdentity(left: InstalledUpdate, right: InstalledUpdate) {
+		return (
+			left.version === right.version &&
+			left.commit === right.commit &&
+			left.target === right.target
+		);
+	}
+	/** A newer installed build supersedes the candidate that was waiting for it. */
+	private settlePending(state: UpdateState, observed: InstalledUpdate) {
+		if (!state.pending) return;
+		let superseded = state.pending.candidate.commit === observed.commit;
+		try {
+			superseded ||=
+				compareReleaseVersions(
+					state.pending.candidate.version,
+					observed.version,
+				) <= 0;
+		} catch {
+			// Unknown identity ordering: keep the candidate, it needs consent anyway.
+		}
+		if (superseded) delete state.pending;
+		else {
+			// The staged copy was prepared against the previous executable.
+			delete state.pending.staged;
+			delete state.pending.consentRevision;
+		}
+	}
+	private recoverySteps(
+		observed: InstalledUpdate,
+		expected: InstalledUpdate[],
+		transaction: UpdateTransaction,
+		adoptHint?: string,
+	) {
+		const label = (value: InstalledUpdate) =>
+			`${value.version}${value.commit ? ` (${value.commit.slice(0, 8)})` : ""}`;
+		return [
+			`Installed build ${label(observed)} is not what update ${transaction.id.slice(0, 8)} (${transaction.phase}) expects: ${expected.map(label).join(" or ")}. The server is running and the update is paused.`,
+			adoptHint ??
+				"To keep the installed build and close that update: bobs-factory update recover --adopt-installed --yes",
+			`To resume that update instead, reinstall ${expected.map(label).join(" or ")}; this notice clears itself when the expected build starts.`,
+		];
+	}
+	/** Reconcile what is actually installed with the update history without ever
+	 * blocking startup. A completed, acknowledged history never constrains a
+	 * deliberate (manual) installation. An unresolved transaction is not touched:
+	 * a foreign identity is recorded as `recovery` with steps and activation is refused.
+	 * Only lock contention is deferred (bounded, asynchronous); malformed state still throws.
 	 */
-	async observeInstalled(identity: InstalledUpdate) {
+	async observeInstalled(
+		identity: InstalledUpdate,
+		options: { adoptHint?: string } = {},
+	) {
 		InstalledSchema.parse(identity);
 		if (!identity.target || !identity.commit) return;
 		const observed = InstalledSchema.extend({
@@ -361,48 +478,67 @@ export class UpdateManager {
 			commit: CandidateSchema.shape.commit,
 			target: CandidateSchema.shape.target,
 		}).parse(identity);
-		const matches = (expected: InstalledUpdate) =>
-			observed.version === expected.version &&
-			observed.commit === expected.commit &&
-			observed.target === expected.target;
-		const shouldWrite = (state: UpdateState) => {
+		const decide = (state: UpdateState) => {
+			const stored = this.storedRecovery();
 			const transaction = state.transaction;
-			if (transaction) {
-				const owned = transaction;
-				if (
-					candidateKey(owned.candidate) !== candidateKey(owned.staged.candidate)
-				)
-					throw new Error(
-						"Update transaction has inconsistent staged identity",
-					);
-				const phase = owned.phase;
-				const completedOutcome = owned.release?.outcome;
-				const expected = completedOutcome
-					? completedOutcome === "succeeded"
-						? [owned.candidate]
-						: [owned.previous]
-					: ["starting", "health", "succeeded"].includes(phase)
-						? [owned.candidate]
-						: ["activating", "recovery-required"].includes(phase)
-							? [owned.previous, owned.candidate]
-							: [owned.previous];
-				if (!expected.some(matches))
-					throw new Error(
-						`Installed runtime does not match update transaction ${completedOutcome ? `outcome ${completedOutcome}` : `phase ${phase}`}`,
-					);
-				return false;
-			}
-			return !matches(state.installed);
+			if (terminal(transaction))
+				return this.sameIdentity(observed, state.installed)
+					? stored
+						? ({ kind: "clear" } as const)
+						: ({ kind: "none" } as const)
+					: ({ kind: "adopt" } as const);
+			const expected = this.expectedInstalled(transaction!);
+			if (expected.some((value) => this.sameIdentity(observed, value)))
+				return stored
+					? ({ kind: "clear" } as const)
+					: ({ kind: "none" } as const);
+			const recovery: UpdateRecovery = {
+				code: "unexpected-runtime",
+				transactionId: transaction!.id,
+				phase: transaction!.phase,
+				expected,
+				observed,
+				detectedAt: stored?.detectedAt ?? now(),
+				steps: this.recoverySteps(
+					observed,
+					expected,
+					transaction!,
+					options.adoptHint,
+				),
+			};
+			return stored &&
+				stored.transactionId === recovery.transactionId &&
+				stored.phase === recovery.phase &&
+				this.sameIdentity(stored.observed, observed)
+				? ({ kind: "none" } as const)
+				: ({ kind: "recovery", recovery } as const);
 		};
+		// Only an identity change rewrites state.json. The recovery notice is a
+		// sidecar that activeRecovery() validates against the live transaction, so
+		// writing it needs no lock and can never clobber a supervisor's view.
+		const adopting = (state: UpdateState) => decide(state).kind === "adopt";
 		const deadline = Date.now() + 1_000;
 		while (true) {
-			if (!shouldWrite(this.read())) return;
+			const state = this.read();
+			const decision = decide(state);
+			if (decision.kind === "recovery")
+				return this.writeJson(this.recoveryFile, decision.recovery);
+			if (decision.kind === "clear")
+				return rmSync(this.recoveryFile, { force: true });
+			if (decision.kind === "none") return;
 			try {
 				// Recheck under the writer lock: a supervisor may have started a
 				// transaction while this observer waited. Never overwrite its view.
-				this.change((state) => {
-					state.installed = observed;
-				}, shouldWrite);
+				this.change((current) => {
+					this.audit("observed-install", {
+						from: current.installed,
+						to: observed,
+						reason: "manual-or-external",
+					});
+					current.installed = observed;
+					this.settlePending(current, observed);
+					rmSync(this.recoveryFile, { force: true });
+				}, adopting);
 				return;
 			} catch (error) {
 				if (!(error instanceof UpdateStateLockBusyError)) throw error;
@@ -416,11 +552,64 @@ export class UpdateManager {
 			}
 		}
 	}
+	/** Operator-confirmed resolution of an `unexpected-runtime` recovery: the
+	 * installed build is the truth. Candidate == installed completes the update;
+	 * anything else is closed as superseded. Never rolls back over a deliberate
+	 * installation. Maintenance is released through the lifecycle when there is
+	 * one, otherwise through `release` (shell fence), otherwise just acknowledged.
+	 */
+	async adoptInstalled(
+		identity: InstalledUpdate,
+		options: { release?: (transactionId: string) => Promise<void> } = {},
+	) {
+		InstalledSchema.parse(identity);
+		return this.operation(async () => {
+			const before = this.read();
+			const recovery = this.activeRecovery(before);
+			if (!recovery)
+				throw new Error("There is no unexpected runtime to adopt.");
+			if (!this.sameIdentity(recovery.observed, identity))
+				throw new Error(
+					`Recovery was recorded for build ${recovery.observed.version} but this is ${identity.version}. Run the command with the installed build.`,
+				);
+			const transaction = before.transaction!;
+			const completes = this.sameIdentity(identity, transaction.candidate);
+			this.audit("adopted-install", {
+				transactionId: transaction.id,
+				from: before.installed,
+				to: identity,
+				outcome: completes ? "succeeded" : "cancelled",
+			});
+			this.change((state) => {
+				const current = state.transaction;
+				if (!current || current.id !== transaction.id)
+					throw new Error("Update transaction changed; retry.");
+				state.installed = identity;
+				current.phase = completes ? "succeeded" : "cancelled";
+				if (!completes) current.error = "superseded-by-manual-install";
+				else delete current.error;
+				this.prepareRelease(current);
+				if (completes) delete state.pending;
+				else this.settlePending(state, identity);
+			});
+			if (this.lifecycle) await this.releaseMaintenance(transaction.id);
+			else {
+				await options.release?.(transaction.id);
+				this.change((state) => {
+					if (state.transaction?.release)
+						state.transaction.release.status = "acknowledged";
+				});
+			}
+			rmSync(this.recoveryFile, { force: true });
+			return this.status();
+		}, true);
+	}
 
 	status() {
 		const state = this.read();
 		return {
 			...state,
+			recovery: this.activeRecovery(state),
 			instance: resolve(this.home),
 			effectivePolicy: effectiveUpdatePolicy(state.settings),
 			activationSupported: Boolean(this.lifecycle),
@@ -584,6 +773,10 @@ export class UpdateManager {
 	/** Explicit Install is bound to the currently displayed exact candidate + revision. */
 	requestInstall(key: string, expectedRevision: number, retry = false) {
 		this.change((state) => {
+			if (this.activeRecovery(state))
+				throw new Error(
+					"An unexpected runtime is installed; resolve the recovery notice before installing.",
+				);
 			if (
 				state.revision !== expectedRevision ||
 				!state.pending ||
@@ -1189,7 +1382,8 @@ export class UpdateManager {
 	/** Supervisor timer: 15-minute release checks, capped exponential offline
 	 * backoff; pending candidates coalesce to the current validated channel target. */
 	async tick() {
-		if (this.read().blocked) return this.status();
+		const current = this.read();
+		if (current.blocked || this.activeRecovery(current)) return this.status();
 		if (Date.now() >= this.read().nextCheckAt) await this.check();
 		const state = this.read();
 		if (state.pending && this.authorized(state, state.pending.candidate)) {

@@ -29,7 +29,7 @@ import {
 	externalLink,
 } from "./contracts.mjs";
 import { desktopPath } from "./desktop-path.mjs";
-import { desktopExecutable } from "./local-runtime.mjs";
+import { desktopExecutable, workerStartupFailure } from "./local-runtime.mjs";
 
 const source = dirname(fileURLToPath(import.meta.url));
 const launcherUrl = pathToFileURL(join(source, "launcher.html")).href;
@@ -241,7 +241,10 @@ async function local() {
 			);
 		if (!existsSync(binary))
 			throw new Error("Packaged Factory runtime is missing");
-		runtimeBinary = desktopExecutable(home, dirname(binary));
+		const { compareReleaseVersions } = await import("./update-services.mjs");
+		runtimeBinary = desktopExecutable(home, dirname(binary), {
+			compareVersions: compareReleaseVersions,
+		});
 		await runRuntime(runtimeBinary, [
 			"--home",
 			home,
@@ -249,11 +252,9 @@ async function local() {
 			"allow-desktop-start",
 		]);
 		mkdirSync(join(home, "runtime"), { recursive: true, mode: 0o700 });
-		const log = openSync(
-			join(home, "runtime", "desktop-worker.log"),
-			"a",
-			0o600,
-		);
+		const logFile = join(home, "runtime", "desktop-worker.log");
+		const logOffset = existsSync(logFile) ? statSync(logFile).size : 0;
+		const log = openSync(logFile, "a", 0o600);
 		const child = spawn(
 			runtimeBinary,
 			["--home", home, "--port", String(port), "--no-open"],
@@ -266,8 +267,30 @@ async function local() {
 		);
 		closeSync(log);
 		child.unref();
-		const failed = new Promise((_, reject) => child.once("error", reject));
-		await Promise.race([waitForFactory(), failed]);
+		// A worker that dies while starting must fail the launch now, with its
+		// own output, instead of surfacing as a generic connection timeout.
+		const failed = new Promise((_, reject) => {
+			child.once("error", reject);
+			child.once("exit", (code, signal) =>
+				reject(
+					new Error(
+						workerStartupFailure(
+							logFile,
+							logOffset,
+							`Factory stopped while starting (${signal ?? `exit code ${code}`}).`,
+						),
+					),
+				),
+			);
+		});
+		await Promise.race([
+			waitForFactory().catch((error) => {
+				throw new Error(
+					workerStartupFailure(logFile, logOffset, error.message),
+				);
+			}),
+			failed,
+		]);
 	} else {
 		if (existsSync(join(home, "runtime", "desktop-runtime.json")))
 			runtimeBinary = JSON.parse(

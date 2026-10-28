@@ -5,11 +5,19 @@ import {
 	acquireRuntimeOperation,
 	ownerAlive,
 	ownerProcessExited,
+	ownerProcessVerified,
 	workerIdentityMatches,
 	workerOwner,
 } from "./InstanceLock.js";
 import { OwnedUpdateLifecycle } from "./OwnedUpdateLifecycle.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
+
+const settled = (
+	transaction: ReturnType<UpdateManager["status"]>["transaction"],
+) =>
+	!transaction ||
+	(["succeeded", "rolled-back", "cancelled"].includes(transaction.phase) &&
+		transaction.release?.status === "acknowledged");
 export async function runUpdateSupervisor(
 	home: string,
 	port: number,
@@ -59,11 +67,21 @@ export async function runUpdateSupervisor(
 						crashRestarts++;
 						await lifecycle.restartCrashedDesktop();
 					}
-				} else {
-					if (!workerIdentityMatches(owner, home, executable, port))
+				} else if (!workerIdentityMatches(owner, home, executable, port)) {
+					// A verified process of this home runs another build than the runtime
+					// link names (a manual install moved the link, or this supervisor is
+					// older/newer than the worker). That is normal skew, not an ownership
+					// failure: leave the worker alone until it restarts onto the link.
+					// Mid-transaction it stays an error.
+					if (
+						!settled(manager.status().transaction) ||
+						!ownerProcessVerified(owner, home, port)
+					)
 						throw new Error(
 							"Worker PID, process start time, executable, home or port cannot be verified.",
 						);
+					manager.reportWorkerOwnership();
+				} else {
 					const identity = JSON.parse(
 						readFileSync(
 							join(dirname(realpathSync(executable)), "build.json"),
@@ -77,17 +95,15 @@ export async function runUpdateSupervisor(
 					);
 					manager = new UpdateManager(home, source, lifecycle, identity);
 					manager.reportWorkerOwnership();
-					const transaction = manager.status().transaction;
+					const { transaction, recovery } = manager.status();
 					try {
-						if (
-							transaction &&
-							(transaction.release?.status !== "acknowledged" ||
-								!["succeeded", "rolled-back", "cancelled"].includes(
-									transaction.phase,
-								))
-						)
-							await manager.recover("operation owner stopped");
-						else await manager.tick();
+						// A deliberate installation that differs from the unresolved
+						// transaction is not rolled back; the operator resolves it with
+						// `update recover --adopt-installed`.
+						if (!recovery) {
+							if (settled(transaction)) await manager.tick();
+							else await manager.recover("operation owner stopped");
+						}
 					} catch (error) {
 						console.error(`Update supervisor: ${(error as Error).message}`);
 					}

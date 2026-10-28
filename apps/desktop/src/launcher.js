@@ -48,7 +48,8 @@ function render() {
 	}
 	const candidate = appState.pending?.candidate,
 		transaction = appState.transaction;
-	appOutput.textContent = `Installed UI: ${appState.installed.version} ${appState.installed.commit ?? "unknown"} ${appState.installed.target ?? "unknown"}\nChannel: ${appState.settings.channel}; effective policy: ${appState.effectivePolicy}; overrides: ${JSON.stringify(appState.settings.overrides)}\n${appState.message}\n${candidate ? `Candidate: ${candidate.channel} ${candidate.version} ${candidate.commit} ${candidate.target}\nManifest: ${candidate.manifestSha256}\n${appState.pending.staged ? "Downloaded and verified" : "Pending verification"}` : "No pending app candidate"}\n${transaction ? `Transaction: ${transaction.phase}${transaction.release ? `; result: ${transaction.release.outcome}` : ""}\n${transaction.error ?? ""}` : ""}\n${appState.error ?? ""}\n${actionError}`;
+	appOutput.textContent = `Installed UI: ${appState.installed.version} ${appState.installed.commit ?? "unknown"} ${appState.installed.target ?? "unknown"}\nChannel: ${appState.settings.channel}; effective policy: ${appState.effectivePolicy}; overrides: ${JSON.stringify(appState.settings.overrides)}\n${appState.message}\n${candidate ? `Candidate: ${candidate.channel} ${candidate.version} ${candidate.commit} ${candidate.target}\nManifest: ${candidate.manifestSha256}\n${appState.pending.staged ? "Downloaded and verified" : "Pending verification"}` : "No pending app candidate"}\n${transaction ? `Transaction: ${transaction.phase}${transaction.release ? `; result: ${transaction.release.outcome}` : ""}\n${transaction.error ?? ""}` : ""}\n${appState.recovery ? `${appState.recovery.steps.join("\n")}\n` : ""}${appState.error ?? ""}\n${actionError}`;
+	document.querySelector("#app-adopt").hidden = !appState.recovery;
 	for (const id of ["install", "retry"])
 		document.querySelector(`#app-${id}`).disabled =
 			requestBusy || !candidate || !appState.activationSupported;
@@ -81,6 +82,7 @@ for (const [id, action] of [
 	["retry", "retry"],
 	["cancel", "cancel"],
 	["recover", "recover"],
+	["adopt", "adopt-installed"],
 ])
 	document.querySelector(`#app-${id}`).addEventListener("click", () => {
 		if ((action === "install" || action === "retry") && !appState?.pending)

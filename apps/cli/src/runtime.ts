@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "node:util";
 import { getAllTools } from "bobs-factory-claude-runner";
 import {
 	type EdgeWorkerConfig,
+	factoryRuntimeIdentity,
 	type RunnerType,
 	resolvePath,
 } from "bobs-factory-core";
@@ -22,6 +23,7 @@ import {
 } from "./onboarding.js";
 import { runtimeAgentSettings } from "./runtime-settings.js";
 import { acquireInstanceLock } from "./services/InstanceLock.js";
+import { scheduleSupervisorRetirement } from "./services/LegacyUpdateAdoption.js";
 import { assertServiceLaunch } from "./services/ServiceLifecycle.js";
 
 export async function launchFactory(values: {
@@ -164,6 +166,8 @@ export async function launchFactory(values: {
 	pruneBackup(home, {
 		processStartedAt: new Date(Date.now() - process.uptime() * 1000),
 	});
+	if (factoryRuntimeIdentity.packaged && process.env.BOBS_FACTORY_DESKTOP_OWNER)
+		scheduleSupervisorRetirement(home, port);
 	if (repository && selected)
 		await onboarding.configure({
 			repositoryPath: repository.repositoryPath,

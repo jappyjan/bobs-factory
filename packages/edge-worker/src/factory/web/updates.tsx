@@ -261,6 +261,14 @@ export function UpdateSettings() {
 					<p>{status.blocked.remedy}</p>
 				</div>
 			)}
+			{status.recovery && (
+				<div role="alert">
+					<p>Update paused: a different build than expected is installed.</p>
+					{status.recovery.steps.map((step) => (
+						<p key={step}>{step}</p>
+					))}
+				</div>
+			)}
 			{status.error && <p role="alert">{status.error}</p>}
 			{action.error && <p role="alert">{action.error.message}</p>}
 			{status.operationOwner && (
