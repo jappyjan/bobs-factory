@@ -31,7 +31,7 @@ const { join } = require('node:path');
 let cancelled = false;
 const create = async (options, id = 'native-id') => ({
   agentId: id,
-  close() { writeFileSync(join(options.local.cwd[0], 'closed'), id); },
+  close() { writeFileSync(join(options.local.cwd, 'closed'), id); },
   async send(prompt, { onDelta }) {
     return {
       async cancel() { cancelled = true; },
@@ -61,7 +61,7 @@ afterEach(async () => {
 });
 
 const options = () => ({
-	local: { cwd: [root], sandboxOptions: { enabled: false } },
+	local: { cwd: root, sandboxOptions: { enabled: false } },
 	mcpServers: {
 		context: {
 			type: "stdio" as const,
