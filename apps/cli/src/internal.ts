@@ -28,7 +28,7 @@ export async function runInternal(args: string[]): Promise<void> {
 			throw new Error("cursor-storage requires an isolated workspace");
 		const { Agent } = await loadCursorSdk();
 		const options = {
-			local: { cwd: [rest[0]], sandboxOptions: { enabled: false } },
+			local: { cwd: rest[0], sandboxOptions: { enabled: false } },
 		};
 		const agent = await Agent.create(options);
 		const resumed = await Agent.resume(agent.agentId, options);

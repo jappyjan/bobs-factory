@@ -1,14 +1,19 @@
 {
 	"schemaVersion": 3,
 	"baselineCommit": "84433882ceed569cb93420d3ddc0961e252e0ce8",
-	"commit": "402768a44f8d5d1eaba696f62284f8a86e310af4",
-	"reviewedBy": "Claude release review, 2026-10-24; independent of the Codex dependency refresh (#173) and the Recipes additions it supersedes",
-	"scope": "Complete lockfile delta from accepted baseline 84433882 to 402768a4: 81 added or changed packages and 22 changed dependency inputs, including removed workspace overrides. 22 packages measured in the binary and web bundle carry exact npm archives (SHA-512 = lockfile, SHA-256, size) and full upstream notices; all are MIT, ISC or BSD-3-Clause, with no native code or install hooks. 59 build and test tooling packages (vitest, vite, rolldown native bindings, express stack) are pinned by lockfile integrity, which matches npm registry metadata, and declare MIT, ISC, BSD-3-Clause or Apache-2.0; the binary build refuses to bundle them. Source and license provenance only; pnpm audit findings are tracked separately.",
+	"commit": "c34115ceb8fd88eebd18e71034a72d8b48efd7cf",
+	"reviewedBy": "Claude implementation agent for #152, 2026-10-28: automated preparation only (npm registry integrity, declared licenses, archive notices, no native code or install hooks); not independent of the audit-advisory dependency changes",
+	"scope": "Complete lockfile delta from accepted baseline 84433882 to the #152 audit-advisory dependency commit: changed pins and lockfile records, including zod 4.6.7, fastify 5.12.7, fast-uri 3.1.9/4.2.3, express 5.3.0 with body-parser 2.4.0 and qs 6.17.0, undici 8.12.3, electron 44.9.3 and @cursor/sdk 1.2.0. Supersedes the 2026-10-24 refresh review. Packages shipped by the binary and web bundle (measured by a darwin-arm64 build) carry archives and notices; all others are tooling pinned by lockfile integrity. Distribution source and license review only; no legal opinion and no native relink claimed.",
 	"files": [
 		{
 			"file": "apps/cli/package.json",
 			"beforeSha256": "18d77accfe83a10cc8acc7e6aaa029455beb95c2282437a9479d51c6bfd9c30b",
-			"afterSha256": "2c1444a776654a94ea7356877a66ed982e650477f92cf1e7eb55480a9b4c5e7b"
+			"afterSha256": "ca4b41d26d91bf63bc5c7ade76988d8068e85e0a9de39a77c906289fd3a3652e"
+		},
+		{
+			"file": "apps/desktop/package.json",
+			"beforeSha256": "4798fc1b1990311903ac9fff7beaa8bf3831505c1d0d6f3e36d83f3af7701300",
+			"afterSha256": "80d6f96b0aff97a9cf52d7f2a8abbd674959e50a30486cd5347bc8c9cf3b3b0d"
 		},
 		{
 			"file": "apps/f1/package.json",
@@ -28,7 +33,7 @@
 		{
 			"file": "packages/claude-runner/package.json",
 			"beforeSha256": "310e09d38a256888fc2964672d3b26ff0992d3c095ab4e43ef8c8d056ec9b347",
-			"afterSha256": "269c7b2186a535aac3affec0fc8a03ae4e9cb0775b08ad76e1b94974e06105e8"
+			"afterSha256": "35a9b54c22f593f4bd3e299388e485f2e5fcae2b4c8d7795a3a8a0ef7ae2f8a9"
 		},
 		{
 			"file": "packages/cloudflare-tunnel-client/package.json",
@@ -43,47 +48,47 @@
 		{
 			"file": "packages/config-updater/package.json",
 			"beforeSha256": "6569e9a4bdb67d00e73b4da0a0ea479cc64f922a396545c64c0ebb65e0f93d18",
-			"afterSha256": "db8f7a8d87350d4b51c8293562a33c5604074611773c72284051e6b60e177968"
+			"afterSha256": "457fb899aa1a449e32f4078e91fb08c39aef015918c0f70c4b79c90f5adf9e2f"
 		},
 		{
 			"file": "packages/core/package.json",
 			"beforeSha256": "0cb1cfde180a42dc0c9f1eccf86a949bf2886ea46e4aff9447fa004c333c0ab1",
-			"afterSha256": "c53a04ab0477f6617ccb30e21ef93df1cb48bb1c1b497d97214de09e8cdb6e61"
+			"afterSha256": "982fc08006630b1c3186c83a59e14e6f084c544d11178545ed0fa7c8714bb9cd"
 		},
 		{
 			"file": "packages/cursor-runner/package.json",
 			"beforeSha256": "c7359529a882b4197ce2fd6cbed555dc14d8be205b7cc2bbd58c62341a4b30ea",
-			"afterSha256": "b0d8e6af70dbc631069b2bd40f2c453c8b6965437ae228e05eb3c1921794bd1f"
+			"afterSha256": "a1c296fa69f022351c9a3e07e5317e7fce8907ac69e2890a7759c119f937ac82"
 		},
 		{
 			"file": "packages/edge-worker/package.json",
 			"beforeSha256": "1e85f912d607618c06fb90308ca2dceb3f68fa3c60edfd1dae6b67966584d780",
-			"afterSha256": "37e12b7b1043d03fd46678659296bc3e65e6f030124645c1577b7a716fa90ea4"
+			"afterSha256": "f7a1721e9912b27c9c0f7bb4accdaaca41aad3a422fcc63a24f06baf98c136af"
 		},
 		{
 			"file": "packages/gemini-runner/package.json",
 			"beforeSha256": "5d3c1f0fee7bffbba54f9a117d77fef56b73e4f3002f1058e9dc43d77b8e4f95",
-			"afterSha256": "f7796182239adf7df0565f3a2cfb3d93e40005482d8505ede655d196e8046dee"
+			"afterSha256": "4c4bb54ea7af1a605fd264ad1a55ce47ca691f6b78e587193a307ab18c7216e6"
 		},
 		{
 			"file": "packages/github-event-transport/package.json",
 			"beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
-			"afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+			"afterSha256": "baaea451ccb1699e5651c850abcafa559950c795e4b92d01849bfe8cc1af777a"
 		},
 		{
 			"file": "packages/gitlab-event-transport/package.json",
 			"beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
-			"afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+			"afterSha256": "baaea451ccb1699e5651c850abcafa559950c795e4b92d01849bfe8cc1af777a"
 		},
 		{
 			"file": "packages/linear-event-transport/package.json",
 			"beforeSha256": "0cc8873920a4a12038f819df5468bb247bc4571c17a0dc372e2929d1ed120984",
-			"afterSha256": "7eb1a549fbe5a59d3ccc0daaa7f033aaca6defd9bddca6744a70a50b55e1d78e"
+			"afterSha256": "920b47cc991cd002bf4705057cb7ff01ec16e47925492f7c430ad66a956eb807"
 		},
 		{
 			"file": "packages/mcp-tools/package.json",
 			"beforeSha256": "94b031da84182cdfe159f87847f5c3af2beed7a2678d481d16d31d8e2ff6d151",
-			"afterSha256": "749080e4df52ac7222fe5a5b8ba3fd6a9b83ced6ea5c799b3b1865223d871d1f"
+			"afterSha256": "96ffb34523ad3d35bc469bbed8b4e94ac8612a3fb53122ca927de7f14130a3d2"
 		},
 		{
 			"file": "packages/opencode-runner/package.json",
@@ -98,17 +103,17 @@
 		{
 			"file": "packages/slack-event-transport/package.json",
 			"beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
-			"afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+			"afterSha256": "baaea451ccb1699e5651c850abcafa559950c795e4b92d01849bfe8cc1af777a"
 		},
 		{
 			"file": "packages/zulip-event-transport/package.json",
 			"beforeSha256": "72dcde87886015f81b9cc2c3a0901c3e083d82431b64119dfbed2956f10eaed0",
-			"afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+			"afterSha256": "baaea451ccb1699e5651c850abcafa559950c795e4b92d01849bfe8cc1af777a"
 		},
 		{
 			"file": "pnpm-lock.yaml",
 			"beforeSha256": "db1e25c863dc8bfa2bc865b19854280292fbcb819b568080b52b8b935a1f3c84",
-			"afterSha256": "2def79b5bbd43116f2d20b0fe547ceeda37a4c20d7474755b924846643cac0ba"
+			"afterSha256": "f2e6e6048d022f968e961ecee1b6ab7a5ddb842455bacfcfce066f2247c204b7"
 		},
 		{
 			"file": "pnpm-workspace.yaml",
@@ -130,6 +135,48 @@
 			"integrity": "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==",
 			"distribution": "tooling",
 			"license": "MIT"
+		},
+		{
+			"name": "@cursor/sdk-darwin-arm64",
+			"version": "1.2.0",
+			"integrity": "sha512-UkZ/RdxKCpOQ85nRgzSq+g0h+gIw36/lCEvQvomhs5EkSFZW3OwbeEzkAU3UYglZ7t3RNHj3mc5C5cdDtHguvw==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
+		},
+		{
+			"name": "@cursor/sdk-darwin-x64",
+			"version": "1.2.0",
+			"integrity": "sha512-mJTFdX+qv9dHAm59tT7uq7ci7+BDvFoNk4gdF2zGp9SLULicY+FdFD64p1qLen1bX5Y2soZaX5mWBy7BfObjcg==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
+		},
+		{
+			"name": "@cursor/sdk-linux-arm64",
+			"version": "1.2.0",
+			"integrity": "sha512-Rs+cd5snuhxMAHkpqRfEGPB1qAsfqSOYJh5SOHZTOWy2LkRVO62WHwd4x80C2emj+dosTV5WAcuF2kMKKcrDJg==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
+		},
+		{
+			"name": "@cursor/sdk-linux-x64",
+			"version": "1.2.0",
+			"integrity": "sha512-ainsGAFtkWTBZrLABp82Hvfv7VB/FxmZHE42qMVotFTRDwOY2iduvhSig910bVxv+kw3S00Srmu/9CxklLwhbw==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
+		},
+		{
+			"name": "@cursor/sdk-win32-x64",
+			"version": "1.2.0",
+			"integrity": "sha512-p3rkyta6R/nXIukd3/ifJq32otkkGoUi41T2jxnHbPHMhzE2F8OuJQGBVmORuQLMr+bIGGVZmCxertgs4WgzcQ==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
+		},
+		{
+			"name": "@cursor/sdk",
+			"version": "1.2.0",
+			"integrity": "sha512-Nqm2U0zTWrYEDCv3Rdwsfa1gYZWsg+JnY+I2F8BwWSAr3FNo0TZWwyHWoWngZgriF1w02fJ4gjJWaul9zysvgQ==",
+			"distribution": "tooling",
+			"license": "SEE LICENSE IN LICENSE.md"
 		},
 		{
 			"name": "@dagrejs/dagre",
@@ -562,6 +609,13 @@
 			"license": "MIT"
 		},
 		{
+			"name": "body-parser",
+			"version": "2.4.0",
+			"integrity": "sha512-Ifk1KcLrxaGt1occQagQNFNNOqRt1LFuehEnHHzB8Z6cRgIxRU1TBaiIsUiCdA+gy5PL7Y1IX31DNKkRmxtXjQ==",
+			"distribution": "tooling",
+			"license": "MIT"
+		},
+		{
 			"name": "chai",
 			"version": "6.3.0",
 			"integrity": "sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==",
@@ -823,6 +877,13 @@
 			}
 		},
 		{
+			"name": "electron",
+			"version": "44.9.3",
+			"integrity": "sha512-Cv9/yMnZxNWsMlIe8T4v//NKHdUvbeyoTJoXE3BIcRxus2meeFaO9h/P3zB5d4cBXum51IgAYrT2QjpIDWKpJA==",
+			"distribution": "tooling",
+			"license": "MIT"
+		},
+		{
 			"name": "es-module-lexer",
 			"version": "2.3.2",
 			"integrity": "sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==",
@@ -849,6 +910,78 @@
 			"integrity": "sha512-qCqy1xSoaugxOD4IVHb1ZWdkvCF2W3aE2okKouWj8VwJ+ztskSiXoBnCSJqfKT+cVPJhuJqe9YLbY425+Zh00g==",
 			"distribution": "tooling",
 			"license": "MIT"
+		},
+		{
+			"name": "fast-uri",
+			"version": "3.1.9",
+			"integrity": "sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ==",
+			"distribution": "bundled",
+			"license": "BSD-3-Clause",
+			"packageJson": {
+				"path": "package/package.json",
+				"sha256": "06728ad83c4df979c6895d089452622441e34afe9b1c24584e2acac8d94a2876"
+			},
+			"licenses": [
+				{
+					"path": "package/LICENSE",
+					"sha256": "b010b0dfdfdb23d7396e03b82cd4621fc9bb8f95d6b0aea70b9c24e12074c786",
+					"text": "Copyright (c) 2011-2021, Gary Court until https://github.com/garycourt/uri-js/commit/a1acf730b4bba3f1097c9f52e7d9d3aba8cdcaae\nCopyright (c) 2021-present The Fastify team <https://github.com/fastify/fastify#team>\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * The names of any contributors may not be used to endorse or promote\n      products derived from this software without specific prior written\n      permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS AND CONTRIBUTORS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n                                  *   *   *\n\nThe complete list of contributors can be found at:\n- https://github.com/garycourt/uri-js/graphs/contributors"
+				}
+			],
+			"archive": {
+				"file": "npm-fast-uri-3.1.9.tgz",
+				"url": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.9.tgz",
+				"size": 50086,
+				"sha256": "4f5a67f7b61110aae7b3ad38e806627f5712f4c150bd38eb804a562e69a9ee5e"
+			}
+		},
+		{
+			"name": "fast-uri",
+			"version": "4.2.3",
+			"integrity": "sha512-I1PXwP5eAhlNlcdpjt9CgB59op2ZvZfxw+BkqGFVIUOgNpCVTcTqp3HhTX7brxj5vsip+nSY4nTvff+eIA76hg==",
+			"distribution": "bundled",
+			"license": "BSD-3-Clause",
+			"packageJson": {
+				"path": "package/package.json",
+				"sha256": "6225bc609df1f93477aaeb391e87caab843fa86403afacda3b339b66db46e0b3"
+			},
+			"licenses": [
+				{
+					"path": "package/LICENSE",
+					"sha256": "b010b0dfdfdb23d7396e03b82cd4621fc9bb8f95d6b0aea70b9c24e12074c786",
+					"text": "Copyright (c) 2011-2021, Gary Court until https://github.com/garycourt/uri-js/commit/a1acf730b4bba3f1097c9f52e7d9d3aba8cdcaae\nCopyright (c) 2021-present The Fastify team <https://github.com/fastify/fastify#team>\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * The names of any contributors may not be used to endorse or promote\n      products derived from this software without specific prior written\n      permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS AND CONTRIBUTORS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n                                  *   *   *\n\nThe complete list of contributors can be found at:\n- https://github.com/garycourt/uri-js/graphs/contributors"
+				}
+			],
+			"archive": {
+				"file": "npm-fast-uri-4.2.3.tgz",
+				"url": "https://registry.npmjs.org/fast-uri/-/fast-uri-4.2.3.tgz",
+				"size": 74515,
+				"sha256": "781233dfc458464975bc5d67392aab75503dee65a5d06a7231f702a8cefe97c5"
+			}
+		},
+		{
+			"name": "fastify",
+			"version": "5.12.7",
+			"integrity": "sha512-v4pEPsTRPuqlDIYiQFB+BHjVN4SdHX9u0ABk0ZDUKbbdY1vsNryUd1j4Z+jQEZajvYIVk047Kimva9/AJ79GYw==",
+			"distribution": "bundled",
+			"license": "MIT",
+			"packageJson": {
+				"path": "package/package.json",
+				"sha256": "e62c8961246f029b70e19cb3523fdd07a78cb0f622951cf2b539dc94d7d65beb"
+			},
+			"licenses": [
+				{
+					"path": "package/LICENSE",
+					"sha256": "23c91863859171455a536380991b4160fee4e19e2d8dc353ecf7143cc4e53ca2",
+					"text": "MIT License\n\nCopyright (c) 2016-present The Fastify team <https://github.com/fastify/fastify#team>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+				}
+			],
+			"archive": {
+				"file": "npm-fastify-5.12.7.tgz",
+				"url": "https://registry.npmjs.org/fastify/-/fastify-5.12.7.tgz",
+				"size": 527352,
+				"sha256": "edc1716d83378350b767a4105b690041f8a2a523d930500ba9d1b36c7ca67dfe"
+			}
 		},
 		{
 			"name": "fdir",
@@ -956,8 +1089,8 @@
 		},
 		{
 			"name": "qs",
-			"version": "6.16.1",
-			"integrity": "sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==",
+			"version": "6.17.0",
+			"integrity": "sha512-5LK5BZ2XDHMvcUJaf0CQ5HL3aVgKbpklvByC7qLSxYkfE8COEEbJg5xCHWCTqzqi0Gs4Jn5Mv5v3R38W6edscA==",
 			"distribution": "tooling",
 			"license": "BSD-3-Clause"
 		},
@@ -993,6 +1126,13 @@
 			"name": "tinyrainbow",
 			"version": "3.2.0",
 			"integrity": "sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==",
+			"distribution": "tooling",
+			"license": "MIT"
+		},
+		{
+			"name": "undici",
+			"version": "8.12.3",
+			"integrity": "sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==",
 			"distribution": "tooling",
 			"license": "MIT"
 		},
@@ -1033,6 +1173,30 @@
 			"integrity": "sha512-5eWdz2yb3ajxWF3C8C4TjkXl7FGm3n2E/VlazALrQHzK7nYMSGFnCZto0bbPNl77AwkOZVLk0YnBAejUu0NiWA==",
 			"distribution": "tooling",
 			"license": "MIT"
+		},
+		{
+			"name": "zod",
+			"version": "4.6.7",
+			"integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==",
+			"distribution": "bundled",
+			"license": "MIT",
+			"packageJson": {
+				"path": "package/package.json",
+				"sha256": "c2d190d9ee4e0bdb60332aaa2130a6a98d65ddb903fe1d29248b15de57832c45"
+			},
+			"licenses": [
+				{
+					"path": "package/LICENSE",
+					"sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
+					"text": "MIT License\n\nCopyright (c) 2025 Colin McDonnell\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+				}
+			],
+			"archive": {
+				"file": "npm-zod-4.6.7.tgz",
+				"url": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
+				"size": 1141941,
+				"sha256": "84efd155bed93270286e793fc951be270b536cbd5b0eeb111f0fa3967201d698"
+			}
 		},
 		{
 			"name": "zustand",

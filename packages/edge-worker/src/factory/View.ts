@@ -101,9 +101,13 @@ export interface ViewScope {
 export const viewUrlSchema = z
 	.string()
 	.max(2000)
+	// zod's .url() trims and strips tab/newline from the value, so reject them on the raw input first.
+	.refine(
+		(value) => !/[\s\p{Cc}\\]/u.test(value),
+		"View links must use HTTP(S) without credentials",
+	)
 	.url()
 	.refine((value) => {
-		if (/[\s\p{Cc}\\]/u.test(value)) return false;
 		try {
 			const url = new URL(value);
 			return (
