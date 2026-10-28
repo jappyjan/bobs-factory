@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- Make the trial launcher bootstrap tests poll for the controlled download process to exit instead of asserting it is gone immediately, fixing a flake on slow runners. (Taskbot #177)
+
 - Allow the release publish job 90 minutes so a slow prepared-release download cannot cancel it mid-publication. (Taskbot #175)
 
 - Gate release candidates on a passed `CI / Validate` run for the exact frozen commit (wait for a running CI, dispatch one when none exists, fail on red) and run only release-specific checks in the release build (`release-checks.yml`); the evidence records the CI run. Binary and checks artifacts no longer carry `run_attempt`, so "Re-run failed jobs" works, and a full rerun re-derives the frozen candidate instead of failing to restore it. (Taskbot #175)
