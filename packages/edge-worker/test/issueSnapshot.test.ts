@@ -69,3 +69,35 @@ it("resolves each distinct comment author once, not once per comment", async () 
 	expect(result.comments[0]?.author).toEqual({ id: "b", name: "Bob" });
 	expect(result.comments[1]?.author).toEqual({ id: "a", name: "Ada" });
 });
+
+it("emits plain JSON: ISO timestamps and no undefined fields", async () => {
+	const at = new Date("2026-01-02T03:04:05.000Z");
+	const issue = {
+		id: "issue",
+		createdAt: at,
+		updatedAt: at,
+		state: Promise.resolve(undefined),
+		team: Promise.resolve(undefined),
+	};
+	const comment = (id: string, userId?: string) => ({
+		id,
+		body: id,
+		createdAt: at,
+		updatedAt: at,
+		userId,
+		user: Promise.resolve(userId ? { id: userId, name: "Ada" } : undefined),
+	});
+	const tracker = {
+		fetchComments: async () => ({ nodes: [comment("a", "u"), comment("b")] }),
+		fetchIssueAttachments: async () => [],
+	};
+	const result = await issueSnapshot(issue as never, [], tracker as never);
+	expect(result).toEqual(JSON.parse(JSON.stringify(result)));
+	expect(result).toMatchObject({
+		createdAt: "2026-01-02T03:04:05.000Z",
+		comments: [{ author: { id: "u", name: "Ada" } }, { id: "b" }],
+	});
+	expect((result as { comments: object[] }).comments[1]).not.toHaveProperty(
+		"author",
+	);
+});
