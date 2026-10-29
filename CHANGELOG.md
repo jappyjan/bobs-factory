@@ -42,6 +42,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Agent steps no longer fail with "Agent did not return the required JSON result" when the agent adds a short explanation before a fenced JSON result (as review steps with long feedback often do). The result is now extracted from the message, and a genuinely invalid result reports the exact parse error and the end of the message so the retry can correct it.
 - Taking over from a ticket whose pull request and branch are gone no longer fails while assembling existing work with "Rules accept only JSON data" (ticket timestamps are now plain JSON), and reusing a leftover worktree no longer treats the ticket's own deleted branch as the base.
 - A ticket can run again after an earlier run for it failed and its worktree was removed. Previously the leftover storage record blocked the new worktree with "Storage path already has ownership or an unresolved earlier identity" and never cleaned up on its own; such records are now retired when the ticket is launched again (also over a worktree left behind by the failed run), and records of removed worktrees whose runs have finished are dropped by storage cleanup. A relaunch over a leftover worktree also reports the repository's base branch when the requested base no longer exists.
 - Taking over from a ticket whose pull request and branch no longer exist now starts from the repository's base branch instead of failing during intake with `couldn't find remote ref`; the run proceeds as a fresh start.
