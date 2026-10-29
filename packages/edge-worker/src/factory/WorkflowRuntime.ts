@@ -492,6 +492,8 @@ export interface ExecutionContext {
 	/** Private persisted Call input origins, independently checked by pinned access. */
 	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	validateRoleOutput?: (value: unknown) => unknown;
+	/** Artifact binding issued at role start; later edits make the worktree dirty without invalidating it. */
+	resultArtifactBinding?: import("bobs-factory-mcp-tools").FactoryArtifactBinding;
 	readOnlyResearch?: boolean;
 	/** Trusted human-thread execution profile, never selected by authored output. */
 	contextAssistance?: true;

@@ -163,12 +163,12 @@ it("charges object sorting, string encoding and set membership before native ope
 			/evaluation.*limit/,
 		);
 });
-it("precharges format refinement strings and repeated comparisons before calling the parser", async () => {
+it("precharges format argument size before calling the parser", async () => {
 	const validator = vi.fn(() => true);
 	await expect(
 		evaluateRulesAsync(
 			[{ message: "Conforms", require: { conforms: "json-v1" } }],
-			{ items: Array.from({ length: 50 }, () => ({ id: "x".repeat(2000) })) },
+			{ items: Array.from({ length: 50 }, () => ({ id: "x".repeat(25_000) })) },
 			validator,
 		),
 	).rejects.toThrow(/evaluation.*limit/);
@@ -251,4 +251,29 @@ it("shares total condition work across actual accepted read bindings", () => {
 		}),
 	).toEqual({ first: "safe" });
 	expect(() => stepBindings(context)).toThrow("evaluation operation limit");
+});
+
+it("accepts a realistically large document under a format rule", () => {
+	const document = {
+		display: {
+			version: "view-v1",
+			components: Array.from({ length: 30 }, (_, i) => ({
+				id: `c${i}`,
+				type: "markdown",
+				data: { literal: { text: "word ".repeat(60) } },
+			})),
+		},
+	};
+	expect(
+		evaluateRules(
+			[
+				{
+					message: "Conforms",
+					require: { conforms: "display", path: "/display" },
+				},
+			],
+			document,
+			() => true,
+		),
+	).toEqual([]);
 });

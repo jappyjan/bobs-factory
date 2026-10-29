@@ -195,6 +195,13 @@ it("normalizes title whitespace and accepts fenced JSON", () => {
 		parseRunTitle('```json\n{"title":"  Add  run\\n titles  "}\n```'),
 	).toBe("Add run titles");
 });
+it("accepts a title wrapped in prose", () => {
+	expect(
+		parseRunTitle(
+			'Here is the title:\n```json\n{"title":"Add run titles"}\n```\nDone.',
+		),
+	).toBe("Add run titles");
+});
 it("deduplicates pending work and updates only after a valid result, cleaning up the runner", async () => {
 	const test = setup(),
 		snapshot = job();
