@@ -243,6 +243,18 @@ it("returns display validation errors for agent correction instead of failing th
 	);
 	expect(issue.message).toContain("components.1.data.literal.items.0");
 	expect(issue.message).not.toContain("data.bindings");
+	const actions = (id: string) => ({
+		id,
+		type: "actions",
+		data: { literal: { actions: [{ id: "submit", label: "Submit" }] } },
+	});
+	const twoBars = await parseStepOutputAsync(
+		clarify,
+		output({ version: "view-v1", components: [actions("a"), actions("b")] }),
+	).catch((e: unknown) => e);
+	expect((twoBars as OutputValidationError).issues[0]!.message).toContain(
+		"A display has one document action bar",
+	);
 	await expect(
 		parseStepOutputAsync(clarify, output(questionDocument)),
 	).resolves.toMatchObject({ status: "needs-input" });

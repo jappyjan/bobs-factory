@@ -132,6 +132,25 @@ export const DisplayDocumentSchema = ViewSchema.superRefine(
 export const ResolvedDisplayDocumentSchema = ResolvedViewSchema.superRefine(
 	checked(validateResolved),
 );
+/** Literal-only components resolve without inputs, so their cross-component limits can be checked before display. */
+function literalOnly(list: readonly unknown[]): boolean {
+	return list.every((item) => {
+		const component = item as { type?: unknown; data?: object };
+		if (!component.data || !("literal" in component.data)) return false;
+		const literal = component.data.literal as { components?: unknown };
+		return (
+			component.type !== "section" ||
+			(Array.isArray(literal.components) && literalOnly(literal.components))
+		);
+	});
+}
+/** Agent-authored displays: the definition plus the checks the display node applies once resolved. */
+export function parseAuthoredDisplay(value: unknown): DisplayDocument {
+	const document = DisplayDocumentSchema.parse(value);
+	if (literalOnly(document.components))
+		ResolvedDisplayDocumentSchema.parse(resolveView(document, {}));
+	return document;
+}
 export const DisplaySourceSchema = z.union([
 	DisplayDocumentSchema,
 	z.object({ from: viewPointerSchema }).strict(),
@@ -191,7 +210,7 @@ function shape(node: JsonSchemaNode): string {
 
 /** Exact author-facing data contract, generated from the validators so it cannot drift. */
 export const DISPLAY_CONTRACT = [
-	'Display document: {version: "view-v1", components: [{id, type, title?, data: {literal: <data>}}]} with 1-40 components and unique IDs (letters, digits, "-", "_", "."). Every object is strict: unknown keys (such as placeholder or a title inside data) are rejected, and a component title belongs on the component, not in data. <data> per type:',
+	'Display document: {version: "view-v1", components: [{id, type, title?, data: {literal: <data>}}]} with 1-40 components and unique IDs (letters, digits, "-", "_", "."). Every object is strict: unknown keys (such as placeholder or a title inside data) are rejected, and a component title belongs on the component, not in data. At most one actions component per display; form field IDs, and itemCards item and codeTour note IDs, are unique across the whole display (at most 100 each). <data> per type:',
 	...DISPLAY_COMPONENTS.map(
 		(type) =>
 			`- ${type}: ${shape(z.toJSONSchema(viewDataSchemas[type], { unrepresentable: "any", io: "input" }) as JsonSchemaNode)}`,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { DependencyGraphSchema } from "./DependencyGraph.js";
-import { DISPLAY_RULE_ID, DisplayDocumentSchema } from "./DisplayDocument.js";
+import { DISPLAY_RULE_ID, parseAuthoredDisplay } from "./DisplayDocument.js";
 
 import { sanitizeJsonConfiguration } from "./Foreach.js";
 
@@ -120,7 +120,7 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 		);
 	},
 	"follow-up-v1": (value) => FollowUpSchema.parse(value),
-	display: (value) => DisplayDocumentSchema.parse(value),
+	display: parseAuthoredDisplay,
 	"view-v1": (value) => ViewSchema.parse(value),
 	"improvement-context-v1": (value) =>
 		z
