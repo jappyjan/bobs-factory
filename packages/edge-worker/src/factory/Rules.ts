@@ -148,7 +148,7 @@ function ruleSchemas(pointer: z.ZodString) {
 				.object({
 					conforms: z
 						.string()
-						.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
+						.regex(/^(?:display|[a-z][a-z0-9-]*-v[1-9]\d*)$/)
 						.max(100),
 					path: pointer.optional(),
 				})

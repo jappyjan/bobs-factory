@@ -1,4 +1,7 @@
 /* biome-ignore-all lint/suspicious/noThenProperty: Declarative JSON branches, never callable Promise.then properties. */
+
+import { DISPLAY_CONTRACT, displayContractRule } from "./DisplayDocument.js";
+
 /** Review policy is recipe data: no legacy review contracts or runtime adapters. */
 const object = (
 	properties: Record<string, unknown>,
@@ -647,7 +650,9 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 				answer: "fix-assistance",
 				pr: "review-inputs/pr",
 			},
-			prompt: `Fix every unresolved consequential finding and not_met coverage item within the accepted plan. Read assistance and answer for accepted human direction, the retained ledger and conflicting recommendations; inspect actual code and check evidence. Disposition every open finding with concrete reason/evidence, including inherited complaints. Do not treat your own disposition as independent review approval, waive scope or weaken tests. Make the smallest sufficient correction, run proportionate checks, and preserve unrelated/inherited work. Return architectureRevision:true when a fix needs a meaningful design or scope change; do not implement that change before check-in. If access/evidence/direction is missing return needs-input with a valid view-v1 display document; the graph owns the human wait. Otherwise return completed. Do not commit, push, create a PR or merge: explicit graph nodes publish the correction. Include message (ending [skip ci]), title and body for the existing draft PR, and dispositions:[{id,status,reason,evidence}].`,
+			prompt: `Fix every unresolved consequential finding and not_met coverage item within the accepted plan. Read assistance and answer for accepted human direction, the retained ledger and conflicting recommendations; inspect actual code and check evidence. Disposition every open finding with concrete reason/evidence, including inherited complaints. Do not treat your own disposition as independent review approval, waive scope or weaken tests. Make the smallest sufficient correction, run proportionate checks, and preserve unrelated/inherited work. Return architectureRevision:true when a fix needs a meaningful design or scope change; do not implement that change before check-in. If access/evidence/direction is missing return needs-input with a valid view-v1 display document; the graph owns the human wait. Otherwise return completed. Do not commit, push, create a PR or merge: explicit graph nodes publish the correction. Include message (ending [skip ci]), title and body for the existing draft PR, and dispositions:[{id,status,reason,evidence}].
+
+${DISPLAY_CONTRACT}`,
 			output: {
 				schema: object(
 					{
@@ -682,6 +687,7 @@ For EACH configured reviewer return {paths:[Git pathspecs],corrections:[{id,stat
 				},
 			],
 			rules: [
+				displayContractRule(),
 				{
 					message: "needs-input requires a display document",
 					require: {

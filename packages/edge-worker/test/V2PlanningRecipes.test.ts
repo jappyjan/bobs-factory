@@ -2,8 +2,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
+import {
+	DISPLAY_COMPONENTS,
+	DISPLAY_CONTRACT,
+} from "../src/factory/DisplayDocument.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { parseStepOutputAsync } from "../src/factory/OutputFormats.js";
+import { OutputValidationError } from "../src/factory/OutputValidation.js";
 import { stepBindings } from "../src/factory/StepBindings.js";
 import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -193,6 +198,66 @@ it.each([
 	expect(run.workflow.steps.find((s) => s.id === "plan")!.session).toBe(
 		"resume",
 	);
+});
+
+it("lists the data contract of every display component", () => {
+	for (const type of DISPLAY_COMPONENTS)
+		expect(DISPLAY_CONTRACT).toContain(`\n- ${type}: {`);
+	expect(DISPLAY_CONTRACT).toContain("markdown: {text: string}");
+});
+
+it("returns display validation errors for agent correction instead of failing the run", async () => {
+	const clarify = defaultWorkflows
+		.find((d) => d.id === "v2-clarify-plan")!
+		.steps.find((s) => s.id === "clarify")!;
+	const output = (display: unknown) => ({
+		...requirements,
+		decisions: [],
+		status: "needs-input",
+		display,
+	});
+	const mistaken = {
+		version: "view-v1",
+		components: [
+			{
+				id: "intro",
+				type: "markdown",
+				data: { literal: { markdown: "Who confirms?" } },
+			},
+			{
+				id: "todo",
+				type: "checklist",
+				data: { literal: { title: "Todo", items: ["one"] } },
+			},
+		],
+	};
+	const error = await parseStepOutputAsync(clarify, output(mistaken)).catch(
+		(e: unknown) => e,
+	);
+	expect(error).toBeInstanceOf(OutputValidationError);
+	const issue = (error as OutputValidationError).issues[0]!;
+	expect(issue.path).toBe("/display");
+	expect(issue.message).toContain("/display must follow the display contract");
+	expect(issue.message).toContain(
+		'components.0.data.literal: Unrecognized key: "markdown"',
+	);
+	expect(issue.message).toContain("components.1.data.literal.items.0");
+	expect(issue.message).not.toContain("data.bindings");
+	const actions = (id: string) => ({
+		id,
+		type: "actions",
+		data: { literal: { actions: [{ id: "submit", label: "Submit" }] } },
+	});
+	const twoBars = await parseStepOutputAsync(
+		clarify,
+		output({ version: "view-v1", components: [actions("a"), actions("b")] }),
+	).catch((e: unknown) => e);
+	expect((twoBars as OutputValidationError).issues[0]!.message).toContain(
+		"A display has one document action bar",
+	);
+	await expect(
+		parseStepOutputAsync(clarify, output(questionDocument)),
+	).resolves.toMatchObject({ status: "needs-input" });
 });
 
 it("skips routine work without asking for acceptance", async () => {
