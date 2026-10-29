@@ -303,33 +303,42 @@ export class GitService {
 			return true;
 		} catch {
 			// Branch doesn't exist locally, check remote
-			try {
-				const remoteOutput = execSync(
-					`git ls-remote --heads origin "${branchName}"`,
-					{
-						env: this.networkEnvironment(repoPath),
-						cwd: repoPath,
-						stdio: "pipe",
-					},
-				);
-				// Check if output is non-empty (branch actually exists on remote)
-				return remoteOutput && remoteOutput.toString().trim().length > 0;
-			} catch {
-				return false;
-			}
+			return this.remoteBranchExists(branchName, repoPath);
+		}
+	}
+
+	private remoteBranchExists(branchName: string, repoPath: string): boolean {
+		try {
+			const remoteOutput = execSync(
+				`git ls-remote --heads origin "${branchName}"`,
+				{
+					env: this.networkEnvironment(repoPath),
+					cwd: repoPath,
+					stdio: "pipe",
+				},
+			);
+			// Check if output is non-empty (branch actually exists on remote)
+			return !!remoteOutput && remoteOutput.toString().trim().length > 0;
+		} catch {
+			return false;
 		}
 	}
 
 	/** A base that exists nowhere is reported as the default base, which is what
 	 * a worktree without that base is built on. Applies to every path that
-	 * reuses a branch or worktree left by an earlier run. */
+	 * reuses a branch or worktree left by an earlier run. The run's own work
+	 * branch exists locally in such a leftover, so it only counts as a base when
+	 * the remote has it: later diffs fetch the base from origin. */
 	private async existingBaseResolution(
 		resolution: BaseBranchResolution,
 		repository: RepositoryConfig,
+		workBranch: string,
 	): Promise<BaseBranchResolution> {
 		if (
 			resolution.branch === repository.baseBranch ||
-			(await this.branchExists(resolution.branch, repository.repositoryPath))
+			(resolution.branch === workBranch
+				? this.remoteBranchExists(resolution.branch, repository.repositoryPath)
+				: await this.branchExists(resolution.branch, repository.repositoryPath))
 		)
 			return resolution;
 		return {
@@ -1033,6 +1042,7 @@ export class GitService {
 								[repository.id]: await this.existingBaseResolution(
 									resolution,
 									repository,
+									branchName,
 								),
 							},
 						};
@@ -1085,6 +1095,7 @@ export class GitService {
 							[repository.id]: await this.existingBaseResolution(
 								resolution,
 								repository,
+								branchName,
 							),
 						},
 					};
@@ -1228,7 +1239,11 @@ export class GitService {
 					`Creating git worktree at ${workspacePath} with existing branch ${branchName}`,
 				);
 				worktreeCmd = `git worktree add "${workspacePath}" "${branchName}"`;
-				resolution = await this.existingBaseResolution(resolution, repository);
+				resolution = await this.existingBaseResolution(
+					resolution,
+					repository,
+					branchName,
+				);
 			}
 
 			execSync(worktreeCmd, {

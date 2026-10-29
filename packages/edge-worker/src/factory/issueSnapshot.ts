@@ -75,30 +75,34 @@ export async function issueSnapshot(
 			after = cursor;
 		} while (after);
 	}
-	return {
-		attachments,
-		id: issue.id,
-		identifier: issue.identifier,
-		title: issue.title,
-		description: issue.description,
-		url: issue.url,
-		priority: issue.priority,
-		createdAt: issue.createdAt,
-		updatedAt: issue.updatedAt,
-		labels,
-		state: state
-			? {
-					...(purpose === "tracking" ? { id: state.id } : {}),
-					name: state.name,
-					type: state.type,
-				}
-			: undefined,
-		assignee: assignee ? { id: assignee.id, name: assignee.name } : undefined,
-		team: team ? { id: team.id, name: team.name, key: team.key } : undefined,
-		project: project ? { id: project.id, name: project.name } : undefined,
-		parent: parent
-			? { id: parent.id, identifier: parent.identifier, title: parent.title }
-			: undefined,
-		comments,
-	};
+	// Rules (transform/check) accept only plain JSON; the SDK's Date timestamps
+	// and undefined fields would fail them until a restart reloads the stored copy.
+	return JSON.parse(
+		JSON.stringify({
+			attachments,
+			id: issue.id,
+			identifier: issue.identifier,
+			title: issue.title,
+			description: issue.description,
+			url: issue.url,
+			priority: issue.priority,
+			createdAt: issue.createdAt,
+			updatedAt: issue.updatedAt,
+			labels,
+			state: state
+				? {
+						...(purpose === "tracking" ? { id: state.id } : {}),
+						name: state.name,
+						type: state.type,
+					}
+				: undefined,
+			assignee: assignee ? { id: assignee.id, name: assignee.name } : undefined,
+			team: team ? { id: team.id, name: team.name, key: team.key } : undefined,
+			project: project ? { id: project.id, name: project.name } : undefined,
+			parent: parent
+				? { id: parent.id, identifier: parent.identifier, title: parent.title }
+				: undefined,
+			comments,
+		}),
+	);
 }

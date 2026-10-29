@@ -629,6 +629,61 @@ describe("GitService", () => {
 		});
 	});
 
+	describe("createGitWorktree - ticket branch equals the leftover work branch", () => {
+		// The leftover's own local branch carries the ticket branch name, so a local
+		// check alone would keep it as a base that origin may no longer have.
+		const reportedBase = async (
+			leftover: "worktree" | "branch",
+			onRemote: boolean,
+		) => {
+			const repository = makeRepository();
+			const issue = makeIssue();
+			const ticketBranch = issue.branchName;
+			mockExecSync.mockImplementation((cmd: any) => {
+				const cmdStr = String(cmd);
+				if (cmdStr === "git rev-parse --git-dir") return Buffer.from(".git\n");
+				if (cmdStr === "git worktree list --porcelain")
+					return leftover === "worktree"
+						? `worktree ${repository.workspaceBaseDir}/${issue.identifier}\n`
+						: "";
+				if (cmdStr.includes("git rev-parse --verify"))
+					return Buffer.from("abc123\n");
+				if (cmdStr.includes("git ls-remote"))
+					return Buffer.from(
+						onRemote && cmdStr.includes(`"${ticketBranch}"`)
+							? `abc123\trefs/heads/${ticketBranch}\n`
+							: "",
+					);
+				return Buffer.from("");
+			});
+			vi.spyOn(
+				gitService as unknown as { isGitWorktree(path: string): boolean },
+				"isGitWorktree",
+			).mockReturnValue(true);
+			const result = await gitService.createGitWorktree(issue, [repository], {
+				baseBranchOverrides: new Map([[repository.id, ticketBranch]]),
+			});
+			return result.resolvedBaseBranches?.[repository.id];
+		};
+		it.each([
+			["worktree"],
+			["branch"],
+		] as const)("falls back to the default base when the ticket branch is absent on the remote (%s left behind)", async (leftover) => {
+			expect(await reportedBase(leftover, false)).toMatchObject({
+				branch: "main",
+				source: "default",
+			});
+		});
+		it.each([
+			["worktree"],
+			["branch"],
+		] as const)("keeps the ticket branch as the base when the remote has it (%s left behind)", async (leftover) => {
+			expect(await reportedBase(leftover, true)).toMatchObject({
+				branch: makeIssue().branchName,
+			});
+		});
+	});
+
 	describe("createGitWorktree - repo setup hook discovery", () => {
 		const setupSuccessfulWorktreeCreate = () => {
 			mockExecSync.mockImplementation((cmd: any) => {
