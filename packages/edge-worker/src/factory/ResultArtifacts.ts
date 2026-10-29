@@ -44,7 +44,7 @@ export async function resolveRoleResult(
 			Object.hasOwn(value, "factoryArtifact")
 		)
 			output = await resolveFactoryResultArtifact(
-				roleResultArtifactBinding(context),
+				context.resultArtifactBinding ?? roleResultArtifactBinding(context),
 				value,
 			);
 	} catch (error) {

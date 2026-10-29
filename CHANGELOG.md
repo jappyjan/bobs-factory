@@ -42,6 +42,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Fixed runs failing when a role edited code before submitting its result, check-in architecture steps rejecting large valid displays as exceeding the rule limit, and run titles failing when the title agent wrapped its JSON in prose. Removed the repeated "Unknown message type: tool_progress" warning.
+
 - Planning and check-in questions written by an agent no longer end the whole run when a display is mis-shaped (for example markdown or checklist data with the wrong fields). Agents now receive the exact data format for every display component, and any remaining mistake is returned to them with the specific errors so they can correct it and continue.
 - Agent steps no longer fail with "Agent did not return the required JSON result" when the agent adds a short explanation before a fenced JSON result (as review steps with long feedback often do). The result is now extracted from the message, and a genuinely invalid result reports the exact parse error and the end of the message so the retry can correct it.
 - Taking over from a ticket whose pull request and branch are gone no longer fails while assembling existing work with "Rules accept only JSON data" (ticket timestamps are now plain JSON), and reusing a leftover worktree no longer treats the ticket's own deleted branch as the base.

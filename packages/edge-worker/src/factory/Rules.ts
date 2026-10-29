@@ -936,7 +936,6 @@ function* conditionTask(
 	if ("conforms" in condition) {
 		if (!state.validateFormat)
 			throw new Error("Format rules require the library validator");
-		const before = state.work;
 		const strictJson = state.strictJson;
 		let value = scope;
 		let nodes: number;
@@ -958,9 +957,11 @@ function* conditionTask(
 		} finally {
 			state.strictJson = strictJson;
 		}
-		// Prepay pairwise refinement comparisons too; repeated format checks cannot
-		// hide their full argument size behind a single condition visit.
-		yield* spend(state, nodes * (before - state.work));
+		// Prepay pairwise refinement comparisons (node by node) too; repeated format
+		// checks cannot hide their argument size behind a single condition visit.
+		// String characters were already paid once by the footprint above; scaling
+		// them by the node count made any realistic document exceed the budget.
+		yield* spend(state, nodes * nodes);
 		return state.validateFormat(condition.conforms, value);
 	}
 	if ("all" in condition) {

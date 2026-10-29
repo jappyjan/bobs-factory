@@ -9556,6 +9556,7 @@ ${taskSection}`;
 			!context.progress.currentRevision.dirty
 				? roleResultArtifactBinding(context)
 				: undefined;
+		context.resultArtifactBinding = artifactBinding;
 		// Required-server readiness checks every requested tool. Artifact submission
 		// exists only when the scoped server has a clean-revision binding, including
 		// on resume with uncommitted work from the previous turn.

@@ -680,7 +680,9 @@ export class AgentSessionManager extends EventEmitter {
 					break;
 
 				default:
-					log.warn(`Unknown message type: ${(message as any).type}`);
+					// Heartbeat-style SDK events carry no timeline content.
+					if ((message as { type?: string }).type !== "tool_progress")
+						log.warn(`Unknown message type: ${(message as any).type}`);
 			}
 		} catch (error) {
 			log.error(`Error handling message:`, error);
