@@ -57,6 +57,8 @@ export interface CreateGitWorktreeOptions {
 export interface GitServiceOptions {
 	capacity?: () => ExecutionCapacity;
 	factoryHome?: string;
+	/** Whether the run with this id is finished; undefined when the run is unknown. */
+	runFinished?: (id: string) => boolean | undefined;
 	/** Complete process environment for a single accepted execution context. */
 	childEnvironment?: Record<string, string>;
 }
@@ -734,6 +736,7 @@ export class GitService {
 				!existed ||
 				(await retention.hasReplacedRecord(path, pathResolve(base)))
 			) {
+				const stale: string[] = [];
 				const record = await retention.register(
 					{
 						category: "worktree",
@@ -745,9 +748,11 @@ export class GitService {
 						evidence: [],
 					},
 					{
-						// Only another owner's unreleased reservation keeps the old record
-						// blocking; this ticket's earlier run is replaced by the one registering.
+						// Only an unreleased reservation of a run that is not finished keeps
+						// the old record blocking; a finished run's reservation is retired
+						// with the record.
 						producerFinished: async () => {
+							stale.length = 0;
 							const directory = join(
 								retention.directory,
 								"workspace-use",
@@ -758,13 +763,28 @@ export class GitService {
 								const use = (await readStorageJson(join(directory, file))) as
 									| { owner?: string; state?: string }
 									| undefined;
-								if (use?.state !== "released" && use?.owner !== issue.id)
+								if (use?.state === "released" || use?.owner === issue.id)
+									continue;
+								if (!use?.owner || !this.options?.runFinished?.(use.owner))
 									return false;
+								stale.push(join(directory, file));
 							}
 							return true;
 						},
 					},
 				);
+				for (const file of stale) {
+					const use = (await readStorageJson(file)) as
+						| Record<string, unknown>
+						| undefined;
+					if (use)
+						await publishStorageJson(file, {
+							...use,
+							state: "released",
+							updatedAt: new Date().toISOString(),
+							reason: "Owning run finished; stale workspace record retired",
+						});
+				}
 				await publishStorageJson(
 					join(
 						retention.directory,

@@ -246,26 +246,71 @@ it.each([
 	await service.createGitWorktree(issue, [repository]);
 	expect(await store.inventoryCount()).toBe(2);
 
-	// Another owner's unreleased reservation keeps an earlier record blocking.
+	// A reservation owned by a run that is still active keeps the earlier record
+	// blocking.
 	git(["worktree", "remove", "--force", first.path]);
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	await publishStorageJson(
-		join(
+	const reserve = async (owner: string) => {
+		await publishStorageJson(
+			join(
+				store.directory,
+				"workspace-use",
+				storageDigest(first.path),
+				`${storageDigest(owner)}.json`,
+			),
+			{
+				version: 1,
+				owner,
+				workspace: first.path,
+				state: "reserved",
+				updatedAt: new Date().toISOString(),
+				reason: "Another producer",
+			},
+		);
+		return join(
 			store.directory,
 			"workspace-use",
 			storageDigest(first.path),
-			`${storageDigest("another-owner")}.json`,
-		),
-		{
-			version: 1,
-			owner: "another-owner",
-			workspace: first.path,
-			state: "reserved",
-			updatedAt: new Date().toISOString(),
-			reason: "Another producer",
-		},
-	);
-	await expect(service.createGitWorktree(issue, [repository])).rejects.toThrow(
+			`${storageDigest(owner)}.json`,
+		);
+	};
+	await reserve("running-run");
+	const states: Record<string, boolean | undefined> = {
+		"running-run": false,
+		"failed-run": true,
+	};
+	const tracked = new GitService(
+		{ factoryHome: root, runFinished: (id) => states[id] },
+		logger,
+	).withEnvironment(env);
+	await expect(tracked.createGitWorktree(issue, [repository])).rejects.toThrow(
 		"reconcile it",
 	);
+	// An unknown owner is never assumed finished.
+	await reserve("unknown-owner");
+	await expect(tracked.createGitWorktree(issue, [repository])).rejects.toThrow(
+		"reconcile it",
+	);
+
+	// A reservation owned by a failed run is retired with the stale record.
+	for (const owner of ["running-run", "unknown-owner"])
+		rmSync(
+			join(
+				store.directory,
+				"workspace-use",
+				storageDigest(first.path),
+				`${storageDigest(owner)}.json`,
+			),
+		);
+	const failedUse = await reserve("failed-run");
+	const third = await tracked.createGitWorktree(issue, [repository]);
+	expect(third.path).toBe(first.path);
+	expect(JSON.parse(readFileSync(failedUse, "utf8"))).toMatchObject({
+		owner: "failed-run",
+		state: "released",
+	});
+	const latest = await Promise.all(
+		(await store.inventoryPage(0)).map((id) => store.record(id)),
+	);
+	expect(latest.filter((record) => record.path === first.path)).toHaveLength(3);
 });

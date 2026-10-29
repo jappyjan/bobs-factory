@@ -480,10 +480,7 @@ export function factoryStorage(
 									repo.workspace === workspace ||
 									repo.workspace.startsWith(`${workspace}${sep}`),
 							)) &&
-						(runtime.isExecuting(run.id) ||
-							["running", "waiting", "blocked", "interrupted"].includes(
-								run.status,
-							)),
+						!runtime.runFinished(run.id),
 				),
 			reset: async (workspace) => {
 				const state = pending.get(workspace);
