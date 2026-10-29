@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { DependencyGraphSchema } from "./DependencyGraph.js";
-import { DisplayDocumentSchema } from "./DisplayDocument.js";
+import { DISPLAY_RULE_ID, DisplayDocumentSchema } from "./DisplayDocument.js";
 
 import { sanitizeJsonConfiguration } from "./Foreach.js";
 
@@ -31,7 +31,7 @@ import {
 	ResearchResultSchema,
 } from "./ResearchFormats.js";
 
-import { evaluateRules, evaluateRulesAsync } from "./Rules.js";
+import { evaluateRules, evaluateRulesAsync, type RuleIssue } from "./Rules.js";
 
 import {
 	FORMAT_IDS,
@@ -165,6 +165,45 @@ export function conforms(format: string, value: unknown): boolean {
 		return false;
 	}
 }
+function describeFailure(error: unknown): string {
+	if (!(error instanceof z.ZodError))
+		return error instanceof Error ? error.message : String(error);
+	const lines = (issues: z.core.$ZodIssue[], prefix: PropertyKey[]): string[] =>
+		issues.flatMap((issue) => {
+			const path = [...prefix, ...issue.path];
+			return issue.code === "invalid_union"
+				? lines(
+						issue.errors.reduce((best, branch) =>
+							branch.length < best.length ? branch : best,
+						),
+						path,
+					)
+				: [`${path.join(".") || "/"}: ${issue.message}`];
+		});
+	return [...new Set(lines(error.issues, []))].slice(0, 12).join("; ");
+}
+/** Format rules say only that a format failed; the agent needs the validator's reasons to correct it. */
+function explainFormatRules() {
+	const failures: string[] = [];
+	return {
+		validate(format: string, value: unknown) {
+			try {
+				parseOutputFormat(format, value);
+				return true;
+			} catch (error) {
+				failures.push(describeFailure(error));
+				return false;
+			}
+		},
+		explain(issues: RuleIssue[]) {
+			return issues.map((issue) =>
+				issue.rule === DISPLAY_RULE_ID && failures.length
+					? { ...issue, message: `${issue.message}: ${failures.join("; ")}` }
+					: issue,
+			);
+		},
+	};
+}
 /** Schema and rule failures reach the same bounded correction loop as legacy output errors. */
 export function parseStepOutput(
 	step: object,
@@ -187,7 +226,10 @@ export function parseStepOutput(
 					throw new OutputValidationError(value, result.issues);
 			}
 		}
-		const issues = evaluateRules(config.rules, output, conforms);
+		const formats = explainFormatRules();
+		const issues = formats.explain(
+			evaluateRules(config.rules, output, formats.validate),
+		);
 		if (issues.length) throw new OutputValidationError(value, issues);
 		return output;
 	} catch (error) {
@@ -224,12 +266,15 @@ export async function parseStepOutputAsync(
 					throw new OutputValidationError(value, result.issues);
 			}
 		}
-		const issues = await evaluateRulesAsync(
-			config.rules,
-			output,
-			conforms,
-			signal,
-			await nodeFreshnessRules(config.rules, fresh),
+		const formats = explainFormatRules();
+		const issues = formats.explain(
+			await evaluateRulesAsync(
+				config.rules,
+				output,
+				formats.validate,
+				signal,
+				await nodeFreshnessRules(config.rules, fresh),
+			),
 		);
 		signal?.throwIfAborted();
 		if (issues.length) throw new OutputValidationError(value, issues);

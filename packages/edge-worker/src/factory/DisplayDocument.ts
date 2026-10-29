@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { foreachPointer } from "./Foreach.js";
+import type { Rule } from "./Rules.js";
 import {
 	components,
 	definitionSchema,
@@ -10,6 +11,7 @@ import {
 	ViewSchema,
 	type ViewScope,
 	type ViewSource,
+	viewDataSchemas,
 	viewPointerSchema,
 } from "./View.js";
 
@@ -159,6 +161,54 @@ export const DISPLAY_JSON_SCHEMA = z.toJSONSchema(
 		.strict(),
 	{ unrepresentable: "any" },
 );
+
+type JsonSchemaNode = {
+	type?: string;
+	const?: unknown;
+	enum?: unknown[];
+	anyOf?: JsonSchemaNode[];
+	oneOf?: JsonSchemaNode[];
+	items?: JsonSchemaNode;
+	properties?: Record<string, JsonSchemaNode>;
+	required?: string[];
+};
+function shape(node: JsonSchemaNode): string {
+	const variants = node.anyOf ?? node.oneOf;
+	if (variants) return [...new Set(variants.map(shape))].join(" | ");
+	if ("const" in node) return JSON.stringify(node.const);
+	if (node.enum) return node.enum.map((v) => JSON.stringify(v)).join(" | ");
+	if (node.properties)
+		return `{${Object.entries(node.properties)
+			.map(
+				([key, value]) =>
+					`${key}${node.required?.includes(key) ? "" : "?"}: ${shape(value)}`,
+			)
+			.join(", ")}}`;
+	if (node.type === "array")
+		return `[${node.items ? shape(node.items) : "any"}]`;
+	return node.type ?? "any";
+}
+
+/** Exact author-facing data contract, generated from the validators so it cannot drift. */
+export const DISPLAY_CONTRACT = [
+	'Display document: {version: "view-v1", components: [{id, type, title?, data: {literal: <data>}}]} with 1-40 components and unique IDs (letters, digits, "-", "_", "."). Every object is strict: unknown keys (such as placeholder or a title inside data) are rejected, and a component title belongs on the component, not in data. <data> per type:',
+	...DISPLAY_COMPONENTS.map(
+		(type) =>
+			`- ${type}: ${shape(z.toJSONSchema(viewDataSchemas[type], { unrepresentable: "any", io: "input" }) as JsonSchemaNode)}`,
+	),
+].join("\n");
+
+/** Agent-authored displays are corrected by the agent, with the validator's errors, instead of failing the run. */
+export const DISPLAY_RULE_ID = "display-contract";
+export function displayContractRule(path = "/display"): Rule {
+	return {
+		id: DISPLAY_RULE_ID,
+		message: `${path} must follow the display contract`,
+		path,
+		when: { path, exists: true },
+		require: { conforms: "display", path },
+	};
+}
 
 export function resolveDisplayDocument(
 	source: ViewSource,
