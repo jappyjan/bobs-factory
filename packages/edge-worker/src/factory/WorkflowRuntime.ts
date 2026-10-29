@@ -868,6 +868,15 @@ export class WorkflowRuntime {
 		this.changed({ id });
 		return message;
 	}
+	/** Authoritative run status: true/false once the run is known, else undefined. */
+	runFinished(id: string): boolean | undefined {
+		const run = this.runs.get(id);
+		if (!run) return undefined;
+		return (
+			!this.isExecuting(id) &&
+			!["running", "waiting", "blocked", "interrupted"].includes(run.status)
+		);
+	}
 	isExecuting(id: string): boolean {
 		return this.controllers.has(id);
 	}

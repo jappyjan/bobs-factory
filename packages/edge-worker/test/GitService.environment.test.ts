@@ -217,3 +217,100 @@ it.each([
 			.map((record) => record.path),
 	).toEqual(registered ? [original.path] : []);
 });
+
+it.each([
+	["recreated by the next run", false],
+	["left behind by a run that stopped before registering it", true],
+])("re-registers a ticket worktree that was removed and %s", async (_name, leftover) => {
+	const { StorageRetentionStore, publishStorageJson, storageDigest } =
+		await import("bobs-factory-core");
+	const { root, env, repository, issue, git } = fixture();
+	const service = new GitService({ factoryHome: root }, logger).withEnvironment(
+		env,
+	);
+	const first = await service.createGitWorktree(issue, [repository]);
+	git(["worktree", "remove", "--force", first.path]);
+	await new Promise((resolve) => setTimeout(resolve, 20));
+	if (leftover) git(["worktree", "add", first.path, issue.branchName!]);
+	const second = await service.createGitWorktree(issue, [repository]);
+	expect(second.path).toBe(first.path);
+	const store = new StorageRetentionStore(root);
+	const records = await Promise.all(
+		(await store.inventoryPage(0)).map((id) => store.record(id)),
+	);
+	expect(records.map((record) => record.path)).toEqual([
+		first.path,
+		first.path,
+	]);
+	// A third launch over the now-registered worktree is a plain continuation.
+	await service.createGitWorktree(issue, [repository]);
+	expect(await store.inventoryCount()).toBe(2);
+
+	// A reservation owned by a run that is still active keeps the earlier record
+	// blocking.
+	git(["worktree", "remove", "--force", first.path]);
+	await new Promise((resolve) => setTimeout(resolve, 20));
+	const reserve = async (owner: string) => {
+		await publishStorageJson(
+			join(
+				store.directory,
+				"workspace-use",
+				storageDigest(first.path),
+				`${storageDigest(owner)}.json`,
+			),
+			{
+				version: 1,
+				owner,
+				workspace: first.path,
+				state: "reserved",
+				updatedAt: new Date().toISOString(),
+				reason: "Another producer",
+			},
+		);
+		return join(
+			store.directory,
+			"workspace-use",
+			storageDigest(first.path),
+			`${storageDigest(owner)}.json`,
+		);
+	};
+	await reserve("running-run");
+	const states: Record<string, boolean | undefined> = {
+		"running-run": false,
+		"failed-run": true,
+	};
+	const tracked = new GitService(
+		{ factoryHome: root, runFinished: (id) => states[id] },
+		logger,
+	).withEnvironment(env);
+	await expect(tracked.createGitWorktree(issue, [repository])).rejects.toThrow(
+		"reconcile it",
+	);
+	// An unknown owner is never assumed finished.
+	await reserve("unknown-owner");
+	await expect(tracked.createGitWorktree(issue, [repository])).rejects.toThrow(
+		"reconcile it",
+	);
+
+	// A reservation owned by a failed run is retired with the stale record.
+	for (const owner of ["running-run", "unknown-owner"])
+		rmSync(
+			join(
+				store.directory,
+				"workspace-use",
+				storageDigest(first.path),
+				`${storageDigest(owner)}.json`,
+			),
+		);
+	const failedUse = await reserve("failed-run");
+	const third = await tracked.createGitWorktree(issue, [repository]);
+	expect(third.path).toBe(first.path);
+	expect(JSON.parse(readFileSync(failedUse, "utf8"))).toMatchObject({
+		owner: "failed-run",
+		state: "released",
+	});
+	const latest = await Promise.all(
+		(await store.inventoryPage(0)).map((id) => store.record(id)),
+	);
+	expect(latest.filter((record) => record.path === first.path)).toHaveLength(3);
+});

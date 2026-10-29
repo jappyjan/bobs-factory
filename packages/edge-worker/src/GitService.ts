@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
 	publishStorageJson,
+	readStorageJson,
 	StorageRetentionStore,
 	spawnExecution as spawn,
 	storageDigest,
@@ -16,6 +17,7 @@ export const setupExecutionScope = new AsyncLocalStorage<{
 
 import { execFile, execSync } from "node:child_process";
 import { existsSync, mkdirSync, statSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve as pathResolve } from "node:path";
 import { promisify } from "node:util";
@@ -55,6 +57,8 @@ export interface CreateGitWorktreeOptions {
 export interface GitServiceOptions {
 	capacity?: () => ExecutionCapacity;
 	factoryHome?: string;
+	/** Whether the run with this id is finished; undefined when the run is unknown. */
+	runFinished?: (id: string) => boolean | undefined;
 	/** Complete process environment for a single accepted execution context. */
 	childEnvironment?: Record<string, string>;
 }
@@ -314,6 +318,25 @@ export class GitService {
 				return false;
 			}
 		}
+	}
+
+	/** A base that exists nowhere is reported as the default base, which is what
+	 * a worktree without that base is built on. Applies to every path that
+	 * reuses a branch or worktree left by an earlier run. */
+	private async existingBaseResolution(
+		resolution: BaseBranchResolution,
+		repository: RepositoryConfig,
+	): Promise<BaseBranchResolution> {
+		if (
+			resolution.branch === repository.baseBranch ||
+			(await this.branchExists(resolution.branch, repository.repositoryPath))
+		)
+			return resolution;
+		return {
+			branch: repository.baseBranch,
+			source: "default",
+			detail: `'${resolution.branch}' not found`,
+		};
 	}
 
 	/**
@@ -707,16 +730,61 @@ export class GitService {
 				}, true);
 				return workspace;
 			}
-			if (!existed) {
-				const record = await retention.register({
-					category: "worktree",
-					path,
-					root: pathResolve(base),
-					producer: "GitService",
-					operation: issue.id,
-					dependencies: [],
-					evidence: [],
-				});
+			// A directory left by an earlier run whose recorded worktree was removed
+			// is a replacement object nothing owns yet.
+			if (
+				!existed ||
+				(await retention.hasReplacedRecord(path, pathResolve(base)))
+			) {
+				const stale: string[] = [];
+				const record = await retention.register(
+					{
+						category: "worktree",
+						path,
+						root: pathResolve(base),
+						producer: "GitService",
+						operation: issue.id,
+						dependencies: [],
+						evidence: [],
+					},
+					{
+						// Only an unreleased reservation of a run that is not finished keeps
+						// the old record blocking; a finished run's reservation is retired
+						// with the record.
+						producerFinished: async () => {
+							stale.length = 0;
+							const directory = join(
+								retention.directory,
+								"workspace-use",
+								storageDigest(path),
+							);
+							const owners = await readdir(directory).catch(() => []);
+							for (const file of owners) {
+								const use = (await readStorageJson(join(directory, file))) as
+									| { owner?: string; state?: string }
+									| undefined;
+								if (use?.state === "released" || use?.owner === issue.id)
+									continue;
+								if (!use?.owner || !this.options?.runFinished?.(use.owner))
+									return false;
+								stale.push(join(directory, file));
+							}
+							return true;
+						},
+					},
+				);
+				for (const file of stale) {
+					const use = (await readStorageJson(file)) as
+						| Record<string, unknown>
+						| undefined;
+					if (use)
+						await publishStorageJson(file, {
+							...use,
+							state: "released",
+							updatedAt: new Date().toISOString(),
+							reason: "Owning run finished; stale workspace record retired",
+						});
+				}
 				await publishStorageJson(
 					join(
 						retention.directory,
@@ -961,7 +1029,12 @@ export class GitService {
 						return {
 							path: workspacePath,
 							isGitWorktree: true,
-							resolvedBaseBranches: { [repository.id]: resolution },
+							resolvedBaseBranches: {
+								[repository.id]: await this.existingBaseResolution(
+									resolution,
+									repository,
+								),
+							},
 						};
 					}
 					// Stale worktree entry — prune and continue with creation
@@ -1008,7 +1081,12 @@ export class GitService {
 					return {
 						path: existingWorktreePath,
 						isGitWorktree: true,
-						resolvedBaseBranches: { [repository.id]: resolution },
+						resolvedBaseBranches: {
+							[repository.id]: await this.existingBaseResolution(
+								resolution,
+								repository,
+							),
+						},
 					};
 				}
 			}
@@ -1150,6 +1228,7 @@ export class GitService {
 					`Creating git worktree at ${workspacePath} with existing branch ${branchName}`,
 				);
 				worktreeCmd = `git worktree add "${workspacePath}" "${branchName}"`;
+				resolution = await this.existingBaseResolution(resolution, repository);
 			}
 
 			execSync(worktreeCmd, {

@@ -675,6 +675,7 @@ export class EdgeWorker extends EventEmitter {
 		this.gitService = new GitService({
 			factoryHome: this.factoryHome,
 			capacity: () => this.runnerSlots,
+			runFinished: (id) => this.getFactoryRuntime().runFinished(id),
 		});
 
 		// Initialize AskUserQuestion handler for elicitation via Linear select signal

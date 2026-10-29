@@ -470,6 +470,18 @@ export function factoryStorage(
 		{
 			inspect,
 			generation: () => generation,
+			finished: (workspace) =>
+				![...runtime.runs.values()].some(
+					(run) =>
+						(run.workspace === workspace ||
+							run.workspace.startsWith(`${workspace}${sep}`) ||
+							run.repositories?.some(
+								(repo) =>
+									repo.workspace === workspace ||
+									repo.workspace.startsWith(`${workspace}${sep}`),
+							)) &&
+						!runtime.runFinished(run.id),
+				),
 			reset: async (workspace) => {
 				const state = pending.get(workspace);
 				if (state) await state.iterator.return([]);
