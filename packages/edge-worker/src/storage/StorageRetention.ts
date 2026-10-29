@@ -11,6 +11,7 @@ import {
 	type StorageRecord,
 	StorageRetentionStore,
 	sameStorageIdentity,
+	storageDigest,
 	storageIdentity,
 } from "bobs-factory-core";
 import { UpdateOperationLock } from "../updates/UpdateOperationLock.js";
@@ -27,6 +28,8 @@ export interface StorageAdapter {
 	close?(): Promise<void>;
 	recover?(record: StorageRecord): Promise<void>;
 	reset?(record: StorageRecord): Promise<void>;
+	/** True when no unfinished producer still needs this record's target. */
+	producerFinished?(record: StorageRecord): boolean | Promise<boolean>;
 	observe(
 		record: StorageRecord,
 		signal: AbortSignal,
@@ -271,7 +274,45 @@ export class StorageRetention {
 						continue;
 					}
 				}
+				const owner = (await readStorageJson(
+					join(
+						this.store.directory,
+						"path-records",
+						`${storageDigest(record.path)}.json`,
+					),
+				)) as { id: string } | undefined;
+				if (owner && owner.id !== record.id) {
+					// A newer record owns this path now; the retired one has nothing to act on.
+					offset++;
+					if (offset % 100 === 0) break;
+					continue;
+				}
 				const adapter = this.adapters[record.category];
+				if (
+					receipt?.phase !== "completed" &&
+					(await adapter?.producerFinished?.(record)) &&
+					(await lstat(record.path).then(
+						() => false,
+						(error) => {
+							if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+								throw error;
+							return true;
+						},
+					))
+				) {
+					preview.candidates.push({
+						record,
+						complete: true,
+						protection: [],
+						eligible: true,
+						reasons: [
+							"Original target is absent and its producer finished; drop the record",
+						],
+					});
+					offset++;
+					if (offset % 100 === 0) break;
+					continue;
+				}
 				let observation: StorageObservation = {
 					record,
 					complete: false,
@@ -505,8 +546,13 @@ export class StorageRetention {
 									} catch (error) {
 										if (
 											(error as NodeJS.ErrnoException).code === "ENOENT" &&
-											previous?.identity &&
-											sameStorageIdentity(previous.identity, record.identity)
+											(previous
+												? !!previous.identity &&
+													sameStorageIdentity(
+														previous.identity,
+														record.identity,
+													)
+												: await adapter.producerFinished?.(record))
 										) {
 											result.phase = "completed";
 											result.reason =
@@ -515,7 +561,7 @@ export class StorageRetention {
 												id,
 												identity: record.identity,
 												phase: "completed",
-												previousPhase: previous.phase,
+												previousPhase: previous?.phase,
 												reason: result.reason,
 												at: new Date(this.clock()).toISOString(),
 											});

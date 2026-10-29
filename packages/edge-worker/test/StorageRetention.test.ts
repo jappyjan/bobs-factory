@@ -384,3 +384,111 @@ it("covers records that became eligible behind a resumed sweep after a mid-sweep
 	await expect.poll(() => removed, { timeout: 10000 }).toEqual([behind.id]);
 	await coordinator.stop();
 });
+
+/** A worktree record whose object was removed, with a stub adapter that records deletions. */
+async function removedWorktree(finished: boolean) {
+	const { home, coordinator } = await fixture();
+	const root = join(home, "worktrees"),
+		path = join(root, "ATT-1");
+	await mkdir(path, { recursive: true });
+	const record = await coordinator.store.register({
+		path,
+		root,
+		category: "worktree",
+		producer: "GitService",
+		operation: "issue-1",
+		dependencies: [],
+		evidence: [],
+	});
+	await rm(path, { recursive: true });
+	const removed: string[] = [];
+	coordinator.adapters.worktree = {
+		producerFinished: () => finished,
+		observe: async (observed) => ({
+			record: observed,
+			complete: true,
+			protection: [],
+		}),
+		remove: async (observed) => {
+			removed.push(observed.id);
+			await rm(observed.path, { recursive: true });
+		},
+	};
+	const clean = async () => {
+		const preview = await coordinator.preview();
+		const candidate = preview.candidates.find((c) => c.record.id === record.id);
+		return { preview, candidate };
+	};
+	return { coordinator, record, root, path, removed, clean };
+}
+it("drops the record of an absent worktree whose producer finished without touching the disk", async () => {
+	const { coordinator, record, path, removed, clean } =
+		await removedWorktree(true);
+	const { preview, candidate } = await clean();
+	expect(candidate).toMatchObject({ eligible: true, protection: [] });
+	await coordinator.execute(preview.id, [record.id]);
+	await expect
+		.poll(async () => (await coordinator.status()).outcome?.completedAt, {
+			timeout: 10000,
+		})
+		.toBeTruthy();
+	expect((await coordinator.status()).outcome?.results).toMatchObject([
+		{ id: record.id, phase: "completed" },
+	]);
+	expect(removed).toEqual([]);
+	// The path can be registered again, and the dropped record no longer appears.
+	await mkdir(path);
+	const next = await coordinator.store.register({
+		path,
+		root: join(path, ".."),
+		category: "worktree",
+		producer: "GitService",
+		operation: "issue-1",
+		dependencies: [],
+		evidence: [],
+	});
+	expect(
+		(await coordinator.preview()).candidates.map((c) => c.record.id),
+	).not.toContain(record.id);
+	expect(next.id).not.toBe(record.id);
+});
+it("keeps the record of an absent worktree while its producer is unfinished", async () => {
+	const { coordinator, record, removed, clean } = await removedWorktree(false);
+	const { preview, candidate } = await clean();
+	expect(candidate?.eligible).toBe(false);
+	await expect(coordinator.execute(preview.id, [record.id])).rejects.toThrow(
+		"eligible",
+	);
+	expect(removed).toEqual([]);
+});
+it("retains a replacement worktree and ignores the record it superseded", async () => {
+	const { coordinator, record, path, root, removed, clean } =
+		await removedWorktree(true);
+	await new Promise((resolve) => setTimeout(resolve, 20));
+	await mkdir(path);
+	await writeFile(join(path, "work.txt"), "new run");
+	const replaced = await clean();
+	expect(replaced.candidate).toMatchObject({ eligible: false });
+	expect(replaced.candidate?.protection.join()).toContain("retain replacement");
+	await expect(
+		coordinator.execute(replaced.preview.id, [record.id]),
+	).rejects.toThrow("eligible");
+	// A new record takes over the path; the retired one is skipped, the new one is never deleted.
+	const next = await coordinator.store.register(
+		{
+			path,
+			root,
+			category: "worktree",
+			producer: "GitService",
+			operation: "issue-1",
+			dependencies: [],
+			evidence: [],
+		},
+		{ producerFinished: () => true },
+	);
+	const preview = await coordinator.preview();
+	expect(preview.candidates.map((c) => c.record.id)).toEqual([next.id]);
+	expect(preview.candidates[0]?.eligible).toBe(false);
+	expect(removed).toEqual([]);
+	expect(await readFile(join(path, "work.txt"), "utf8")).toBe("new run");
+});

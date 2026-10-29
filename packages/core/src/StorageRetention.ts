@@ -244,8 +244,29 @@ export class StorageRetentionStore {
 		z.string().uuid().parse(id);
 		return join(this.directory, "records", `${id}.json`);
 	}
+	/** True when this path was registered for a filesystem object that is no longer
+	 * the one there: the earlier object was removed and the path recreated. */
+	async hasReplacedRecord(path: string, root: string) {
+		const index = (await readStorageJson(
+			join(
+				this.directory,
+				"path-records",
+				`${storageDigest(await realpath(path))}.json`,
+			),
+		)) as { identity: StorageIdentity } | undefined;
+		return (
+			!!index &&
+			!sameStorageIdentity(index.identity, await storageIdentity(path, root))
+		);
+	}
+	/** `producerFinished` lets the producer retire an earlier record of the same
+	 * path whose object was removed and recreated. Without it, or while the
+	 * earlier producer is unfinished, the unresolved record still blocks. */
 	async register(
 		input: Omit<StorageRecord, "version" | "id" | "identity" | "registeredAt">,
+		options: {
+			producerFinished?: (earlier: StorageRecord) => boolean | Promise<boolean>;
+		} = {},
 	) {
 		await this.initialize();
 		const record = StorageRecordSchema.parse({
@@ -271,13 +292,31 @@ export class StorageRetentionStore {
 					const receipt = (await readStorageJson(
 						join(this.directory, "receipts", `${existing.id}.json`),
 					)) as { phase?: string } | undefined;
-					if (
-						sameStorageIdentity(existing.identity, record.identity) ||
-						receipt?.phase !== "completed"
-					)
-						throw new Error(
+					const blocked = () =>
+						new Error(
 							"Storage path already has ownership or an unresolved earlier identity; reconcile it before registering again",
 						);
+					if (sameStorageIdentity(existing.identity, record.identity))
+						throw blocked();
+					if (receipt?.phase !== "completed") {
+						// The earlier object is gone (the path now holds a different one),
+						// so retiring its record deletes nothing and the new object is untouched.
+						const earlier = await this.record(existing.id);
+						if (!(await options.producerFinished?.(earlier))) throw blocked();
+						await publishStorageJson(
+							join(this.directory, "receipts", `${existing.id}.json`),
+							{
+								id: existing.id,
+								identity: earlier.identity,
+								phase: "completed",
+								previousPhase: receipt?.phase,
+								supersededBy: record.id,
+								reason:
+									"Original target was replaced by a newer registration of the same path",
+								at: new Date().toISOString(),
+							},
+						);
+					}
 				}
 				const count = await this.inventoryCount();
 				const pagePath = join(

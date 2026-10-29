@@ -217,3 +217,55 @@ it.each([
 			.map((record) => record.path),
 	).toEqual(registered ? [original.path] : []);
 });
+
+it.each([
+	["recreated by the next run", false],
+	["left behind by a run that stopped before registering it", true],
+])("re-registers a ticket worktree that was removed and %s", async (_name, leftover) => {
+	const { StorageRetentionStore, publishStorageJson, storageDigest } =
+		await import("bobs-factory-core");
+	const { root, env, repository, issue, git } = fixture();
+	const service = new GitService({ factoryHome: root }, logger).withEnvironment(
+		env,
+	);
+	const first = await service.createGitWorktree(issue, [repository]);
+	git(["worktree", "remove", "--force", first.path]);
+	await new Promise((resolve) => setTimeout(resolve, 20));
+	if (leftover) git(["worktree", "add", first.path, issue.branchName!]);
+	const second = await service.createGitWorktree(issue, [repository]);
+	expect(second.path).toBe(first.path);
+	const store = new StorageRetentionStore(root);
+	const records = await Promise.all(
+		(await store.inventoryPage(0)).map((id) => store.record(id)),
+	);
+	expect(records.map((record) => record.path)).toEqual([
+		first.path,
+		first.path,
+	]);
+	// A third launch over the now-registered worktree is a plain continuation.
+	await service.createGitWorktree(issue, [repository]);
+	expect(await store.inventoryCount()).toBe(2);
+
+	// Another owner's unreleased reservation keeps an earlier record blocking.
+	git(["worktree", "remove", "--force", first.path]);
+	await new Promise((resolve) => setTimeout(resolve, 20));
+	await publishStorageJson(
+		join(
+			store.directory,
+			"workspace-use",
+			storageDigest(first.path),
+			`${storageDigest("another-owner")}.json`,
+		),
+		{
+			version: 1,
+			owner: "another-owner",
+			workspace: first.path,
+			state: "reserved",
+			updatedAt: new Date().toISOString(),
+			reason: "Another producer",
+		},
+	);
+	await expect(service.createGitWorktree(issue, [repository])).rejects.toThrow(
+		"reconcile it",
+	);
+});

@@ -34,6 +34,8 @@ export interface WorkspaceRetentionSource {
 	close?(): Promise<void>;
 	reset?(path: string): Promise<void>;
 	generation?(): number;
+	/** True when no run that could still use this workspace is unfinished. */
+	finished?(path: string): boolean;
 	inspect(
 		path: string,
 		signal?: AbortSignal,
@@ -55,6 +57,9 @@ export class WorktreeArtifacts implements StorageAdapter {
 			pending?: Promise<IteratorResult<number, StorageObservation>>;
 		}
 	>();
+	producerFinished(record: StorageRecord) {
+		return this.source.finished?.(record.path) ?? false;
+	}
 	async reset(record: StorageRecord) {
 		const state = this.states.get(record.id);
 		if (state) {

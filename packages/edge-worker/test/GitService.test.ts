@@ -24,6 +24,7 @@ vi.mock("bobs-factory-core", async (importOriginal) => {
 			workspaceClaim = () => ({
 				run: async (work: () => Promise<unknown>) => work(),
 			});
+			hasReplacedRecord = async () => false;
 			register = async () => ({ id: "virtual-record", identity: {} });
 		},
 	};
@@ -584,6 +585,47 @@ describe("GitService", () => {
 					),
 				),
 			).toBe(true);
+		});
+	});
+
+	describe("createGitWorktree - leftovers of an earlier run", () => {
+		const reportedBase = async (leftover: "worktree" | "branch") => {
+			const repository = makeRepository();
+			const issue = makeIssue();
+			mockExecSync.mockImplementation((cmd: any) => {
+				const cmdStr = String(cmd);
+				if (cmdStr === "git rev-parse --git-dir") return Buffer.from(".git\n");
+				if (cmdStr === "git worktree list --porcelain")
+					return leftover === "worktree"
+						? `worktree ${repository.workspaceBaseDir}/${issue.identifier}\n`
+						: "";
+				// The ticket's own branch is left over; the requested base exists nowhere.
+				if (cmdStr.includes("git rev-parse --verify")) {
+					if (cmdStr.includes('"ticket-branch"'))
+						throw new Error("fatal: Needed a single revision");
+					return Buffer.from("abc123\n");
+				}
+				if (cmdStr.includes("git ls-remote")) return Buffer.from("");
+				return Buffer.from("");
+			});
+			vi.spyOn(
+				gitService as unknown as { isGitWorktree(path: string): boolean },
+				"isGitWorktree",
+			).mockReturnValue(true);
+			const result = await gitService.createGitWorktree(issue, [repository], {
+				baseBranchOverrides: new Map([[repository.id, "ticket-branch"]]),
+			});
+			return { result, repository };
+		};
+		it.each([
+			["worktree"],
+			["branch"],
+		] as const)("reports the default base for a requested base that is missing when a %s was left behind", async (leftover) => {
+			const { result, repository } = await reportedBase(leftover);
+			expect(result.resolvedBaseBranches?.[repository.id]).toMatchObject({
+				branch: repository.baseBranch,
+				source: "default",
+			});
 		});
 	});
 

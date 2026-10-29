@@ -314,3 +314,89 @@ it("recovers an interrupted record revision while preserving its index and count
 	expect((await restarted.record(record.id)).dependencies).toEqual(["pending"]);
 	expect(await restarted.inventoryRevision()).toBe(2);
 }, 30_000);
+
+describe("re-registering a path whose earlier object was removed", () => {
+	async function recreated() {
+		const { store, home, root, path } = await fixture();
+		const input = {
+			path,
+			root,
+			producer: "test",
+			operation: "ATT-1",
+			category: "worktree" as const,
+			dependencies: [],
+			evidence: [],
+		};
+		const earlier = await store.register(input);
+		await rm(path, { recursive: true });
+		return { store, home, root, path, input, earlier };
+	}
+	async function recreate(path: string) {
+		// Distinct birth time so the replacement has a different identity.
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		await mkdir(path);
+	}
+	it("still blocks without proof that the earlier producer finished", async () => {
+		const { store, path, input } = await recreated();
+		await recreate(path);
+		await expect(store.register(input)).rejects.toThrow("reconcile it");
+		await expect(
+			store.register(input, { producerFinished: () => false }),
+		).rejects.toThrow("reconcile it");
+		expect(await store.inventoryCount()).toBe(1);
+	});
+	it("supersedes the earlier record once its producer finished", async () => {
+		const { store, home, root, path, input, earlier } = await recreated();
+		await recreate(path);
+		expect(await store.hasReplacedRecord(path, root)).toBe(true);
+		const next = await store.register(input, {
+			producerFinished: (record) => record.id === earlier.id,
+		});
+		expect(next.id).not.toBe(earlier.id);
+		expect(await store.hasReplacedRecord(path, root)).toBe(false);
+		expect(await store.inventoryPage(0)).toEqual([earlier.id, next.id]);
+		expect(
+			JSON.parse(
+				await readFile(
+					join(store.directory, "receipts", `${earlier.id}.json`),
+					"utf8",
+				),
+			),
+		).toMatchObject({ phase: "completed", supersededBy: next.id });
+		// The new object now owns the path, so a further registration is real double ownership.
+		await expect(
+			new StorageRetentionStore(home).register(input, {
+				producerFinished: () => true,
+			}),
+		).rejects.toThrow("reconcile it");
+	});
+	it("registers over a removed path whose earlier record was already retired", async () => {
+		const { store, path, input } = await recreated();
+		await recreate(path);
+		await store.register(input, { producerFinished: () => true });
+		await rm(path, { recursive: true });
+		await recreate(path);
+		const third = await store.register(input, { producerFinished: () => true });
+		expect(await store.inventoryPage(0)).toHaveLength(3);
+		expect((await store.record(third.id)).path).toBe(path);
+	});
+	it("never retires a record whose object is still the one registered", async () => {
+		const { store, path, root, input } = await fixture().then(async (f) => {
+			const input = {
+				path: f.path,
+				root: f.root,
+				producer: "test",
+				operation: "ATT-1",
+				category: "worktree" as const,
+				dependencies: [],
+				evidence: [],
+			};
+			await f.store.register(input);
+			return { ...f, input };
+		});
+		expect(await store.hasReplacedRecord(path, root)).toBe(false);
+		await expect(
+			store.register(input, { producerFinished: () => true }),
+		).rejects.toThrow("reconcile it");
+	});
+});
